@@ -5,6 +5,9 @@ from flask import Flask, request, session, g, redirect, render_template, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
+db_dir = os.path.dirname(DB_PATH)
+if db_dir:
+    os.makedirs(db_dir, exist_ok=True)
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 
 app = Flask(__name__, static_folder="static", static_url_path="/static", template_folder="templates")
