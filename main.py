@@ -10,6 +10,9 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
+_dbdir = os.path.dirname(DB_PATH)
+if _dbdir:
+    os.makedirs(_dbdir, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _normalize_date(v):
@@ -161,6 +164,17 @@ def ensure_db():
 # ---------- static ----------
 @app.route("/")
 def index():
+
+
+@app.route("/api/health")
+def api_health():
+    try:
+        db = get_db()
+        db.execute("SELECT 1")
+        return jsonify({"ok": True, "db":"ok"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
     return send_from_directory(".", "index.html")
 
 @app.route("/uploads/<path:name>")
@@ -661,6 +675,19 @@ def export_warehouse():
     bio = io.BytesIO()
     wb.save(bio); bio.seek(0)
     return send_file(bio, as_attachment=True, download_name="warehouse.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+import traceback
+@app.errorhandler(Exception)
+def json_error(e):
+    path = request.path or ""
+    if path.startswith("/api/") or path.startswith("/export/"):
+        try:
+            msg = f"{type(e).__name__}: {str(e)}"
+            return jsonify({"ok": False, "error": msg}), 500
+        except Exception:
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+    return e
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
