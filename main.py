@@ -87,9 +87,13 @@ def ensure_admin():
                    (admin_email, "Admin", "admin", generate_password_hash(admin_pass), datetime.utcnow().isoformat()))
         db.commit()
 
-@app.before_first_request
 def bootstrap():
-    init_db(); ensure_admin()
+    init_db()
+    ensure_admin()
+
+# spusť jednou při startu, v app contextu (funguje i na Flask 3.1+)
+with app.app_context():
+    bootstrap()
 
 def current_user():
     uid = session.get("uid")
