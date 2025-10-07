@@ -12,6 +12,20 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+def _normalize_date(v):
+    if not v: return v
+    # Accept DD.MM.YYYY, DD-MM-YYYY, or YYYY-MM-DD
+    import re
+    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", str(v))
+    if m:
+        y, M, d = m.groups()
+        return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
+    m = re.match(r"^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$", str(v))
+    if m:
+        d, M, y = m.groups()
+        return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
+    return v
+
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DB_PATH)
@@ -379,6 +393,7 @@ def api_jobs():
             return jsonify({"ok": False, "error":"invalid_input"}), 400
         status = data.get("status") or "Plán"
         note = data.get("note") or ""
+        data["date"] = _normalize_date(data.get("date"))
         db.execute("""INSERT INTO jobs(title,client,status,city,code,date,note)
                       VALUES (?,?,?,?,?,?,?)""",
                    (data["title"], data["client"], status, data["city"], data["code"], data["date"], note))
@@ -536,7 +551,7 @@ def api_tasks():
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         title = data.get("title"); description = data.get("description") or ""
-        due_date = data.get("due_date"); status = data.get("status") or "nový"
+        due_date = _normalize_date(data.get("due_date")); status = data.get("status") or "nový"
         employee_id = data.get("employee_id"); job_id = data.get("job_id")
         if status not in VALID_STATUS:
             return jsonify({"ok": False, "error":"bad_status"}), 400
