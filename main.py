@@ -5,14 +5,18 @@ from flask import Flask, request, session, g, redirect, render_template, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
+# auto-create parent directory if provided
 db_dir = os.path.dirname(DB_PATH)
 if db_dir:
     os.makedirs(db_dir, exist_ok=True)
+
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
+ALLOW_SELF_REGISTER = os.environ.get("ALLOW_SELF_REGISTER", "1") == "1"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static", template_folder="templates")
 app.secret_key = SECRET_KEY
 
+# -------- DB helpers --------
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DB_PATH)
@@ -91,13 +95,12 @@ def ensure_admin():
         db.commit()
 
 def bootstrap():
-    init_db()
-    ensure_admin()
+    init_db(); ensure_admin()
 
-# spusť jednou při startu, v app contextu (funguje i na Flask 3.1+)
 with app.app_context():
     bootstrap()
 
+# -------- helpers --------
 def current_user():
     uid = session.get("uid")
     if not uid: return None
@@ -125,6 +128,7 @@ def sec_headers(resp):
     resp.headers.setdefault("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';")
     return resp
 
+# -------- routes --------
 @app.route("/", endpoint="root")
 def root():
     u = current_user()
@@ -132,7 +136,7 @@ def root():
 
 @app.route("/login", methods=["GET","POST"])
 def login_page():
-    if request.method == "GET": return render_template("login.html", title="Přihlášení")
+    if request.method == "GET": return render_template("login.html", title="Přihlášení", ALLOW_SELF_REGISTER=ALLOW_SELF_REGISTER)
     email = (request.form.get("email") or "").strip().lower()
     password = request.form.get("password") or ""
     db = get_db()
@@ -149,6 +153,9 @@ def logout():
 
 @app.route("/register", methods=["GET","POST"])
 def register_page():
+    if not ALLOW_SELF_REGISTER:
+        flash("Registrace je dočasně vypnutá. Kontaktujte administrátora.", "error")
+        return redirect("/login")
     if request.method == "GET": return render_template("register.html", title="Registrace")
     email = (request.form.get("email") or "").strip().lower()
     password = request.form.get("password") or ""
@@ -374,6 +381,7 @@ def export_xlsx():
     return send_file(buf, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                      as_attachment=True, download_name=fname)
 
+# ---- Admin: Users ----
 @app.route("/admin/users", methods=["GET","POST"])
 def admin_users():
     u, err = admin_required()
@@ -389,6 +397,27 @@ def admin_users():
     elif act == "make_admin": db.execute("UPDATE users SET role='admin' WHERE id=?", (uid,))
     db.commit(); return redirect("/admin/users")
 
+@app.route("/admin/users/new", methods=["POST"])
+def admin_users_new():
+    u, err = admin_required()
+    if err: return err
+    email = (request.form.get("email") or "").strip().lower()
+    name = (request.form.get("name") or "").strip() or None
+    role = (request.form.get("role") or "user").strip()
+    pwd  = request.form.get("password") or ""
+    if not email or not pwd:
+        flash("Email i heslo jsou povinné.", "error"); return redirect("/admin/users")
+    db = get_db()
+    if db.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+        flash("Uživatel s tímto e-mailem už existuje.", "error"); return redirect("/admin/users")
+    db.execute("""INSERT INTO users(email,name,role,password_hash,approved,active,created_at)
+                  VALUES (?,?,?,?,1,1,?)""",
+               (email, name, role, generate_password_hash(pwd), datetime.utcnow().isoformat()))
+    db.commit()
+    flash("Uživatel vytvořen.", "success")
+    return redirect("/admin/users")
+
+# ---- Admin: Resets ----
 @app.route("/admin/resets", methods=["GET","POST","DELETE"])
 def admin_resets():
     u, err = admin_required()
