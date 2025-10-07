@@ -689,6 +689,30 @@ def json_error(e):
             return jsonify({"ok": False, "error": "internal_error"}), 500
     return e
 
+
+# ---- diagnostics & JSON errors (appended safely) ----
+import traceback
+from flask import request, jsonify
+
+@app.route("/api/health")
+def api_health():
+    try:
+        db = get_db()
+        db.execute("SELECT 1")
+        return jsonify({"ok": True, "db": "ok"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"{type(e).__name__}: {e}"}), 500
+
+@app.errorhandler(Exception)
+def json_error(e):
+    path = request.path or ""
+    if path.startswith("/api/") or path.startswith("/export/"):
+        try:
+            return jsonify({"ok": False, "error": f"{type(e).__name__}: {e}"}), 500
+        except Exception:
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+    raise e
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
