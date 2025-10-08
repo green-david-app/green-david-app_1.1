@@ -399,10 +399,11 @@ def api_jobs():
         return jsonify({"ok": True, "jobs":[dict(r) for r in rows]})
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
-        req = ["title","client","city","code","date"]
-        if not all(data.get(k) for k in req):
-            return jsonify({"ok": False, "error":"invalid_input"}), 400
-        status = data.get("status") or "Plán"
+        req = ["title","city","code","date"]
+        if not all((data.get(k) is not None and str(data.get(k)).strip()!="") for k in req):
+            return jsonify({"ok": False, "error":"missing_fields"}), 400
+        client = (data.get("client") or "").strip()
+        status = (data.get("status") or "Plán").strip()
         note = data.get("note") or ""
         data["date"] = _normalize_date(data.get("date"))
         db.execute("""INSERT INTO jobs(title,client,status,city,code,date,note)
