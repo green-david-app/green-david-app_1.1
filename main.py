@@ -10,9 +10,6 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
-_dbdir = os.path.dirname(DB_PATH)
-if _dbdir:
-    os.makedirs(_dbdir, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _normalize_date(v):
@@ -41,6 +38,16 @@ def close_db(error=None):
     if db is not None:
         db.close()
 
+
+# ---------- defensive fixes ----------
+def ensure_columns(db):
+    try:
+        cols = [r[1] for r in db.execute("PRAGMA table_info(users)").fetchall()]
+        if cols and "created_at" not in cols:
+            db.execute("ALTER TABLE users ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))")
+            db.commit()
+    except Exception:
+        pass
 # ---------- migrations ----------
 def get_version(db):
     db.execute("CREATE TABLE IF NOT EXISTS app_meta (id INTEGER PRIMARY KEY CHECK (id=1), version INTEGER NOT NULL)")
@@ -159,22 +166,12 @@ def seed_admin(db):
 def ensure_db():
     db = get_db()
     migrate(db)
+    ensure_columns(db)
     seed_admin(db)
 
 # ---------- static ----------
 @app.route("/")
 def index():
-
-
-@app.route("/api/health")
-def api_health():
-    try:
-        db = get_db()
-        db.execute("SELECT 1")
-        return jsonify({"ok": True, "db":"ok"})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
     return send_from_directory(".", "index.html")
 
 @app.route("/uploads/<path:name>")
@@ -675,19 +672,6 @@ def export_warehouse():
     bio = io.BytesIO()
     wb.save(bio); bio.seek(0)
     return send_file(bio, as_attachment=True, download_name="warehouse.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-
-import traceback
-@app.errorhandler(Exception)
-def json_error(e):
-    path = request.path or ""
-    if path.startswith("/api/") or path.startswith("/export/"):
-        try:
-            msg = f"{type(e).__name__}: {str(e)}"
-            return jsonify({"ok": False, "error": msg}), 500
-        except Exception:
-            return jsonify({"ok": False, "error": "internal_error"}), 500
-    return e
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
