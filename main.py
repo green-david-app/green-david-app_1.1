@@ -46,6 +46,14 @@ def close_db(_=None):
 
 def init_db():
     db = get_db(); c = db.cursor()
+    # Defensive migration: ensure users.created_at exists with a default
+    try:
+        cols = [r[1] for r in c.execute("PRAGMA table_info(users)").fetchall()]
+        if 'created_at' not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))")
+            db.commit()
+    except Exception:
+        pass
     c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,role TEXT NOT NULL,password_hash TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT (datetime('now')))")
     c.execute("CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,role TEXT NOT NULL)")
     c.execute("CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,client TEXT NOT NULL,status TEXT NOT NULL,city TEXT NOT NULL,code TEXT NOT NULL,date TEXT NOT NULL,note TEXT)")
@@ -56,7 +64,7 @@ def init_db():
     c.execute("CREATE TABLE IF NOT EXISTS job_assignments (job_id INTEGER NOT NULL,employee_id INTEGER NOT NULL,PRIMARY KEY (job_id, employee_id))")
     c.execute("CREATE TABLE IF NOT EXISTS calendar_events (id INTEGER PRIMARY KEY AUTOINCREMENT,kind TEXT NOT NULL,ref_id INTEGER,title TEXT NOT NULL,date TEXT NOT NULL,meta TEXT)")
     if not c.execute("SELECT 1 FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone():
-        c.execute("INSERT INTO users(email,name,role,password_hash,active) VALUES (?,?,?,?,1)", ("admin@greendavid.local","Admin","admin", generate_password_hash("admin123")))
+        c.execute("INSERT OR IGNORE INTO users(email,name,role,password_hash,active,created_at) VALUES (?,?,?,?,1)", ("admin@greendavid.local","Admin","admin", generate_password_hash("admin123"), 1, datetime.utcnow().isoformat(timespec="seconds")))
     db.commit()
 
 @app.before_request
