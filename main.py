@@ -162,11 +162,49 @@ def seed_admin(db):
                     datetime.utcnow().isoformat()))
         db.commit()
 
+
+# ---------- defensive schema for jobs ----------
+def ensure_jobs_schema(db):
+    try:
+        cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
+    except Exception:
+        cols = []
+    if not cols:
+        c = db.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                client TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'Plán',
+                city TEXT NOT NULL,
+                code TEXT NOT NULL,
+                date TEXT NOT NULL,
+                note TEXT
+            )
+        """)
+        db.commit()
+        return
+    required = {
+        "title": "TEXT NOT NULL DEFAULT ''",
+        "client": "TEXT NOT NULL DEFAULT ''",
+        "status": "TEXT NOT NULL DEFAULT 'Plán'",
+        "city": "TEXT NOT NULL DEFAULT ''",
+        "code": "TEXT NOT NULL DEFAULT ''",
+        "date": "TEXT NOT NULL DEFAULT ''",
+        "note": "TEXT"
+    }
+    have = set(cols)
+    for name, decl in required.items():
+        if name not in have:
+            db.execute(f"ALTER TABLE jobs ADD COLUMN {name} {decl}")
+            db.commit()
 @app.before_request
 def ensure_db():
     db = get_db()
     migrate(db)
     ensure_columns(db)
+    ensure_jobs_schema(db)
     seed_admin(db)
 
 # ---------- static ----------
@@ -395,14 +433,16 @@ def api_jobs():
     if err: return err
     db = get_db()
     if request.method == "GET":
-        rows = db.execute("SELECT * FROM jobs ORDER BY date DESC, id DESC").fetchall()
+        rows = db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()
         return jsonify({"ok": True, "jobs":[dict(r) for r in rows]})
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
-        req = ["title","client","city","code","date"]
-        if not all(data.get(k) for k in req):
-            return jsonify({"ok": False, "error":"invalid_input"}), 400
-        status = data.get("status") or "Plán"
+        req = ["title","city","code","date"]
+        if not all((data.get(k) is not None and str(data.get(k)).strip()!="") for k in req):
+            return jsonify({"ok": False, "error":"missing_fields"}), 400
+        if "client" not in data or data.get("client") is None:
+            data["client"] = ""
+        status = (data.get("status") or "Plán").strip()
         note = data.get("note") or ""
         data["date"] = _normalize_date(data.get("date"))
         db.execute("""INSERT INTO jobs(title,client,status,city,code,date,note)
