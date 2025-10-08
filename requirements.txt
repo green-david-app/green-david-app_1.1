@@ -1,4 +1,5 @@
-flask>=3.0
-gunicorn>=23.0
-werkzeug>=3.0
-openpyxl>=3.1
+flask>=3.0.3
+# kompatibilní i s 3.1+
+gunicorn==22.0.0
+werkzeug==3.0.3
+openpyxl==3.1.5
