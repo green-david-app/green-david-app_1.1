@@ -1,1 +1,4 @@
-Flask>=3.0\ngunicorn>=21.2\nopenpyxl>=3.1\nWerkzeug>=3.0\n
+Flask>=3.0
+gunicorn>=21.2
+openpyxl>=3.1
+Werkzeug>=3.0
