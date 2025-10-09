@@ -165,7 +165,7 @@ def seed_admin(db):
 
 
 def ensure_jobs_schema(db):
-    """Ensure jobs table exists and is compatible (title/name + owner_id)."""
+    """Ensure jobs table exists and is compatible (title/name + owner_id + created_at)."""
     db.execute("""
         CREATE TABLE IF NOT EXISTS jobs(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -195,6 +195,15 @@ def ensure_jobs_schema(db):
         admin_id = get_admin_id(db)
         try:
             db.execute("UPDATE jobs SET owner_id=? WHERE owner_id IS NULL OR owner_id=0", (admin_id,))
+        except Exception:
+            pass
+    # created_at
+    cols = {r[1]: r for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "created_at" not in cols:
+        db.execute("ALTER TABLE jobs ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))")
+    else:
+        try:
+            db.execute("UPDATE jobs SET created_at = datetime('now') WHERE created_at IS NULL OR created_at=''")
         except Exception:
             pass
     db.execute("UPDATE jobs SET title = '' WHERE title IS NULL")
@@ -453,16 +462,30 @@ def api_jobs():
         uid = get_admin_id(db)
 
     cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-    if "name" in cols:
+    need_name = ("name" in cols)
+    has_created_at = ("created_at" in cols)
+
+    if need_name and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, title, client, status, city, code, date, note, uid)
+        )
+    elif need_name and not has_created_at:
         db.execute(
             "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
             (title, title, client, status, city, code, date, note, uid)
+        )
+    elif (not need_name) and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, client, status, city, code, date, note, uid)
         )
     else:
         db.execute(
             "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
             (title, client, status, city, code, date, note, uid)
         )
+
     db.commit()
     return jsonify({"ok": True})
 @app.route("/api/jobs/<int:jid>", methods=["GET"])
