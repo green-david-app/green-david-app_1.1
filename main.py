@@ -163,10 +163,9 @@ def seed_admin(db):
         db.commit()
 
 
-# ---- schema compatibility helpers ----
 
 def ensure_jobs_schema(db):
-    """Ensure 'jobs' table works with both old ('name') and new ('title') schemas."""
+    """Ensure jobs table exists and is compatible (title/name + owner_id)."""
     db.execute("""
         CREATE TABLE IF NOT EXISTS jobs(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,6 +186,17 @@ def ensure_jobs_schema(db):
         db.execute("UPDATE jobs SET title = COALESCE(title, name) WHERE (title IS NULL OR title='') AND name IS NOT NULL")
     except Exception:
         pass
+    # owner_id
+    cols = {r[1]: r for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "owner_id" not in cols:
+        admin_id = get_admin_id(db)
+        db.execute(f"ALTER TABLE jobs ADD COLUMN owner_id INTEGER NOT NULL DEFAULT {admin_id}")
+    else:
+        admin_id = get_admin_id(db)
+        try:
+            db.execute("UPDATE jobs SET owner_id=? WHERE owner_id IS NULL OR owner_id=0", (admin_id,))
+        except Exception:
+            pass
     db.execute("UPDATE jobs SET title = '' WHERE title IS NULL")
     db.commit()
 
@@ -420,6 +430,7 @@ def api_items():
 @app.route("/api/jobs", methods=["GET","POST"])
 def api_jobs():
     db = get_db()
+
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
         return jsonify({"ok": True, "jobs": rows})
@@ -437,13 +448,21 @@ def api_jobs():
     client = (data.get("client") or "").strip()
     note   = (data.get("note") or None)
 
+    uid = session.get("uid")
+    if uid is None:
+        uid = get_admin_id(db)
+
     cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
     if "name" in cols:
-        db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?,?)",
-                   (title, title, client, status, city, code, date, note))
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
+            (title, title, client, status, city, code, date, note, uid)
+        )
     else:
-        db.execute("INSERT INTO jobs(title, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?)",
-                   (title, client, status, city, code, date, note))
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
+            (title, client, status, city, code, date, note, uid)
+        )
     db.commit()
     return jsonify({"ok": True})
 @app.route("/api/jobs/<int:jid>", methods=["GET"])
@@ -691,3 +710,8 @@ def export_warehouse():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
+
+def get_admin_id(db):
+    row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
+    return int(row["id"]) if row else 1
