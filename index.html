@@ -406,25 +406,27 @@
       }
 
       
-      // Calendar tab (summary + on-demand day detail)
+      // Calendar tab (robust states + summary/detail)
       function CalendarTab(){
         const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-        const [summary,setSummary]=useState([]);
-        const [detail,setDetail]=useState({date:"",jobs:[],work_logs:[]});
+        const [summary,setSummary]=useState(null);   // null=loading, []=empty
+        const [detail,setDetail]=useState(null);
         const [err,setErr]=useState("");
 
-        async function loadSummary(){ try{
-          const j = await api("/api/calendar");
-          const arr = (j && (j.summary||[])) || [];
-          setSummary(arr);
-        }catch(e){ setErr(e.message||String(e)); } }
-
-        async function loadDetail(iso){ try{
-          const j = await api("/api/calendar?date="+iso);
-          const data = (j && j.data) || {date: iso, jobs:[], work_logs:[]};
-          setDetail(data);
-        }catch(e){ setErr(e.message||String(e)); } }
-
+        async function loadSummary(){
+          try{
+            const j = await api("/api/calendar");
+            const arr = (j && (j.summary||[])) || [];
+            setSummary(arr);
+          }catch(e){ setErr(e.message||String(e)); setSummary([]); }
+        }
+        async function loadDetail(iso){
+          try{
+            const j = await api("/api/calendar?date="+iso);
+            const d = (j && j.data) || {date: iso, jobs:[], work_logs:[]};
+            setDetail(d);
+          }catch(e){ setErr(e.message||String(e)); }
+        }
         useEffect(()=>{ loadSummary().catch(()=>{}); },[]);
 
         function shift(delta){ const d=new Date(month); d.setMonth(d.getMonth()+delta); d.setDate(1); setMonth(d); }
@@ -432,18 +434,15 @@
         const days=new Date(y,m+1,0).getDate();
         const first=new Date(y,m,1).getDay(); const pad=(first+6)%7;
 
-        function badgeCounts(iso){
-          const item = summary.find(x=>x.date===iso);
-          if(!item) return {jobs:0,work_logs:0};
-          return {jobs:item.jobs||0, work_logs:item.work_logs||0};
+        function countFor(iso){
+          const it = (summary||[]).find(x=>x.date===iso);
+          return it ? {jobs:it.jobs||0, work_logs:it.work_logs||0} : {jobs:0, work_logs:0};
         }
 
         const boxes=[]; for(let i=0;i<pad;i++) boxes.push({empty:true});
         for(let d=1; d<=days; d++){
-          const dateObj=new Date(y,m,d);
-          const iso=dateObj.toISOString().slice(0,10);
-          const counts = badgeCounts(iso);
-          boxes.push({d,iso,counts});
+          const iso=new Date(y,m,d).toISOString().slice(0,10);
+          boxes.push({d,iso,counts: countFor(iso)});
         }
 
         return (<div className="grid" style={{gridTemplateColumns:"repeat(7,1fr)"}}>
@@ -456,35 +455,40 @@
                 <button className="ghost" onClick={()=>shift(1)}>▶</button>
               </div>
             </div>
+            {summary===null && <div className="card-c">Načítám kalendář…</div>}
+            {summary && summary.length===0 && <div className="card-c">
+              Zatím žádná data v kalendáři.
+              <div className="muted" style={{marginTop:8}}>TIP: vytvoř zakázku s datem, nebo přidej výkaz – pak se objeví v souhrnu.</div>
+            </div>}
+            {err && <div className="card-c error">{err}</div>}
           </div>
 
           {boxes.map((b,i)=>(<div key={i} className="card small" style={{minHeight:150,cursor: b.empty? 'default':'pointer'}} onClick={()=>!b.empty && loadDetail(b.iso)}>
             <div className="card-h" style={{justifyContent:"space-between"}}>
               <div>{b.empty? "" : b.d}</div>
-              {!b.empty && <div className="actions">
+              {!b.empty && summary && <div className="actions">
                 {b.counts.jobs>0 && <span className="badge">Z: {b.counts.jobs}</span>}
                 {b.counts.work_logs>0 && <span className="badge ghost">V: {b.counts.work_logs}</span>}
               </div>}
             </div>
-            {!b.empty && detail.date===b.iso && <div className="card-c">
+            {!b.empty && detail && detail.date===b.iso && <div className="card-c">
               {(detail.jobs||[]).map((j,idx)=>(<div key={"j"+idx} className="badge">{j.title||j.name||("Zakázka #"+j.id)}</div>))}
               {(detail.work_logs||[]).slice(0,5).map((w,idx)=>(<div key={"w"+idx} className="badge ghost">{(w.employee_name||"") + " • " + (w.hours||0) + "h"}</div>))}
             </div>}
           </div>))}
-          {err && <div className="error" style={{gridColumn:"1 / -1"}}>{err}</div>}
         </div>);
       }
 
-      // Worklogs (výkazy) tab using /api/worklogs
+      // Worklogs (výkazy) tab using /api/worklogs (GET list, POST create)
       function WorklogsTab(){
-        const [rows,setRows]=useState([]);
+        const [rows,setRows]=useState(null); // null=loading
         const [form,setForm]=useState({employee_name:"",work_date:"",hours:0,job_title:"",note:""});
         const [err,setErr]=useState("");
 
         async function load(){ try{
           const res = await api("/api/worklogs");
-          setRows((res && (res.work_logs||[])) || []);
-        }catch(e){ setErr(e.message||String(e)); } }
+          setRows((res && res.work_logs) || []);
+        }catch(e){ setErr(e.message||String(e)); setRows([]); } }
         useEffect(()=>{ load().catch(()=>{}); },[]);
 
         async function add(e){ e.preventDefault();
@@ -511,23 +515,27 @@
             </form>
             {err && <div className="error">{err}</div>}
           </div></div>
-          <div className="card"><div className="card-h"><div>Výkazy</div></div><div className="card-c">
-            <table className="table">
-              <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Zakázka</th><th>Pozn.</th></tr></thead>
-              <tbody>
-                {rows.map(r=>(<tr key={r.id}>
-                  <td>{r.work_date}</td>
-                  <td>{r.employee_name}</td>
-                  <td>{r.hours}</td>
-                  <td>{r.job_title||""}</td>
-                  <td>{r.note||""}</td>
-                </tr>))}
-              </tbody>
-            </table>
-          </div></div>
+          <div className="card"><div className="card-h"><div>Výkazy</div></div>
+            {rows===null && <div className="card-c">Načítám výkazy…</div>}
+            {rows && rows.length===0 && <div className="card-c">Zatím žádné výkazy.</div>}
+            {rows && rows.length>0 && <div className="card-c">
+              <table className="table">
+                <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Zakázka</th><th>Pozn.</th></tr></thead>
+                <tbody>
+                  {rows.map(r=>(<tr key={r.id}>
+                    <td>{r.work_date}</td>
+                    <td>{r.employee_name}</td>
+                    <td>{r.hours}</td>
+                    <td>{r.job_title||""}</td>
+                    <td>{r.note||""}</td>
+                  </tr>))}
+                </tbody>
+              </table>
+            </div>}
+          </div>
         </div>);
       }
-      // END_WORKLOGS_TAB
+      // END_TABS_INJECT
 // Employees root (needs after App def)
       function Employees(){
         const [list,setList]=useState([]);
