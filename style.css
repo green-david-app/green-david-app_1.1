@@ -44,3 +44,22 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .error-overlay{background:#ffe7e7;border:1px solid #ffb8b8;color:#5a0000;border-radius:12px;padding:12px;margin:14px 0;white-space:pre-wrap}
 .linklike{color:#b6f3c9;cursor:pointer}
 .linklike:hover{text-decoration:underline}
+
+
+/* ---- Calendar ---- */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{font-weight:700;font-size:12px;color:#93a39a;text-align:center;padding:6px 0}
+.cal-cell{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:86px;padding:8px;cursor:pointer;position:relative}
+.cal-dim{opacity:.45}
+.cal-today{outline:2px solid var(--accent);}
+.cal-date{position:absolute;top:6px;right:8px;font-size:12px;color:#a8b7ae}
+.cal-dots{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:16px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d0d7d3}
+.dot.job{background:#7fbf7f}
+.dot.task{background:#92a7ff}
+.dot.note{background:#ffd280}
+.dot.more{border-radius:6px;padding:0 4px;height:18px;line-height:18px;font-size:11px;background:#62706a;color:#eaf6ef}
+.pill{display:inline-block;font-size:11px;padding:2px 6px;border-radius:999px;background:#62706a;color:#fff;margin-right:6px;text-transform:uppercase}
+.pill.task{background:#5b6be0}.pill.job{background:#2b8c4f}.pill.note{background:#b7892e}
+a.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid var(--accent-2);background:var(--panel);color:var(--txt-inv)}
+a.btn.disabled{pointer-events:none;opacity:.5}

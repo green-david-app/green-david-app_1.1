@@ -1,6 +1,6 @@
 
 import os, re, io, base64, sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -149,6 +149,22 @@ def migrate(db):
         )""")
         db.commit()
         set_version(db, 2)
+    if v < 3:
+        db.execute("""CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            start TEXT NOT NULL,
+            end TEXT,
+            all_day INTEGER NOT NULL DEFAULT 1,
+            type TEXT NOT NULL DEFAULT 'note',
+            ref_id INTEGER,
+            notes TEXT,
+            created_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )""")
+        db.commit()
+        set_version(db, 3)
+
 
 def seed_admin(db):
     cur = db.execute("SELECT COUNT(*) as c FROM users")
@@ -738,3 +754,149 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+
+
+# ---------- calendar API ----------
+@app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
+def api_calendar():
+    u, err = require_role(write=request.method in ("POST","PATCH","DELETE"))
+    if err: return err
+    db = get_db()
+    if request.method == "GET":
+        q_from = request.args.get("from") or request.args.get("start")
+        q_to = request.args.get("to") or request.args.get("end")
+        if not q_from or not q_to:
+            now = datetime.now()
+            q_from = f"{now.year}-{str(now.month).zfill(2)}-01"
+            if now.month == 12:
+                y2, m2 = now.year+1, 1
+            else:
+                y2, m2 = now.year, now.month+1
+            last = (datetime(y2,m2,1) - timedelta(days=1)).day
+            q_to = f"{now.year}-{str(now.month).zfill(2)}-{str(last).zfill(2)}"
+        rows = []
+        # ad-hoc calendar events
+        cur = db.execute("""
+            SELECT id, title, start, COALESCE(end, start) as end, all_day, type, ref_id, notes
+            FROM calendar_events
+            WHERE date(start) BETWEEN date(?) AND date(?)
+            ORDER BY start
+        """, (q_from, q_to))
+        for r in cur.fetchall():
+            rows.append({"id": f"note-{r['id']}", "title": r["title"], "start": r["start"], "end": r["end"],
+                         "all_day": bool(r["all_day"]), "type": r["type"], "ref_id": r["ref_id"], "notes": r["notes"]})
+        # jobs as events
+        cur = db.execute("""
+            SELECT id, title, code, date FROM jobs
+            WHERE date(date) BETWEEN date(?) AND date(?)
+        """, (q_from, q_to))
+        for r in cur.fetchall():
+            rows.append({"id": f"job-{r['id']}", "title": f"Zakázka: {r['title']} ({r['code']})",
+                         "start": r["date"], "end": r["date"], "all_day": True, "type": "job", "ref_id": r["id"]})
+        # tasks as events
+        try:
+            cur = db.execute("""
+                SELECT id, title, due_date, status FROM tasks
+                WHERE due_date IS NOT NULL AND date(due_date) BETWEEN date(?) AND date(?)
+            """, (q_from, q_to))
+            for r in cur.fetchall():
+                rows.append({"id": f"task-{r['id']}", "title": f"Úkol: {r['title']}",
+                             "start": r["due_date"], "end": r["due_date"], "all_day": True, "type": "task", "ref_id": r["id"], "status": r["status"]})
+        except Exception:
+            pass
+        return jsonify({"ok": True, "events": rows})
+    data = request.get_json(force=True, silent=True) or {}
+    if request.method == "POST":
+        typ = (data.get("type") or "note").lower()
+        if typ == "note":
+            title = (data.get("title") or "").strip()
+            start = (data.get("start") or "").strip()
+            end = (data.get("end") or None)
+            all_day = 1 if data.get("all_day", True) else 0
+            notes = (data.get("notes") or None)
+            if not title or not start:
+                return jsonify({"ok": False, "error":"missing_fields"}), 400
+            cur = db.execute("INSERT INTO calendar_events(title,start,end,all_day,type,notes,created_by) VALUES (?,?,?,?,?,?,?)",
+                (title, start, end, all_day, "note", notes, u["id"]))
+            db.commit()
+            eid = cur.lastrowid
+            return jsonify({"ok": True, "event": {"id": f"note-{eid}","title":title,"start":start,"end":end or start,"all_day":bool(all_day),"type":"note"}})
+        elif typ == "task":
+            title = (data.get("title") or "").strip()
+            due_date = (data.get("start") or data.get("due_date") or "").strip()
+            employee_id = data.get("employee_id")
+            job_id = data.get("job_id")
+            description = data.get("notes")
+            if not title or not due_date:
+                return jsonify({"ok": False, "error":"missing_fields"}), 400
+            cur = db.execute("""INSERT INTO tasks(title,description,status,due_date,employee_id,job_id,created_by,created_at)
+                                VALUES (?,?,?,?,?,?,?,datetime('now'))""",
+                             (title, description, "nový", due_date, employee_id, job_id, u["id"]))
+            db.commit()
+            tid = cur.lastrowid
+            return jsonify({"ok": True, "event": {"id": f"task-{tid}","title": f"Úkol: {title}","start": due_date,"end": due_date,"all_day": True,"type":"task","ref_id": tid}})
+        elif typ == "job":
+            title = (data.get("title") or "").strip()
+            date = (data.get("start") or data.get("date") or "").strip()
+            client = (data.get("client") or "").strip()
+            city = (data.get("city") or "").strip()
+            code = (data.get("code") or "").strip()
+            note = (data.get("notes") or None)
+            if not (title and date and client and city and code):
+                return jsonify({"ok": False, "error":"missing_job_fields"}), 400
+            cur = db.execute("""INSERT INTO jobs(title,client,status,city,code,date,note) VALUES (?,?,?,?,?,?,?)""",
+                             (title, client, "Plán", city, code, date, note))
+            db.commit()
+            jid = cur.lastrowid
+            return jsonify({"ok": True, "event": {"id": f"job-{jid}","title": f"Zakázka: {title} ({code})","start": date,"end": date,"all_day": True,"type":"job","ref_id": jid}})
+        return jsonify({"ok": False, "error":"unsupported_type"}), 400
+    if request.method == "PATCH":
+        ev_id = request.args.get("id") or data.get("id")
+        if not ev_id or not str(ev_id).startswith("note-"):
+            return jsonify({"ok": False, "error":"only_notes_editable"}), 400
+        raw_id = int(str(ev_id).split("-",1)[1])
+        title = data.get("title"); start = data.get("start"); end = data.get("end"); all_day = data.get("all_day"); notes = data.get("notes")
+        sets = []; vals = []
+        if title is not None: sets.append("title=?"); vals.append(title)
+        if start is not None: sets.append("start=?"); vals.append(start)
+        if end is not None: sets.append("end=?"); vals.append(end)
+        if all_day is not None: sets.append("all_day=?"); vals.append(1 if all_day else 0)
+        if notes is not None: sets.append("notes=?"); vals.append(notes)
+        if not sets: return jsonify({"ok": True})
+        vals.append(raw_id)
+        db.execute(f"UPDATE calendar_events SET {', '.join(sets)} WHERE id= ?", vals)
+        db.commit()
+        return jsonify({"ok": True})
+    ev_id = request.args.get("id") or data.get("id")
+    if not ev_id or not str(ev_id).startswith("note-"):
+        return jsonify({"ok": False, "error":"only_notes_deletable"}), 400
+    raw_id = int(str(ev_id).split("-",1)[1])
+    db.execute("DELETE FROM calendar_events WHERE id=?", (raw_id,))
+    db.commit()
+    return jsonify({"ok": True})
+
+# ---------- employee hours report (JSON) ----------
+@app.route("/api/reports/employee_hours")
+def api_report_employee_hours():
+    u, err = require_auth()
+    if err: return err
+    emp = request.args.get("employee_id", type=int)
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+    if not emp:
+        return jsonify({"ok": False, "error":"missing_employee"}), 400
+    q = """
+        SELECT t.id, t.date, t.hours, t.place, t.activity,
+               j.title as title, j.code as code, j.city as city
+        FROM timesheets t
+        JOIN jobs j ON j.id = t.job_id
+        WHERE t.employee_id=?
+          AND (? IS NULL OR date(t.date) >= date(?))
+          AND (? IS NULL OR date(t.date) <= date(?))
+        ORDER BY t.date ASC
+    """
+    rows = [dict(r) for r in get_db().execute(q, (emp, date_from, date_from, date_to, date_to)).fetchall()]
+    total = sum(float(r["hours"]) for r in rows) if rows else 0.0
+    er = get_db().execute("SELECT id,name,role FROM employees WHERE id=?", (emp,)).fetchone()
+    emp_obj = dict(er) if er else {"id": emp, "name": "Neznámý"}
+    return jsonify({"ok": True, "employee": emp_obj, "total_hours": total, "rows": rows})
