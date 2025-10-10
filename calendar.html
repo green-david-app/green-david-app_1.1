@@ -1,0 +1,29 @@
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalendář – Green David</title><link rel="stylesheet" href="/style.css">
+<style>.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.day{border:1px solid #23262d;border-radius:12px;min-height:84px;padding:6px;background:#10141a;cursor:pointer}.panel{margin-top:10px;border:1px solid #23262d;border-radius:12px;padding:10px;background:#0f1115}</style>
+</head><body>
+<header><h1>Green David – Kalendář</h1><nav><a href="/">Zakázky</a> · <a href="/vykazy.html">Výkazy</a></nav></header>
+<main style="max-width:980px;margin:18px auto;padding:10px">
+  <div id="month"></div><div class="grid" id="grid"></div><div id="panel" class="panel" style="display:none"></div>
+</main>
+<script>
+const monthEl=document.getElementById('month'),grid=document.getElementById('grid'),panel=document.getElementById('panel');
+const t=new Date(),y=t.getFullYear(),m=t.getMonth(),first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate();
+async function j(u){const r=await fetch(u);return r.json();}
+async function build(){monthEl.textContent=t.toLocaleString('cs-CZ',{month:'long',year:'numeric'});grid.innerHTML='';for(let i=0;i<start;i++){grid.appendChild(document.createElement('div'));}
+ const sum=await j('/api/calendar');const map={};if(sum.ok&&sum.summary){for(const r of sum.summary){map[r.date]=r;}}
+ for(let d=1;d<=days;d++){const iso=new Date(y,m,d).toISOString().slice(0,10);const c=document.createElement('div');c.className='day';
+  const s=map[iso]||{jobs:0,tasks:0,notes:0,work_logs:0};
+  c.innerHTML=`<div style='display:flex;justify-content:space-between;font-size:12px;color:#9aa4b2'><b>${d}.</b>
+    <span>${s.jobs?`<span class=badge>Z:${s.jobs}</span>`:''}${s.tasks?` <span class=badge>Ú:${s.tasks}</span>`:''}${s.notes?` <span class=badge>P:${s.notes}</span>`:''}${s.work_logs?` <span class=badge>H:${s.work_logs}</span>`:''}</span></div>`;
+  c.onclick=()=>showDay(iso);grid.appendChild(c);}}
+function list(a,f){if(!a||a.length===0)return'<div class=empty>nic</div>';return'<ul>'+a.map(x=>'<li>'+f(x)+'</li>').join('')+'</ul>';}
+async function showDay(iso){const r=await j('/api/calendar?date='+iso);if(!r.ok)return;const d=r.data;panel.style.display='block';
+ panel.innerHTML=`<h3>${new Date(iso).toLocaleDateString('cs-CZ')}</h3>
+ <h4>Zakázky</h4>${list(d.jobs,j=>`${j.title||j.name||'(bez názvu)'} · ${j.city||''} · ${j.code||''} · ${j.status||''}`)}
+ <h4>Úkoly</h4>${list(d.tasks,t=>`${t.title} · zakázka ${t.job_id||''}`)}
+ <h4>Poznámky</h4>${list(d.notes,n=>`${n.title}`)}
+ <h4>Hodiny</h4>${list(d.work_logs,w=>`${w.employee_name}: ${w.hours} h · ${w.job_title||''}`)}`;}
+build();
+</script></body></html>
