@@ -738,3 +738,5 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+    from addons.main_addons_calendar_vykazy import *  # přidá kalendář, výkazy a init schématu
+
