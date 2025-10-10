@@ -106,7 +106,7 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-        const items=[{key:"jobs",label:"Zakázky"},{key:"calendar",label:"Kalendář"},{key:"timesheets",label:"Hodiny"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
+        const items=[{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
         return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
@@ -398,8 +398,6 @@
           <Tabs value={tab} onChange={(k)=>{ setTab(k); setJobOpen(null); }} canAdmin={auth.user?.role==="admin"} taskCount={auth.tasks}/>
           <div style={{height:12}}/>
           {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
-          {tab==="calendar" && <CalendarTab/>}
-          {tab==="timesheets" && <TimesheetsTab/>}
           {tab==="tasks" && <TasksTab/>}
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}
@@ -457,124 +455,7 @@
         );
       }
 
-      
-      function CalendarTab(){
-        const [jobs,setJobs]=useState([]);
-        const [month,setMonth]=useState(()=>{
-          const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1);
-        });
-        const [err,setErr]=useState("");
-        useEffect(()=>{ (async()=>{ try{ const j=await api("/api/jobs"); setJobs(j.jobs||[]); }catch(e){ setErr(e.message);} })(); },[]);
-        const ym = month.toISOString().slice(0,7);
-        const byDate = {};
-        for(const j of jobs){
-          if(!j.date) continue;
-          if(!byDate[j.date]) byDate[j.date]=[];
-          byDate[j.date].push(j);
-        }
-        function daysInMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
-        const firstDow = new Date(month.getFullYear(),month.getMonth(),1).getDay(); // 0=Sun
-        const startOffset = (firstDow+6)%7; // Monday-first
-        const total = startOffset + daysInMonth(month);
-        const cells = Array.from({length: Math.ceil(total/7)*7}, (_,i)=>i);
-        function shiftMonth(delta){
-          setMonth(new Date(month.getFullYear(), month.getMonth()+delta, 1));
-        }
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card">
-            <div className="card-h">
-              <div>Kalendář</div>
-              <div>
-                <button className="btn" onClick={()=>shiftMonth(-1)}>◀</button>
-                <b style={{margin:"0 12px"}}>{month.toLocaleString('cs-CZ',{month:'long', year:'numeric'})}</b>
-                <button className="btn" onClick={()=>shiftMonth(1)}>▶</button>
-              </div>
-            </div>
-            <div className="card-c">
-              {err && <div className="small" style={{color:'#ffbcbc'}}>{err}</div>}
-              <div className="calendar">
-                <div className="cal-head">
-                  {["Po","Út","St","Čt","Pá","So","Ne"].map(d=><div key={d}>{d}</div>)}
-                </div>
-                <div className="cal-grid">
-                  {cells.map(i=>{
-                    const day = i - startOffset + 1;
-                    const inMonth = day>=1 && day<=daysInMonth(month);
-                    const dateStr = inMonth ? new Date(month.getFullYear(),month.getMonth(),day).toISOString().slice(0,10) : null;
-                    const list = dateStr ? (byDate[dateStr]||[]) : [];
-                    return (<div key={i} className={"cal-cell"+(inMonth?"":" dim")+(list.length?" has":"")}>
-                      <div className="cal-day">{inMonth? day : ""}</div>
-                      {list.slice(0,3).map((j,idx)=>(<div key={idx} className={"pill "+(j.status==='Probíhá'?'green': (j.status==='Hotovo'?'gray':'blue'))}>{j.title}</div>))}
-                      {list.length>3 && <div className="small">+{list.length-3} další…</div>}
-                    </div>);
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>);
-      }
-
-      function TimesheetsTab(){
-        const [employees,setEmployees]=useState([]);
-        const [jobs,setJobs]=useState([]);
-        const [list,setList]=useState([]);
-        const [form,setForm]=useState({date:"", employee_id:"", job:"", hours:"", note:""});
-        const [err,setErr]=useState("");
-        useEffect(()=>{ (async()=>{
-          try{ const e=await api("/api/employees"); setEmployees(e.employees||[]); }catch(e){}
-          try{ const j=await api("/api/jobs"); setJobs(j.jobs||[]);}catch(e){}
-          load();
-        })(); },[]);
-        async function load(){ try{ const r=await api("/api/timesheets"); setList(r.timesheets||[]);}catch(e){ setErr(e.message);} }
-        async function add(e){ e.preventDefault(); setErr(""); try{
-          if(!form.date) throw new Error("Vyber datum");
-          const data={...form, employee_id: Number(form.employee_id)||null, hours: Number(form.hours)||0};
-          await api("/api/timesheets", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data)});
-          setForm({date:"", employee_id:"", job:"", hours:"", note:""});
-          load();
-        }catch(e){ setErr(e.message || String(e)); } }
-        async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id, {method:"DELETE"}); load(); }
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Výkaz hodin</div></div><div className="card-c">
-            {err && <div className="small" style={{color:'#ffbcbc'}}>{err}</div>}
-            <form onSubmit={add}>
-              <div className="form-row">
-                <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
-                <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} required>
-                  <option value="">Zaměstnanec…</option>
-                  {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-                <select value={form.job} onChange={e=>setForm({...form,job:e.target.value})}>
-                  <option value="">Zakázka…</option>
-                  {jobs.map(j=><option key={j.id} value={j.id}>{j.title} ({j.code})</option>)}
-                </select>
-                <input type="number" min="0" step="0.5" placeholder="Hodiny" value={form.hours} onChange={e=>setForm({...form,hours:e.target.value})} required style={{width:120}}/>
-                <input placeholder="Poznámka" value={form.note||""} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:2}}/>
-                <button type="submit">Přidat</button>
-              </div>
-            </form>
-          </div></div>
-          <div className="card"><div className="card-h"><div>Seznam</div></div><div className="card-c">
-            <table className="table">
-              <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodiny</th><th>Poznámka</th><th></th></tr></thead>
-              <tbody>
-                {list.map(r=>(<tr key={r.id}>
-                  <td>{r.date}</td>
-                  <td>{(employees.find(e=>e.id===r.employee_id)||{}).name || r.employee_id}</td>
-                  <td>{r.job}</td>
-                  <td>{r.hours}</td>
-                  <td>{r.note||""}</td>
-                  <td><button className="btn" onClick={()=>del(r.id)}>Smazat</button></td>
-                </tr>))}
-              </tbody>
-            </table>
-            {list.length===0 && <div className="small">Zatím žádné záznamy.</div>}
-          </div></div>
-        </div>);
-      }
-
-ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+      ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
   </body>
 </html>
