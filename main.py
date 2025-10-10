@@ -14,6 +14,11 @@ from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
 app.register_blueprint(addons_calendar_vykazy_bp)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}, 200
+
+
 def _normalize_date(v):
     if not v: return v
     # Accept DD.MM.YYYY, DD-MM-YYYY, or YYYY-MM-DD
