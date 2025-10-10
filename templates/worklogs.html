@@ -1,0 +1,116 @@
+
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <div class="title-row">
+    <h1>Výkazy hodin</h1>
+    <div class="gap"></div>
+    <a class="btn" href="/jobs">← Zpět na zakázky</a>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>Nový výkaz</b></div>
+    <div class="card-c">
+      <div class="form-row">
+        <div><label>Zaměstnanec</label><select id="f-emp"></select></div>
+        <div><label>Zakázka</label><select id="f-job"></select></div>
+        <div><label>Datum</label><input id="f-date" type="date"></div>
+        <div><label>Hodiny</label><input id="f-hours" type="number" min="0" step="0.25" value="8"></div>
+      </div>
+      <div class="form-row">
+        <div class="grow"><label>Místo</label><input id="f-place" type="text" placeholder="např. Brno"></div>
+        <div class="grow"><label>Činnost</label><input id="f-activity" type="text" placeholder="např. údržba"></div>
+        <div><button class="btn" id="btn-add">Přidat</button></div>
+      </div>
+      <div id="msg" style="margin-top:.5rem;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>Přehled výkazů</b></div>
+    <div class="card-c">
+      <div class="form-row">
+        <div><label>Filtr zaměstnanec</label><select id="flt-emp"><option value="">— Všichni —</option></select></div>
+        <div><label>Filtr zakázka</label><select id="flt-job"><option value="">— Vše —</option></select></div>
+        <div><button class="btn" id="btn-reload">Načíst</button></div>
+      </div>
+      <table class="table" id="tbl">
+        <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodiny</th><th>Místo</th><th>Činnost</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const qs = new URLSearchParams(location.search);
+  const preDate = qs.get('date') || new Date().toISOString().slice(0,10);
+
+  const el = s => document.querySelector(s);
+  const fillSel = (sel, rows, getId, getText) => {
+    sel.innerHTML = rows.map(r=>\`<option value="\${getId(r)}">\${getText(r)}</option>\`).join('');
+  };
+
+  // Load employees & jobs
+  const emps = await fetch('/api/employees').then(r=>r.json()).then(j=>j.rows||[]);
+  const jobs = await fetch('/api/jobs').then(r=>r.json()).then(j=>j.rows||[]);
+
+  fillSel(el('#f-emp'), emps, r=>r.id, r=>r.name);
+  fillSel(el('#f-job'), jobs, r=>r.id, r=>\`\${r.title} (\${r.city})\`);
+  el('#f-date').value = preDate;
+
+  // Filters
+  fillSel(el('#flt-emp'), [{id:'', name:'— Všichni —'}].concat(emps), r=>r.id, r=>r.name||r);
+  fillSel(el('#flt-job'), [{id:'', title:'— Vše —', city:''}].concat(jobs), r=>r.id, r=>r.title? \`\${r.title} (\${r.city})\` : r);
+
+  async function reload(){
+    const params = new URLSearchParams();
+    const e = el('#flt-emp').value; const j = el('#flt-job').value;
+    if(e) params.set('employee_id', e); if(j) params.set('job_id', j);
+    const data = await fetch('/api/timesheets?'+params.toString()).then(r=>r.json());
+    const rows = data.rows || [];
+    const tb = el('#tbl tbody'); tb.innerHTML = '';
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = \`
+        <td>\${r.date}</td>
+        <td>\${r.employee_name||''}</td>
+        <td>\${r.job_title||''} <small>\${r.job_code||''}</small></td>
+        <td>\${r.hours}</td>
+        <td>\${r.place||''}</td>
+        <td>\${r.activity||''}</td>
+        <td><button class="btn btn-danger btn-xs" data-id="\${r.id}">Smazat</button></td>\`;
+      tb.appendChild(tr);
+    });
+  }
+
+  el('#btn-reload').onclick = reload;
+  await reload();
+
+  // Add
+  el('#btn-add').onclick = async ()=>{
+    const payload = {
+      employee_id: parseInt(el('#f-emp').value,10),
+      job_id: parseInt(el('#f-job').value,10),
+      date: el('#f-date').value,
+      hours: parseFloat(el('#f-hours').value||'0'),
+      place: el('#f-place').value.trim(),
+      activity: el('#f-activity').value.trim()
+    };
+    const res = await fetch('/api/timesheets', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}).then(r=>r.json());
+    el('#msg').textContent = res.ok? 'Uloženo.' : ('Chyba: '+(res.error||'neznámá'));
+    if(res.ok) { await reload(); }
+  };
+
+  // Delete handler
+  document.getElementById('tbl').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button[data-id]'); if(!btn) return;
+    const id = btn.getAttribute('data-id');
+    if(!confirm('Smazat výkaz #'+id+'?')) return;
+    const res = await fetch('/api/timesheets?id='+id, {method:'DELETE'}).then(r=>r.json());
+    if(res.ok) reload();
+  });
+})();
+</script>
+{% endblock %}

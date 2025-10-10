@@ -1,0 +1,134 @@
+
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <div class="title-row">
+    <h1>Kalendář</h1>
+    <div class="gap"></div>
+    <button class="btn" id="btn-today">Dnes</button>
+  </div>
+
+  <div class="card">
+    <div class="card-h">
+      <div class="calendar-bar">
+        <button class="btn" id="m-prev">&#8592;</button>
+        <div class="calendar-title" id="calendar-title">Měsíc YYYY</div>
+        <button class="btn" id="m-next">&#8594;</button>
+      </div>
+    </div>
+    <div class="card-c">
+      <div class="calendar-grid" id="cal-grid">
+        <div class="dow">Po</div><div class="dow">Út</div><div class="dow">St</div><div class="dow">Čt</div><div class="dow">Pá</div><div class="dow dim">So</div><div class="dow dim">Ne</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b id="detail-title">Detail dne</b></div>
+    <div class="card-c" id="day-detail">
+      <em>Vyberte den v kalendáři.</em>
+    </div>
+  </div>
+</div>
+
+<style>
+  .calendar-bar{display:flex;gap:.5rem;align-items:center;justify-content:center}
+  .calendar-title{font-weight:600}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.4rem}
+  .dow{font-size:.85rem;opacity:.7;padding:.2rem .1rem;text-align:center}
+  .day{border-radius:12px;padding:.4rem;min-height:68px;background:var(--card-bg,#fff);border:1px solid rgba(0,0,0,.06);display:flex;flex-direction:column;gap:.25rem}
+  .day .dnum{font-weight:600;align-self:flex-start}
+  .day .tags{margin-top:auto;display:flex;gap:.25rem;flex-wrap:wrap}
+  .pill-xs{font-size:.7rem;padding:.1rem .4rem;border-radius:999px;background:#2b7a78;color:#fff}
+  .muted{opacity:.4}
+  .sel{outline:2px solid #2b7a78}
+</style>
+
+<script>
+(function(){
+  const grid = document.getElementById('cal-grid');
+  const titleEl = document.getElementById('calendar-title');
+  const detail = document.getElementById('day-detail');
+  const detailTitle = document.getElementById('detail-title');
+  const prevBtn = document.getElementById('m-prev');
+  const nextBtn = document.getElementById('m-next');
+  const todayBtn = document.getElementById('btn-today');
+
+  let current = new Date();
+  current.setDate(1);
+
+  function fmt(d){return d.toISOString().slice(0,10);}
+  function yyyymm(d){return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');}
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    return {start, end};
+  }
+
+  function renderMonth(){
+    const {start, end} = monthRange(current);
+    titleEl.textContent = start.toLocaleDateString('cs-CZ', {month:'long', year:'numeric'});
+    // compute grid start on Monday
+    const startWeekday = (start.getDay()+6)%7; // 0..6 (Mon..Sun)
+    const gridStart = new Date(start); gridStart.setDate(1 - startWeekday);
+    const days = [];
+    for(let i=0;i<42;i++){ const d = new Date(gridStart); d.setDate(gridStart.getDate()+i); days.push(d); }
+    // fetch summary
+    const from = fmt(days[0]); const to = fmt(days[41]);
+    fetch(`/api/calendar/summary?from=${from}&to=${to}`).then(r=>r.json()).then(js=>{
+      const map = new Map(js.summary.map(x=>[x.date, x]));
+      grid.innerHTML = '<div class="dow">Po</div><div class="dow">Út</div><div class="dow">St</div><div class="dow">Čt</div><div class="dow">Pá</div><div class="dow dim">So</div><div class="dow dim">Ne</div>';
+      days.forEach(d=>{
+        const ds = fmt(d);
+        const inMonth = d.getMonth()===current.getMonth();
+        const info = map.get(ds) || {jobs:0, work_logs:0};
+        const el = document.createElement('div');
+        el.className = 'day' + (inMonth?'':' muted');
+        el.dataset.date = ds;
+        el.innerHTML = \`
+          <div class="dnum">\${d.getDate()}</div>
+          <div class="tags">
+            \${info.jobs?'<span class="pill-xs">Zakázky: '+info.jobs+'</span>':''}
+            \${info.work_logs?'<span class="pill-xs">Výkazy: '+info.work_logs+'</span>':''}
+          </div>\`;
+        el.addEventListener('click', ()=>selectDay(ds, el));
+        grid.appendChild(el);
+      });
+    });
+  }
+
+  let selectedEl=null;
+  function selectDay(ds, el){
+    if(selectedEl) selectedEl.classList.remove('sel');
+    selectedEl = el; if(el) el.classList.add('sel');
+    detailTitle.textContent = 'Detail dne '+ new Date(ds).toLocaleDateString('cs-CZ');
+    detail.innerHTML = '<div>Načítám…</div>';
+    fetch('/api/calendar/day?date='+ds).then(r=>r.json()).then(js=>{
+      const {jobs, work_logs} = js.data;
+      const jobsHtml = jobs.length? jobs.map(j=>\`<li><b>\${j.title}</b> — \${j.client} • \${j.city} • \${j.code}</li>\`).join('') : '<li><em>Žádné zakázky</em></li>';
+      const wlHtml = work_logs.length? work_logs.map(w=>\`<li>\${w.employee_name}: \${w.hours} h — \${w.job_title} (\${w.place||''} \${w.activity||''})</li>\`).join('') : '<li><em>Žádné výkazy</em></li>';
+      detail.innerHTML = \`
+        <div class="grid-2">
+          <div>
+            <h3>Zakázky</h3>
+            <ul class="list">\${jobsHtml}</ul>
+          </div>
+          <div>
+            <h3>Výkazy</h3>
+            <ul class="list">\${wlHtml}</ul>
+            <div style="margin-top:.5rem;">
+              <a class="btn" href="/vykazy?date=\${ds}">Přidat výkaz</a>
+            </div>
+          </div>
+        </div>\`;
+    });
+  }
+
+  prevBtn.onclick=()=>{ current.setMonth(current.getMonth()-1); renderMonth(); };
+  nextBtn.onclick=()=>{ current.setMonth(current.getMonth()+1); renderMonth(); };
+  todayBtn.onclick=()=>{ current = new Date(); current.setDate(1); renderMonth(); };
+
+  renderMonth();
+})();
+</script>
+{% endblock %}
