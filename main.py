@@ -19,21 +19,15 @@ def healthz():
 
 @app.get("/style.css")
 def send_style():
-    try:
-        return send_from_directory("static", "style.css")
-    except Exception:
-        return "", 404
+    return send_from_directory("static", "style.css")
 
 @app.get("/logo.jpg")
 def send_logo_jpg():
     try:
         return send_from_directory("static", "logo.jpg")
     except Exception:
-        # fallback to svg if jpg missing
-        try:
-            return send_from_directory("static", "logo.svg")
-        except Exception:
-            return "", 404
+        return send_from_directory("static", "logo.svg")
+
 
     return {"status": "ok"}, 200
 
