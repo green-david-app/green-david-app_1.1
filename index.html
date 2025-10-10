@@ -405,7 +405,55 @@
         </div>);
       }
 
-      // Employees root (needs after App def)
+      
+      // Calendar (month view) using /api/calendar
+      
+function CalendarTab(){
+  const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1); });
+  const [data,setData]=useState({jobs:[],tasks:[]}); const [err,setErr]=useState("");
+  async function load(d){ try{ const iso=d.toISOString().slice(0,10); const j=await api("/api/calendar?date="+iso); setData(j||{});}catch(e){ setErr(e.message);} }
+  useEffect(()=>{ load(month).catch(()=>{}); },[month]);
+  function shiftMonth(delta){ const d=new Date(month); d.setMonth(d.getMonth()+delta); d.setDate(1); setMonth(d); }
+  const y=month.getFullYear(), m=month.getMonth(); const daysInMonth=new Date(y,m+1,0).getDate(); const firstDay=new Date(y,m,1).getDay(); const pad=(firstDay+6)%7;
+  const boxes=[]; for(let i=0;i<pad;i++) boxes.push({empty:true}); for(let d=1; d<=daysInMonth; d++){ const iso=new Date(y,m,d).toISOString().slice(0,10); const jobs=(data.jobs||[]).filter(x=>x.date===iso); const tasks=(data.tasks||[]).filter(x=>x.date===iso); boxes.push({d,iso,jobs,tasks}); }
+  return (<div className="grid" style={{gridTemplateColumns:"repeat(7,1fr)"}}>
+    <div className="card" style={{gridColumn:"1 / -1"}}><div className="card-h"><div>Kalendář — {month.toLocaleDateString('cs-CZ',{year:'numeric',month:'long'})}</div><div className="actions"><button className="ghost" onClick={()=>shiftMonth(-1)}>◀</button><button className="ghost" onClick={()=>setMonth(new Date(new Date().getFullYear(), new Date().getMonth(),1))}>Dnes</button><button className="ghost" onClick={()=>shiftMonth(1)}>▶</button></div></div></div>
+    {boxes.map((b,i)=>(<div key={i} className="card small" style={{minHeight:120}}>
+      <div className="card-h" style={{justifyContent:"space-between"}}><div>{b.empty? "": b.d}</div></div>
+      <div className="card-c">{!b.empty && (<>{(b.jobs||[]).map((j,idx)=>(<div key={"j"+idx} className="badge">{j.title}</div>))}{(b.tasks||[]).map((t,idx)=>(<div key={"t"+idx} className="badge ghost">{t.title}</div>))}</>)}</div>
+    </div>))}
+    {err && <div className="error">{err}</div>}
+  </div>);
+}
+
+
+      // Timesheets Tab
+      
+function TimesheetsTab(){
+  const [rows,setRows]=useState([]); const [employees,setEmployees]=useState([]); const [form,setForm]=useState({employee_id:"",date:"",hours:0,place:"",activity:""}); const [err,setErr]=useState("");
+  async function load(){ try{ const [ts,em]=await Promise.all([api("/api/timesheets"), api("/api/employees")]); setRows(ts.rows||ts.timesheets||[]); setEmployees(em.employees||[]);}catch(e){ setErr(e.message);} }
+  useEffect(()=>{ load().catch(()=>{}); },[]);
+  async function add(e){ e.preventDefault(); try{ await api("/api/timesheets",{method:"POST", body: JSON.stringify(form)}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
+  async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
+  return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
+    <div className="card"><div className="card-h"><div>Nový výkaz</div></div><div className="card-c">
+      <form onSubmit={add}><div className="form-row">
+        <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} required><option value="">Zaměstnanec</option>{employees.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}</select>
+        <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
+        <input type="number" min="0" step="0.5" value={form.hours} onChange={e=>setForm({...form,hours:parseFloat(e.target.value||0)})} placeholder="Hodin" required/>
+      </div><div className="form-row">
+        <input placeholder="Místo" value={form.place} onChange={e=>setForm({...form,place:e.target.value})}/>
+        <input placeholder="Činnost" value={form.activity} onChange={e=>setForm({...form,activity:e.target.value})}/>
+        <button className="primary" type="submit">Přidat</button>
+      </div></form>{err && <div className="error">{err}</div>}</div></div>
+    <div className="card"><div className="card-h"><div>Výkazy</div></div><div className="card-c">
+      <table className="table"><thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Místo</th><th>Činnost</th><th></th></tr></thead>
+      <tbody>{rows.map(r=>(<tr key={r.id}><td>{r.date||r.work_date}</td><td>{r.employee_name||r.employee||r.employee_id}</td><td>{r.hours}</td><td>{r.place||""}</td><td>{r.activity||""}</td><td><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></td></tr>))}</tbody></table>
+    </div></div>
+  </div>);
+}
+
+// Employees root (needs after App def)
       function Employees(){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({name:"",role:"Zahradník"});
