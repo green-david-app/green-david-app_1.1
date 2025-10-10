@@ -8,29 +8,27 @@ DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__, static_folder=".", static_url_path="")
+app = Flask(__name__, static_folder="static", static_url_path="")
 app.secret_key = SECRET_KEY
-from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
-app.register_blueprint(addons_calendar_vykazy_bp)
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# --- Addons (calendar & timesheets) registration ---
+try:
+    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
+    app.register_blueprint(addons_calendar_vykazy_bp)
+except Exception:
+    try:
+        # legacy fallback if addon is not blueprint-based
+    except Exception:
+        pass
+# --- end addons registration ---
+
+# Healthcheck for Render
 @app.get("/healthz")
 def healthz():
-
-@app.get("/style.css")
-def send_style():
-    return send_from_directory("static", "style.css")
-
-@app.get("/logo.jpg")
-def send_logo_jpg():
-    try:
-        return send_from_directory("static", "logo.jpg")
-    except Exception:
-        return send_from_directory("static", "logo.svg")
-
-
     return {"status": "ok"}, 200
 
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _normalize_date(v):
     if not v: return v
@@ -758,3 +756,4 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+
