@@ -1,15 +1,14 @@
 
+# -*- coding: utf-8 -*-
 import os
 from datetime import datetime
 from flask import Flask, jsonify, request, session, send_from_directory
 
-# --- App setup ---------------------------------------------------------------
+# ---------------- App setup ----------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-prod")
-
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Allow overriding admin via env
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@greendavid.local")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
@@ -20,21 +19,17 @@ DEFAULT_USER = {
     "role": "admin",
 }
 
-# --- Optional addon (calendar & timesheets via blueprint) --------------------
+# ------------- Optional addon -------------
 try:
-    # If your repo has addons/main_addons_calendar_vykazy.py with `bp` blueprint
-    # this will be used; otherwise we continue without crashing.
     from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp  # type: ignore
     app.register_blueprint(addons_calendar_vykazy_bp)
     print("[INIT] addons blueprint registered")
 except Exception as e:
     print("[INIT] addons blueprint skipped:", e)
 
-# --- Static / root routes ----------------------------------------------------
+# ------------- Static/root ----------------
 @app.route("/", methods=["GET"])
 def root():
-    # Serve index.html directly from the repo root (same place as main.py)
-    # to match your existing project layout.
     return send_from_directory(ROOT_DIR, "index.html")
 
 @app.route("/style.css")
@@ -49,53 +44,53 @@ def logo_svg():
 def logo_jpg():
     return send_from_directory(ROOT_DIR, "logo.jpg")
 
-# --- Lightweight in-memory data (fallback for UI to work) --------------------
+# ------------- Data (fallback) ------------
 JOBS = [
-    {
-        "id": 2,
-        "title": "zahrada Pavlíkova",
-        "name": "zahrada Pavlíkova",
-        "client": "Mackrle",
-        "city": "Brno",
-        "code": "09-2025",
-        "date": "2025-09-22",
-        "status": "Probíhá",
-        "owner_id": 1,
-        "created_at": "2025-10-09 20:38:37",
-    },
-    {
-        "id": 3,
-        "title": "závlaha Lovosice",
-        "name": "závlaha Lovosice",
-        "client": "OK Garden",
-        "city": "Lovosice",
-        "code": "11_2025",
-        "date": "2025-11-10",
-        "status": "Plán",
-        "owner_id": 1,
-        "created_at": "2025-10-10 12:00:00",
-    },
+    {"id": 2, "title": "zahrada Pavlíkova", "name": "zahrada Pavlíkova",
+     "client": "Mackrle", "city": "Brno", "code": "09-2025",
+     "date": "2025-09-22", "status": "Probíhá", "owner_id": 1,
+     "created_at": "2025-10-09 20:38:37"},
+    {"id": 3, "title": "závlaha Lovosice", "name": "závlaha Lovosice",
+     "client": "OK Garden", "city": "Lovosice", "code": "11_2025",
+     "date": "2025-11-10", "status": "Plán", "owner_id": 1,
+     "created_at": "2025-10-10 12:00:00"},
 ]
-
 EMPLOYEES = [
     {"id": 1, "name": "Adam"},
     {"id": 2, "name": "David"},
 ]
+TIMESHEETS = []
 
-TIMESHEETS = []  # simple in-memory store so UI má kam zapisovat
+# ------------- Helpers --------------------
+def _read_cred_payload():
+    """Accept JSON, form, or querystring; tolerate keys: email/username/e, password/pass/p"""
+    data = request.get_json(silent=True) or {}
+    if not data:
+        if request.form:
+            data = request.form.to_dict()
+        elif request.args:
+            data = request.args.to_dict()
+        else:
+            data = {}
+    # unify keys
+    email = (data.get("email") or data.get("username") or data.get("e") or "").strip().lower()
+    password = data.get("password") or data.get("pass") or data.get("p") or ""
+    return email, password
 
-# --- Auth-like endpoints (very simple session) -------------------------------
-@app.route("/api/login", methods=["POST"])
-def api_login():
-    data = request.get_json(silent=True) or request.form or {}
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-
+def _do_login(email: str, password: str):
     valid_emails = {ADMIN_EMAIL.lower(), "admin@greendavid.cz"}
     if email in valid_emails and password == ADMIN_PASSWORD:
         session["user"] = DEFAULT_USER
-        return jsonify({"ok": True, "user": DEFAULT_USER})
+        session.permanent = True
+        return True
+    return False
 
+# ------------- Auth -----------------------
+@app.route("/api/login", methods=["POST", "GET"])
+def api_login():
+    email, password = _read_cred_payload()
+    if _do_login(email, password):
+        return jsonify({"ok": True, "user": DEFAULT_USER})
     return jsonify({"ok": False, "error": "invalid_credentials"}), 401
 
 @app.route("/api/logout", methods=["POST"])
@@ -108,7 +103,7 @@ def api_me():
     user = session.get("user")
     return jsonify({"ok": True, "user": user})
 
-# --- Business endpoints used by the UI --------------------------------------
+# ------------- Business APIs --------------
 @app.route("/api/jobs")
 def api_jobs():
     return jsonify({"ok": True, "jobs": JOBS})
@@ -122,19 +117,16 @@ def api_timesheets():
     if request.method == "GET":
         return jsonify({"ok": True, "work_logs": TIMESHEETS})
 
-    # POST create
     data = request.get_json(silent=True) or request.form or {}
     try:
         job_id = int(data.get("job_id"))
-        hours = float(data.get("hours"))
+        hours = float(str(data.get("hours")).replace(",", "."))
         date_str = (data.get("date") or "").strip()
         if not date_str:
             raise ValueError("missing date")
-        # normalize date to YYYY-MM-DD if possible
         try:
             date_norm = datetime.fromisoformat(date_str).date().isoformat()
         except Exception:
-            # try dd.mm.yyyy
             try:
                 d, m, y = date_str.split(".")
                 date_norm = datetime(int(y), int(m), int(d)).date().isoformat()
@@ -150,14 +142,14 @@ def api_timesheets():
         "job_id": job_id,
         "employee_id": employee_id,
         "date": date_norm,
-        "hours": hours,
+        "hours": round(hours, 2),
         "note": note,
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     TIMESHEETS.append(entry)
     return jsonify({"ok": True, "entry": entry}), 201
 
-# --- Health ------------------------------------------------------------------
+# ------------- Health ---------------------
 @app.route("/healthz")
 def healthz():
     return jsonify({"ok": True})
