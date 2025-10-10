@@ -208,7 +208,7 @@ def ensure_jobs_schema(db):
     db.execute("UPDATE jobs SET title = '' WHERE title IS NULL")
     db.commit()
 
-@app.before_request
+@bp.before_request
 def ensure_db():
     db = get_db()
     migrate(db)
