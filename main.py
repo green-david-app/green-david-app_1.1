@@ -4,6 +4,20 @@ from flask import Flask, send_from_directory
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
+# registrace stránek Kalendář/Výkazy (Blueprint)
+try:
+    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
+    app.register_blueprint(addons_calendar_vykazy_bp)
+    app.logger.info("[INIT] addons calendar/vykazy registered")
+except Exception as e:
+    app.logger.exception("addons calendar/vykazy failed: %s", e)
+
+# healthcheck pro Render (volitelné)
+@app.get("/healthz")
+def _healthz():
+    from flask import jsonify
+    return jsonify(status="ok")
+
 # SECRET_KEY for sessions (login)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
