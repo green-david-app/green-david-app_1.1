@@ -1,207 +1,295 @@
 
 import os
 import json
-from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, session
+from datetime import datetime, timedelta
+from pathlib import Path
+from flask import Flask, request, jsonify, send_file, session, make_response
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-app = Flask(__name__, static_folder=None)
-app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True,
-)
+APP_ROOT = Path(__file__).resolve().parent
+DATA_DIR = APP_ROOT / "data"
+DATA_DIR.mkdir(exist_ok=True)
 
-ROOT_DIR = os.path.abspath(os.getcwd())
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-os.makedirs(DATA_DIR, exist_ok=True)
-
-JOBS_FILE = os.path.join(DATA_DIR, "jobs.json")
-EMPLOYEES_FILE = os.path.join(DATA_DIR, "employees.json")
-TIMESHEETS_FILE = os.path.join(DATA_DIR, "timesheets.json")
-
-def _load_json(path, fallback):
+# --- Helpers -----------------------------------------------------------------
+def _json_load(path: Path, default):
     try:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
+        if path.exists():
+            with path.open("r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
         pass
-    return fallback
+    return default
 
-def _save_json(path, data):
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
+def _json_save(path: Path, data):
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, path)
+    tmp.replace(path)
 
-if not os.path.exists(JOBS_FILE):
-    _save_json(JOBS_FILE, [
-        {"id": 2, "title": "zahrada Pavlíková", "name": "zahrada Pavlíková", "client": "Mackrle", "city": "Brno", "code": "09-2025", "status": "Probíhá", "date": "2025-09-22"}
-    ])
+def _to_float_hours(v):
+    if v is None:
+        raise ValueError("hodiny (hours) chybí")
+    if isinstance(v, (int, float)):
+        return float(v)
+    s = str(v).strip().replace(",", ".")
+    return float(s)
 
-if not os.path.exists(EMPLOYEES_FILE):
-    _save_json(EMPLOYEES_FILE, [
-        {"id": 1, "name": "Adam"},
-        {"id": 2, "name": "David"}
-    ])
+def _to_int(v, field_name):
+    if v is None or str(v).strip() == "":
+        raise ValueError(f"{field_name} chybí")
+    return int(str(v).strip())
 
-if not os.path.exists(TIMESHEETS_FILE):
-    _save_json(TIMESHEETS_FILE, [])
+def _parse_date(v):
+    if isinstance(v, (datetime, )):
+        return v.strftime("%Y-%m-%d")
+    s = str(v).strip()
+    # Podporuj i DD.MM.YYYY
+    try:
+        if "." in s:
+            return datetime.strptime(s, "%d.%m.%Y").strftime("%Y-%m-%d")
+        return datetime.strptime(s, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except Exception:
+        raise ValueError("datum má být ve formátu YYYY-MM-DD nebo DD.MM.YYYY")
 
+# --- Flask app ---------------------------------------------------------------
+app = Flask(__name__)
+
+# Bezpečné session cookies + reverzní proxy fix (Render)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+app.config.update(
+    SESSION_COOKIE_NAME="gd_session",
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="None",   # funguje v Safari přes HTTPS
+    SESSION_COOKIE_SECURE=True,       # Render je HTTPS
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
+
+# --- Static files ------------------------------------------------------------
 @app.get("/")
 def index():
-    return send_from_directory(ROOT_DIR, "index.html")
+    index_html = APP_ROOT / "index.html"
+    if index_html.exists():
+        return send_file(index_html)
+    # fallback minimalistický login (když chybí index.html)
+    return """
+    <html><body style="font-family: system-ui;">
+      <h3>green david app</h3>
+      <form onsubmit="login(event)">
+        <input id="email" value="admin@greendavid.cz">
+        <input id="password" type="password" value="admin123">
+        <button>Login</button>
+      </form>
+      <script>
+        async function login(e){
+          e.preventDefault();
+          const r = await fetch('/api/login', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            credentials:'include',
+            body: JSON.stringify({
+              email: document.getElementById('email').value,
+              password: document.getElementById('password').value
+            })
+          });
+          const j = await r.json();
+          if(j.ok){ location.href='/' } else { alert(j.error || 'Login failed'); }
+        }
+      </script>
+    </body></html>
+    """, 200, {"Content-Type":"text/html; charset=utf-8"}
 
 @app.get("/style.css")
-def style_css():
-    return send_from_directory(ROOT_DIR, "style.css")
+def style():
+    css = APP_ROOT / "style.css"
+    if css.exists():
+        return send_file(css)
+    return "", 200, {"Content-Type": "text/css"}
 
 @app.get("/logo.jpg")
 def logo_jpg():
-    return send_from_directory(ROOT_DIR, "logo.jpg")
+    p = APP_ROOT / "logo.jpg"
+    if p.exists():
+        return send_file(p)
+    return "", 200
 
 @app.get("/logo.svg")
 def logo_svg():
-    return send_from_directory(ROOT_DIR, "logo.svg")
+    p = APP_ROOT / "logo.svg"
+    if p.exists():
+        return send_file(p)
+    return "", 200
 
-DEFAULT_ADMIN_EMAILS = {
-    "admin@greendavid.local",
-    "admin@greendavid.cz",
-}
-DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+# --- Auth --------------------------------------------------------------------
+USERS_FILE = DATA_DIR / "users.json"
 
-def _user_payload():
-    if "user" in session:
-        u = session["user"]
-        return {"ok": True, "id": u["id"], "name": u["name"], "email": u["email"], "role": u["role"], "user": u}
-    return {"ok": True, "user": None}
-
-@app.get("/api/me")
-def api_me():
-    return jsonify(_user_payload())
+def _ensure_admin_user():
+    users = _json_load(USERS_FILE, [])
+    if not users:
+        users = [{
+            "id": 1,
+            "name": "Admin",
+            "email": "admin@greendavid.cz",
+            "role": "admin",
+            "password": os.environ.get("ADMIN_PASSWORD", "admin123"),
+        }]
+        _json_save(USERS_FILE, users)
+    return users
 
 @app.post("/api/login")
 def api_login():
-    data = request.get_json(silent=True) or request.form.to_dict()
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-    if (email in DEFAULT_ADMIN_EMAILS) and (password == DEFAULT_ADMIN_PASSWORD):
-        user = {"id": 1, "name": "Admin", "email": email, "role": "admin"}
-        session["user"] = user
-        return jsonify({"ok": True, "user": user})
-    return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    payload = request.get_json(silent=True) or request.form
+    email = (payload.get("email") or "").strip().lower()
+    password = (payload.get("password") or "").strip()
+
+    users = _ensure_admin_user()
+    user = next((u for u in users if u["email"].lower() == email), None)
+    if not user or user.get("password") != password:
+        return jsonify({"ok": False, "error": "Špatný e-mail nebo heslo"}), 401
+
+    session.clear()
+    session.permanent = True
+    session["user_id"] = user["id"]
+
+    res = jsonify({"ok": True, "id": user["id"], "name": user["name"], "email": user["email"], "role": user["role"]})
+    return res
 
 @app.post("/api/logout")
 def api_logout():
-    session.pop("user", None)
+    session.clear()
     return jsonify({"ok": True})
 
+@app.get("/api/me")
+def api_me():
+    uid = session.get("user_id")
+    if not uid:
+        return jsonify({"ok": False})
+    users = _ensure_admin_user()
+    user = next((u for u in users if u["id"] == uid), None)
+    if not user:
+        session.clear()
+        return jsonify({"ok": False})
+    return jsonify({
+        "ok": True,
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "role": user["role"],
+        "user": {"id": user["id"], "name": user["name"], "email": user["email"], "role": user["role"]}
+    })
+
+# --- Data endpoints ----------------------------------------------------------
+JOBS_FILE = DATA_DIR / "jobs.json"
+EMP_FILE  = DATA_DIR / "employees.json"
+TS_FILE   = DATA_DIR / "timesheets.json"
+
+def _require_login():
+    if not session.get("user_id"):
+        return False, (jsonify({"ok": False, "error": "Unauthenticated"}), 401)
+    return True, None
+
 @app.get("/api/jobs")
-def api_jobs_get():
-    return jsonify(_load_json(JOBS_FILE, []))
-
-@app.get("/api/employees")
-def api_employees_get():
-    return jsonify(_load_json(EMPLOYEES_FILE, []))
-
-@app.get("/api/timesheets")
-def api_timesheets_get():
-    return jsonify(_load_json(TIMESHEETS_FILE, []))
-
-def _pick(mapping, keys, default=None):
-    for k in keys:
-        if k in mapping and mapping[k] not in (None, ""):
-            return mapping[k]
-    return default
-
-def _to_int(value, field_name):
-    if value is None:
-        raise ValueError(f"{field_name} is required")
-    if isinstance(value, (int, float)):
-        return int(value)
-    s = str(value).strip()
-    if s == "":
-        raise ValueError(f"{field_name} is required")
-    s = s.replace(",", ".")
-    try:
-        return int(float(s))
-    except Exception:
-        raise ValueError(f"{field_name} must be a number")
-
-@app.post("/api/timesheets")
-def api_timesheets_post():
-    payload = request.get_json(silent=True) or request.form.to_dict()
-
-    date_raw = _pick(payload, ["date", "datum"])
-    employee_raw = _pick(payload, ["employee_id", "employee", "zamestnanec_id", "zamestnanec"])
-    job_raw = _pick(payload, ["job_id", "job", "zakazka_id", "zakazka"])
-    hours_raw = _pick(payload, ["hours", "hodiny", "h"])
-    note = _pick(payload, ["note", "poznámka", "poznamka"], "")
-
-    try:
-        if date_raw:
-            try:
-                date_obj = datetime.strptime(str(date_raw), "%Y-%m-%d")
-            except ValueError:
-                date_obj = datetime.strptime(str(date_raw), "%d.%m.%Y")
-            date = date_obj.strftime("%Y-%m-%d")
-        else:
-            date = datetime.utcnow().strftime("%Y-%m-%d")
-
-        employee_id = _to_int(employee_raw, "employee_id")
-        job_id = _to_int(job_raw, "job_id")
-        hours = _to_int(hours_raw, "hours")
-    except ValueError as e:
-        return jsonify({"ok": False, "error": "bad_payload", "message": str(e)}), 400
-
-    ts = _load_json(TIMESHEETS_FILE, [])
-    item = {
-        "id": (ts[-1]["id"] + 1) if ts else 1,
-        "date": date,
-        "employee_id": employee_id,
-        "job_id": job_id,
-        "hours": hours,
-        "note": note,
-    }
-    ts.append(item)
-    _save_json(TIMESHEETS_FILE, ts)
-    return jsonify({"ok": True, "item": item})
+def api_jobs_list():
+    ok, resp = _require_login()
+    if not ok: return resp
+    jobs = _json_load(JOBS_FILE, [{
+        "id": 2,
+        "name": "zahrada Pavlíkova",
+        "title": "zahrada Pavlíkova",
+        "client": "Mackrle",
+        "city": "Brno",
+        "code": "09-2025",
+        "date": "2025-09-22",
+        "status": "Probíhá"
+    }])
+    return jsonify(jobs)
 
 @app.post("/api/jobs")
-def api_jobs_post():
-    data = request.get_json(silent=True) or request.form.to_dict()
-    jobs = _load_json(JOBS_FILE, [])
-    item = {
-        "id": (jobs[-1]["id"] + 1) if jobs else 1,
-        "title": data.get("title") or data.get("name") or "Nová zakázka",
-        "name": data.get("name") or data.get("title") or "Nová zakázka",
-        "client": data.get("client") or "",
-        "city": data.get("city") or "",
-        "code": data.get("code") or "",
-        "status": data.get("status") or "Plán",
-        "date": data.get("date") or datetime.utcnow().strftime("%Y-%m-%d"),
+def api_jobs_add():
+    ok, resp = _require_login()
+    if not ok: return resp
+    payload = request.get_json(silent=True) or request.form
+
+    jobs = _json_load(JOBS_FILE, [])
+    new_id = (max([j.get("id", 0) for j in jobs]) + 1) if jobs else 1
+    job = {
+        "id": new_id,
+        "name": payload.get("name") or payload.get("title") or "Nová zakázka",
+        "title": payload.get("title") or payload.get("name") or "Nová zakázka",
+        "client": payload.get("client") or "",
+        "city": payload.get("city") or "",
+        "code": payload.get("code") or "",
+        "date": _parse_date(payload.get("date") or datetime.utcnow().strftime("%Y-%m-%d")),
+        "status": payload.get("status") or "Plán"
     }
-    jobs.append(item)
-    _save_json(JOBS_FILE, jobs)
-    return jsonify({"ok": True, "item": item})
+    jobs.append(job)
+    _json_save(JOBS_FILE, jobs)
+    return jsonify({"ok": True, "job": job})
+
+@app.get("/api/employees")
+def api_employees():
+    ok, resp = _require_login()
+    if not ok: return resp
+    employees = _json_load(EMP_FILE, [{"id": 1, "name": "Adam"}])
+    return jsonify(employees)
 
 @app.post("/api/employees")
-def api_employees_post():
-    data = request.get_json(silent=True) or request.form.to_dict()
-    emps = _load_json(EMPLOYEES_FILE, [])
-    item = {
-        "id": (emps[-1]["id"] + 1) if emps else 1,
-        "name": data.get("name") or "Nový zaměstnanec",
-    }
-    emps.append(item)
-    _save_json(EMPLOYEES_FILE, emps)
-    return jsonify({"ok": True, "item": item})
+def api_employees_add():
+    ok, resp = _require_login()
+    if not ok: return resp
+    payload = request.get_json(silent=True) or request.form
+    employees = _json_load(EMP_FILE, [])
+    new_id = (max([e.get("id", 0) for e in employees]) + 1) if employees else 1
+    emp = {"id": new_id, "name": payload.get("name") or "Nový zaměstnanec"}
+    employees.append(emp)
+    _json_save(EMP_FILE, employees)
+    return jsonify({"ok": True, "employee": emp})
 
-@app.get("/healthz")
-def healthz():
-    return "ok", 200
+@app.get("/api/timesheets")
+def api_timesheets_list():
+    ok, resp = _require_login()
+    if not ok: return resp
+    ts = _json_load(TS_FILE, [])
+    return jsonify(ts)
+
+@app.post("/api/timesheets")
+def api_timesheets_add():
+    ok, resp = _require_login()
+    if not ok: return resp
+
+    p = request.get_json(silent=True) or request.form
+
+    try:
+        date_in   = p.get("date") or p.get("datum")
+        employee  = p.get("employee_id") or p.get("employee") or p.get("zamestnanec") or p.get("zaměstnanec")
+        job       = p.get("job_id") or p.get("job") or p.get("zakazka") or p.get("zakázka")
+        hours_in  = p.get("hours") or p.get("hodiny") or p.get("h")
+        note      = (p.get("note") or p.get("poznamka") or p.get("poznámka") or "").strip()
+
+        rec = {
+            "id": int(datetime.utcnow().timestamp() * 1000),
+            "date": _parse_date(date_in),
+            "employee_id": _to_int(employee, "zaměstnanec"),
+            "job_id": _to_int(job, "zakázka"),
+            "hours": _to_float_hours(hours_in),
+            "note": note,
+        }
+    except ValueError as e:
+        return jsonify({"ok": False, "error": f"bad_payload: {e}"}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": "bad_payload: " + str(e)}), 400
+
+    ts = _json_load(TS_FILE, [])
+    ts.append(rec)
+    _json_save(TS_FILE, ts)
+    return jsonify({"ok": True, "timesheet": rec})
+
+# --- Misc --------------------------------------------------------------------
+@app.after_request
+def _no_cache(resp):
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
+    port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=True)
