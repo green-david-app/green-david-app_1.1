@@ -757,7 +757,7 @@ def ensure_worklogs_schema(db):
 
 
 # === API: Calendar aggregation ===
-@app.get("/api/calendar")
+@bp.get("/api/calendar")
 def api_calendar():
     db = get_db()
     qdate = (request.args.get("date") or "").strip()
