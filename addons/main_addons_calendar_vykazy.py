@@ -1,7 +1,7 @@
 
 import os, re, io, base64, sqlite3
 from datetime import datetime
-from flask import Blueprint, Flask, send_from_directory, request, jsonify, session, g, send_file, abort
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, Blueprint, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -31,7 +31,7 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
-@app.teardown_appcontext
+@bp.teardown_request
 def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
