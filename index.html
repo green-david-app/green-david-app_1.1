@@ -106,7 +106,7 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-        const items=[{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
+        const items=[{key:"jobs",label:"Zakázky"},{key:"calendar",label:"Kalendář"},{key:"timesheets",label:"Výkazy"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
         return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
@@ -397,7 +397,10 @@
         return (<div>
           <Tabs value={tab} onChange={(k)=>{ setTab(k); setJobOpen(null); }} canAdmin={auth.user?.role==="admin"} taskCount={auth.tasks}/>
           <div style={{height:12}}/>
-          {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
+          {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}
+          {tab==="calendar" && <CalendarPage/>}
+          {tab==="timesheets" && <TimesheetsPage/>}
+/> : <JobsList onOpen={setJobOpen}/>)}
           {tab==="tasks" && <TasksTab/>}
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}
@@ -455,7 +458,130 @@
         );
       }
 
-      ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+      
+// ==== Calendar (iPhone-like) ====
+function startOfMonth(d){ const x=new Date(d.getFullYear(), d.getMonth(), 1); return x; }
+function endOfMonth(d){ const x=new Date(d.getFullYear(), d.getMonth()+1, 0); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtYMD(d){ return d.toISOString().slice(0,10); }
+function czDayName(i){ return ["Po","Út","St","Čt","Pá","So","Ne"][i]; }
+
+function CalendarPage(){
+  const [now,setNow]=React.useState(new Date());
+  const [jobs,setJobs]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+
+  React.useEffect(()=>{
+    fetchJSON('/api/jobs').then(j=>{ setJobs(j.jobs||[]); setLoading(false); });
+  },[]);
+
+  const monthStart=startOfMonth(now);
+  const monthEnd=endOfMonth(now);
+  // Grid starts on Monday
+  const startGrid = (d=>{ const wd=(d.getDay()+6)%7; return addDays(d, -wd); })(monthStart);
+  const endGrid = (d=>{ const wd=(d.getDay()+6)%7; return addDays(d, 6-wd); })(monthEnd);
+
+  const map = React.useMemo(()=>{
+    const m={};
+    for(const job of jobs){ if(job.date){ (m[job.date]=m[job.date]||[]).push(job); } }
+    return m;
+  },[jobs]);
+
+  const days=[];
+  for(let d=new Date(startGrid); d<=endGrid; d=addDays(d,1)){
+    const iso=fmtYMD(d);
+    const inMonth=d.getMonth()===now.getMonth();
+    const has=(map[iso]||[]);
+    days.push({d:new Date(d),iso,inMonth,has});
+  }
+
+  return React.createElement('div',{className:'panel'},
+    React.createElement('div',{className:'flex row between'},
+      React.createElement('div',{},
+        React.createElement('button',{className:'btn',onClick:()=>setNow(new Date(now.getFullYear(),now.getMonth()-1,1))},'‹')
+      ),
+      React.createElement('div',{className:'h2'}, now.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'})),
+      React.createElement('div',{},
+        React.createElement('button',{className:'btn',onClick:()=>setNow(new Date(now.getFullYear(),now.getMonth()+1,1))},'›')
+      )
+    ),
+    React.createElement('div',{className:'calendar-grid'},
+      ['Po','Út','St','Čt','Pá','So','Ne'].map((n,i)=>React.createElement('div',{key:'wd'+i,className:'cal-wd'},n)),
+      days.map(({d,iso,inMonth,has})=>React.createElement('div',{key:iso,className:`cal-cell ${inMonth?'':'muted'}`},
+        React.createElement('div',{className:'cal-day'}, d.getDate()),
+        has.map(j=>React.createElement('div',{key:j.id,className:'cal-pill'}, j.name || j.title || 'Zakázka'))
+      ))
+    ),
+    loading?React.createElement('div',{className:'muted mt-2'},'Načítám...'):null
+  );
+}
+
+// ==== Timesheets (Výkazy) ====
+function TimesheetsPage(){
+  const [employees,setEmployees]=React.useState([]);
+  const [jobs,setJobs]=React.useState([]);
+  const [rows,setRows]=React.useState([]);
+  const [form,setForm]=React.useState({date:(new Date()).toISOString().slice(0,10), employee_id:'', hours:'', job:'', note:''});
+  const [range,setRange]=React.useState(()=>{
+    const d=new Date(); const from=new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0,10);
+    const to=new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
+    return {from,to};
+  });
+
+  function refreshList(){
+    const q = `?from=${range.from}&to=${range.to}`;
+    fetchJSON('/api/timesheets'+q).then(x=> setRows(x.rows||[]));
+  }
+
+  React.useEffect(()=>{ fetchJSON('/api/employees').then(x=>setEmployees(x.employees||[])); },[]);
+  React.useEffect(()=>{ fetchJSON('/api/jobs').then(x=>setJobs(x.jobs||[])); },[]);
+  React.useEffect(()=>{ refreshList(); }, [range.from, range.to]);
+
+  function save(e){
+    e.preventDefault();
+    const payload = {...form, hours:Number(form.hours)};
+    fetch('/api/timesheets',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(x=>{ if(x.ok){ setForm({...form, hours:'', note:''}); refreshList(); } else { alert('Chyba: '+(x.error||'neznámá')); } });
+  }
+  function del(id){
+    fetch('/api/timesheets?id='+id,{method:'DELETE'}).then(r=>r.json()).then(x=>{ if(x.ok){ refreshList(); } });
+  }
+
+  return React.createElement('div',{className:'panel'},
+    React.createElement('div',{className:'h3 mb-2'}, 'Výkazy hodin'),
+    React.createElement('form',{className:'grid2', onSubmit:save},
+      React.createElement('input',{type:'date', value:form.date, onChange:e=>setForm({...form,date:e.target.value})}),
+      React.createElement('select',{value:form.employee_id, onChange:e=>setForm({...form,employee_id:e.target.value})},
+        React.createElement('option',{value:''},'– Zaměstnanec –'),
+        employees.map(e=>React.createElement('option',{key:e.id,value:e.id}, e.name))
+      ),
+      React.createElement('select',{value:form.job, onChange:e=>setForm({...form,job:e.target.value})},
+        React.createElement('option',{value:''},'– Zakázka –'),
+        jobs.map(j=>React.createElement('option',{key:j.id,value:(j.name||j.title)}, (j.name||j.title)))
+      ),
+      React.createElement('input',{type:'number',step:'0.25',placeholder:'Hodiny', value:form.hours, onChange:e=>setForm({...form,hours:e.target.value})}),
+      React.createElement('input',{type:'text',placeholder:'Poznámka', value:form.note, onChange:e=>setForm({...form,note:e.target.value}), className:'colspan2'}),
+      React.createElement('button',{className:'btn primary colspan2',type:'submit'},'Uložit výkaz')
+    ),
+    React.createElement('div',{className:'mt-3 flex row gap'},
+      React.createElement('input',{type:'date', value:range.from, onChange:e=>setRange({...range,from:e.target.value})}),
+      React.createElement('input',{type:'date', value:range.to, onChange:e=>setRange({...range,to:e.target.value})})
+    ),
+    React.createElement('table',{className:'mt-2 table'},
+      React.createElement('thead',{}, React.createElement('tr',{}, ['Datum','Zaměstnanec','Zakázka','Hodiny','Poznámka',''].map((h,i)=>React.createElement('th',{key:i},h)))),
+      React.createElement('tbody',{}, rows.map(r=>React.createElement('tr',{key:r.id},
+        React.createElement('td',{}, r.date),
+        React.createElement('td',{}, (employees.find(e=>e.id===r.employee_id)||{}).name || r.employee_id),
+        React.createElement('td',{}, r.job),
+        React.createElement('td',{}, r.hours),
+        React.createElement('td',{}, r.note||''),
+        React.createElement('td',{}, React.createElement('button',{className:'btn', onClick:()=>del(r.id)},'Smazat'))
+      )))
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
   </body>
 </html>
