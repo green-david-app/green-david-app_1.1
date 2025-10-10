@@ -30,6 +30,15 @@
 
     <script>
       // ---------- util ----------
+      const take = (obj, keys, def=[]) => {
+        for(const k of keys){
+          const p = k.split('.'); let cur = obj;
+          for(const part of p){ cur = (cur||{})[part]; }
+          if(Array.isArray(cur)) return cur;
+          if(cur && typeof cur==='object' && Array.isArray(cur.items)) return cur.items;
+        }
+        return def;
+      };
       function toISODateFlex(v){
         if(!v) return v;
         const d = String(v).replace(/\D+/g, '');
@@ -60,12 +69,10 @@
       window.addEventListener('error', e=> showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)));
       window.addEventListener('unhandledrejection', e=> showJSError(e.reason ? (e.reason.stack||e.reason) : e));
 
-      // tolerantní pomocník pro auth
       function isAuthed(payload){
         if(!payload) return false;
         if (typeof payload.authenticated === 'boolean') return payload.authenticated;
         if (typeof payload.ok === 'boolean') return payload.ok;
-        // fallback – pokud dorazí user objekt, bereme jako přihlášen
         if (payload.user && (payload.user.id || payload.user.email)) return true;
         return false;
       }
@@ -106,7 +113,6 @@
           setErr("");
           try{
             await api("/api/login",{method:"POST", body: JSON.stringify({email, password:pass})});
-            // po přihlášení si ověř /api/me a až pak pusť app dál
             const j = await api("/api/me");
             if(isAuthed(j)) onLogged();
             else throw new Error("Přihlášení se nepodařilo.");
@@ -147,12 +153,12 @@
         return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
-      // ---- Zakázky (beze změn designu) ----
+      // ---- Zakázky (beze změn) ----
       function JobsList({onOpen}){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
-        async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
+        async function load(){ try{ const j=await api("/api/jobs"); setList(take(j,["jobs","rows","data.jobs"],[])); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{
           const payload={...form, date: toISODateFlex(form.date)};
@@ -214,16 +220,12 @@
         );
       }
 
-      // ... (JobDetail, PhotoUploader, JobTasks, JobHours – beze změn proti tvé verzi)
-      // Kvůli délce ponechávám komponenty JobDetail/PhotoUploader/JobTasks/JobHours stejné
-      // – jediné změny jsou níže v CalendarTab a TimesheetsTab.
-
-      // ---- Kalendář (iPhone-like, beze změny vzhledu; jen status "Dokončeno" místo "Hotovo") ----
+      // ---- Kalendář ----
       function CalendarTab(){
         const [jobs,setJobs]=useState([]);
         const [month,setMonth]=useState(()=> new Date(new Date().getFullYear(), new Date().getMonth(), 1));
         const [err,setErr]=useState("");
-        useEffect(()=>{ (async()=>{ try{ const j=await api("/api/jobs"); setJobs(j.jobs||[]); }catch(e){ setErr(e.message);} })(); },[]);
+        useEffect(()=>{ (async()=>{ try{ const j=await api("/api/jobs"); setJobs(take(j,["jobs","rows","data.jobs"],[])); }catch(e){ setErr(e.message);} })(); },[]);
         function daysInMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
         const firstDow = new Date(month.getFullYear(),month.getMonth(),1).getDay(); // 0=Sun
         const startOffset = (firstDow+6)%7; // Monday-first
@@ -281,7 +283,7 @@
         );
       }
 
-      // ---- Výkaz hodin (tolerantní k /api/timesheets tvaru dat) ----
+      // ---- Výkaz hodin ----
       function TimesheetsTab(){
         const [employees,setEmployees]=useState([]);
         const [jobs,setJobs]=useState([]);
@@ -290,16 +292,15 @@
         const [err,setErr]=useState("");
 
         useEffect(()=>{ (async()=>{
-          try{ const e=await api("/api/employees"); setEmployees(e.employees||[]); }catch(e){}
-          try{ const j=await api("/api/jobs"); setJobs(j.jobs||[]);}catch(e){}
+          try{ const e=await api("/api/employees"); setEmployees(take(e,["employees","rows","data.employees"],[])); }catch(e){}
+          try{ const j=await api("/api/jobs"); setJobs(take(j,["jobs","rows","data.jobs"],[])); }catch(e){}
           load();
         })(); },[]);
 
         async function load(){
           try{
             const r=await api("/api/timesheets");
-            // r.rows (někde) nebo r.timesheets (jinde)
-            setList(r.rows || r.timesheets || []);
+            setList(take(r,["timesheets","rows","data.timesheets"],[]));
           }catch(e){ setErr(e.message);}
         }
 
@@ -307,7 +308,7 @@
           e.preventDefault(); setErr("");
           try{
             if(!form.date) throw new Error("Vyber datum");
-            const data={...form, employee_id: Number(form.employee_id)||null, hours: Number(form.hours)||0};
+            const data={...form, employee_id: form.employee_id? Number(form.employee_id):null, hours: Number(form.hours)||0};
             await api("/api/timesheets", {method:"POST", body: JSON.stringify(data)});
             setForm({date:"", employee_id:"", job:"", hours:"", note:""});
             load();
@@ -315,6 +316,12 @@
         }
 
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id, {method:"DELETE"}); load(); }
+
+        const empName = (id)=>{
+          const n = Number(id);
+          const found = employees.find(e=> Number(e.id)===n);
+          return found? found.name : id;
+        };
 
         return (
           <div className="grid" style={{gridTemplateColumns:"1fr"}}>
@@ -345,7 +352,7 @@
                   {list.map(r=>(
                     <tr key={r.id}>
                       <td>{r.date}</td>
-                      <td>{(employees.find(e=>e.id===r.employee_id)||{}).name || r.employee_id}</td>
+                      <td>{empName(r.employee_id)}</td>
                       <td>{r.job}</td>
                       <td>{r.hours}</td>
                       <td>{r.note||""}</td>
@@ -360,7 +367,68 @@
         );
       }
 
-      // ---- App kořen – JEN úprava autenticace ----
+      // ---- Zaměstnanci ----
+      function Employees(){
+        const [list,setList]=useState([]);
+        const [err,setErr]=useState("");
+        const [form,setForm]=useState({name:"", role:"worker", email:""});
+
+        async function load(){
+          try{
+            const j = await api("/api/employees");
+            setList(take(j,["employees","rows","data.employees"],[]));
+          }catch(e){ setErr(e.message); }
+        }
+        useEffect(()=>{ load().catch(()=>{}); },[]);
+
+        async function add(e){
+          e.preventDefault(); setErr("");
+          try{
+            await api("/api/employees",{method:"POST", body: JSON.stringify(form)});
+            setForm({name:"", role:"worker", email:""});
+            load();
+          }catch(e){ setErr(e.message||String(e)); }
+        }
+        async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
+
+        return (
+          <div className="grid" style={{gridTemplateColumns:"1fr"}}>
+            <div className="card">
+              <div className="card-h"><div>Zaměstnanci</div></div>
+              <div className="card-c">
+                {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+                <form onSubmit={add}>
+                  <div className="form-row">
+                    <input placeholder="Jméno" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/>
+                    <input type="email" placeholder="E-mail (volitelné)" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/>
+                    <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
+                      <option value="worker">Dělník</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <button type="submit">Přidat</button>
+                  </div>
+                </form>
+                <table className="table" style={{marginTop:12}}>
+                  <thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th></th></tr></thead>
+                  <tbody>
+                    {list.map(u=>(
+                      <tr key={u.id}>
+                        <td>{u.name}</td>
+                        <td>{u.email||""}</td>
+                        <td>{u.role||"worker"}</td>
+                        <td><button className="ghost" onClick={()=>del(u.id)}>Smazat</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {list.length===0 && <div className="small">Zatím žádní zaměstnanci.</div>}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ---- Kořen ----
       function App(){
         const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0});
         const [tab, setTab] = useState("jobs");
@@ -392,8 +460,7 @@
         );
       }
 
-      // --- (ponechávám Employees/UsersTab/Warehouse/TasksTab/JobDetail atd. z tvojí verze) ---
-
+      // POZN: komponenty JobDetail/TasksTab/UsersTab/Warehouse zůstávají stejné jako v tvé funkční verzi.
       ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
   </body>
