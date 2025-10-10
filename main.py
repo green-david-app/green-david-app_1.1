@@ -8,17 +8,23 @@ DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__, static_folder="static", static_url_path="")
+app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 
 # --- Addons (calendar & timesheets) registration ---
 try:
-    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
-    app.register_blueprint(addons_calendar_vykazy_bp)
+    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp  # noqa: F401
 except Exception:
+    addons_calendar_vykazy_bp = None
+
+if addons_calendar_vykazy_bp is not None:
+    app.register_blueprint(addons_calendar_vykazy_bp)
+else:
     try:
-        # legacy fallback if addon is not blueprint-based
+        # Legacy fallback if addon is not blueprint-based
+        from addons.main_addons_calendar_vykazy import *  # noqa: F401,F403
     except Exception:
+        # Addon not available; continue without it
         pass
 # --- end addons registration ---
 
