@@ -1,54 +1,56 @@
-# -*- coding: utf-8 -*-
+
 import os
 from datetime import datetime
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, jsonify, request, session, send_from_directory
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app = Flask(__name__, static_folder=None)
+# --- App setup ---------------------------------------------------------------
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-prod")
 
-# -------------------------------
-# Root & static file routes
-# -------------------------------
-@app.get("/")
-def index():
-    return send_from_directory(BASE_DIR, "index.html")
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-@app.get("/style.css")
-def static_css():
-    return send_from_directory(BASE_DIR, "style.css", mimetype="text/css")
+# Allow overriding admin via env
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@greendavid.local")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
-@app.get("/logo.svg")
-def static_logo_svg():
-    return send_from_directory(BASE_DIR, "logo.svg")
+DEFAULT_USER = {
+    "id": 1,
+    "name": "Admin",
+    "email": ADMIN_EMAIL,
+    "role": "admin",
+}
 
-@app.get("/logo.jpg")
-def static_logo_jpg():
-    return send_from_directory(BASE_DIR, "logo.jpg")
+# --- Optional addon (calendar & timesheets via blueprint) --------------------
+try:
+    # If your repo has addons/main_addons_calendar_vykazy.py with `bp` blueprint
+    # this will be used; otherwise we continue without crashing.
+    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp  # type: ignore
+    app.register_blueprint(addons_calendar_vykazy_bp)
+    print("[INIT] addons blueprint registered")
+except Exception as e:
+    print("[INIT] addons blueprint skipped:", e)
 
-# -------------------------------
-# Optional blueprints
-# -------------------------------
-def _try_register_blueprint(import_path, attr_name="bp"):
-    try:
-        module = __import__(import_path, fromlist=[attr_name])
-        bp = getattr(module, attr_name)
-        app.register_blueprint(bp)
-        print(f"[INIT] registered blueprint: {import_path}")
-        return True
-    except Exception as e:
-        print(f"[INIT] skipped blueprint {import_path}: {e}")
-        return False
+# --- Static / root routes ----------------------------------------------------
+@app.route("/", methods=["GET"])
+def root():
+    # Serve index.html directly from the repo root (same place as main.py)
+    # to match your existing project layout.
+    return send_from_directory(ROOT_DIR, "index.html")
 
-_try_register_blueprint("addons.main_addons_calendar_vykazy")
+@app.route("/style.css")
+def style_css():
+    return send_from_directory(ROOT_DIR, "style.css")
 
-# -------------------------------
-# Minimal API fallbacks
-# -------------------------------
-_employees = [
-    {"id": 1, "name": "Adam"},
-    {"id": 2, "name": "David"},
-]
-_jobs = [
+@app.route("/logo.svg")
+def logo_svg():
+    return send_from_directory(ROOT_DIR, "logo.svg")
+
+@app.route("/logo.jpg")
+def logo_jpg():
+    return send_from_directory(ROOT_DIR, "logo.jpg")
+
+# --- Lightweight in-memory data (fallback for UI to work) --------------------
+JOBS = [
     {
         "id": 2,
         "title": "zahrada Pavlíkova",
@@ -56,11 +58,10 @@ _jobs = [
         "client": "Mackrle",
         "city": "Brno",
         "code": "09-2025",
-        "status": "Probíhá",
         "date": "2025-09-22",
+        "status": "Probíhá",
         "owner_id": 1,
         "created_at": "2025-10-09 20:38:37",
-        "note": None,
     },
     {
         "id": 3,
@@ -69,89 +70,98 @@ _jobs = [
         "client": "OK Garden",
         "city": "Lovosice",
         "code": "11_2025",
-        "status": "Plán",
         "date": "2025-11-10",
+        "status": "Plán",
         "owner_id": 1,
         "created_at": "2025-10-10 12:00:00",
-        "note": None,
-    },
-    {
-        "id": 1,
-        "title": "zahrada Třeboňice",
-        "name": "zahrada Třeboňice",
-        "client": "Adam",
-        "city": "Praha",
-        "code": "09-2025",
-        "status": "Probíhá",
-        "date": "2025-09-10",
-        "owner_id": 1,
-        "created_at": "2025-10-01 08:00:00",
-        "note": None,
     },
 ]
-_timesheets = []
 
-def _ensure_iso_date(s):
-    try:
-        return datetime.strptime(s, "%Y-%m-%d").date().isoformat()
-    except Exception:
-        return None
+EMPLOYEES = [
+    {"id": 1, "name": "Adam"},
+    {"id": 2, "name": "David"},
+]
 
-@app.get("/api/me")
+TIMESHEETS = []  # simple in-memory store so UI má kam zapisovat
+
+# --- Auth-like endpoints (very simple session) -------------------------------
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(silent=True) or request.form or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    valid_emails = {ADMIN_EMAIL.lower(), "admin@greendavid.cz"}
+    if email in valid_emails and password == ADMIN_PASSWORD:
+        session["user"] = DEFAULT_USER
+        return jsonify({"ok": True, "user": DEFAULT_USER})
+
+    return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.pop("user", None)
+    return jsonify({"ok": True})
+
+@app.route("/api/me")
 def api_me():
-    return jsonify({
-        "ok": True,
-        "user": {"id": 1, "name": "Admin", "email": "admin@greendavid.local"}
-    })
+    user = session.get("user")
+    return jsonify({"ok": True, "user": user})
 
-@app.get("/api/employees")
-def api_employees():
-    return jsonify({"ok": True, "data": _employees})
-
-@app.get("/api/jobs")
+# --- Business endpoints used by the UI --------------------------------------
+@app.route("/api/jobs")
 def api_jobs():
-    return jsonify({"ok": True, "data": _jobs})
+    return jsonify({"ok": True, "jobs": JOBS})
 
-@app.get("/api/timesheets")
-def api_timesheets_list():
-    return jsonify({"ok": True, "data": _timesheets})
+@app.route("/api/employees")
+def api_employees():
+    return jsonify({"ok": True, "employees": EMPLOYEES})
 
-@app.post("/api/timesheets")
-def api_timesheets_create():
+@app.route("/api/timesheets", methods=["GET", "POST"])
+def api_timesheets():
+    if request.method == "GET":
+        return jsonify({"ok": True, "work_logs": TIMESHEETS})
+
+    # POST create
+    data = request.get_json(silent=True) or request.form or {}
     try:
-        payload = request.get_json(force=True, silent=True) or {}
-        employee_id = int(payload.get("employee_id", 0))
-        job_id = int(payload.get("job_id", 0))
-        date = payload.get("date")
-        hours = float(payload.get("hours", 0))
-        note = (payload.get("note") or "").strip()
-
-        if not employee_id or not any(e["id"] == employee_id for e in _employees):
-            return jsonify({"ok": False, "error": "Neplatný zaměstnanec."}), 400
-        if not job_id or not any(j["id"] == job_id for j in _jobs):
-            return jsonify({"ok": False, "error": "Neplatná zakázka."}), 400
-        if not _ensure_iso_date(date):
-            return jsonify({"ok": False, "error": "Datum musí být ve formátu YYYY-MM-DD."}), 400
-        if hours <= 0:
-            return jsonify({"ok": False, "error": "Hodiny musí být větší než 0."}), 400
-
-        new_item = {
-            "id": (max([t["id"] for t in _timesheets]) + 1) if _timesheets else 1,
-            "employee_id": employee_id,
-            "job_id": job_id,
-            "date": _ensure_iso_date(date),
-            "hours": round(hours, 2),
-            "note": note or None,
-            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-        }
-        _timesheets.append(new_item)
-        return jsonify({"ok": True, "data": new_item}), 201
+        job_id = int(data.get("job_id"))
+        hours = float(data.get("hours"))
+        date_str = (data.get("date") or "").strip()
+        if not date_str:
+            raise ValueError("missing date")
+        # normalize date to YYYY-MM-DD if possible
+        try:
+            date_norm = datetime.fromisoformat(date_str).date().isoformat()
+        except Exception:
+            # try dd.mm.yyyy
+            try:
+                d, m, y = date_str.split(".")
+                date_norm = datetime(int(y), int(m), int(d)).date().isoformat()
+            except Exception:
+                date_norm = date_str
+        employee_id = int(data.get("employee_id") or 1)
+        note = data.get("note") or ""
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Nepodařilo se uložit: {e}"}), 400
+        return jsonify({"ok": False, "error": f"bad_payload: {e}"}), 400
 
-@app.get("/healthz")
+    entry = {
+        "id": len(TIMESHEETS) + 1,
+        "job_id": job_id,
+        "employee_id": employee_id,
+        "date": date_norm,
+        "hours": hours,
+        "note": note,
+        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    TIMESHEETS.append(entry)
+    return jsonify({"ok": True, "entry": entry}), 201
+
+# --- Health ------------------------------------------------------------------
+@app.route("/healthz")
 def healthz():
     return jsonify({"ok": True})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "10000")), debug=False)
+    port = int(os.environ.get("PORT", "10000"))
+    app.run(host="0.0.0.0", port=port, debug=False)
