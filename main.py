@@ -1,148 +1,157 @@
+# -*- coding: utf-8 -*-
+import os
+from datetime import datetime
+from flask import Flask, send_from_directory, jsonify, request
 
-from flask import Flask, jsonify, request, send_from_directory, redirect
-import os, json
-from datetime import datetime, timedelta
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__, static_folder=None)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-os.makedirs(DATA_DIR, exist_ok=True)
+# -------------------------------
+# Root & static file routes
+# -------------------------------
+@app.get("/")
+def index():
+    return send_from_directory(BASE_DIR, "index.html")
 
-# ---- tiny helpers to LOAD/SAVE json without wiping existing data ----
-def _seed_if_missing(fname, default_payload):
-    path = os.path.join(DATA_DIR, fname)
-    if not os.path.exists(path):
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(default_payload, f, ensure_ascii=False, indent=2)
+@app.get("/style.css")
+def static_css():
+    return send_from_directory(BASE_DIR, "style.css", mimetype="text/css")
 
-# do NOT overwrite existing files; only create if missing
-_seed_if_missing("jobs.json", {"jobs":[]})
-_seed_if_missing("employees.json", {"employees":[{"id":1,"name":"Admin"}]})
-_seed_if_missing("timesheets.json", {"work_logs":[]})
+@app.get("/logo.svg")
+def static_logo_svg():
+    return send_from_directory(BASE_DIR, "logo.svg")
 
-def _load(name, key):
-    with open(os.path.join(DATA_DIR, f"{name}.json"), "r", encoding="utf-8") as f:
-        return json.load(f)
+@app.get("/logo.jpg")
+def static_logo_jpg():
+    return send_from_directory(BASE_DIR, "logo.jpg")
 
-def _save(name, payload):
-    with open(os.path.join(DATA_DIR, f"{name}.json"), "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+# -------------------------------
+# Optional blueprints
+# -------------------------------
+def _try_register_blueprint(import_path, attr_name="bp"):
+    try:
+        module = __import__(import_path, fromlist=[attr_name])
+        bp = getattr(module, attr_name)
+        app.register_blueprint(bp)
+        print(f"[INIT] registered blueprint: {import_path}")
+        return True
+    except Exception as e:
+        print(f"[INIT] skipped blueprint {import_path}: {e}")
+        return False
 
-app = Flask(__name__)
+_try_register_blueprint("addons.main_addons_calendar_vykazy")
 
-# ---------------- PAGES (keep your index as-is) ----------------
-@app.get("/calendar")
-def page_calendar():
-    return send_from_directory(os.path.join(BASE_DIR, "templates"), "calendar.html")
+# -------------------------------
+# Minimal API fallbacks
+# -------------------------------
+_employees = [
+    {"id": 1, "name": "Adam"},
+    {"id": 2, "name": "David"},
+]
+_jobs = [
+    {
+        "id": 2,
+        "title": "zahrada Pavlíkova",
+        "name": "zahrada Pavlíkova",
+        "client": "Mackrle",
+        "city": "Brno",
+        "code": "09-2025",
+        "status": "Probíhá",
+        "date": "2025-09-22",
+        "owner_id": 1,
+        "created_at": "2025-10-09 20:38:37",
+        "note": None,
+    },
+    {
+        "id": 3,
+        "title": "závlaha Lovosice",
+        "name": "závlaha Lovosice",
+        "client": "OK Garden",
+        "city": "Lovosice",
+        "code": "11_2025",
+        "status": "Plán",
+        "date": "2025-11-10",
+        "owner_id": 1,
+        "created_at": "2025-10-10 12:00:00",
+        "note": None,
+    },
+    {
+        "id": 1,
+        "title": "zahrada Třeboňice",
+        "name": "zahrada Třeboňice",
+        "client": "Adam",
+        "city": "Praha",
+        "code": "09-2025",
+        "status": "Probíhá",
+        "date": "2025-09-10",
+        "owner_id": 1,
+        "created_at": "2025-10-01 08:00:00",
+        "note": None,
+    },
+]
+_timesheets = []
 
-@app.get("/timesheets")
-def page_timesheets():
-    return send_from_directory(os.path.join(BASE_DIR, "templates"), "timesheets.html")
+def _ensure_iso_date(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date().isoformat()
+    except Exception:
+        return None
 
-# ---------------- EXISTING BASIC API (kept simple) --------------
 @app.get("/api/me")
 def api_me():
-    return jsonify(ok=True, user={"id":1,"name":"Admin","role":"admin"})
+    return jsonify({
+        "ok": True,
+        "user": {"id": 1, "name": "Admin", "email": "admin@greendavid.local"}
+    })
 
 @app.get("/api/employees")
 def api_employees():
-    data = _load("employees", "employees")
-    return jsonify(ok=True, employees=data.get("employees", []))
+    return jsonify({"ok": True, "data": _employees})
 
 @app.get("/api/jobs")
-def api_jobs_list():
-    data = _load("jobs", "jobs")
-    return jsonify(ok=True, jobs=data.get("jobs", []))
+def api_jobs():
+    return jsonify({"ok": True, "data": _jobs})
 
-@app.post("/api/jobs")
-def api_jobs_add():
-    body = request.get_json(force=True, silent=True) or {}
-    data = _load("jobs","jobs"); jobs = data.get("jobs",[])
-    new_id = (max([j["id"] for j in jobs]) + 1) if jobs else 1
-    job = {
-        "id": new_id,
-        "name": (body.get("name") or f"Zakázka {new_id}").strip(),
-        "client": body.get("client"),
-        "city": body.get("city"),
-        "code": body.get("code"),
-        "date": body.get("date") or datetime.utcnow().date().isoformat(),
-        "status": body.get("status") or "Plán",
-        "note": body.get("note"),
-    }
-    jobs.append(job); _save("jobs", {"jobs": jobs})
-    return jsonify(ok=True, job=job)
-
-@app.delete("/api/jobs/<int:job_id>")
-def api_jobs_delete(job_id):
-    data = _load("jobs","jobs")
-    jobs = [j for j in data.get("jobs",[]) if j["id"] != job_id]
-    _save("jobs", {"jobs": jobs})
-    return jsonify(ok=True)
-
-# ---------------- TIMESHEETS (NEW) ----------------
 @app.get("/api/timesheets")
 def api_timesheets_list():
-    data = _load("timesheets", "work_logs")
-    return jsonify(ok=True, work_logs=data.get("work_logs", []))
+    return jsonify({"ok": True, "data": _timesheets})
 
 @app.post("/api/timesheets")
-def api_timesheets_add():
-    body = request.get_json(force=True, silent=True) or {}
-    for k in ["employee_id","job_id","date","hours"]:
-        if body.get(k) in (None, ""):
-            return (f"Missing field: {k}", 400)
-    data = _load("timesheets","work_logs"); logs = data.get("work_logs",[])
-    new_id = (max([w.get("id",0) for w in logs]) + 1) if logs else 1
-    log = {
-        "id": new_id,
-        "employee_id": int(body["employee_id"]),
-        "job_id": int(body["job_id"]),
-        "date": str(body["date"]),
-        "hours": float(str(body["hours"]).replace(",", ".")),
-        "note": body.get("note")
-    }
-    logs.append(log); _save("timesheets", {"work_logs": logs})
-    return jsonify(ok=True, work_log=log)
-
-# ---------------- CALENDAR SUMMARY (NEW) ----------------
-def _jobs_by_date():
-    mp={}
-    for j in _load("jobs","jobs").get("jobs",[]):
-        d=j.get("date"); mp.setdefault(d, []).append(j)
-    return mp
-
-def _logs_by_date():
-    mp={}
-    for w in _load("timesheets","work_logs").get("work_logs",[]):
-        d=w.get("date"); mp.setdefault(d, []).append(w)
-    return mp
-
-@app.get("/api/calendar/summary")
-def api_calendar_summary():
-    qs_from = request.args.get("from")
-    qs_to = request.args.get("to")
-    if not qs_from or not qs_to:
-        return ("/api/calendar/summary?from=YYYY-MM-DD&to=YYYY-MM-DD", 400)
+def api_timesheets_create():
     try:
-        a = datetime.fromisoformat(qs_from).date()
-        b = datetime.fromisoformat(qs_to).date()
-    except Exception:
-        return ("Bad date format", 400)
+        payload = request.get_json(force=True, silent=True) or {}
+        employee_id = int(payload.get("employee_id", 0))
+        job_id = int(payload.get("job_id", 0))
+        date = payload.get("date")
+        hours = float(payload.get("hours", 0))
+        note = (payload.get("note") or "").strip()
 
-    J=_jobs_by_date(); W=_logs_by_date()
-    out=[]; cur=a
-    while cur<=b:
-        k=cur.isoformat()
-        out.append({"date":k, "jobs":len(J.get(k,[])), "work_logs":len(W.get(k,[]))})
-        cur += timedelta(days=1)
-    return jsonify(ok=True, summary=out)
+        if not employee_id or not any(e["id"] == employee_id for e in _employees):
+            return jsonify({"ok": False, "error": "Neplatný zaměstnanec."}), 400
+        if not job_id or not any(j["id"] == job_id for j in _jobs):
+            return jsonify({"ok": False, "error": "Neplatná zakázka."}), 400
+        if not _ensure_iso_date(date):
+            return jsonify({"ok": False, "error": "Datum musí být ve formátu YYYY-MM-DD."}), 400
+        if hours <= 0:
+            return jsonify({"ok": False, "error": "Hodiny musí být větší než 0."}), 400
 
-@app.get("/api/calendar/day")
-def api_calendar_day():
-    date = request.args.get("date")
-    if not date: return ("Missing ?date=YYYY-MM-DD", 400)
-    J=_jobs_by_date(); W=_logs_by_date()
-    return jsonify(ok=True, jobs=J.get(date,[]), work_logs=W.get(date,[]))
+        new_item = {
+            "id": (max([t["id"] for t in _timesheets]) + 1) if _timesheets else 1,
+            "employee_id": employee_id,
+            "job_id": job_id,
+            "date": _ensure_iso_date(date),
+            "hours": round(hours, 2),
+            "note": note or None,
+            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _timesheets.append(new_item)
+        return jsonify({"ok": True, "data": new_item}), 201
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Nepodařilo se uložit: {e}"}), 400
 
-# -------------- fallback start (for local run) --------------
+@app.get("/healthz")
+def healthz():
+    return jsonify({"ok": True})
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "10000")), debug=False)
