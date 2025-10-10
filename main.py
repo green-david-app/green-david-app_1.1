@@ -10,6 +10,8 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
+from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
+app.register_blueprint(addons_calendar_vykazy_bp)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _normalize_date(v):
@@ -738,5 +740,3 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
-    from addons.main_addons_calendar_vykazy import *  # přidá kalendář, výkazy a init schématu
-

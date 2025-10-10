@@ -1,15 +1,14 @@
 
 import os, re, io, base64, sqlite3
 from datetime import datetime
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
+from flask import Blueprint, Flask, send_from_directory, request, jsonify, session, g, send_file, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__, static_folder=".", static_url_path="")
-app.secret_key = SECRET_KEY
+bp = Blueprint("addons_calendar_vykazy", __name__)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _normalize_date(v):
@@ -217,18 +216,18 @@ def ensure_db():
     seed_admin(db)
 
 # ---------- static ----------
-@app.route("/")
+@bp.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
-@app.route("/uploads/<path:name>")
+@bp.route("/uploads/<path:name>")
 def uploaded_file(name):
     safe = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
     path = os.path.join(UPLOAD_DIR, safe)
     if not os.path.isfile(path): abort(404)
     return send_from_directory(UPLOAD_DIR, safe)
 
-@app.route("/health")
+@bp.route("/health")
 def health():
     return {"status": "ok"}
 
@@ -255,7 +254,7 @@ def require_role(write=False):
     return u, None
 
 # ---------- auth ----------
-@app.route("/api/me")
+@bp.route("/api/me")
 def api_me():
     u = current_user()
     tasks_count = 0
@@ -264,7 +263,7 @@ def api_me():
         tasks_count = db.execute("SELECT COUNT(*) c FROM tasks WHERE employee_id=? AND status!='hotovo'", (u["id"],)).fetchone()["c"]
     return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": tasks_count})
 
-@app.route("/api/login", methods=["POST"])
+@bp.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -276,13 +275,13 @@ def api_login():
     session["uid"] = row["id"]
     return jsonify({"ok": True})
 
-@app.route("/api/logout", methods=["POST"])
+@bp.route("/api/logout", methods=["POST"])
 def api_logout():
     session.pop("uid", None)
     return jsonify({"ok": True})
 
 # ---------- users (admin) ----------
-@app.route("/api/users", methods=["GET","POST","PATCH"])
+@bp.route("/api/users", methods=["GET","POST","PATCH"])
 def api_users():
     u, err = require_auth()
     if err: return err
@@ -329,7 +328,7 @@ def api_users():
         return jsonify({"ok": True})
 
 # ---------- employees + timesheets ----------
-@app.route("/api/employees", methods=["GET","POST","DELETE"])
+@bp.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -351,7 +350,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-@app.route("/api/timesheets", methods=["GET","POST","DELETE"])
+@bp.route("/api/timesheets", methods=["GET","POST","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -390,7 +389,7 @@ def api_timesheets():
 # ---------- warehouse ----------
 VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
 
-@app.route("/api/items", methods=["GET","POST","PATCH","DELETE"])
+@bp.route("/api/items", methods=["GET","POST","PATCH","DELETE"])
 def api_items():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -436,7 +435,7 @@ def api_items():
         return jsonify({"ok": True})
 
 # ---------- jobs ----------
-@app.route("/api/jobs", methods=["GET","POST"])
+@bp.route("/api/jobs", methods=["GET","POST"])
 def api_jobs():
     db = get_db()
 
@@ -488,7 +487,7 @@ def api_jobs():
 
     db.commit()
     return jsonify({"ok": True})
-@app.route("/api/jobs/<int:jid>", methods=["GET"])
+@bp.route("/api/jobs/<int:jid>", methods=["GET"])
 def api_job_detail(jid):
     u, err = require_auth()
     if err: return err
@@ -505,7 +504,7 @@ def api_job_detail(jid):
                                            WHERE t.job_id=? ORDER BY t.date DESC, t.id DESC""",(jid,)).fetchall()]
     return jsonify({"ok": True, "job": dict(job), "materials": mats, "tools": tools, "photos": photos, "assignments": assigns, "tasks": tasks, "hours": hours})
 
-@app.route("/api/jobs/<int:jid>/materials", methods=["POST","DELETE"])
+@bp.route("/api/jobs/<int:jid>/materials", methods=["POST","DELETE"])
 def api_job_materials(jid):
     u, err = require_role(write=True)
     if err: return err
@@ -524,7 +523,7 @@ def api_job_materials(jid):
         db.commit()
         return jsonify({"ok": True})
 
-@app.route("/api/jobs/<int:jid>/tools", methods=["POST","DELETE"])
+@bp.route("/api/jobs/<int:jid>/tools", methods=["POST","DELETE"])
 def api_job_tools(jid):
     u, err = require_role(write=True)
     if err: return err
@@ -543,7 +542,7 @@ def api_job_tools(jid):
         db.commit()
         return jsonify({"ok": True})
 
-@app.route("/api/jobs/<int:jid>/photos", methods=["POST","DELETE"])
+@bp.route("/api/jobs/<int:jid>/photos", methods=["POST","DELETE"])
 def api_job_photos(jid):
     u, err = require_role(write=True)
     if err: return err
@@ -574,7 +573,7 @@ def api_job_photos(jid):
         db.commit()
         return jsonify({"ok": True})
 
-@app.route("/api/jobs/<int:jid>/assignments", methods=["GET","POST"])
+@bp.route("/api/jobs/<int:jid>/assignments", methods=["GET","POST"])
 def api_job_assignments(jid):
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -597,7 +596,7 @@ def api_job_assignments(jid):
 # ---------- tasks ----------
 VALID_STATUS = ('nový','probíhá','hotovo')
 
-@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
+@bp.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def api_tasks():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -652,7 +651,7 @@ def api_tasks():
         return jsonify({"ok": True})
 
 # ---------- exports ----------
-@app.route("/export/employee_hours.xlsx")
+@bp.route("/export/employee_hours.xlsx")
 def export_employee_hours():
     u, err = require_auth()
     if err: return err
@@ -679,7 +678,7 @@ def export_employee_hours():
     wb.save(bio); bio.seek(0)
     return send_file(bio, as_attachment=True, download_name="employee_hours.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-@app.route("/export/job_materials.xlsx")
+@bp.route("/export/job_materials.xlsx")
 def export_job_materials():
     u, err = require_auth()
     if err: return err
@@ -707,7 +706,7 @@ def export_job_materials():
     wb.save(bio); bio.seek(0)
     return send_file(bio, as_attachment=True, download_name="job_materials.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-@app.route("/export/warehouse.xlsx")
+@bp.route("/export/warehouse.xlsx")
 def export_warehouse():
     u, err = require_auth()
     if err: return err
@@ -793,7 +792,7 @@ def api_calendar():
 
 
 # === API: Work logs ===
-@app.route("/api/worklogs", methods=["GET","POST"])
+@bp.route("/api/worklogs", methods=["GET","POST"])
 def api_worklogs():
     db = get_db()
     if request.method == "GET":
