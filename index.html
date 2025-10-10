@@ -1,1 +1,103 @@
-# dummy; will be replaced in next cell
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Green David – Správa zakázek</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Green David</h1>
+  <nav>
+    <a href="#" id="lnkJobs" class="active">Zakázky</a>
+  </nav>
+</header>
+
+<main>
+  <section id="jobs">
+    <h2>Zakázky</h2>
+    <form id="jobForm">
+      <div class="grid">
+        <label>Název *</label><input name="title" required>
+        <label>Město *</label><input name="city" required>
+        <label>Kód *</label><input name="code" required>
+        <label>Datum *</label><input name="date" placeholder="DD.MM.RRRR" required>
+        <label>Klient</label><input name="client">
+        <label>Status</label>
+        <select name="status">
+          <option>Plán</option>
+          <option>Probíhá</option>
+          <option>Hotovo</option>
+        </select>
+      </div>
+      <label>Poznámka</label>
+      <textarea name="note" rows="2"></textarea>
+      <button type="submit">Přidat zakázku</button>
+      <span id="jobMsg"></span>
+    </form>
+
+    <div id="jobsList" class="list"></div>
+  </section>
+</main>
+
+<script>
+async function fetchJSON(url, opts={}) {
+  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  if(!r.ok){ const t=await r.text(); throw new Error(t || r.status); }
+  return r.json();
+}
+
+async function loadJobs(){
+  const box = document.getElementById('jobsList');
+  box.innerHTML = '<div class="loading">Načítám…</div>';
+  try{
+    const data = await fetchJSON('/api/jobs');
+    const rows = (data.jobs || []);
+    if(rows.length===0){ box.innerHTML = '<div class="empty">Zatím žádné zakázky.</div>'; return; }
+    box.innerHTML = rows.map(j => `
+      <article class="card">
+        <h3>${j.title || j.name || '(bez názvu)'}</h3>
+        <div class="meta">
+          <span>${j.city||''}</span> ·
+          <span>${j.code||''}</span> ·
+          <span>${(j.date||'').substring(0,10)}</span> ·
+          <span>${j.status||''}</span>
+        </div>
+        ${j.client ? `<div>Klient: ${j.client}</div>`:''}
+        ${j.note ? `<div class="note">${j.note}</div>`:''}
+      </article>
+    `).join('');
+  }catch(e){
+    box.innerHTML = '<div class="error">Chyba při načítání zakázek</div>';
+    console.error(e);
+  }
+}
+
+document.getElementById('jobForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const form = ev.currentTarget;
+  const fd = new FormData(form);
+  const payload = {};
+  for (const [k,v] of fd.entries()) payload[k]=v;
+  for(const k of ['title','city','code','date']){
+    if(!payload[k] || !String(payload[k]).trim()){
+      document.getElementById('jobMsg').textContent = 'Vyplň povinná pole.'; 
+      return;
+    }
+  }
+  try{
+    await fetchJSON('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
+    document.getElementById('jobMsg').textContent = 'Uloženo ✔';
+    form.reset();
+    await loadJobs();
+  }catch(e){
+    document.getElementById('jobMsg').textContent = 'Chyba při ukládání';
+    console.error(e);
+  }
+});
+
+loadJobs();
+</script>
+</body>
+</html>
