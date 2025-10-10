@@ -2,11 +2,18 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-from flask import Flask, jsonify, request, session, send_from_directory
+from flask import Flask, jsonify, request, session, send_from_directory, redirect, url_for
 
-# ---------------- App setup ----------------
 app = Flask(__name__)
+
+# ---- Session / cookies ----
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-prod")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True,
+)
+
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@greendavid.local")
@@ -19,7 +26,7 @@ DEFAULT_USER = {
     "role": "admin",
 }
 
-# ------------- Optional addon -------------
+# ---- Optional addon: calendar & timesheets blueprint ----
 try:
     from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp  # type: ignore
     app.register_blueprint(addons_calendar_vykazy_bp)
@@ -27,24 +34,41 @@ try:
 except Exception as e:
     print("[INIT] addons blueprint skipped:", e)
 
-# ------------- Static/root ----------------
-@app.route("/", methods=["GET"])
+# ---- Static files ----
+@app.get("/")
 def root():
-    return send_from_directory(ROOT_DIR, "index.html")
+    index = os.path.join(ROOT_DIR, "index.html")
+    if os.path.exists(index):
+        return send_from_directory(ROOT_DIR, "index.html")
+    return (
+        "<!doctype html><meta charset='utf-8'><title>Green David</title>"
+        "<h1>Green David</h1><p>index.html nebyl nalezen v kořenu.</p>",
+        200,
+        {"Content-Type": "text/html; charset=utf-8"},
+    )
 
-@app.route("/style.css")
+@app.get("/style.css")
 def style_css():
-    return send_from_directory(ROOT_DIR, "style.css")
+    path = os.path.join(ROOT_DIR, "style.css")
+    if os.path.exists(path):
+        return send_from_directory(ROOT_DIR, "style.css")
+    return "", 200, {"Content-Type": "text/css"}
 
-@app.route("/logo.svg")
+@app.get("/logo.svg")
 def logo_svg():
-    return send_from_directory(ROOT_DIR, "logo.svg")
+    path = os.path.join(ROOT_DIR, "logo.svg")
+    if os.path.exists(path):
+        return send_from_directory(ROOT_DIR, "logo.svg")
+    return "", 200, {"Content-Type": "image/svg+xml"}
 
-@app.route("/logo.jpg")
+@app.get("/logo.jpg")
 def logo_jpg():
-    return send_from_directory(ROOT_DIR, "logo.jpg")
+    path = os.path.join(ROOT_DIR, "logo.jpg")
+    if os.path.exists(path):
+        return send_from_directory(ROOT_DIR, "logo.jpg")
+    return "", 200, {"Content-Type": "image/jpeg"}
 
-# ------------- Data (fallback) ------------
+# ---- In-memory fallback data ----
 JOBS = [
     {"id": 2, "title": "zahrada Pavlíkova", "name": "zahrada Pavlíkova",
      "client": "Mackrle", "city": "Brno", "code": "09-2025",
@@ -61,9 +85,8 @@ EMPLOYEES = [
 ]
 TIMESHEETS = []
 
-# ------------- Helpers --------------------
+# ---- Helpers ----
 def _read_cred_payload():
-    """Accept JSON, form, or querystring; tolerate keys: email/username/e, password/pass/p"""
     data = request.get_json(silent=True) or {}
     if not data:
         if request.form:
@@ -72,7 +95,6 @@ def _read_cred_payload():
             data = request.args.to_dict()
         else:
             data = {}
-    # unify keys
     email = (data.get("email") or data.get("username") or data.get("e") or "").strip().lower()
     password = data.get("password") or data.get("pass") or data.get("p") or ""
     return email, password
@@ -85,7 +107,16 @@ def _do_login(email: str, password: str):
         return True
     return False
 
-# ------------- Auth -----------------------
+# ---- No-cache for API responses ----
+@app.after_request
+def add_no_cache_headers(resp):
+    if request.path.startswith("/api/"):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+    return resp
+
+# ---- Auth APIs ----
 @app.route("/api/login", methods=["POST", "GET"])
 def api_login():
     email, password = _read_cred_payload()
@@ -93,22 +124,32 @@ def api_login():
         return jsonify({"ok": True, "user": DEFAULT_USER})
     return jsonify({"ok": False, "error": "invalid_credentials"}), 401
 
-@app.route("/api/logout", methods=["POST"])
+@app.get("/dev-login")
+def dev_login():
+    session["user"] = DEFAULT_USER
+    session.permanent = True
+    return redirect(url_for("root"))
+
+@app.post("/api/logout")
 def api_logout():
     session.pop("user", None)
     return jsonify({"ok": True})
 
-@app.route("/api/me")
+@app.get("/api/me")
 def api_me():
     user = session.get("user")
-    return jsonify({"ok": True, "user": user})
+    if user:
+        payload = {"ok": True, "user": user}
+        payload.update(user)  # flatten id/name/email/role for older UI
+        return jsonify(payload)
+    return jsonify({"ok": True, "user": None})
 
-# ------------- Business APIs --------------
-@app.route("/api/jobs")
+# ---- Business APIs ----
+@app.get("/api/jobs")
 def api_jobs():
     return jsonify({"ok": True, "jobs": JOBS})
 
-@app.route("/api/employees")
+@app.get("/api/employees")
 def api_employees():
     return jsonify({"ok": True, "employees": EMPLOYEES})
 
@@ -149,8 +190,8 @@ def api_timesheets():
     TIMESHEETS.append(entry)
     return jsonify({"ok": True, "entry": entry}), 201
 
-# ------------- Health ---------------------
-@app.route("/healthz")
+# ---- Health ----
+@app.get("/healthz")
 def healthz():
     return jsonify({"ok": True})
 
