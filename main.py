@@ -18,6 +18,23 @@ def _healthz():
     from flask import jsonify
     return jsonify(status="ok")
 
+# registrace stránek Kalendář/Výkazy (Blueprint) – s kontrolou duplicit
+try:
+    from addons.main_addons_calendar_vykazy import bp as addons_calendar_vykazy_bp
+    if 'gd_addons_calendar_vykazy' not in app.blueprints:
+        app.register_blueprint(addons_calendar_vykazy_bp)
+        app.logger.info("[INIT] addons calendar/vykazy registered")
+    else:
+        app.logger.info("[INIT] addons calendar/vykazy already registered – skipping")
+except Exception as e:
+    app.logger.exception("[INIT] addons calendar/vykazy failed: %s", e)
+
+# healthcheck pro Render (volitelné)
+@app.get("/healthz")
+def _healthz():
+    from flask import jsonify
+    return jsonify(status="ok")
+
 # SECRET_KEY for sessions (login)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
