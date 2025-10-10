@@ -1,7 +1,8 @@
 
 from flask import Blueprint, render_template
 
-bp = Blueprint("addons_calendar_vykazy", __name__)
+# Použijeme unikátní jméno blueprintu, aby nenarážel na dřívější registrace
+bp = Blueprint("gd_addons_calendar_vykazy", __name__)
 
 @bp.get("/calendar")
 def calendar_page():
