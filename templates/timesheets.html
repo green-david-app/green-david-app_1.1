@@ -1,0 +1,56 @@
+
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Výkazy • green david app</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+.card{background:#22272b;color:#e7eef5;border-radius:14px;padding:14px 16px;margin:14px 0}
+.input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #3b444c;background:#1a1f24;color:#e7eef5}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{background:#1f8f54;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+.btn.secondary{background:#36414a}
+table{width:100%;border-collapse:collapse} th,td{padding:8px;border-bottom:1px solid #3a434a} th{text-align:left;color:#b7c5cf}
+.empty{color:#9fb0bd;padding:16px}
+.header{background:#fff;border-radius:16px;padding:18px 20px;margin:8px 0 18px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center}
+.brand img{width:40px;height:40px}
+.nav a{color:#e7eef5}
+</style>
+</head><body>
+<div class="app">
+  <div class="header">
+    <div class="brand"><img src="/logo.svg"><div><h1>green david app</h1><div class="badge">interní systém</div></div></div>
+    <div class="badge"><a href="/" style="text-decoration:none">← Zpět</a></div>
+  </div>
+  <div class="nav"><a href="/">Zakázky</a><a href="/calendar">Kalendář</a><a href="/timesheets" class="active">Výkazy</a><a href="/employees">Zaměstnanci</a><a href="/users">Uživatelé</a></div>
+
+  <div class="card">
+    <h3>Nový výkaz</h3>
+    <div class="row"><select id="emp" class="input"></select><select id="job" class="input"></select></div>
+    <div class="row" style="margin-top:8px">
+      <input id="date" class="input" placeholder="DD.MM.RRRR">
+      <input id="hours" class="input" placeholder="Hodin (např. 4.5)">
+    </div>
+    <div style="margin-top:8px"><input id="note" class="input" placeholder="Poznámka"></div>
+    <div style="margin-top:10px"><button class="btn" onclick="save()">Uložit</button></div>
+  </div>
+
+  <div class="card">
+    <h3>Výkazy</h3>
+    <table>
+      <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodin</th><th>Poznámka</th></tr></thead>
+      <tbody id="list"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+function dmyToISO(s){const p=s.trim().split('.');if(p.length<3)return null;return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+function isoToDmy(s){const [Y,M,D]=s.split('-');return `${D}.${M}.${Y}`;}
+async function j(url,opt={}){const r=await fetch(url,Object.assign({headers:{'Content-Type':'application/json'}},opt));return r.json();}
+let employees=[],jobs=[];
+async function init(){const qs=new URLSearchParams(location.search);const preJ=qs.get('job_id');employees=(await j('/api/employees')).employees||[];jobs=(await j('/api/jobs')).jobs||[]; emp.innerHTML=employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join(''); job.innerHTML=jobs.map(x=>`<option value="${x.id}">${x.name}</option>`).join(''); if(preJ) job.value=preJ; load();}
+async function load(){const data=await j('/api/timesheets'); const em=new Map(employees.map(e=>[e.id,e.name])); const jm=new Map(jobs.map(j=>[j.id,j.name])); if(!data.work_logs||!data.work_logs.length){list.innerHTML='<tr><td colspan=5 class="empty">Zatím žádné výkazy.</td></tr>';return;} list.innerHTML=data.work_logs.map(w=>`<tr><td>${isoToDmy(w.date)}</td><td>${em.get(w.employee_id)||('#'+w.employee_id)}</td><td>${jm.get(w.job_id)||('#'+w.job_id)}</td><td>${w.hours}</td><td>${w.note||''}</td></tr>`).join('');}
+async function save(){const body={employee_id:Number(emp.value),job_id:Number(job.value),date:dmyToISO(date.value)||new Date().toISOString().slice(0,10),hours:Number(hours.value.replace(',','.'))||0,note:note.value.trim()}; const r=await fetch('/api/timesheets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(r.ok){hours.value='';note.value='';load();} else {alert('Uložení se nezdařilo');}}
+init();
+</script>
+</body></html>

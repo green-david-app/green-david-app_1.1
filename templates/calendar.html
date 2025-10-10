@@ -1,0 +1,54 @@
+
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalendář • green david app</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+.cal-wrap{background:#22272b;color:#e7eef5;border-radius:14px;padding:12px}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-cell{background:#2b3136;border-radius:10px;min-height:70px;padding:6px;position:relative}
+.cal-day{font-size:12px;color:#9fb0bd}
+.cal-dot{width:6px;height:6px;border-radius:50%;background:#1f8f54;display:inline-block;margin-right:3px}
+.cal-cell.today{outline:2px solid #1f8f54}
+.cal-cell .jobs{font-size:12px;margin-top:6px}
+.card{background:#22272b;color:#e7eef5;border-radius:14px;padding:14px 16px;margin:14px 0}
+.pill{background:#123b25;color:#bfe7d2;border-radius:999px;font-size:12px;padding:6px 10px}
+.btn{background:#1f8f54;color:white;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+.btn.secondary{background:#36414a}
+.nav a{color:#e7eef5}
+.header{background:#fff;border-radius:16px;padding:18px 20px;margin:8px 0 18px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center}
+.brand img{width:40px;height:40px}
+</style>
+</head><body>
+<div class="app">
+  <div class="header">
+    <div class="brand"><img src="/logo.svg"><div><h1>green david app</h1><div class="badge">interní systém</div></div></div>
+    <div class="badge"><a href="/" style="text-decoration:none">← Zpět</a></div>
+  </div>
+  <div class="nav"><a href="/">Zakázky</a><a href="/calendar" class="active">Kalendář</a><a href="/timesheets">Výkazy</a><a href="/employees">Zaměstnanci</a><a href="/users">Uživatelé</a></div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <button class="btn secondary" onclick="shift(-1)">◀</button>
+      <h3 id="mt"></h3>
+      <button class="btn secondary" onclick="shift(1)">▶</button>
+    </div>
+    <div class="cal-grid" id="grid"></div>
+  </div>
+  <div class="card" id="detail" style="display:none"></div>
+</div>
+<script>
+let cur = new Date();
+const grid=document.getElementById('grid'), mt=document.getElementById('mt'), detail=document.getElementById('detail');
+const iso=d=>d.toISOString().slice(0,10);
+function start(d){return new Date(d.getFullYear(),d.getMonth(),1)}
+function end(d){return new Date(d.getFullYear(),d.getMonth()+1,0)}
+async function load(){const a=start(cur), b=end(cur); const r=await fetch(`/api/calendar/summary?from=${iso(a)}&to=${iso(b)}`); const data=await r.json(); render(a,data.summary||[]);}
+function render(mStart,sum){mt.textContent=mStart.toLocaleString('cs-CZ',{month:'long',year:'numeric'}); grid.innerHTML=''; const w=(new Date(mStart.getFullYear(),mStart.getMonth(),1).getDay()+6)%7; for(let i=0;i<w;i++)grid.appendChild(document.createElement('div'));
+ const days=end(mStart).getDate(); const map=new Map(sum.map(x=>[x.date,x])); for(let d=1;d<=days;d++){const dt=new Date(mStart.getFullYear(),mStart.getMonth(),d), key=iso(dt); const cell=document.createElement('div'); cell.className='cal-cell'+(iso(new Date())===key?' today':''); cell.innerHTML=`<div class="cal-day">${d}.</div>`; const s=map.get(key); if(s){const dots=[]; if(s.jobs) dots.push('<span class="cal-dot"></span>'.repeat(s.jobs)); if(s.work_logs) dots.push('<span class="cal-dot" style="background:#ffa726"></span>'.repeat(s.work_logs)); const wrap=document.createElement('div'); wrap.className='jobs'; wrap.innerHTML=dots.join(''); cell.appendChild(wrap);} cell.onclick=()=>openDay(key); grid.appendChild(cell);}}
+async function openDay(date){const r=await fetch(`/api/calendar/day?date=${date}`); const d=await r.json(); const jobs=(d.jobs||[]).map(j=>`<div class='card'><div style='display:flex;justify-content:space-between;align-items:center'><div><div style='font-weight:700'>${j.name}</div><div class='badge' style='color:#9fb0bd'>${j.client||''} • ${j.city||''} • ${j.code||''}</div></div><span class='pill'>${j.status||'Plán'}</span></div></div>`).join(''); const logs=(d.work_logs||[]).map(w=>`<tr><td>${w.employee_id}</td><td>${w.hours}</td><td>${w.note||''}</td></tr>`).join(''); detail.style.display='block'; detail.innerHTML=`<h3>${new Date(date).toLocaleDateString('cs-CZ')}</h3>${jobs||'<div>Žádné zakázky.</div>'}<div class='card'><h3>Výkazy dne</h3><table><thead><tr><th>Zaměstnanec</th><th>Hodin</th><th>Poznámka</th></tr></thead><tbody>${logs||'<tr><td colspan=3>Bez výkazů.</td></tr>'}</tbody></table></div>`;}
+function shift(n){cur=new Date(cur.getFullYear(),cur.getMonth()+n,1); load();}
+load();
+</script>
+</body></html>
