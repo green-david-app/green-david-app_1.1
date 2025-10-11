@@ -27,7 +27,6 @@ window.GD_Timesheets = (function(){
     const empSel=root.querySelector("#rep_employee"); empSel.innerHTML=`<option value="">Vyber zaměstnance…</option>`+employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
     root.querySelector("#ts_employee").innerHTML=employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
     root.querySelector("#ts_job").innerHTML=jobs.map(j=>`<option value="${j.id}">${j.title} (${j.code||""})</option>`).join("");
-
     const tbody=root.querySelector("#rep_tbody"), totalEl=root.querySelector("#rep_total"), exp=root.querySelector("#rep_export");
     async function loadRows(){
       const emp=empSel.value; if(!emp) return;
@@ -37,11 +36,10 @@ window.GD_Timesheets = (function(){
       totalEl.textContent=j.total_hours; exp.classList.remove("disabled"); exp.href=\`/export/employee_hours.csv?employee_id=\${emp}&from=\${f}&to=\${t}\`;
     }
     root.querySelector("#rep_form").onsubmit=(ev)=>{ev.preventDefault(); loadRows();};
-
     const msg=root.querySelector("#rep_msg");
     root.querySelector("#rep_add").onsubmit=async ev=>{
       ev.preventDefault(); msg.style.display="none";
-      const d={employee_id:Number(root.querySelector("#ts_employee").value), job_id:Number(root.querySelector("#ts_job").value), date:root.querySelector("#ts_date").value, hours:Number(root.querySelector("#ts_hours").value), place:root.querySelector("#ts_place").value||null, activity:root.querySelector("#ts_activity").value||null};
+      const d={employee_id:Number(root.querySelector("#ts_employee").value), job_id:Number(root.querySelector("#ts_job").value), date=root.querySelector("#ts_date").value, hours:Number(root.querySelector("#ts_hours").value), place:root.querySelector("#ts_place").value||null, activity:root.querySelector("#ts_activity").value||null};
       try{ await api("/api/timesheets",{method:"POST", body:JSON.stringify(d)}); msg.textContent="Zapsáno."; msg.className="alert ok"; msg.style.display="block"; await loadRows(); ev.target.reset(); }
       catch(ex){ msg.textContent="Uložení selhalo: "+ex.message; msg.className="alert error"; msg.style.display="block"; }
     };

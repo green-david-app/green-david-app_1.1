@@ -2,7 +2,6 @@
 window.GD_Calendar = (function(){
   const pad=n=>String(n).padStart(2,"0"), iso=d=>d.toISOString().slice(0,10), eom=(y,m)=>new Date(y,m,0).getDate();
   async function api(url,opts={}){const r=await fetch(url,Object.assign({headers:{"Content-Type":"application/json"}},opts));const j=await r.json().catch(()=>({}));if(!r.ok||j.ok===false)throw new Error((j&&(j.error||j.detail))||("HTTP "+r.status));return j}
-
   async function mount(root){
     root.innerHTML = `<div class="grid" style="grid-template-columns:1.2fr 0.8fr">
       <div class="card"><div class="card-h"><div class="right"><button class="tab" id="cal_prev">◀</button><b id="cal_title"></b><button class="tab" id="cal_next">▶</button></div><div class="right">Kalendář</div></div>
@@ -23,15 +22,12 @@ window.GD_Calendar = (function(){
           <div class="form-row"><button type="submit">Přidat</button></div>
         </form>
       </div></div>`;
-
     let today=new Date(); let ym={y:today.getFullYear(), m:today.getMonth()+1}; let selected=null;
     const grid=root.querySelector("#cal_grid"), title=root.querySelector("#cal_title"), sel=root.querySelector("#sel_date"), list=root.querySelector("#cal_list"), err=root.querySelector("#cal_err");
-
     const employees=(await api("/api/employees")).employees||[]; const jobs=(await api("/api/jobs")).jobs||[];
     root.querySelector("#f_employee_id").innerHTML=`<option value="">Zaměstnanec (volit.)</option>`+employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
     root.querySelector("#f_job_id").innerHTML=`<option value="">Zakázka (volit.)</option>`+jobs.map(j=>`<option value="${j.id}">${j.title} (${j.code||""})</option>`).join("");
-
-    async function load(){err.style.display="none"; const from=`${ym.y}-${pad(ym.m)}-01`, to=`${ym.y}-${pad(eom(ym.y,ym.m))}`; const j=await api(`/api/calendar?from=${from}&to=${to}`); draw(j.events||[])}
+    const load = async ()=>{err.style.display="none"; const from=`${ym.y}-${pad(ym.m)}-01`, to=`${ym.y}-${pad(eom(ym.y,ym.m))}`; const j=await api(`/api/calendar?from=${from}&to=${to}`); draw(j.events||[])};
     function draw(events){
       const first=new Date(ym.y, ym.m-1, 1); const start=new Date(first); const dow=first.getDay()||7; start.setDate(1-(dow-1));
       const days=Array.from({length:42},(_,i)=>new Date(start.getFullYear(),start.getMonth(),start.getDate()+i));
@@ -47,10 +43,8 @@ window.GD_Calendar = (function(){
     function renderList(evts){list.innerHTML=evts.map(e=>`<li><span class="pill ${e.type}">${e.type}</span> ${e.title||""}</li>`).join("") || `<div class="muted">Žádné položky.</div>`}
     root.querySelector("#cal_prev").onclick=()=>{ym.m--; if(ym.m<1){ym.m=12; ym.y--;} load();};
     root.querySelector("#cal_next").onclick=()=>{ym.m++; if(ym.m>12){ym.m=1; ym.y++;} load();};
-
     const typeSel=root.querySelector("#f_type"), jobMore=root.querySelector("#f_job_more"), taskMore=root.querySelector("#f_task_more");
     const toggle=()=>{jobMore.style.display=(typeSel.value==="job")?"flex":"none"; taskMore.style.display=(typeSel.value!=="note")?"flex":"none"}; typeSel.onchange=toggle; toggle();
-
     root.querySelector("#cal_form").onsubmit=async ev=>{
       ev.preventDefault(); err.style.display="none";
       const type=typeSel.value; const payload={type, title:root.querySelector("#f_title").value.trim(), start:root.querySelector("#f_date").value, notes:(root.querySelector("#f_notes").value||"").trim()||null};
