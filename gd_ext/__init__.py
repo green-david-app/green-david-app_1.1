@@ -86,12 +86,15 @@ def tasks_list_create():
 def timesheets_list_create():
     db = get_db()
     if request.method == "GET":
-        rows = [dict(r) for r in db.execute("""            SELECT t.*, j.title as job_title, j.code as job_code, e.name as employee_name
+        rows = [dict(r) for r in db.execute(
+        """
+        SELECT t.*, j.title as job_title, j.code as job_code, e.name as employee_name
         FROM timesheets t
         JOIN jobs j ON j.id = t.job_id
         JOIN employees e ON e.id = t.employee_id
         ORDER BY date DESC, t.id DESC
-        """)]
+        """
+        )]
         return jsonify(ok=True, timesheets=rows)
     d = request.get_json(force=True, silent=True) or {}
     if not (d.get("employee_id") and d.get("job_id") and d.get("date") and d.get("hours") is not None):
@@ -108,14 +111,16 @@ def api_report_employee_hours():
     dfrom, dto = request.args.get("from"), request.args.get("to")
     if not emp:
         return jsonify(ok=False, error="missing_employee"), 400
-    rows = [dict(r) for r in db.execute("""        SELECT t.date, t.hours, t.place, t.activity,
-            j.title as title, j.code as code, j.city as city
-    FROM timesheets t JOIN jobs j ON j.id = t.job_id
-    WHERE t.employee_id=?
-        AND (? IS NULL OR date(t.date) >= date(?))
-        AND (? IS NULL OR date(t.date) <= date(?))
-    ORDER BY t.date ASC
-    """, (emp, dfrom, dfrom, dto, dto)).fetchall()]
+    rows = [dict(r) for r in db.execute(
+        """
+        SELECT t.date, t.hours, t.place, t.activity,
+                j.title as title, j.code as code, j.city as city
+        FROM timesheets t JOIN jobs j ON j.id = t.job_id
+        WHERE t.employee_id=?
+            AND (? IS NULL OR date(t.date) >= date(?))
+            AND (? IS NULL OR date(t.date) <= date(?))
+        ORDER BY t.date ASC
+        """, (emp, dfrom, dfrom, dto, dto)).fetchall()]
     total = sum((r["hours"] or 0) for r in rows)
     return jsonify(ok=True, rows=rows, total_hours=total)
 
@@ -126,14 +131,16 @@ def export_employee_hours_csv():
     dfrom, dto = request.args.get("from"), request.args.get("to")
     if not emp:
         return make_response("missing_employee", 400)
-    rows = db.execute("""        SELECT t.date, t.hours, t.place, t.activity,
-            j.title as title, j.code as code, j.city as city
-    FROM timesheets t JOIN jobs j ON j.id = t.job_id
-    WHERE t.employee_id=?
-        AND (? IS NULL OR date(t.date) >= date(?))
-        AND (? IS NULL OR date(t.date) <= date(?))
-    ORDER BY t.date ASC
-    """, (emp, dfrom, dfrom, dto, dto)).fetchall()
+    rows = db.execute(
+        """
+        SELECT t.date, t.hours, t.place, t.activity,
+                j.title as title, j.code as code, j.city as city
+        FROM timesheets t JOIN jobs j ON j.id = t.job_id
+        WHERE t.employee_id=?
+            AND (? IS NULL OR date(t.date) >= date(?))
+            AND (? IS NULL OR date(t.date) <= date(?))
+        ORDER BY t.date ASC
+        """, (emp, dfrom, dfrom, dto, dto)).fetchall()
     sio = io.StringIO()
     w = csv.writer(sio)
     w.writerow(["Datum","Hodiny","Zakázka","Kód","Město","Místo","Popis"])
