@@ -1,1 +1,4 @@
-flask
+flask>=3.0
+gunicorn>=23.0
+werkzeug>=3.0
+openpyxl>=3.1
