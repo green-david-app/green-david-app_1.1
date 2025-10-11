@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="cs"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalendář</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+<header class="topbar"><div class="brand">green david app</div>
+<nav class="tabs"><a class="tab active" href="/calendar">Kalendář</a><a class="tab" href="/timesheets">Výkazy</a></nav></header>
+<main class="wrap"><div id="app"></div></main>
+<script src="{{ url_for('static', filename='gd_calendar.js') }}"></script>
+<script>window.GD_Calendar && window.GD_Calendar.mount(document.getElementById('app'));</script>
+</body></html>
