@@ -1,7 +1,7 @@
 
 import os, re, io, base64, sqlite3
 from datetime import datetime
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -177,6 +177,8 @@ def ensure_calendar_schema(db):
             task_id INTEGER
         )
     """)
+
+
 def ensure_jobs_schema(db):
     """Ensure jobs table exists and is compatible (title/name + owner_id + created_at)."""
     db.execute("""
@@ -232,11 +234,6 @@ def ensure_db():
 # ---------- static ----------
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
-
-@app.route("/calendar")
-@app.route("/timesheets")
-def spa_pages():
     return send_from_directory(".", "index.html")
 
 @app.route("/uploads/<path:name>")
@@ -802,3 +799,17 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+
+
+# ---------- server-rendered pages ----------
+@app.route("/calendar")
+def calendar_page():
+    u, err = require_auth()
+    if err: return err
+    return render_template("calendar.html", title="Kalendář")
+
+@app.route("/timesheets")
+def timesheets_page():
+    u, err = require_auth()
+    if err: return err
+    return render_template("reports.html", title="Výkazy")
