@@ -26,7 +26,7 @@ window.GD_Calendar = (function(){
     let today=new Date(); let ym={y:today.getFullYear(), m:today.getMonth()+1}; let selected=null;
     const grid=root.querySelector("#cal_grid"), title=root.querySelector("#cal_title"), sel=root.querySelector("#sel_date"), list=root.querySelector("#cal_list"), err=root.querySelector("#cal_err");
 
-    const load = async ()=>{err.style.display="none"; const from=`${ym.y}-${pad(ym.m)}-01`, to=`${ym.y}-${pad(eom(ym.y,ym.m))}`; const j=await api(`/api/calendar?from=${from}&to=${to}`); draw(j.events||[])};
+    const load = async ()=>{err.style.display="none"; const from=`${ym.y}-${pad(ym.m)}-01`, to=`${ym.y}-${pad(eom(ym.y,ym.m))}`; const j=await api(`/gd/api/calendar?from=${from}&to=${to}`); draw(j.events||[])};
     function draw(events){
       const first=new Date(ym.y, ym.m-1, 1); const start=new Date(first); const dow=first.getDay()||7; start.setDate(1-(dow-1));
       const days=Array.from({length:42},(_,i)=>new Date(start.getFullYear(),start.getMonth(),start.getDate()+i));
@@ -53,7 +53,7 @@ window.GD_Calendar = (function(){
       if(type==="job"){payload.client=root.querySelector("#f_client").value.trim(); payload.city=root.querySelector("#f_city").value.trim(); payload.code=root.querySelector("#f_code").value.trim();
         if(!(payload.client&&payload.city&&payload.code)){err.textContent="Pro zakázku vyplň Klient, Město a Kód."; err.style.display="block"; return;}}
       if(type==="task"){const eid=root.querySelector("#f_employee_id").value, jid=root.querySelector("#f_job_id").value; if(eid) payload.employee_id=Number(eid); if(jid) payload.job_id=Number(jid);}
-      try{ await fetch("/api/calendar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(r=>r.json()); root.querySelector("#f_title").value=""; root.querySelector("#f_notes").value=""; await load(); }
+      try{ await fetch("/gd/api/calendar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(r=>r.json()); root.querySelector("#f_title").value=""; root.querySelector("#f_notes").value=""; await load(); }
       catch(ex){ err.textContent="Chyba uložení: "+ex.message; err.style.display="block"; }
     };
     await load();

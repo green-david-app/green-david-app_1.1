@@ -23,7 +23,7 @@ window.GD_Timesheets = (function(){
         </form>
       </div></div>
     </div>`;
-    const employees=(await api("/api/employees")).employees||[]; const jobs=(await api("/api/jobs")).jobs||[];
+    const employees=(await api("/gd/api/employees")).employees||[]; const jobs=(await api("/gd/api/jobs")).jobs||[];
     const empSel=root.querySelector("#rep_employee"); empSel.innerHTML=`<option value="">Vyber zaměstnance…</option>`+employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
     root.querySelector("#ts_employee").innerHTML=employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
     root.querySelector("#ts_job").innerHTML=jobs.map(j=>`<option value="${j.id}">${j.title} (${j.code||""})</option>`).join("");
@@ -32,9 +32,9 @@ window.GD_Timesheets = (function(){
     async function loadRows(){
       const emp=empSel.value; if(!emp) return;
       const f=root.querySelector("#rep_from").value||"", t=root.querySelector("#rep_to").value||"";
-      const j=await api(`/api/reports/employee_hours?employee_id=${emp}&from=${f}&to=${t}`);
+      const j=await api(`/gd/api/reports/employee_hours?employee_id=${emp}&from=${f}&to=${t}`);
       tbody.innerHTML=j.rows.map(r=>`<tr><td>${r.date}</td><td>${r.hours}</td><td>${r.title||""}</td><td>${r.code||""}</td><td>${r.city||""}</td><td>${r.place||""}</td><td>${r.activity||""}</td></tr>`).join("");
-      totalEl.textContent=j.total_hours; exp.classList.remove("disabled"); exp.href=\`/export/employee_hours.csv?employee_id=\${emp}&from=\${f}&to=\${t}\`;
+      totalEl.textContent=j.total_hours; exp.classList.remove("disabled"); exp.href=\`/gd/api/export/employee_hours.csv?employee_id=\${emp}&from=\${f}&to=\${t}\`;
     }
     root.querySelector("#rep_form").onsubmit=(ev)=>{ev.preventDefault(); loadRows();};
 
@@ -42,7 +42,7 @@ window.GD_Timesheets = (function(){
     root.querySelector("#rep_add").onsubmit=async ev=>{
       ev.preventDefault(); msg.style.display="none";
       const d={employee_id:Number(root.querySelector("#ts_employee").value), job_id:Number(root.querySelector("#ts_job").value), date:root.querySelector("#ts_date").value, hours:Number(root.querySelector("#ts_hours").value), place:root.querySelector("#ts_place").value||null, activity:root.querySelector("#ts_activity").value||null};
-      try{ await api("/api/timesheets",{method:"POST", body:JSON.stringify(d)}); msg.textContent="Zapsáno."; msg.className="alert ok"; msg.style.display="block"; await loadRows(); ev.target.reset(); }
+      try{ await api("/gd/api/timesheets",{method:"POST", body:JSON.stringify(d)}); msg.textContent="Zapsáno."; msg.className="alert ok"; msg.style.display="block"; await loadRows(); ev.target.reset(); }
       catch(ex){ msg.textContent="Uložení selhalo: "+ex.message; msg.className="alert error"; msg.style.display="block"; }
     };
   }
