@@ -493,7 +493,26 @@
         </div>);
       }
 
-function App(){
+
+      function pathToTab(p){
+        if(!p) return "jobs";
+        if(p.startsWith("/calendar")) return "calendar";
+        if(p.startsWith("/timesheets")) return "reports";
+        if(p.startsWith("/time")) return "time";
+        if(p.startsWith("/stock")) return "stock";
+        if(p.startsWith("/jobs")) return "jobs";
+        return "jobs";
+      }
+      function tabToPath(t){
+        if(t==="calendar") return "/calendar";
+        if(t==="reports") return "/timesheets";
+        if(t==="time") return "/time";
+        if(t==="stock") return "/stock";
+        if(t==="jobs") return "/jobs";
+        return "/";
+      }
+      function App(){ window.onpopstate = ()=>{ setTab && setTab(pathToTab(location.pathname)); };
+
         const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
         useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;

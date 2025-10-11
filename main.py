@@ -237,6 +237,13 @@ def ensure_db():
 def index():
     return send_from_directory(".", "index.html")
 
+# ---------- SPA page aliases ----------
+@app.route("/calendar")
+@app.route("/timesheets")
+def spa_pages():
+    # Serve SPA for these paths; the SPA reads pathname to select tab
+    return send_from_directory(".", "index.html")
+
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
     safe = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
