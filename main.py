@@ -227,6 +227,7 @@ def ensure_db():
     db = get_db()
     migrate(db)
     ensure_columns(db)
+    ensure_calendar_schema(db)
     seed_admin(db)
 
 # ---------- static ----------
