@@ -1,7 +1,7 @@
 
 import os, re, io, base64, sqlite3
 from datetime import datetime
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -229,18 +229,11 @@ def ensure_db():
     db = get_db()
     migrate(db)
     ensure_columns(db)
-    ensure_calendar_schema(db)
     seed_admin(db)
 
 # ---------- static ----------
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
-
-# ---------- SPA page aliases ----------
-@app.route("/calendar")
-@app.route("/timesheets")
-def spa_pages():
     return send_from_directory(".", "index.html")
 
 @app.route("/uploads/<path:name>")
@@ -446,16 +439,12 @@ def gd_calendar():
 # ---------- GD API aliases ----------
 @app.route("/gd/api/employees", methods=["GET","POST","DELETE"])
 def gd_employees(): return api_employees()
-
 @app.route("/gd/api/timesheets", methods=["GET","POST","DELETE"])
 def gd_timesheets(): return api_timesheets()
-
 @app.route("/gd/api/jobs", methods=["GET","POST"])
 def gd_jobs(): return api_jobs()
-
 @app.route("/gd/api/jobs/<int:jid>", methods=["GET"])
 def gd_job_detail_alias(jid): return api_job_detail(jid)
-
 @app.route("/gd/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def gd_tasks_alias(): return api_tasks()
 
@@ -810,3 +799,17 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+
+
+# ---------- server-rendered pages ----------
+@app.route("/calendar")
+def calendar_page():
+    u, err = require_auth()
+    if err: return err
+    return render_template("calendar.html", title="Kalendář")
+
+@app.route("/timesheets")
+def timesheets_page():
+    u, err = require_auth()
+    if err: return err
+    return render_template("reports.html", title="Výkazy")

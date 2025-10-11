@@ -107,7 +107,7 @@
 
       function Tabs({value,onChange,canAdmin,taskCount}){
         const items=[{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
-        return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>{ const p=tabToPath(it.key); history.pushState({}, "", p); onChange(it.key); }}>{it.label}</div>))}</div>;
+        return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
       function JobsList({onOpen}){
@@ -389,130 +389,7 @@
         </div>);
       }
 
-      
-      function pathToTab(p){
-        if(!p) return "jobs";
-        if(p.startsWith("/calendar")) return "calendar";
-        if(p.startsWith("/timesheets")) return "reports";
-        if(p.startsWith("/time")) return "time";
-        if(p.startsWith("/stock")) return "stock";
-        if(p.startsWith("/jobs")) return "jobs";
-        return "jobs";
-      }
-      function tabToPath(t){
-        if(t==="calendar") return "/calendar";
-        if(t==="reports") return "/timesheets";
-        if(t==="time") return "/time";
-        if(t==="stock") return "/stock";
-        if(t==="jobs") return "/jobs";
-        return "/";
-      }
-      
-      function CalendarView(){
-        const [year,setYear] = useState(new Date().getFullYear());
-        const [month,setMonth] = useState(new Date().getMonth()+1);
-        const [events,setEvents] = useState([]);
-        const [jobs,setJobs] = useState([]);
-        const [form,setForm] = useState({date:"",kind:"poznamka",title:"",note:"",job_id:""});
-        function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
-        async function load(){ const j = await api(`/gd/api/calendar?year=${year}&month=${month}`); setEvents(j.events||[]); const jj = await api("/api/jobs"); setJobs(jj.jobs||[]); }
-        useEffect(()=>{ load().catch(()=>{}); },[year,month]);
-        function prev(){ let y=year,m=month-1; if(m<1){m=12;y--;} setYear(y); setMonth(m); }
-        function next(){ let y=year,m=month+1; if(m>12){m=1;y++;} setYear(y); setMonth(m); }
-        function formatDate(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
-        async function add(e){ e.preventDefault(); await api("/gd/api/calendar",{method:"POST", body: JSON.stringify(form)}); setForm({date:"",kind:"poznamka",title:"",note:"",job_id:""}); load(); }
-        async function del(id){ if(!confirm("Smazat položku?")) return; await api(`/gd/api/calendar?id=${id}`, {method:"DELETE"}); load(); }
-        const firstDow = new Date(year, month-1, 1).getDay() || 7;
-        const total = daysInMonth(year,month);
-        const grid = []; for(let i=1;i<firstDow;i++) grid.push(null); for(let d=1; d<=total; d++) grid.push(d);
-        return (<div className="grid gap">
-          <div className="card">
-            <div className="card-h"><div>Kalendář</div><div className="card-actions"><button className="ghost" onClick={prev}>◀︎</button><div style={{minWidth:140,textAlign:"center"}}>{year}-{String(month).padStart(2,"0")}</div><button className="ghost" onClick={next}>▶︎</button></div></div>
-            <div className="card-c">
-              <div className="calendar-grid">
-                {["Po","Út","St","Čt","Pá","So","Ne"].map(d=>(<div key={d} className="cal-head">{d}</div>))}
-                {grid.map((d,i)=> d===null ? <div key={"e"+i} className="cal-empty"></div> :
-                  <div key={d} className="cal-cell">
-                    <div className="cal-day">{d}</div>
-                    <div className="cal-evts">
-                      {(events||[]).filter(e=>e.date===formatDate(year,month,d)).map(e=> (
-                        <div key={e.id} className={"tag "+e.kind}>
-                          <span>{e.title}</span>
-                          <button title="Smazat" className="x" onClick={()=>del(e.id)}>×</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="card"><div className="card-h"><div>Přidat položku</div></div>
-            <div className="card-c">
-              <form onSubmit={add}><div className="form-row">
-                <input placeholder="Datum (YYYY-MM-DD)" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required style={{width:160}}/>
-                <select value={form.kind} onChange={e=>setForm({...form,kind:e.target.value})}>
-                  <option value="poznamka">poznámka</option>
-                  <option value="zakazka">zakázka</option>
-                  <option value="ukol">úkol</option>
-                </select>
-                <input placeholder="Titulek" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required style={{flex:1}}/>
-              </div>
-              <div className="form-row">
-                <select value={form.job_id} onChange={e=>setForm({...form,job_id:e.target.value})} style={{flex:1}}>
-                  <option value="">(nepřiřazeno)</option>
-                  {jobs.map(j=>(<option key={j.id} value={j.id}>{j.title || j.name || ("#" + j.id)}</option>))}
-                </select>
-              </div>
-              <div className="form-row">
-                <input placeholder="Poznámka" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:1}}/>
-              </div>
-              <div className="form-row"><button type="submit">Uložit</button></div>
-              </form>
-            </div>
-          </div>
-        </div>);
-      }
-
-      function ReportsView(){
-        const [rows,setRows] = useState([]);
-        const [employees,setEmployees] = useState([]);
-        const [filter,setFilter] = useState({employee_id:"", from:"", to:""});
-        useEffect(()=>{ (async()=>{ const [h,e]=await Promise.all([api("/api/timesheets"), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]); })().catch(()=>{}); },[]);
-        const filtered = rows.filter(r=> (!filter.employee_id || String(r.employee_id)===String(filter.employee_id)) && (!filter.from || r.date>=filter.from) && (!filter.to || r.date<=filter.to));
-        const byEmp = filtered.reduce((acc,r)=>{ const k=r.employee||("ID "+r.employee_id); acc[k]=(acc[k]||0)+Number(r.hours||0); return acc; },{});
-        function toCSV(){
-          const cols=["employee","date","hours","place","activity","job_id"];
-          const lines=[cols.join(",")].concat(filtered.map(r=> cols.map(c=> (`"${String(r[c]??"").replace(/"/g,'""')}"`)).join(",")));
-          const blob=new Blob([lines.join("\n")], {type:"text/csv"});
-          const url=URL.createObjectURL(blob);
-          const a=document.createElement("a"); a.href=url; a.download="vykazy.csv"; a.click();
-          URL.revokeObjectURL(url);
-        }
-        return (<div className="grid gap">
-          <div className="card"><div className="card-h"><div>Výkazy</div><div className="card-actions"><button className="ghost" onClick={toCSV}>Export CSV</button><a className="ghost" href="/export/employee_hours.xlsx">Export XLSX</a></div></div>
-            <div className="card-c">
-              <div className="form-row">
-                <select value={filter.employee_id} onChange={e=>setFilter({...filter,employee_id:e.target.value})} style={{width:220}}>
-                  <option value="">(všichni zaměstnanci)</option>
-                  {employees.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}
-                </select>
-                <input placeholder="Od (YYYY-MM-DD)" value={filter.from} onChange={e=>setFilter({...filter,from:e.target.value})}/>
-                <input placeholder="Do (YYYY-MM-DD)" value={filter.to} onChange={e=>setFilter({...filter,to:e.target.value})}/>
-              </div>
-              <table className="table"><thead><tr><th>Zaměstnanec</th><th>Datum</th><th>Hodiny</th><th>Místo</th><th>Činnost</th><th>Zakázka</th></tr></thead>
-                <tbody>{filtered.map(r=>(<tr key={r.id}><td>{r.employee||("ID "+r.employee_id)}</td><td>{r.date}</td><td>{r.hours}</td><td>{r.place}</td><td>{r.activity}</td><td>{r.job_id||""}</td></tr>))}</tbody>
-              </table>
-              <div className="small" style={{marginTop:8}}>
-                {Object.entries(byEmp).map(([k,v])=>(<div key={k}>{k}: <b>{v.toFixed(2)} h</b></div>))}
-              </div>
-            </div>
-          </div>
-        </div>);
-      }
-
-function App(){ window.onpopstate = ()=>{ setTab(pathToTab(location.pathname)); };
-
+      function App(){
         const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
         useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
