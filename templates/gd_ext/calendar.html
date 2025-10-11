@@ -3,33 +3,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kalendář</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<style>
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.cal-dow{font-size:12px;opacity:.7;text-align:center;margin-top:6px}
-.cal-cell{background:#1f2937;padding:8px;border-radius:8px;min-height:84px;cursor:pointer;position:relative}
-.cal-cell.dim{opacity:.35}
-.cal-cell.today{outline:2px solid #10b981}
-.cal-date{font-weight:600;font-size:13px;opacity:.9}
-.cal-dots{position:absolute;left:8px;right:8px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px}
-.dot{display:inline-block;width:8px;height:8px;border-radius:999px;background:#9ca3af}
-.dot.task{background:#60a5fa}
-.dot.job{background:#34d399}
-.dot.note{background:#f59e0b}
-.dot.more{background:#6b7280;color:#fff;border-radius:6px;padding:0 4px;width:auto;height:auto;font-size:10px;line-height:14px}
-.form-row{display:flex;gap:8px;margin:6px 0}
-.form-row input,.form-row select,.form-row button{flex:1}
-.list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.list li{background:#111827;padding:8px;border-radius:8px}
-.pill{font-size:11px;padding:2px 6px;border-radius:999px;background:#374151;margin-right:6px}
-.pill.task{background:#1d4ed8}.pill.job{background:#065f46}.pill.note{background:#92400e}
-.alert{padding:8px;border-radius:8px;background:#111827}
-.alert.ok{background:#064e3b}.alert.error{background:#7f1d1d}
-.grid.two{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
-@media(max-width:900px){.grid.two{grid-template-columns:1fr}}
-</style>
 </head><body>
-<header class="topbar"><div class="brand">green david app</div>
-<nav class="tabs"><a class="tab active" href="/calendar">Kalendář</a><a class="tab" href="/timesheets">Výkazy</a></nav></header>
+<header class="topbar">
+  <div class="brand">green david app</div>
+  <nav class="tabs"><a class="tab active" href="/calendar">Kalendář</a><a class="tab" href="/timesheets">Výkazy</a></nav>
+</header>
 <main class="wrap"><div id="app"></div></main>
 <script src="{{ url_for('static', filename='gd_calendar.js') }}"></script>
 <script>window.GD_Calendar && window.GD_Calendar.mount(document.getElementById('app'));</script>
