@@ -3,6 +3,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Výkazy hodin</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border-bottom:1px solid #374151;padding:8px;text-align:left;font-size:14px}
+.table th{opacity:.7}
+.form-row{display:flex;gap:8px;margin:6px 0}
+.form-row input,.form-row select,.form-row button{flex:1}
+.alert{padding:8px;border-radius:8px;background:#111827;margin-bottom:8px}
+.alert.ok{background:#064e3b}.alert.error{background:#7f1d1d}
+.btn.disabled{pointer-events:none;opacity:.55}
+</style>
 </head><body>
 <header class="topbar"><div class="brand">green david app</div>
 <nav class="tabs"><a class="tab" href="/calendar">Kalendář</a><a class="tab active" href="/timesheets">Výkazy</a></nav></header>

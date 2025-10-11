@@ -1,7 +1,8 @@
 # wsgi.py - idempotent registration of gd_ext blueprint
-from main import app as app
+from main import app as app  # import your existing Flask app
 
 try:
+    # Avoid duplicate blueprint registration
     if 'gd' not in getattr(app, 'blueprints', {}):
         from gd_ext import GD_BP, ensure_gd_db
         ensure_gd_db()
