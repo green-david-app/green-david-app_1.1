@@ -177,8 +177,6 @@ def ensure_calendar_schema(db):
             task_id INTEGER
         )
     """)
-
-
 def ensure_jobs_schema(db):
     """Ensure jobs table exists and is compatible (title/name + owner_id + created_at)."""
     db.execute("""
@@ -234,6 +232,11 @@ def ensure_db():
 # ---------- static ----------
 @app.route("/")
 def index():
+    return send_from_directory(".", "index.html")
+
+@app.route("/calendar")
+@app.route("/timesheets")
+def spa_pages():
     return send_from_directory(".", "index.html")
 
 @app.route("/uploads/<path:name>")
@@ -435,7 +438,6 @@ def gd_calendar():
         db.commit()
         return jsonify({"ok": True})
 
-
 # ---------- GD API aliases ----------
 @app.route("/gd/api/employees", methods=["GET","POST","DELETE"])
 def gd_employees(): return api_employees()
@@ -447,7 +449,6 @@ def gd_jobs(): return api_jobs()
 def gd_job_detail_alias(jid): return api_job_detail(jid)
 @app.route("/gd/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def gd_tasks_alias(): return api_tasks()
-
 # ---------- warehouse ----------
 VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
 
@@ -800,15 +801,14 @@ def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
 
-
 # ---------- server-rendered pages ----------
-@app.route("/calendar")
+@app.route("/calendar-page")
 def calendar_page():
     u, err = require_auth()
     if err: return err
     return render_template("calendar.html", title="Kalendář")
 
-@app.route("/timesheets")
+@app.route("/timesheets-page")
 def timesheets_page():
     u, err = require_auth()
     if err: return err
