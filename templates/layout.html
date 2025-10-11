@@ -7,15 +7,15 @@
   <div class="brand">
     <img class="brand-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="green david"/>
     <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
-  </div>
-  <nav class="nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/calendar">Kalendář</a><a href="/timesheets">Výkazy</a><a href="/jobs">Zakázky</a>
-    <a href="/time">Hodiny</a>
-    <a href="/stock">Sklad</a>
-    <a href="/export/xlsx" class="btn ghost">Export XLSX</a>
-    {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
-  </nav>
+  <div class="tabs">
+  <a href="/calendar" class="tab">Kalendář</a>
+  <a href="/timesheets" class="tab">Výkazy</a>
+  <a href="/jobs" class="tab">Zakázky</a>
+  <a href="/tasks" class="tab">Úkoly</a>
+  <a href="/employees" class="tab">Zaměstnanci</a>
+  <a href="/stock" class="tab">Sklad</a>
+  <a href="/users" class="tab">Uživatelé</a>
+</div>
 </header>
 <main class="container">
   {% with messages = get_flashed_messages(with_categories=true) %}
