@@ -48,11 +48,11 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 /* --- Calendar --- */
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
 .cal-head{font-weight:600;font-size:12px;opacity:.8}
-.cal-cell{border:1px solid #2a2a2a;border-radius:12px;padding:6px;min-height:90px;background:#202525}
-.cal-day{font-size:12px;opacity:.7;margin-bottom:4px}
+.cal-cell{border:1px solid #e3e3e3;border-radius:12px;padding:6px;min-height:90px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cal-day{font-size:12px;opacity:.6;margin-bottom:4px}
 .cal-evts{display:flex;flex-direction:column;gap:4px}
-.tag{display:flex;align-items:center;justify-content:space-between;font-size:12px;border-radius:8px;padding:4px 6px;background:#254f2d}
-.tag.zakazka{background:#1f3a55}
-.tag.ukol{background:#4a3f1a}
-.tag.poznamka{background:#254f2d}
-.tag .x{background:transparent;border:none;cursor:pointer;opacity:.7;color:#eee}
+.tag{display:flex;align-items:center;justify-content:space-between;font-size:12px;border-radius:8px;padding:4px 6px;background:#e9f6ee}
+.tag.zakazka{background:#e4f1ff}
+.tag.ukol{background:#fff5d7}
+.tag.poznamka{background:#e9f6ee}
+.tag .x{background:transparent;border:none;cursor:pointer;opacity:.6}
