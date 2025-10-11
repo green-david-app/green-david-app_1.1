@@ -406,24 +406,19 @@ def api_timesheets():
 
 # ---------- GD API aliases ----------
 @app.route("/gd/api/employees", methods=["GET","POST","DELETE"])
-def gd_employees():
-    return api_employees()
+def gd_employees(): return api_employees()
 
 @app.route("/gd/api/timesheets", methods=["GET","POST","DELETE"])
-def gd_timesheets():
-    return api_timesheets()
+def gd_timesheets(): return api_timesheets()
 
 @app.route("/gd/api/jobs", methods=["GET","POST"])
-def gd_jobs():
-    return api_jobs()
+def gd_jobs(): return api_jobs()
 
 @app.route("/gd/api/jobs/<int:jid>", methods=["GET"])
-def gd_job_detail(jid):
-    return api_job_detail(jid)
+def gd_jobs_detail_alias(jid): return api_job_detail(jid)
 
 @app.route("/gd/api/tasks", methods=["GET","POST","PATCH","DELETE"])
-def gd_tasks():
-    return api_tasks()
+def gd_tasks_alias(): return api_tasks()
 
 
 # ---------- calendar ----------
@@ -433,7 +428,6 @@ def gd_calendar():
     if err: return err
     db = get_db()
     if request.method == "GET":
-        # optional month filter: year, month
         year = request.args.get("year", type=int)
         month = request.args.get("month", type=int)
         if year and month:
@@ -448,7 +442,7 @@ def gd_calendar():
         job_id = data.get("job_id"); task_id = data.get("task_id")
         if not (date_s and kind in ("zakazka","ukol","poznamka") and title):
             return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO calendar_events(date,kind,title,note,job_id,task_id) VALUES (?,?,?,?,?,?)""",
+        db.execute("INSERT INTO calendar_events(date,kind,title,note,job_id,task_id) VALUES (?,?,?,?,?,?)",
                    (date_s, kind, title, note, job_id, task_id))
         db.commit()
         return jsonify({"ok": True})

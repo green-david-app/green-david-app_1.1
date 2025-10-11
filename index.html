@@ -397,18 +397,16 @@
         const [jobs,setJobs] = useState([]);
         const [form,setForm] = useState({date:"",kind:"poznamka",title:"",note:"",job_id:""});
         function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
-        async function load(){ const j = await api(`/gd/api/calendar?year=${year}&month=${month}`); setEvents(j.events||[]); const jobs = await api("/api/jobs"); setJobs(jobs.jobs||[]); }
+        async function load(){ const j = await api(`/gd/api/calendar?year=${year}&month=${month}`); setEvents(j.events||[]); const jj = await api("/api/jobs"); setJobs(jj.jobs||[]); }
         useEffect(()=>{ load().catch(()=>{}); },[year,month]);
         function prev(){ let y=year,m=month-1; if(m<1){m=12;y--;} setYear(y); setMonth(m); }
         function next(){ let y=year,m=month+1; if(m>12){m=1;y++;} setYear(y); setMonth(m); }
         function formatDate(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
         async function add(e){ e.preventDefault(); await api("/gd/api/calendar",{method:"POST", body: JSON.stringify(form)}); setForm({date:"",kind:"poznamka",title:"",note:"",job_id:""}); load(); }
         async function del(id){ if(!confirm("Smazat položku?")) return; await api(`/gd/api/calendar?id=${id}`, {method:"DELETE"}); load(); }
-        const firstDow = new Date(year, month-1, 1).getDay() || 7; // 1..7 (Mon..Sun)
+        const firstDow = new Date(year, month-1, 1).getDay() || 7;
         const total = daysInMonth(year,month);
-        const grid = [];
-        for(let i=1;i<firstDow;i++) grid.push(null);
-        for(let d=1; d<=total; d++) grid.push(d);
+        const grid = []; for(let i=1;i<firstDow;i++) grid.push(null); for(let d=1; d<=total; d++) grid.push(d);
         return (<div className="grid gap">
           <div className="card">
             <div className="card-h"><div>Kalendář</div><div className="card-actions"><button className="ghost" onClick={prev}>◀︎</button><div style={{minWidth:140,textAlign:"center"}}>{year}-{String(month).padStart(2,"0")}</div><button className="ghost" onClick={next}>▶︎</button></div></div>
