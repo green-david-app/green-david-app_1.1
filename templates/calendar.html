@@ -1,6 +1,80 @@
 {% extends "layout.html" %}
 {% block content %}
-<div style="margin-top:8px"></div>
 <h1>Kalendář</h1>
-{% include "calendar.html" %}
+<div class="card">
+  <div class="card-h">
+    <div>Měsíční kalendář</div>
+    <div class="card-actions">
+      <button id="prev" class="ghost">◀︎</button>
+      <div id="label" style="min-width:140px;text-align:center"></div>
+      <button id="next" class="ghost">▶︎</button>
+    </div>
+  </div>
+  <div class="card-c">
+    <div class="calendar-grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><div>Přidat položku</div></div>
+  <div class="card-c">
+    <form id="frm">
+      <div class="form-row">
+        <input id="fdate" placeholder="Datum (YYYY-MM-DD)" required style="width:160px"/>
+        <select id="fkind">
+          <option value="poznamka">poznámka</option>
+          <option value="zakazka">zakázka</option>
+          <option value="ukol">úkol</option>
+        </select>
+        <input id="ftitle" placeholder="Titulek" required style="flex:1"/>
+      </div>
+      <div class="form-row"><input id="fnote" placeholder="Poznámka" style="flex:1"/></div>
+      <div class="form-row"><button type="submit">Uložit</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const grid = document.getElementById("grid");
+  const label = document.getElementById("label");
+  let y = new Date().getFullYear();
+  let m = new Date().getMonth()+1;
+  function fmt(y,m,d){ return y+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"); }
+  function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
+  async function load(){
+    label.textContent = y+"-"+String(m).padStart(2,"0");
+    const res = await fetch(`/gd/api/calendar?year=${y}&month=${m}`);
+    const js = await res.json(); const ev = js.events || [];
+    const firstDow = new Date(y, m-1, 1).getDay() || 7;
+    const total = daysInMonth(y,m);
+    const frag = document.createDocumentFragment();
+    ["Po","Út","St","Čt","Pá","So","Ne"].forEach(d=>{ const h=document.createElement("div"); h.className="cal-head"; h.textContent=d; frag.appendChild(h); });
+    for(let i=1;i<firstDow;i++){ const e=document.createElement("div"); e.className="cal-empty"; frag.appendChild(e); }
+    for(let d=1; d<=total; d++){
+      const cell=document.createElement("div"); cell.className="cal-cell";
+      const day=document.createElement("div"); day.className="cal-day"; day.textContent=d; cell.appendChild(day);
+      const list=document.createElement("div"); list.className="cal-evts";
+      ev.filter(e=>e.date===fmt(y,m,d)).forEach(e=>{
+        const tag=document.createElement("div"); tag.className="tag "+e.kind;
+        const span=document.createElement("span"); span.textContent=e.title;
+        const btn=document.createElement("button"); btn.className="x"; btn.textContent="×";
+        btn.onclick = async ()=>{ if(!confirm("Smazat položku?")) return; await fetch(`/gd/api/calendar?id=${e.id}`, {method:"DELETE"}); load(); };
+        tag.appendChild(span); tag.appendChild(btn); list.appendChild(tag);
+      });
+      cell.appendChild(list); frag.appendChild(cell);
+    }
+    grid.innerHTML=""; grid.appendChild(frag);
+  }
+  document.getElementById("prev").onclick = ()=>{ m--; if(m<1){m=12;y--;} load(); };
+  document.getElementById("next").onclick = ()=>{ m++; if(m>12){m=1;y++;} load(); };
+  document.getElementById("frm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const body = {date: fdate.value, kind: fkind.value, title: ftitle.value, note: fnote.value};
+    const r = await fetch("/gd/api/calendar", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    if(r.ok){ e.target.reset(); load(); }
+  };
+  load();
+})();
+</script>
 {% endblock %}
