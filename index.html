@@ -462,6 +462,7 @@
       function CalendarTab(){
         const [month,setMonth]=React.useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
         const [events,setEvents]=React.useState([]);
+        const normDateStr = (s)=>{ if(!s) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; const m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); if(m){const[_,d,mo,y]=m; return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); } return s; };
         function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
         function range(){
           const start = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -478,9 +479,9 @@
             api(`/api/jobs`),
             api(`/api/tasks`)
           ]);
-          const jobEvents = (jobs.jobs||[]).filter(j=>j.date).map(j=>({id:"job-"+j.id, date:j.date, title:j.title, kind:"job"}));
-          const taskEvents = (tasks.tasks||[]).filter(t=>t.due_date).map(t=>({id:"task-"+t.id, date:t.due_date, title:t.title, kind:"task"}));
-          setEvents([...(ev||[]), ...jobEvents, ...taskEvents]);
+          const jobEvents = ((jobs&&jobs.jobs)||[]).filter(j=>j.date).map(j=>({id:'job-'+j.id, date:normDateStr(j.date), title:j.title, kind:'job'}));
+          const taskEvents = ((tasks&&tasks.tasks)||[]).filter(t=>t.due_date).map(t=>({id:'task-'+t.id, date:normDateStr(t.due_date), title:t.title, kind:'task'}));
+          setEvents([...(ev||[]).map(e=>({...e, date:normDateStr(e.date)})), ...jobEvents, ...taskEvents]);
         }
         React.useEffect(()=>{ load().catch(()=>{}); }, [month.getFullYear(), month.getMonth()]);
         async function addQuick(d){
