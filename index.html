@@ -18,14 +18,6 @@
       </div>
     </header>
 
-    <div class="container" style="margin-top:.5rem">
-      <div class="row-gap" style="justify-content:flex-start">
-        <a class="button ghost" href="/calendar.html">Kalendář</a>
-        <a class="button ghost" href="/timesheets.html">Výkazy hodin</a>
-      </div>
-    </div>
-
-
     <main class="container">
       <div id="app"></div>
       <div id="js-error" class="error-overlay" style="display:none"></div>
@@ -114,7 +106,7 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-        const items=[{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
+        const items=[{key:\"calendar\",label:\"Kalendář\"},{key:\"timesheets\",label:\"Výkazy\"},{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
         return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
@@ -407,6 +399,8 @@
           <div style={{height:12}}/>
           {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
           {tab==="tasks" && <TasksTab/>}
+          {tab==="calendar" && <CalendarTab/>}
+          {tab==="timesheets" && <TimesheetsTab/>}
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}
           {tab==="users" && auth.user?.role==="admin" && <UsersTab/>}
@@ -463,7 +457,111 @@
         );
       }
 
-      ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+      
+      // ---- Calendar tab ----
+      function CalendarTab(){
+        const {useState,useEffect} = React;
+        const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+        const [events,setEvents]=useState([]);
+        function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+        function range(){
+          const start = new Date(month.getFullYear(), month.getMonth(), 1);
+          const padStart = (start.getDay()+6)%7;
+          const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+          const arr=[]; for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); arr.push(x);} return arr;
+        }
+        async function load(){
+          const start = new Date(month.getFullYear(), month.getMonth(), 1);
+          const end = new Date(month.getFullYear(), month.getMonth()+1, 0);
+          const from = toISO(start), to = toISO(end);
+          const [ev, jobs, tasks] = await Promise.all([
+            api(`/gd/api/calendar?from=${from}&to=${to}`),
+            api(`/api/jobs`),
+            api(`/api/tasks`)
+          ]);
+          const jobEvents = (jobs.jobs||[]).filter(j=>j.date).map(j=>({id:"job-"+j.id, date:j.date, title:j.title, kind:"job"}));
+          const taskEvents = (tasks.tasks||[]).filter(t=>t.due_date).map(t=>({id:"task-"+t.id, date:t.due_date, title:t.title, kind:"task"}));
+          setEvents([...(ev||[]), ...jobEvents, ...taskEvents]);
+        }
+        useEffect(()=>{ load().catch(()=>{}); }, [month.getFullYear(), month.getMonth()]);
+        async function addQuick(d){
+          const title = prompt("Název poznámky:");
+          if(!title) return;
+          await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISO(d), title, kind:"note"})});
+          await load();
+        }
+        return (<div className="card">
+          <div className="card-h"><div>Kalendář</div>
+            <div className="row-gap">
+              <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+              <b>{month.toLocaleString('cs-CZ',{month:'long'})} {month.getFullYear()}</b>
+              <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+            </div>
+          </div>
+          <div className="card-c">
+            <div className="cal-grid">
+              {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+              {range().map((d,i)=>{
+                const key = toISO(d);
+                const dayEvents = events.filter(e=>e.date===key);
+                const dim = d.getMonth()!==month.getMonth();
+                return (<div key={i} className={"cal-cell"+(dim?" cal-dim":"")} onDoubleClick={()=>addQuick(d)}>
+                  <div className="cal-date">{d.getDate()}</div>
+                  <div className="cal-evlist">
+                    {dayEvents.map(e=>(<div key={e.id} className={"cal-ev cal-"+(e.kind||'note')} title={e.note||''}>
+                      {e.title}
+                    </div>))}
+                  </div>
+                </div>);
+              })}
+            </div>
+          </div>
+        </div>);
+      }
+
+      // ---- Timesheets tab ----
+      function TimesheetsTab(){
+        const {useState,useEffect} = React;
+        const [rows,setRows]=useState([]);
+        const [emps,setEmps]=useState([]);
+        const [f,setF]=useState({from:"",to:"",emp:""});
+        async function load(){
+          const [ts, es] = await Promise.all([api("/gd/api/timesheets"), api("/api/employees")]);
+          setRows((ts && ts.rows) || []);
+          setEmps((es && es.employees) || []);
+        }
+        useEffect(()=>{ load().catch(()=>{}); }, []);
+        const filtered = rows.filter(r=> (!f.emp || String(r.employee_id)===String(f.emp)) &&
+          (!f.from || r.date>=f.from) && (!f.to || r.date<=f.to));
+        const total = filtered.reduce((s,r)=>s + (parseFloat(r.hours)||0), 0);
+        return (<div className="card">
+          <div className="card-h">
+            <div>Výkazy hodin</div>
+            <div className="row-gap">
+              <a className="ghost" href={`/gd/api/timesheets/export${f.from||f.to ? `?from=${f.from}&to=${f.to}` : ''}`}>Export CSV</a>
+            </div>
+          </div>
+          <div className="card-c">
+            <div className="form-row">
+              <select value={f.emp} onChange={e=>setF({...f,emp:e.target.value})}>
+                <option value="">— Všichni zaměstnanci —</option>
+                {emps.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}
+              </select>
+              <input type="date" value={f.from} onChange={e=>setF({...f,from:e.target.value})}/>
+              <input type="date" value={f.to} onChange={e=>setF({...f,to:e.target.value})}/>
+              <button className="ghost" onClick={()=>setF({from:"",to:"",emp:""})}>Zrušit filtr</button>
+            </div>
+            <div className="small" style={{marginBottom:'.5rem'}}>Celkem: <b>{total.toFixed(2)} h</b> ({filtered.length} záznamů)</div>
+            <table className="table">
+              <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodiny</th><th>Místo</th><th>Popis</th></tr></thead>
+              <tbody>
+                {filtered.map(r=>(<tr key={r.id}><td>{r.date}</td><td>{(emps.find(e=>e.id===r.employee_id)||{}).name||r.employee_id}</td><td>{r.hours}</td><td>{r.place||""}</td><td>{r.activity||""}</td></tr>))}
+              </tbody>
+            </table>
+          </div>
+        </div>);
+      }
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
   </body>
 </html>
