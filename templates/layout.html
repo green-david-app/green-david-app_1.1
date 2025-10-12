@@ -1,7 +1,4 @@
-{% set title = title or 'green david app' %}
 <!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{ title }}</title><link rel="stylesheet" href="/style.css"></head>
-<body>
-<div class="tabs"><a href="/calendar" class="tab">Kalendář</a><a href="/timesheets" class="tab">Výkazy</a><a href="/" class="tab">Zakázky</a></div>
-<div class="container">{% block content %}{% endblock %}</div>
-</body></html>
+<title>{{ title or 'green david app' }}</title><link rel="stylesheet" href="/style.css"></head>
+<body><div class="tabs"><a href="/calendar" class="tab">Kalendář</a><a href="/timesheets" class="tab">Výkazy</a><a href="/" class="tab">Zakázky</a></div>
+<div class="container">{% block content %}{% endblock %}</div></body></html>

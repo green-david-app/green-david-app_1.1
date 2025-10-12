@@ -1,12 +1,1 @@
-{% extends "layout.html" %}
-{% block content %}
-<h1>Výkazy</h1>
-<div class="card"><div class="card-h"><div>Filtr</div></div><div class="card-c"><div id="rep"></div></div></div>
-<script>
-(async function(){
-  function mount(node, html){ node.innerHTML = html; }
-  const host=document.getElementById('rep');
-  mount(host, `<div class="small">Zvolte zaměstnance a období v hlavní verzi /timesheets (SPA).</div>`);
-})();
-</script>
-{% endblock %}
+{% extends "layout.html" %}{% block content %}<div id="mount"></div><script>location='/timesheets'</script>{% endblock %}

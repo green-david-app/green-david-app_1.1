@@ -45,8 +45,7 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .linklike{color:#b6f3c9;cursor:pointer}
 .linklike:hover{text-decoration:underline}
 
-
-/* calendar robust */
+/* gd calendar */
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
 .cal-head{font-weight:600;font-size:12px;opacity:.85}
 .cal-cell{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;min-height:104px;background:rgba(255,255,255,.06)}
