@@ -142,3 +142,24 @@ with app.app_context():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), debug=True)
+
+
+# --------- API: /api/me (compat) ---------
+@app.route("/api/me")
+def api_me():
+    user = {"id": 1, "name": "Admin", "role": "admin"}
+    return jsonify({"ok": True, "user": user, "tasks_count": 1})
+
+
+# --------- API: /api/jobs (best-effort) ---------
+@app.route("/api/jobs")
+def api_jobs():
+    u, err = require_auth()
+    if err: return err
+    db = get_db()
+    exists = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'").fetchone()
+    jobs = []
+    if exists:
+        rows = db.execute("SELECT * FROM jobs ORDER BY id DESC").fetchall()
+        jobs = [dict(r) for r in rows]
+    return jsonify({"ok": True, "jobs": jobs})
