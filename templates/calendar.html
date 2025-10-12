@@ -2,20 +2,12 @@
 {% block content %}
 <h1>Kalendář</h1>
 <div class="card">
-  <div class="card-h">
-    <div>Měsíční kalendář</div>
-    <div class="card-actions">
-      <button id="prev" class="ghost">◀︎</button>
-      <div id="label" style="min-width:140px;text-align:center"></div>
-      <button id="next" class="ghost">▶︎</button>
-    </div>
+  <div class="card-h"><div>Měsíční kalendář</div>
+    <div class="card-actions"><button id="prev" class="ghost">◀︎</button><div id="label" style="min-width:140px;text-align:center"></div><button id="next" class="ghost">▶︎</button></div>
   </div>
-  <div class="card-c">
-    <div class="calendar-grid" id="grid"></div>
-  </div>
+  <div class="card-c"><div class="calendar-grid" id="grid"></div></div>
 </div>
-<div class="card">
-  <div class="card-h"><div>Přidat položku</div></div>
+<div class="card"><div class="card-h"><div>Přidat položku</div></div>
   <div class="card-c">
     <form id="frm">
       <div class="form-row">
@@ -27,12 +19,8 @@
         </select>
         <input id="ftitle" placeholder="Titulek" required style="flex:1"/>
       </div>
-      <div class="form-row">
-        <input id="fnote" placeholder="Poznámka" style="flex:1"/>
-      </div>
-      <div class="form-row">
-        <button type="submit">Uložit</button>
-      </div>
+      <div class="form-row"><input id="fnote" placeholder="Poznámka" style="flex:1"/></div>
+      <div class="form-row"><button type="submit">Uložit</button></div>
     </form>
   </div>
 </div>
@@ -51,9 +39,7 @@
     const firstDow = new Date(y, m-1, 1).getDay() || 7;
     const total = daysInMonth(y,m);
     const frag = document.createDocumentFragment();
-    ["Po","Út","St","Čt","Pá","So","Ne"].forEach(d=>{
-      const h = document.createElement("div"); h.className="cal-head"; h.textContent=d; frag.appendChild(h);
-    });
+    ["Po","Út","St","Čt","Pá","So","Ne"].forEach(d=>{ const h=document.createElement("div"); h.className="cal-head"; h.textContent=d; frag.appendChild(h); });
     for(let i=1;i<firstDow;i++){ const e=document.createElement("div"); e.className="cal-empty"; frag.appendChild(e); }
     for(let d=1; d<=total; d++){
       const cell=document.createElement("div"); cell.className="cal-cell";
@@ -62,16 +48,13 @@
       ev.filter(e=>e.date===fmt(y,m,d)).forEach(e=>{
         const tag=document.createElement("div"); tag.className="tag "+e.kind;
         const span=document.createElement("span"); span.textContent=e.title;
-        const btn=document.createElement("button"); btn.className="x"; btn.textContent="×"; btn.onclick = async ()=>{
-          if(!confirm("Smazat položku?")) return;
-          await fetch(`/gd/api/calendar?id=${e.id}`, {method:"DELETE"});
-          load();
-        };
+        const btn=document.createElement("button"); btn.className="x"; btn.textContent="×";
+        btn.onclick = async ()=>{ if(!confirm("Smazat položku?")) return; await fetch(`/gd/api/calendar?id=${e.id}`, {method:"DELETE"}); load(); };
         tag.appendChild(span); tag.appendChild(btn); list.appendChild(tag);
       });
       cell.appendChild(list); frag.appendChild(cell);
     }
-    grid.innerHTML = ""; grid.appendChild(frag);
+    grid.innerHTML=""; grid.appendChild(frag);
   }
   document.getElementById("prev").onclick = ()=>{ m--; if(m<1){m=12;y--;} load(); };
   document.getElementById("next").onclick = ()=>{ m++; if(m>12){m=1;y++;} load(); };
