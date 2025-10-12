@@ -44,11 +44,3 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .error-overlay{background:#ffe7e7;border:1px solid #ffb8b8;color:#5a0000;border-radius:12px;padding:12px;margin:14px 0;white-space:pre-wrap}
 .linklike{color:#b6f3c9;cursor:pointer}
 .linklike:hover{text-decoration:underline}
-
-/* gd calendar */
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
-.cal-head{font-weight:600;font-size:12px;opacity:.85}
-.cal-cell{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;min-height:104px;background:rgba(255,255,255,.06)}
-.cal-day{font-size:14px;font-weight:800;letter-spacing:.2px;color:#fff;margin-bottom:6px;opacity:.95}
-.cal-evts{display:flex;flex-direction:column;gap:6px}
-.tag{font-size:12px;border-radius:10px;padding:6px 8px;background:rgba(79,192,141,.18)}
