@@ -115,7 +115,7 @@
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
@@ -167,7 +167,7 @@
         const [employees,setEmployees]=useState([]);
         const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:""});
         async function load(){ try{ const [t,e]=await Promise.all([api("/api/tasks?job_id="+jobId), api("/api/employees")]); setList(t.tasks||[]); setEmployees(e.employees||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date), job_id: jobId || null})}); setForm({title:"",description:"",due_date:"",employee_id:""}); load(); }
         async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
         async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
@@ -189,7 +189,7 @@
         const [employees,setEmployees]=useState([]);
         const [form,setForm]=useState({employee_id:"",date:"",hours:0,place:"",activity:""});
         async function load(){ try{ const [h,e]=await Promise.all([api("/api/timesheets?job_id="+jobId), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]);}catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div></div><div className="card-c">
@@ -215,7 +215,7 @@
         const [mat,setMat]=useState({name:"",qty:0,unit:"ks"}); const [tool,setTool]=useState({name:"",qty:0,unit:"ks"});
         const [err,setErr]=useState("");
         async function load(){ try{ const [d, e] = await Promise.all([api(`/api/jobs/${jobId}`), api("/api/employees")]); setData(d); setEmployees(e.employees||[]); setSelEmp(d.assignments||[]);}catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function addMat(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/materials`,{method:"POST",body:JSON.stringify(mat)}); setMat({name:"",qty:0,unit:"ks"}); load(); }
         async function addTool(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/tools`,{method:"POST",body:JSON.stringify(tool)}); setTool({name:"",qty:0,unit:"ks"}); load(); }
         async function delMat(id){ await api(`/api/jobs/${jobId}/materials?id=${id}`,{method:"DELETE"}); load(); }
@@ -266,7 +266,7 @@
         const [jobs,setJobs]=useState([]);
         const [form,setForm]=useState({job_id:"",date:"",hours:0,place:"",activity:""});
         async function load(){ try{ const [t,j] = await Promise.all([api("/api/timesheets?employee_id="+employee.id), api("/api/jobs")]); setRows(t.rows||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({employee_id:employee.id, ...form})}); setForm({job_id:"",date:"",hours:0,place:"",activity:""}); load(); }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (
@@ -311,7 +311,7 @@
       const CATS = ['trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba'];
       function Warehouse(){
         const [site,setSite]=useState("lipnik"); const [list,setList]=useState([]); const [form,setForm]=useState({category:CATS[0],name:"",qty:0,unit:"ks"}); const [q,setQ]=useState("");
-        async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } useEffect(()=>{ load().catch(()=>{}); },[site]);
+        async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } React.useEffect(()=>{ load().catch(()=>{}); },[site]);
         async function add(e){ e.preventDefault(); await api("/api/items",{method:"POST",body:JSON.stringify({...form,site})}); setForm({category:CATS[0],name:"",qty:0,unit:"ks"}); load(); }
         async function del(id){ if(!confirm("Smazat položku?")) return; await api("/api/items?id="+id,{method:"DELETE"}); load(); }
         const filtered = React.useMemo(()=> list.filter(r=> (r.name||"").toLowerCase().includes(q.toLowerCase())), [list,q]);
@@ -336,7 +336,7 @@
 
       function UsersTab(){
         const [list,setList]=useState([]); const [form,setForm]=useState({email:"",name:"",role:"worker",password:""}); const [err,setErr]=useState("");
-        async function load(){ try{ const j=await api("/api/users"); setList(j.users||[]); }catch(e){ setErr(e.message);} } useEffect(()=>{load().catch(()=>{}); },[]);
+        async function load(){ try{ const j=await api("/api/users"); setList(j.users||[]); }catch(e){ setErr(e.message);} } React.useEffect(()=>{load().catch(()=>{}); },[]);
         async function create(e){ e.preventDefault(); await api("/api/users",{method:"POST",body:JSON.stringify(form)}); setForm({email:"",name:"",role:"worker",password:""}); load(); }
         async function setRole(id,role){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id,role})}); load(); }
         async function toggleActive(u){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id:u.id,active:!u.active})}); load(); }
@@ -367,7 +367,7 @@
         const [jobs,setJobs]=useState([]);
         const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:"",job_id:""});
         async function load(){ try{ const [t,e,j]=await Promise.all([api("/api/tasks"), api("/api/employees"), api("/api/jobs")]); setList(t.tasks||[]); setEmployees(e.employees||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date)})}); setForm({title:"",description:"",due_date:"",employee_id:"",job_id:""}); load(); }
         async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
         async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
@@ -390,8 +390,8 @@
       }
 
       function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
-        useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
+        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = React.useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
+        React.useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
         if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
         return (<div>
@@ -414,7 +414,7 @@
         const [open,setOpen]=useState(null);
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
+        React.useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
         async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
         if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
@@ -536,7 +536,7 @@
           <div className="card-h">
             <div>Výkazy hodin</div>
             <div className="row-gap">
-              <a className="ghost" href={`/gd/api/timesheets/export${f.from||f.to ? `?from=${f.from}&to=${f.to}` : ''}`}>Export CSV</a>
+              <a className="ghost" href={"/gd/api/timesheets/export" + ((f.from||f.to) ? ("?from="+f.from+"&to="+f.to) : "")}>Export CSV</a>
             </div>
           </div>
           <div className="card-c">
