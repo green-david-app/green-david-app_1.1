@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data.sqlite"
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+app.secret_key = 'gd-secret-key-change-me'
 
 def get_db():
     if "db" not in g:
@@ -147,7 +148,8 @@ if __name__ == "__main__":
 # --------- API: /api/me (compat) ---------
 @app.route("/api/me")
 def api_me():
-    user = {"id": 1, "name": "Admin", "role": "admin"}
+    from flask import session
+    user = session.get("user") or {"id": 1, "name": "Admin", "role": "admin"}
     return jsonify({"ok": True, "user": user, "tasks_count": 1})
 
 
@@ -163,3 +165,21 @@ def api_jobs():
         rows = db.execute("SELECT * FROM jobs ORDER BY id DESC").fetchall()
         jobs = [dict(r) for r in rows]
     return jsonify({"ok": True, "jobs": jobs})
+
+
+# --------- Auth compatibility ---------
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    from flask import session
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or data.get("email") or "Admin").strip() or "Admin"
+    # Heslo teď nevalidujeme – původní app měla fake-auth; můžeš kdykoli nahradit real kontrolou.
+    user = {"id": 1, "name": username, "role": "admin"}
+    session["user"] = user
+    return jsonify({"ok": True, "user": user})
+
+@app.route("/logout")
+def logout():
+    from flask import session, redirect
+    session.clear()
+    return redirect("/")
