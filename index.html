@@ -460,9 +460,8 @@
       
       // ---- Calendar tab ----
       function CalendarTab(){
-        const {useState,useEffect} = React;
-        const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-        const [events,setEvents]=useState([]);
+        const [month,setMonth]=React.useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+        const [events,setEvents]=React.useState([]);
         function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
         function range(){
           const start = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -483,7 +482,7 @@
           const taskEvents = (tasks.tasks||[]).filter(t=>t.due_date).map(t=>({id:"task-"+t.id, date:t.due_date, title:t.title, kind:"task"}));
           setEvents([...(ev||[]), ...jobEvents, ...taskEvents]);
         }
-        useEffect(()=>{ load().catch(()=>{}); }, [month.getFullYear(), month.getMonth()]);
+        React.useEffect(()=>{ load().catch(()=>{}); }, [month.getFullYear(), month.getMonth()]);
         async function addQuick(d){
           const title = prompt("Název poznámky:");
           if(!title) return;
@@ -521,16 +520,15 @@
 
       // ---- Timesheets tab ----
       function TimesheetsTab(){
-        const {useState,useEffect} = React;
-        const [rows,setRows]=useState([]);
-        const [emps,setEmps]=useState([]);
-        const [f,setF]=useState({from:"",to:"",emp:""});
+        const [rows,setRows]=React.useState([]);
+        const [emps,setEmps]=React.useState([]);
+        const [f,setF]=React.useState({from:"",to:"",emp:""});
         async function load(){
           const [ts, es] = await Promise.all([api("/gd/api/timesheets"), api("/api/employees")]);
           setRows((ts && ts.rows) || []);
           setEmps((es && es.employees) || []);
         }
-        useEffect(()=>{ load().catch(()=>{}); }, []);
+        React.useEffect(()=>{ load().catch(()=>{}); }, []);
         const filtered = rows.filter(r=> (!f.emp || String(r.employee_id)===String(f.emp)) &&
           (!f.from || r.date>=f.from) && (!f.to || r.date<=f.to));
         const total = filtered.reduce((s,r)=>s + (parseFloat(r.hours)||0), 0);
