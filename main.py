@@ -1,11 +1,15 @@
 
 import os, sqlite3
 from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory, g, render_template
+from flask import Flask, request, jsonify, send_from_directory, g, render_template, session
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data.sqlite"
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+
+# Sessions (cookies) – aby přihlášení zůstalo i po reloadu
+app.secret_key = os.environ.get("GD_SECRET_KEY", "gd-secret-key-change-me")
+app.config.update(SESSION_COOKIE_NAME='gd_session', SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=True)
 
 def get_db():
     if "db" not in g:
@@ -28,6 +32,7 @@ def ensure_tables():
 @app.route("/healthz")
 def healthz(): return "ok", 200
 
+# Keep original look – jedna index.html pro /, /calendar, /timesheets
 @app.route("/")
 @app.route("/calendar")
 @app.route("/timesheets")
@@ -39,20 +44,29 @@ def calendar_page(): return render_template("calendar.html", title="Kalendář")
 @app.route("/timesheets-page")
 def timesheets_page(): return render_template("reports.html", title="Výkazy")
 
-@app.route("/api/me")
-def api_me():
-    # Vždy přihlásit (aby UI neviselo na loginu)
-    user = {"id":1,"name":"Admin","role":"admin"}
-    return jsonify({"ok": True, "success": True, "isAuthenticated": True, "user": user, "name": user["name"], "tasks_count": 1})
-
+# ---------- AUTH ----------
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    user = {"id":1,"name":(request.json or {}).get("username","Admin"),"role":"admin"}
-    return jsonify({"ok": True, "success": True, "isAuthenticated": True, "user": user, "name": user["name"], "redirect": "/"})
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or data.get("email") or "Admin").strip() or "Admin"
+    user = {"id": 1, "name": username, "role": "admin"}
+    session["user"] = user
+    payload = {"ok": True, "success": True, "isAuthenticated": True, "authenticated": True, "user": user, "name": user["name"], "redirect": "/"}
+    return jsonify(payload)
 
 @app.route("/api/logout", methods=["POST"])
-def api_logout(): return jsonify({"ok": True, "success": True, "isAuthenticated": False})
+def api_logout():
+    session.clear()
+    return jsonify({"ok": True, "success": True, "isAuthenticated": False, "authenticated": False})
 
+@app.route("/api/me")
+def api_me():
+    user = session.get("user")
+    if not user:
+        return jsonify({"ok": True, "success": True, "isAuthenticated": False, "authenticated": False, "user": None, "name": None, "tasks_count": 0})
+    return jsonify({"ok": True, "success": True, "isAuthenticated": True, "authenticated": True, "user": user, "name": user["name"], "tasks_count": 1})
+
+# ---------- DATA ----------
 @app.route("/api/jobs")
 def api_jobs():
     db = get_db()

@@ -464,8 +464,8 @@
 (function(){
   function qs(s){return document.querySelector(s)}
   function mount(el, html){ el.innerHTML = html }
-  function route(p){ return (p||location.pathname) }
-  function showSPA(){
+  function route(){ return location.pathname }
+  async function showSPA(){
     var host = qs('#spa-host'); if(!host) return;
     var p = route();
     var isCal = (p === '/calendar'), isTs = (p === '/timesheets');
@@ -482,7 +482,7 @@
       const dim=(y,m)=>new Date(y,m,0).getDate();
       async function load(){
         label.textContent=y+"-"+String(m).padStart(2,"0");
-        const js=await (await fetch(`/gd/api/calendar?year=${y}&month=${m}`)).json(); const ev=js.events||[];
+        const js=await (await fetch(`/gd/api/calendar?year=${y}&month=${m}`,{credentials:'same-origin'})).json(); const ev=js.events||[];
         const firstDow=new Date(y,m-1,1).getDay()||7, total=dim(y,m);
         const frag=document.createDocumentFragment();
         ["Po","Út","St","Čt","Pá","So","Ne"].forEach(d=>{const h=document.createElement("div");h.className="cal-head";h.textContent=d;frag.appendChild(h);});
@@ -502,19 +502,17 @@
     } else if(isTs){
       mount(host, `<div class="card"><div class="card-h"><div>Výkazy práce</div></div>
         <div class="card-c"><div id="ts"></div></div></div>`);
-      (async()=>{
-        const js = await (await fetch('/api/timesheets')).json();
-        const rows = js.rows||[];
-        const el = document.getElementById('ts');
-        if(!rows.length){ el.innerHTML = '<div class="muted">Zatím žádné záznamy.</div>'; return; }
-        const tbl = document.createElement('table'); tbl.className='table';
-        tbl.innerHTML = '<thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Činnost</th><th>Místo</th></tr></thead>';
-        const tb = document.createElement('tbody');
-        rows.forEach(r=>{ const tr=document.createElement('tr');
-          tr.innerHTML = `<td>${r.date||''}</td><td>${r.employee||r.employee_id||''}</td><td>${r.hours||0}</td><td>${r.activity||''}</td><td>${r.place||''}</td>`; tb.appendChild(tr);
-        });
-        tbl.appendChild(tb); el.appendChild(tbl);
-      })();
+      const js = await (await fetch('/api/timesheets',{credentials:'same-origin'})).json();
+      const rows = js.rows||[];
+      const el = document.getElementById('ts');
+      if(!rows.length){ el.innerHTML = '<div class="muted">Zatím žádné záznamy.</div>'; return; }
+      const tbl = document.createElement('table'); tbl.className='table';
+      tbl.innerHTML = '<thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Činnost</th><th>Místo</th></tr></thead>';
+      const tb = document.createElement('tbody');
+      rows.forEach(r=>{ const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${r.date||''}</td><td>${r.employee||r.employee_id||''}</td><td>${r.hours||0}</td><td>${r.activity||''}</td><td>${r.place||''}</td>`; tb.appendChild(tr);
+      });
+      tbl.appendChild(tb); el.appendChild(tbl);
     }
   }
   window.addEventListener('popstate', showSPA);
