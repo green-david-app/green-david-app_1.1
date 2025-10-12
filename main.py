@@ -32,6 +32,41 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
+
+def ensure_schema():
+    db = get_db()
+    db.executescript("""
+    CREATE TABLE IF NOT EXISTS employees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS timesheets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        hours REAL NOT NULL DEFAULT 0,
+        place TEXT DEFAULT '',
+        activity TEXT DEFAULT '',
+        FOREIGN KEY(employee_id) REFERENCES employees(id)
+    );
+    CREATE TABLE IF NOT EXISTS calendar_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,               -- YYYY-MM-DD
+        title TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'note',-- 'job' | 'task' | 'note'
+        job_id INTEGER,
+        start_time TEXT,                  -- HH:MM optional
+        end_time TEXT,                    -- HH:MM optional
+        note TEXT DEFAULT ''
+    );
+    """)
+    db.commit()
+
 @app.teardown_appcontext
 def close_db(error=None):
     db = g.pop("db", None)
@@ -387,6 +422,56 @@ def api_timesheets():
         db.commit()
         return jsonify({"ok": True})
 
+
+@app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
+def api_calendar():
+    u, err = require_role(write=(request.method!="GET"))
+    if err: return err
+    db = get_db()
+    if request.method == "GET":
+        # Optional date range filter: ?from=YYYY-MM-DD&to=YYYY-MM-DD
+        d_from = request.args.get("from"); d_to = request.args.get("to")
+        if d_from and d_to:
+            rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
+        else:
+            rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
+        return jsonify([dict(r) for r in rows])
+    data = request.get_json(force=True, silent=True) or {}
+    if request.method == "POST":
+        date = normalize_date(data.get("date"))
+        title = (data.get("title") or "").strip()
+        kind = (data.get("kind") or "note").strip()
+        job_id = data.get("job_id")
+        start_time = (data.get("start_time") or "").strip() or None
+        end_time = (data.get("end_time") or "").strip() or None
+        note = (data.get("note") or "").strip()
+        if not (date and title):
+            return jsonify({"error":"Missing date or title"}), 400
+        cur = db.execute("INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) VALUES(?,?,?,?,?,?,?)",
+                         (date,title,kind,job_id,start_time,end_time,note))
+        db.commit()
+        return jsonify({"ok":True,"id":cur.lastrowid})
+    if request.method == "PATCH":
+        eid = data.get("id")
+        if not eid: return jsonify({"error":"Missing id"}), 400
+        fields = ["date","title","kind","job_id","start_time","end_time","note"]
+        sets, vals = [], []
+        for f in fields:
+            if f in data:
+                v = normalize_date(data[f]) if f=="date" else data[f]
+                sets.append(f"{f}=?"); vals.append(v)
+        if not sets: return jsonify({"error":"No changes"}), 400
+        vals.append(eid)
+        db.execute("UPDATE calendar_events SET "+",".join(sets)+" WHERE id=?", vals)
+        db.commit()
+        return jsonify({"ok":True})
+    if request.method == "DELETE":
+        eid = request.args.get("id") or (data.get("id") if data else None)
+        if not eid: return jsonify({"error":"Missing id"}), 400
+        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+        db.commit()
+        return jsonify({"ok":True})
+
 # ---------- warehouse ----------
 VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
 
@@ -738,3 +823,66 @@ if __name__ == "__main__":
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
+
+
+@app.route("/api/timesheets/export")
+def api_timesheets_export():
+    u, err = require_role()
+    if err: return err
+    db = get_db()
+    d_from = request.args.get("from")
+    d_to = request.args.get("to")
+    q = "SELECT t.id, e.name as employee, t.date, t.hours, t.place, t.activity FROM timesheets t JOIN employees e ON e.id=t.employee_id"
+    args = []
+    if d_from and d_to:
+        q += " WHERE t.date BETWEEN ? AND ?"
+        args = [normalize_date(d_from), normalize_date(d_to)]
+    q += " ORDER BY t.date ASC"
+    rows = db.execute(q, args).fetchall()
+    # Build CSV
+    out = io.StringIO()
+    out.write("id;employee;date;hours;place;activity\n")
+    for r in rows:
+        out.write(f"{r['id']};{r['employee']};{r['date']};{r['hours']};{r['place']};{r['activity']}\n")
+    out.seek(0)
+    return send_file(io.BytesIO(out.getvalue().encode('utf-8')), mimetype="text/csv; charset=utf-8", as_attachment=True, download_name="timesheets.csv")
+
+@app.route('/gd/api/me', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_me():
+    return api_me()
+
+@app.route('/gd/api/login', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_login():
+    return api_login()
+
+@app.route('/gd/api/logout', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_logout():
+    return api_logout()
+
+@app.route('/gd/api/users', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_users():
+    return api_users()
+
+@app.route('/gd/api/employees', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_employees():
+    return api_employees()
+
+@app.route('/gd/api/timesheets', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_timesheets():
+    return api_timesheets()
+
+@app.route('/gd/api/timesheets/export')
+def gd_api_timesheets_export():
+    return api_timesheets_export()
+
+@app.route('/gd/api/items', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_items():
+    return api_items()
+
+@app.route('/gd/api/jobs', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_jobs():
+    return api_jobs()
+
+@app.route('/gd/api/calendar', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_calendar():
+    return api_calendar()

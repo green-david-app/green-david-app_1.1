@@ -44,3 +44,16 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .error-overlay{background:#ffe7e7;border:1px solid #ffb8b8;color:#5a0000;border-radius:12px;padding:12px;margin:14px 0;white-space:pre-wrap}
 .linklike{color:#b6f3c9;cursor:pointer}
 .linklike:hover{text-decoration:underline}
+
+
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.5rem}
+.cal-head{font-weight:600;padding:.5rem;border-bottom:1px solid #e5e5e5}
+.cal-cell{min-height:110px;border:1px solid #eee;border-radius:.5rem;padding:.25rem;display:flex;flex-direction:column}
+.cal-dim{opacity:.5}
+.cal-date{font-size:.85rem;opacity:.8;margin-bottom:.25rem}
+.cal-evlist{display:flex;flex-direction:column;gap:.25rem}
+.cal-ev{font-size:.82rem;padding:.15rem .35rem;border-radius:.4rem;background:rgba(0,128,0,.08);border:1px solid rgba(0,128,0,.15)}
+.cal-ev.cal-job{background:rgba(0,128,0,.10);}
+.cal-ev.cal-task{background:rgba(0,128,64,.10);}
+.cal-ev.cal-note{background:rgba(0,0,0,.05);}

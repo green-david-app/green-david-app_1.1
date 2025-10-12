@@ -24,9 +24,192 @@
       <p class="small footer">© green david s.r.o.</p>
     </main>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin>
+function Calendar(){
+  const [month, setMonth] = useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const ym = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7; // Monday=0
+    const days = [];
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); days.push(x); }
+    return days;
+  }
+  async function load(){
+    const from = toISODateFlex(`01.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const toDate = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const to = toISODateFlex(`${String(toDate.getDate()).padStart(2,'0')}.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const [ev, js] = await Promise.all([api(`/gd/api/calendar?from=${from}&to=${to}`), api(`/gd/api/jobs`)]);
+    setEvents(ev); setJobs(js);
+  }
+  useEffect(()=>{ load(); }, [ym(month)]);
+
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISODateFlex(toCZ(d)), title, kind:"note"})});
+    await load();
+  }
+  function sameDay(a,b){ return a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
+  function dayKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ', { month: 'long' })} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthRange(month).map((d,i)=>{
+          const dayEvents = events.filter(e=>e.date===dayKey(d));
+          const isCurMonth = d.getMonth()===month.getMonth();
+          return (<div key={i} className={"cal-cell"+(isCurMonth?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
+    </script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin>
+function Calendar(){
+  const [month, setMonth] = useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const ym = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7; // Monday=0
+    const days = [];
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); days.push(x); }
+    return days;
+  }
+  async function load(){
+    const from = toISODateFlex(`01.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const toDate = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const to = toISODateFlex(`${String(toDate.getDate()).padStart(2,'0')}.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const [ev, js] = await Promise.all([api(`/gd/api/calendar?from=${from}&to=${to}`), api(`/gd/api/jobs`)]);
+    setEvents(ev); setJobs(js);
+  }
+  useEffect(()=>{ load(); }, [ym(month)]);
+
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISODateFlex(toCZ(d)), title, kind:"note"})});
+    await load();
+  }
+  function sameDay(a,b){ return a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
+  function dayKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ', { month: 'long' })} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthRange(month).map((d,i)=>{
+          const dayEvents = events.filter(e=>e.date===dayKey(d));
+          const isCurMonth = d.getMonth()===month.getMonth();
+          return (<div key={i} className={"cal-cell"+(isCurMonth?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js">
+function Calendar(){
+  const [month, setMonth] = useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const ym = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7; // Monday=0
+    const days = [];
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); days.push(x); }
+    return days;
+  }
+  async function load(){
+    const from = toISODateFlex(`01.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const toDate = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const to = toISODateFlex(`${String(toDate.getDate()).padStart(2,'0')}.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const [ev, js] = await Promise.all([api(`/gd/api/calendar?from=${from}&to=${to}`), api(`/gd/api/jobs`)]);
+    setEvents(ev); setJobs(js);
+  }
+  useEffect(()=>{ load(); }, [ym(month)]);
+
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISODateFlex(toCZ(d)), title, kind:"note"})});
+    await load();
+  }
+  function sameDay(a,b){ return a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
+  function dayKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ', { month: 'long' })} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthRange(month).map((d,i)=>{
+          const dayEvents = events.filter(e=>e.date===dayKey(d));
+          const isCurMonth = d.getMonth()===month.getMonth();
+          return (<div key={i} className={"cal-cell"+(isCurMonth?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
+    </script>
 
     <script>
       
@@ -90,6 +273,67 @@
           }
         }catch(e){ box.innerText = ""; }
       }
+    
+function Calendar(){
+  const [month, setMonth] = useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const ym = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7; // Monday=0
+    const days = [];
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); days.push(x); }
+    return days;
+  }
+  async function load(){
+    const from = toISODateFlex(`01.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const toDate = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const to = toISODateFlex(`${String(toDate.getDate()).padStart(2,'0')}.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const [ev, js] = await Promise.all([api(`/gd/api/calendar?from=${from}&to=${to}`), api(`/gd/api/jobs`)]);
+    setEvents(ev); setJobs(js);
+  }
+  useEffect(()=>{ load(); }, [ym(month)]);
+
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISODateFlex(toCZ(d)), title, kind:"note"})});
+    await load();
+  }
+  function sameDay(a,b){ return a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
+  function dayKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ', { month: 'long' })} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthRange(month).map((d,i)=>{
+          const dayEvents = events.filter(e=>e.date===dayKey(d));
+          const isCurMonth = d.getMonth()===month.getMonth();
+          return (<div key={i} className={"cal-cell"+(isCurMonth?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
     </script>
 
     <script type="text/babel" data-presets="env,react">
@@ -106,7 +350,7 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-        const items=[{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"+(taskCount? " ("+taskCount+")": "")},{key:"employees",label:"Zaměstnanci"},{key:"warehouse",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
+        const items=[{key:"calendar",label:"Kalendář"},{key:"time",label:"Hodiny"},{key:"jobs",label:"Zakázky"},{key:"tasks",label:"Úkoly"},{key:"stock",label:"Sklad"},...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])];
         return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
       }
 
@@ -192,7 +436,7 @@
         useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
-        return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div></div><div className="card-c">
+        return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div><div className="row-gap"><a class="ghost" href="/gd/api/timesheets/export">Export CSV</a></div></div><div className="card-c">
           <form onSubmit={add}><div className="form-row">
             <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} required><option value="">Zaměstnanec…</option>{employees.map(emp=>(<option key={emp.id} value={emp.id}>{emp.name}</option>))}</select>
             <input type="text" placeholder="DD.MM.RRRR" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
@@ -456,6 +700,67 @@
       }
 
       ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+    
+function Calendar(){
+  const [month, setMonth] = useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const ym = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function monthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7; // Monday=0
+    const days = [];
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); days.push(x); }
+    return days;
+  }
+  async function load(){
+    const from = toISODateFlex(`01.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const toDate = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const to = toISODateFlex(`${String(toDate.getDate()).padStart(2,'0')}.${String(month.getMonth()+1).padStart(2,'0')}.${month.getFullYear()}`);
+    const [ev, js] = await Promise.all([api(`/gd/api/calendar?from=${from}&to=${to}`), api(`/gd/api/jobs`)]);
+    setEvents(ev); setJobs(js);
+  }
+  useEffect(()=>{ load(); }, [ym(month)]);
+
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar", {method:"POST", body: JSON.stringify({date: toISODateFlex(toCZ(d)), title, kind:"note"})});
+    await load();
+  }
+  function sameDay(a,b){ return a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
+  function dayKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ', { month: 'long' })} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthRange(month).map((d,i)=>{
+          const dayEvents = events.filter(e=>e.date===dayKey(d));
+          const isCurMonth = d.getMonth()===month.getMonth();
+          return (<div key={i} className={"cal-cell"+(isCurMonth?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
     </script>
   </body>
 </html>
