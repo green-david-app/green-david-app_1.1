@@ -46,14 +46,10 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .linklike:hover{text-decoration:underline}
 
 
-/* calendar additions */
+/* calendar robust */
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
-.cal-head{font-weight:600;font-size:12px;opacity:.9}
+.cal-head{font-weight:600;font-size:12px;opacity:.85}
 .cal-cell{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;min-height:104px;background:rgba(255,255,255,.06)}
-.cal-day{font-size:13px;font-weight:700;color:#e8f0e8;margin-bottom:6px}
+.cal-day{font-size:14px;font-weight:800;letter-spacing:.2px;color:#fff;margin-bottom:6px;opacity:.95}
 .cal-evts{display:flex;flex-direction:column;gap:6px}
-.tag{display:flex;align-items:center;justify-content:space-between;font-size:12px;border-radius:10px;padding:6px 8px;background:rgba(79,192,141,.18);backdrop-filter:saturate(120%) blur(2px)}
-.tag.zakazka{background:rgba(66,135,245,.18)}
-.tag.ukol{background:rgba(255,193,7,.18)}
-.tag .x{background:transparent;border:none;cursor:pointer;opacity:.8;color:#fff}
-
+.tag{font-size:12px;border-radius:10px;padding:6px 8px;background:rgba(79,192,141,.18)}
