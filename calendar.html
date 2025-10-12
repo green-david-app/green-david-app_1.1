@@ -1,0 +1,77 @@
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kalendář – green david app</title>
+<link rel="stylesheet" href="/style.css"/>
+</head><body>
+<header class="header">
+  <div class="brand">
+    <img src="/logo.svg" class="brand-logo" alt="green david"/>
+    <div><div class="brand-title">green david app</div><div class="brand-sub">Kalendář</div></div>
+    <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
+  </div>
+</header>
+<main class="container"><div id="app"></div></main>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  async function api(url, opts){ const r = await fetch(url, {headers: {'Content-Type':'application/json'}, credentials:'same-origin', ...(opts||{})}); if(!r.ok) throw new Error(await r.text()); return await r.json(); }
+  function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+</script>
+<script type="text/babel" data-presets="env,react">
+const {useState,useEffect} = React;
+function Calendar(){
+  const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [events,setEvents]=useState([]);
+  async function load(){
+    const start = new Date(month.getFullYear(), month.getMonth(), 1);
+    const end = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const from = toISO(start), to = toISO(end);
+    setEvents(await api(`/gd/api/calendar?from=${from}&to=${to}`));
+  }
+  useEffect(()=>{ load(); }, [month.getFullYear(), month.getMonth()]);
+  function monthDays(){
+    const start = new Date(month.getFullYear(), month.getMonth(), 1);
+    const end = new Date(month.getFullYear(), month.getMonth()+1, 0);
+    const padStart = (start.getDay()+6)%7;
+    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
+    const a=[]; for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); a.push(x);} return a;
+  }
+  async function addQuick(d){
+    const title = prompt("Název události:");
+    if(!title) return;
+    await api("/gd/api/calendar",{method:"POST", body: JSON.stringify({date: toISO(d), title, kind: "note"})});
+    load();
+  }
+  function sameMonth(d){ return d.getMonth()===month.getMonth(); }
+  return (<div className="card">
+    <div className="card-h"><div>Kalendář</div>
+      <div className="row-gap">
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
+        <b>{month.toLocaleString('cs-CZ',{month:'long'})} {month.getFullYear()}</b>
+        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
+      </div>
+    </div>
+    <div className="card-c">
+      <div className="cal-grid">
+        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
+        {monthDays().map((d,i)=>{
+          const key = toISO(d);
+          const dayEvents = events.filter(e=>e.date===key);
+          return (<div key={i} className={"cal-cell"+(sameMonth(d)?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
+            <div className="cal-date">{d.getDate()}</div>
+            <div className="cal-evlist">
+              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
+                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
+              </div>))}
+            </div>
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+function App(){ return <Calendar/> }
+ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+</script>
+</body></html>
