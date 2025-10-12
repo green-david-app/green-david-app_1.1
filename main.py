@@ -9,6 +9,8 @@ DB_PATH = BASE_DIR / "data.sqlite"
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
 app.secret_key = 'gd-secret-key-change-me'
+app.config.update(SESSION_COOKIE_NAME='gd_session', SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=True)
+
 
 def get_db():
     if "db" not in g:
@@ -149,8 +151,20 @@ if __name__ == "__main__":
 @app.route("/api/me")
 def api_me():
     from flask import session
-    user = session.get("user") or {"id": 1, "name": "Admin", "role": "admin"}
-    return jsonify({"ok": True, "user": user, "tasks_count": 1})
+    user = session.get("user")
+    if not user:
+        # unauthenticated, but keep legacy shape
+        payload = {"ok": True, "isAuthenticated": False, "user": None, "name": None, "tasks_count": 0}
+        return jsonify(payload)
+    payload = {
+        "ok": True,
+        "success": True,
+        "isAuthenticated": True,
+        "user": user,
+        "name": user.get("name"),
+        "tasks_count": 1
+    }
+    return jsonify(payload)
 
 
 # --------- API: /api/jobs (best-effort) ---------
@@ -173,13 +187,27 @@ def api_login():
     from flask import session
     data = request.get_json(silent=True) or {}
     username = (data.get("username") or data.get("email") or "Admin").strip() or "Admin"
-    # Heslo teď nevalidujeme – původní app měla fake-auth; můžeš kdykoli nahradit real kontrolou.
     user = {"id": 1, "name": username, "role": "admin"}
     session["user"] = user
-    return jsonify({"ok": True, "user": user})
+    payload = {
+        "ok": True,
+        "success": True,
+        "isAuthenticated": True,
+        "user": user,
+        "name": user["name"],
+        "redirect": "/"
+    }
+    return jsonify(payload)
 
 @app.route("/logout")
 def logout():
     from flask import session, redirect
     session.clear()
     return redirect("/")
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    from flask import session, jsonify
+    session.clear()
+    return jsonify({"ok": True, "success": True, "isAuthenticated": False})
