@@ -64,3 +64,11 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .color-green{background:#e6f5ea; border-color:#9bd3a9}
 .color-red{background:#fde8e8; border-color:#f5a3a3}
 .color-blue{background:#e8f1fd; border-color:#9bb7f0}
+
+
+/* ensure color-* overrides cal-ev defaults */
+.cal-ev.color-green{background:#e6f5ea;border-color:#9bd3a9;color:#0f1519}
+.cal-ev.color-red{background:#fde8e8;border-color:#f5a3a3;color:#0f1519}
+.cal-ev.color-blue{background:#e8f1fd;border-color:#9bb7f0;color:#0f1519}
+.cal-ev .cal-del{border:0;background:transparent;font-weight:800;cursor:pointer;line-height:1;padding:0 4px;color:inherit}
+

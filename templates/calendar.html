@@ -9,7 +9,7 @@
   <button id="addTask" class="btn">+ Úkol</button>
   <button id="addJob" class="btn">+ Zakázka</button>
 </div>
-<div id="calendar" class="calendar-grid"></div>
+<div id="calendar" class="cal-grid"></div>
 
 <dialog id="eventDlg">
   <form method="dialog" id="eventForm">
@@ -74,10 +74,10 @@ async function loadMonth() {
 
 function renderEvents(items){
   for (const ev of items){
-    const cell = grid.querySelector(\`.cal-cell[data-date="\${ev.date}"] .cal-events\`);
+    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-evlist`);
     if (!cell) continue;
     const tag = document.createElement("div");
-    tag.className = "cal-tag kind-"+ev.kind + " color-" + (ev.color||"green");
+    tag.className = "cal-ev kind-"+ev.kind + " color-" + (ev.color||"green");
     const textSpan = document.createElement("span");
     textSpan.textContent = (ev.start_time?ev.start_time+" ":"") + (ev.note||"(bez popisu)");
     tag.appendChild(textSpan);
@@ -88,11 +88,10 @@ function renderEvents(items){
     del.addEventListener("click", async (e)=>{
       e.stopPropagation();
       if(!confirm("Smazat tuto položku?")) return;
-      const resp = await fetch(`/gd/api/calendar?id=${ev.id}`, {method: "DELETE"});
-      if(resp.ok){ loadMonth(); } else { alert("Mazání selhalo"); }
+      const resp = await fetch(`/gd/api/calendar?id=${ev.id}`, {method:"DELETE"});
+      if (resp.ok){ loadMonth(); } else { alert("Mazání selhalo"); }
     });
     tag.appendChild(del);
-    tag.title = ev.note||"";
     tag.addEventListener("click", ()=>openDlg(ev));
     cell.appendChild(tag);
   }
