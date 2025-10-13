@@ -868,13 +868,13 @@ def api_calendar():
 
     if request.method == "POST":
         date = normalize_date(data.get("date"))
-        title = (data.get("title") or "").strip()
+        title = (data.get("title") or data.get("note") or "").strip()
         kind = (data.get("kind") or "note").strip()
         job_id = data.get("job_id")
         start_time = (data.get("start_time") or None)
         end_time = (data.get("end_time") or None)
         note = (data.get("note") or "").strip()
-        if not (date and title):
+        if not date:
             return jsonify({"error": "Missing date or title"}), 400
         cur = db.execute(
             "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) "
@@ -925,3 +925,7 @@ def page_calendar():
 @app.route("/timesheets")
 def page_timesheets():
     return render_template("timesheets.html", title="Výkazy")
+
+
+# Backward-compatible alias
+normalize_date = _normalize_date
