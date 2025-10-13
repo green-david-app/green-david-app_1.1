@@ -31,23 +31,19 @@ def get_db():
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
     return g.db
-
-
 def ensure_schema():
     db = get_db()
+    # Create tables if not exist (keep minimal columns; migrations add the rest)
     db.executescript("""
     CREATE TABLE IF NOT EXISTS calendar_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
-        title TEXT NOT NULL,
-        kind TEXT NOT NULL DEFAULT 'note',
-        job_id INTEGER,
-        start_time TEXT,
-        end_time TEXT,
-        note TEXT DEFAULT ''
+        title TEXT NOT NULL
     );
-    """ )
+    """)
     db.commit()
+
+    # Run calendar column migration (idempotent)
     try:
         migrate_calendar_columns()
     except Exception:
