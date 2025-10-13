@@ -14,7 +14,7 @@
 <dialog id="eventDlg">
   <form method="dialog" id="eventForm">
     <h3 id="dlgTitle">Událost</h3>
-    <input type="hidden" name="id"/>
+    <input type="hidden" name="id" id="event_id"/>
     <label>Typ
       <select name="kind">
         <option value="note">Poznámka</option>
@@ -82,7 +82,7 @@ function renderEvents(items){
 
 function openDlg(ev){
   form.reset();
-  form.id.value = ev.id || "";
+  form.elements['id'].value = ev.id || "";
   form.kind.value = ev.kind || "note";
   form.date.value = ev.date || ymd(new Date());
   form.start_time.value = ev.start_time||"";
@@ -95,7 +95,7 @@ function openDlg(ev){
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const payload = Object.fromEntries(new FormData(form).entries());
+  const payload = Object.fromEntries(new FormData(form).entries()); payload.id = payload.id || document.getElementById('event_id').value;
   payload.start_time = payload.start_time || null;
   payload.end_time = payload.end_time || null;
   payload.note = payload.note || "";
@@ -103,7 +103,7 @@ form.addEventListener("submit", async (e)=>{
   let url = "/gd/api/calendar", method="POST";
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
+  if (resp.ok){ dlg.close(); loadMonth(); } else { const t=await resp.text(); console.error(t); alert("Uložení selhalo"); }
 });
 
 document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
@@ -113,7 +113,7 @@ document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(n
 document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 
 document.getElementById("delBtn").onclick = async ()=>{
-  const id = form.id.value;
+  const id = (form.elements['id'] && form.elements['id'].value) || document.getElementById('event_id').value;
   if (!id) return;
   if (!confirm("Smazat událost #"+id+"?")) return;
   const r = await fetch("/gd/api/calendar?id="+encodeURIComponent(id), {method:"DELETE"});
