@@ -47,29 +47,18 @@ const grid = document.getElementById("calendar");
 const label = document.getElementById("monthLabel");
 const dlg = document.getElementById("eventDlg");
 const form = document.getElementById("eventForm");
-
 let cur = new Date(); cur.setDate(1);
-
 function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
 function ymd(d){return d.toISOString().slice(0,10);}
 
-async function loadMonth() {
+async function loadMonth(){
   label.textContent = fmtMonth(cur);
   grid.innerHTML = "";
-  const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
-  first.setDate(1-startDow);
-  // hlavička dnů
+  const first = new Date(cur); const startDow = (first.getDay()+6)%7; first.setDate(1-startDow);
   const days = ["Po","Út","St","Čt","Pá","So","Ne"];
-  for (const dn of days){
-    const h = document.createElement("div");
-    h.className = "cal-head";
-    h.textContent = dn;
-    grid.appendChild(h);
-  }
-  // 6 týdnů = 42 buněk
+  for (const dn of days){ const h=document.createElement("div"); h.className="cal-head"; h.textContent=dn; grid.appendChild(h); }
   for (let i=0;i<42;i++){
-    const day = new Date(first); day.setDate(first.getDate()+i);
-    const d = day;
+    const d = new Date(first); d.setDate(first.getDate()+i);
     const e = document.createElement("div");
     e.className = "cal-cell"+(d.getMonth()==cur.getMonth()?"":" cal-dim");
     e.dataset.date = ymd(d);
@@ -79,7 +68,7 @@ async function loadMonth() {
   const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
   const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
   const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
-  if (!resp.ok){ alert("Načtení selhalo"); return; }
+  if(!resp.ok){ alert("Načtení selhalo"); return; }
   const items = await resp.json();
   renderEvents(items);
 }
