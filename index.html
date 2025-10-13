@@ -115,7 +115,7 @@
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[]);
+        useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
@@ -167,7 +167,7 @@
         const [employees,setEmployees]=useState([]);
         const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:""});
         async function load(){ try{ const [t,e]=await Promise.all([api("/api/tasks?job_id="+jobId), api("/api/employees")]); setList(t.tasks||[]); setEmployees(e.employees||[]); }catch(e){ console.error(e);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date), job_id: jobId || null})}); setForm({title:"",description:"",due_date:"",employee_id:""}); load(); }
         async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
         async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
@@ -189,7 +189,7 @@
         const [employees,setEmployees]=useState([]);
         const [form,setForm]=useState({employee_id:"",date:"",hours:0,place:"",activity:""});
         async function load(){ try{ const [h,e]=await Promise.all([api("/api/timesheets?job_id="+jobId), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]);}catch(e){ console.error(e);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div></div><div className="card-c">
@@ -215,7 +215,7 @@
         const [mat,setMat]=useState({name:"",qty:0,unit:"ks"}); const [tool,setTool]=useState({name:"",qty:0,unit:"ks"});
         const [err,setErr]=useState("");
         async function load(){ try{ const [d, e] = await Promise.all([api(`/api/jobs/${jobId}`), api("/api/employees")]); setData(d); setEmployees(e.employees||[]); setSelEmp(d.assignments||[]);}catch(e){ setErr(e.message);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[jobId]);
+        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function addMat(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/materials`,{method:"POST",body:JSON.stringify(mat)}); setMat({name:"",qty:0,unit:"ks"}); load(); }
         async function addTool(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/tools`,{method:"POST",body:JSON.stringify(tool)}); setTool({name:"",qty:0,unit:"ks"}); load(); }
         async function delMat(id){ await api(`/api/jobs/${jobId}/materials?id=${id}`,{method:"DELETE"}); load(); }
@@ -266,7 +266,7 @@
         const [jobs,setJobs]=useState([]);
         const [form,setForm]=useState({job_id:"",date:"",hours:0,place:"",activity:""});
         async function load(){ try{ const [t,j] = await Promise.all([api("/api/timesheets?employee_id="+employee.id), api("/api/jobs")]); setRows(t.rows||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
+        useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({employee_id:employee.id, ...form})}); setForm({job_id:"",date:"",hours:0,place:"",activity:""}); load(); }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (
@@ -311,7 +311,7 @@
       const CATS = ['trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba'];
       function Warehouse(){
         const [site,setSite]=useState("lipnik"); const [list,setList]=useState([]); const [form,setForm]=useState({category:CATS[0],name:"",qty:0,unit:"ks"}); const [q,setQ]=useState("");
-        async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } React.useEffect(()=>{ load().catch(()=>{}); },[site]);
+        async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } useEffect(()=>{ load().catch(()=>{}); },[site]);
         async function add(e){ e.preventDefault(); await api("/api/items",{method:"POST",body:JSON.stringify({...form,site})}); setForm({category:CATS[0],name:"",qty:0,unit:"ks"}); load(); }
         async function del(id){ if(!confirm("Smazat položku?")) return; await api("/api/items?id="+id,{method:"DELETE"}); load(); }
         const filtered = React.useMemo(()=> list.filter(r=> (r.name||"").toLowerCase().includes(q.toLowerCase())), [list,q]);
@@ -336,7 +336,7 @@
 
       function UsersTab(){
         const [list,setList]=useState([]); const [form,setForm]=useState({email:"",name:"",role:"worker",password:""}); const [err,setErr]=useState("");
-        async function load(){ try{ const j=await api("/api/users"); setList(j.users||[]); }catch(e){ setErr(e.message);} } React.useEffect(()=>{load().catch(()=>{}); },[]);
+        async function load(){ try{ const j=await api("/api/users"); setList(j.users||[]); }catch(e){ setErr(e.message);} } useEffect(()=>{load().catch(()=>{}); },[]);
         async function create(e){ e.preventDefault(); await api("/api/users",{method:"POST",body:JSON.stringify(form)}); setForm({email:"",name:"",role:"worker",password:""}); load(); }
         async function setRole(id,role){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id,role})}); load(); }
         async function toggleActive(u){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id:u.id,active:!u.active})}); load(); }
@@ -367,7 +367,7 @@
         const [jobs,setJobs]=useState([]);
         const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:"",job_id:""});
         async function load(){ try{ const [t,e,j]=await Promise.all([api("/api/tasks"), api("/api/employees"), api("/api/jobs")]); setList(t.tasks||[]); setEmployees(e.employees||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[]);
+        useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date)})}); setForm({title:"",description:"",due_date:"",employee_id:"",job_id:""}); load(); }
         async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
         async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
@@ -390,8 +390,8 @@
       }
 
       function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = React.useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
-        React.useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
+        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
+        useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
         if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
         return (<div>
@@ -414,7 +414,7 @@
         const [open,setOpen]=useState(null);
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
-        React.useEffect(()=>{ load().catch(()=>{}); },[]);
+        useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
         async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
         if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
@@ -462,8 +462,9 @@
       function CalendarTab(){
         const [month,setMonth]=React.useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
         const [events,setEvents]=React.useState([]);
-        const normDateStr = (s)=>{ if(!s) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; const m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); if(m){const[_,d,mo,y]=m; return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); } return s; };
-        function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+        const normDateStr = (s)=>{ if(!s) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; const m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/); if(m){ let [_,d,mo,y]=m; if(y.length===2){y=2000+parseInt(y,10);} return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); } return ''; };
+        function fromCodeToISO(code){ if(!code) return ''; const m=String(code).match(/(\d{1,2})_(\d{2,4})/); if(!m) return ''; let mm=parseInt(m[1],10); let yy=m[2].length===2? 2000+parseInt(m[2],10): parseInt(m[2],10); if(mm<1||mm>12) return ''; return yy+ '-' + String(mm).padStart(2,'0') + '-01'; }
+        function toISO(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
         function range(){
           const start = new Date(month.getFullYear(), month.getMonth(), 1);
           const padStart = (start.getDay()+6)%7;
@@ -479,8 +480,8 @@
             api(`/api/jobs`),
             api(`/api/tasks`)
           ]);
-          const jobEvents = ((jobs&&jobs.jobs)||[]).filter(j=>j.date).map(j=>({id:'job-'+j.id, date:normDateStr(j.date), title:j.title, kind:'job'}));
-          const taskEvents = ((tasks&&tasks.tasks)||[]).filter(t=>t.due_date).map(t=>({id:'task-'+t.id, date:normDateStr(t.due_date), title:t.title, kind:'task'}));
+          const jobEvents = ((jobs && jobs.jobs) || []).map(j=>{ let d=normDateStr(j.date); if(!d) d=fromCodeToISO(j.code); return d?({id:'job-'+j.id, date:d, title:j.title, kind:'job'}):null; }).filter(Boolean);
+          const taskEvents = ((tasks && tasks.tasks) || []).map(t=>{ let d=normDateStr(t.due_date); return d?({id:'task-'+t.id, date:d, title:t.title, kind:'task'}):null; }).filter(Boolean);
           setEvents([...(ev||[]).map(e=>({...e, date:normDateStr(e.date)})), ...jobEvents, ...taskEvents]);
         }
         React.useEffect(()=>{ load().catch(()=>{}); }, [month.getFullYear(), month.getMonth()]);
@@ -508,9 +509,7 @@
                 return (<div key={i} className={"cal-cell"+(dim?" cal-dim":"")} onDoubleClick={()=>addQuick(d)}>
                   <div className="cal-date">{d.getDate()}</div>
                   <div className="cal-evlist">
-                    {dayEvents.map(e=>(<div key={e.id} className={"cal-ev cal-"+(e.kind||'note')} title={e.note||''}>
-                      {e.title}
-                    </div>))}
+                    {dayEvents.map(e=>(<div key={e.id} className={"cal-ev cal-"+(e.kind||'note')} title={e.note||''}>{e.title}</div>))}
                   </div>
                 </div>);
               })}
@@ -523,22 +522,45 @@
       function TimesheetsTab(){
         const [rows,setRows]=React.useState([]);
         const [emps,setEmps]=React.useState([]);
+        const [jobs,setJobs]=React.useState([]);
         const [f,setF]=React.useState({from:"",to:"",emp:""});
+        const [newRow,setNewRow]=React.useState({employee_id:"",job_id:"",date:"",hours:"",place:"",activity:""});
+        const [editing,setEditing]=React.useState({});
         async function load(){
-          const [ts, es] = await Promise.all([api("/gd/api/timesheets"), api("/api/employees")]);
+          const [ts, es, js] = await Promise.all([api("/gd/api/timesheets"), api("/api/employees"), api("/api/jobs")]);
           setRows((ts && ts.rows) || []);
-          setEmps((es && es.employees) || []);
+          setEmps(((es && es.employees) || []).map(e=>({...e, id: Number(e.id)})));
+          setJobs(((js && js.jobs) || []).map(j=>({...j, id: Number(j.id)})));
         }
         React.useEffect(()=>{ load().catch(()=>{}); }, []);
-        const filtered = rows.filter(r=> (!f.emp || String(r.employee_id)===String(f.emp)) &&
-          (!f.from || r.date>=f.from) && (!f.to || r.date<=f.to));
+        async function addRow(){
+          const p = {...newRow};
+          if(!p.employee_id || !p.job_id || !p.date || p.hours===''){ alert("Vyplň zaměstnance, zakázku, datum a hodiny."); return; }
+          p.employee_id=Number(p.employee_id); p.job_id=Number(p.job_id); p.hours=Number(p.hours);
+          const res = await api("/gd/api/timesheets", {method:"POST", body: JSON.stringify(p)});
+          if(res && res.ok){ setNewRow({employee_id:'',job_id:'',date:'',hours:'',place:'',activity:''}); await load(); }
+        }
+        function startEdit(r){ setEditing({...editing, [r.id]: {...r}}); }
+        function onEdit(id, field, value){ setEditing({...editing, [id]: {...editing[id], [field]: value}}); }
+        async function saveEdit(id){
+          const p = {...editing[id]}; delete p.employee_name; delete p.job_title; delete p.job_code;
+          p.id = id;
+          const res = await api("/gd/api/timesheets/update", {method:"POST", body: JSON.stringify(p)});
+          if(res && res.ok){ const ne={...editing}; delete ne[id]; setEditing(ne); await load(); }
+        }
+        async function delRow(id){
+          if(!confirm("Smazat záznam?")) return;
+          const res = await api(`/gd/api/timesheets?id=${id}`, {method:"DELETE"});
+          if(res && res.ok){ await load(); }
+        }
+        const filtered = rows.filter(r=> (!f.emp || String(r.employee_id)===String(f.emp)) && (!f.from || r.date>=f.from) && (!f.to || r.date<=f.to));
         const total = filtered.reduce((s,r)=>s + (parseFloat(r.hours)||0), 0);
+        const EmpName = ({id}) => { const e=emps.find(x=>Number(x.id)===Number(id)); return e? e.name : id; };
+        const JobName = ({id}) => { const j=jobs.find(x=>Number(x.id)===Number(id)); return j? `${j.title} (${j.code})` : id; };
         return (<div className="card">
           <div className="card-h">
             <div>Výkazy hodin</div>
-            <div className="row-gap">
-              <a className="ghost" href={"/gd/api/timesheets/export" + ((f.from||f.to) ? ("?from="+f.from+"&to="+f.to) : "")}>Export CSV</a>
-            </div>
+            <div className="row-gap"><a className="ghost" href={"/gd/api/timesheets/export" + ((f.from||f.to)?("?from="+f.from+"&to="+f.to):"")}>Export CSV</a></div>
           </div>
           <div className="card-c">
             <div className="form-row">
@@ -548,13 +570,42 @@
               </select>
               <input type="date" value={f.from} onChange={e=>setF({...f,from:e.target.value})}/>
               <input type="date" value={f.to} onChange={e=>setF({...f,to:e.target.value})}/>
-              <button className="ghost" onClick={()=>setF({from:"",to:"",emp:""})}>Zrušit filtr</button>
+              <button className="ghost" onClick={()=>setF({from:'',to:'',emp:''})}>Zrušit filtr</button>
+            </div>
+            <div className="card sub">
+              <div className="card-h"><div>Přidat záznam</div></div>
+              <div className="card-c form-row">
+                <select value={newRow.employee_id} onChange={e=>setNewRow({...newRow, employee_id: e.target.value})}>
+                  <option value="">Zaměstnanec…</option>
+                  {emps.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}
+                </select>
+                <select value={newRow.job_id} onChange={e=>setNewRow({...newRow, job_id: e.target.value})}>
+                  <option value="">Zakázka…</option>
+                  {jobs.map(j=>(<option key={j.id} value={j.id}>{j.title} ({j.code})</option>))}
+                </select>
+                <input type="date" value={newRow.date} onChange={e=>setNewRow({...newRow, date:e.target.value})}/>
+                <input type="number" step="0.25" min="0" value={newRow.hours} onChange={e=>setNewRow({...newRow, hours:e.target.value})} placeholder="Hod"/>
+                <input type="text" value={newRow.place} onChange={e=>setNewRow({...newRow, place:e.target.value})} placeholder="Místo"/>
+                <input type="text" value={newRow.activity} onChange={e=>setNewRow({...newRow, activity:e.target.value})} placeholder="Popis"/>
+                <button onClick={addRow}>Přidat</button>
+              </div>
             </div>
             <div className="small" style={{marginBottom:'.5rem'}}>Celkem: <b>{total.toFixed(2)} h</b> ({filtered.length} záznamů)</div>
             <table className="table">
-              <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodiny</th><th>Místo</th><th>Popis</th></tr></thead>
+              <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodiny</th><th>Místo</th><th>Popis</th><th></th></tr></thead>
               <tbody>
-                {filtered.map(r=>(<tr key={r.id}><td>{r.date}</td><td>{(emps.find(e=>e.id===r.employee_id)||{}).name||r.employee_id}</td><td>{r.hours}</td><td>{r.place||""}</td><td>{r.activity||""}</td></tr>))}
+                {filtered.map(r=>{
+                  const ed = editing[r.id];
+                  return (<tr key={r.id}>
+                    <td>{ed ? <input type="date" value={ed.date} onChange={e=>onEdit(r.id,'date',e.target.value)}/> : r.date}</td>
+                    <td>{ed ? (<select value={ed.employee_id} onChange={e=>onEdit(r.id,'employee_id', Number(e.target.value))}>{emps.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}</select>) : <EmpName id={r.employee_id}/>}</td>
+                    <td>{ed ? (<select value={ed.job_id} onChange={e=>onEdit(r.id,'job_id', Number(e.target.value))}>{jobs.map(j=>(<option key={j.id} value={j.id}>{j.title} ({j.code})</option>))}</select>) : <JobName id={r.job_id}/>}</td>
+                    <td>{ed ? <input type="number" step="0.25" min="0" value={ed.hours} onChange={e=>onEdit(r.id,'hours', Number(e.target.value))}/> : r.hours}</td>
+                    <td>{ed ? <input value={ed.place||''} onChange={e=>onEdit(r.id,'place', e.target.value)}/> : (r.place||'')}</td>
+                    <td>{ed ? <input value={ed.activity||''} onChange={e=>onEdit(r.id,'activity', e.target.value)}/> : (r.activity||'')}</td>
+                    <td className="right">{ed ? (<><button className="ghost" onClick={()=>saveEdit(r.id)}>Uložit</button><button className="ghost" onClick={()=>{ const ne={...editing}; delete ne[r.id]; setEditing(ne);} }>Zrušit</button></>) : (<><button className="ghost" onClick={()=>startEdit(r)}>Upravit</button><button className="ghost" onClick={()=>delRow(r.id)}>Smazat</button></>)}</td>
+                  </tr>);
+                })}
               </tbody>
             </table>
           </div>
