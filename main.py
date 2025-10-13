@@ -854,3 +854,8 @@ def _alias_gd_api_timesheets_export():
 @app.route("/gd/api/timesheets/update", methods=['POST'])
 def _alias_gd_api_timesheets_update():
     return api_timesheets_update()
+
+
+@app.route("/gd/api/timesheets", methods=['GET','POST','DELETE'])
+def _alias_gd_api_timesheets():
+    return api_timesheets()
