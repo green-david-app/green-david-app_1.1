@@ -756,18 +756,29 @@ def get_admin_id(db):
     return int(row["id"]) if row else 1
 
 @app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
-def api_calendar():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
-    db = get_db()
-    if request.method == "GET":
-        d_from = request.args.get("from"); d_to = request.args.get("to")
-        if d_from and d_to:
-            rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
-        else:
-            rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
-        return jsonify([dict(r) for r in rows])
-    data = request.get_json(force=True, silent=True) or {}
+\1
+        try:
+            d_from = request.args.get("from"); d_to = request.args.get("to")
+            if d_from and d_to:
+                rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
+            else:
+                rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
+            return jsonify([dict(r) for r in rows])
+        except Exception as _e:
+            # if columns missing (first run), migrate and retry once
+            try:
+                migrate_calendar_columns()
+                if d_from and d_to:
+                    rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
+                else:
+                    rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
+                return jsonify([dict(r) for r in rows])
+            except Exception as _e2:
+                return jsonify({"error":"calendar_select_failed","detail":str(_e2)}), 500
+
+        
+        data = request.get_json(force=True, silent=True) or {}
+(force=True, silent=True) or {}
     if request.method == "POST":
         date = normalize_date(data.get("date"))
         title = (data.get("title") or "").strip()
@@ -855,7 +866,25 @@ def _alias_gd_api_timesheets_export():
 def _alias_gd_api_timesheets_update():
     return api_timesheets_update()
 
+def migrate_calendar_columns():
+    db = get_db()
+    cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
+    def add_col(name, ddl):
+        if name not in cols:
+            db.execute(f"ALTER TABLE calendar_events ADD COLUMN {ddl}")
+    add_col("kind", "TEXT NOT NULL DEFAULT 'note'")
+    add_col("job_id", "INTEGER")
+    add_col("start_time", "TEXT")
+    add_col("end_time", "TEXT")
+    add_col("note", "TEXT DEFAULT ''")
+    db.commit()
 
-@app.route("/gd/api/timesheets", methods=['GET','POST','DELETE'])
-def _alias_gd_api_timesheets():
-    return api_timesheets()
+@app.route("/admin/migrate-calendar")
+def admin_migrate_calendar():
+    u, err = require_role()
+    if err: return err
+    try:
+        migrate_calendar_columns()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
