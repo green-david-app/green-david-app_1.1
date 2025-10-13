@@ -615,3 +615,107 @@ ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
   </body>
 </html>
+
+<script>
+function Calendar(){
+  const [month, setMonth] = useState(()=>{const d=new Date(); d.setDate(1); return d;});
+  const [items, setItems] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({id:"", kind:"note", date:"", start_time:"", end_time:"", note:"", color:"#198754"});
+
+  const ymd = (d)=>d.toISOString().slice(0,10);
+  function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
+
+  async function load(){
+    const from = ymd(new Date(month.getFullYear(), month.getMonth(), 1));
+    const to = ymd(new Date(month.getFullYear(), month.getMonth()+1, 0));
+    const r = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
+    const js = await r.json();
+    setItems(js.items||[]);
+  }
+  useEffect(()=>{load()}, [month]);
+
+  function openNew(kind, date){
+    setForm({id:"", kind, date, start_time:"", end_time:"", note:"", color:"#198754"});
+    setOpen(true);
+  }
+  function openEdit(ev){
+    setForm({id: ev.id||"", kind: ev.kind||"note", date: ev.date, start_time: ev.start_time||"", end_time: ev.end_time||"", note: ev.note||"", color: ev.color||"#198754"});
+    setOpen(true);
+  }
+  async function save(e){
+    e.preventDefault();
+    const payload = {...form};
+    if (!payload.date) return alert("Chybí datum");
+    const method = payload.id ? "PATCH" : "POST";
+    const r = await fetch("/gd/api/calendar", {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    if (!r.ok){ console.error(await r.text()); return alert("Uložení selhalo"); }
+    setOpen(false); await load();
+  }
+  async function del(){
+    if (!form.id) return;
+    if (!confirm(`Smazat událost #${form.id}?`)) return;
+    const r = await fetch(`/gd/api/calendar?id=${encodeURIComponent(form.id)}`, {method:"DELETE"});
+    if (!r.ok){ console.error(await r.text()); return alert("Mazání selhalo"); }
+    setOpen(false); await load();
+  }
+
+  const cells=[]; const first=new Date(month); const startDow=(first.getDay()+6)%7; first.setDate(1-startDow);
+  for(let i=0;i<42;i++){
+    const day=new Date(first); day.setDate(first.getDate()+i);
+    const key=ymd(day); const dayItems=items.filter(x=>x.date===key);
+    cells.push(
+      <div key={key} className={"cal-cell"+(day.getMonth()==month.getMonth()?"":" muted")} onDoubleClick={()=>openNew("note", key)}>
+        <div className="cal-date">{day.getDate()}.</div>
+        <div className="cal-events">
+          {dayItems.map(ev=>(
+            <div key={ev.id} className={"cal-tag kind-"+ev.kind} style={{borderColor: ev.color||undefined, background: ev.color? (ev.color+"20"): undefined}} onClick={()=>openEdit(ev)}>
+              {(ev.start_time? ev.start_time+" " : "")}{ev.note || ev.title || "(bez popisu)"}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (<div>
+    <div className="cal-controls">
+      <button onClick={()=>{const d=new Date(month); d.setMonth(d.getMonth()-1); setMonth(d)}}>◀</button>
+      <div id="monthLabel" style={{flex:1,textAlign:"center"}}>{fmtMonth(month)}</div>
+      <button onClick={()=>{const d=new Date(month); d.setMonth(d.getMonth()+1); setMonth(d)}}>▶</button>
+      <button className="btn" onClick={()=>openNew("note", ymd(new Date()))}>+ Poznámka</button>
+      <button className="btn" onClick={()=>openNew("task", ymd(new Date()))}>+ Úkol</button>
+      <button className="btn" onClick={()=>openNew("job", ymd(new Date()))}>+ Zakázka</button>
+    </div>
+    <div className="calendar-grid">{cells}</div>
+
+    {open && <div className="modal-backdrop" onClick={()=>setOpen(false)}></div>}
+    {open && <div className="modal">
+      <form onSubmit={save}>
+        <h3>Událost</h3>
+        <input type="hidden" value={form.id}/>
+        <label>Typ
+          <select value={form.kind} onChange={e=>setForm({...form, kind:e.target.value})}>
+            <option value="note">Poznámka</option>
+            <option value="task">Úkol</option>
+            <option value="job">Zakázka</option>
+          </select>
+        </label>
+        <label>Datum <input type="date" required value={form.date} onChange={e=>setForm({...form, date:e.target.value})}/></label>
+        <label>Začátek <input type="time" value={form.start_time} onChange={e=>setForm({...form, start_time:e.target.value})}/></label>
+        <label>Konec <input type="time" value={form.end_time} onChange={e=>setForm({...form, end_time:e.target.value})}/></label>
+        <label>Poznámka <textarea rows="3" value={form.note} onChange={e=>setForm({...form, note:e.target.value})}/></label>
+        <label>Barva <input type="color" value={form.color||"#198754"} onChange={e=>setForm({...form, color:e.target.value})}/></label>
+        <div className="row" style={{justifyContent:"space-between"}}>
+          {form.id ? <button type="button" onClick={del}>Smazat</button> : <span/>}
+          <div>
+            <button type="button" onClick={()=>setOpen(false)} style={{marginRight:8}}>Zrušit</button>
+            <button type="submit">Uložit</button>
+          </div>
+        </div>
+      </form>
+    </div>}
+  </div>);
+}
+
+</script>
