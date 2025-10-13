@@ -808,7 +808,7 @@ def migrate_calendar_columns():
     add_col("end_time", "TEXT")
     add_col("note", "TEXT DEFAULT ''")
     db.commit()
-    add_col(\"color\", \"TEXT DEFAULT 'green'\")
+    add_col("color", "TEXT DEFAULT 'green'")
     db.commit()
 
 @app.route("/api/calendar", methods=["GET", "POST", "PATCH", "DELETE"])

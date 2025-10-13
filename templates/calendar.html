@@ -105,6 +105,7 @@ function openDlg(ev){
   form.date.value = ev.date || ymd(new Date());
   form.start_time.value = ev.start_time||"";
   form.end_time.value = ev.end_time||"";
+  form.color.value = (ev.color||"green");
   form.note.value = ev.note||"";
   dlg.showModal();
 }
