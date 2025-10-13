@@ -271,7 +271,7 @@ def api_me():
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     db = get_db()
@@ -299,7 +299,7 @@ def api_users():
         return jsonify({"ok": True, "users":[dict(r) for r in rows]})
     if u["role"] != "admin":
         return jsonify({"ok": False, "error": "forbidden"}), 403
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         email = (data.get("email") or "").strip().lower()
         name = data.get("name") or ""
@@ -343,7 +343,7 @@ def api_employees():
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
     if request.method == "POST":
-        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role")
         if not (name and role): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
@@ -377,7 +377,7 @@ def api_timesheets():
         rows = db.execute(q, params).fetchall()
         return jsonify({"ok": True, "rows":[dict(r) for r in rows]})
     if request.method == "POST":
-        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
         emp = data.get("employee_id"); job = data.get("job_id"); date=data.get("date"); hours = data.get("hours")
         place = data.get("place") or ""
         activity = data.get("activity") or ""
@@ -405,7 +405,7 @@ def api_items():
         q = "SELECT * FROM items" + (" WHERE site=?" if site in ('lipnik','praha') else "") + " ORDER BY id DESC"
         rows = db.execute(q, (site, ) if site in ('lipnik','praha') else ()).fetchall()
         return jsonify({"ok": True, "items":[dict(r) for r in rows]})
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         req = ["site","category","name","qty","unit"]
         if not all(k in data and data[k] not in (None,"") for k in req):
@@ -441,9 +441,17 @@ def api_items():
         return jsonify({"ok": True})
 
 # ---------- jobs ----------
-@app.route("/api/jobs", methods=["GET","POST"])
+@app.route("/api/jobs", methods=["GET","POST","DELETE"])
 def api_jobs():
     db = get_db()
+    # DELETE job by id via query param
+    if request.method == "DELETE":
+        jid = request.args.get("id", type=int)
+        if not jid:
+            return jsonify({"error":"missing id"}), 400
+        db.execute("DELETE FROM jobs WHERE id = ?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
@@ -516,7 +524,7 @@ def api_job_materials(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); qty = data.get("qty"); unit = data.get("unit")
         if not (name and unit and qty is not None): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO job_materials(job_id,name,qty,unit) VALUES (?,?,?,?)", (jid, name, float(qty), unit))
@@ -535,7 +543,7 @@ def api_job_tools(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); qty = data.get("qty"); unit = data.get("unit")
         if not (name and unit and qty is not None): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO job_tools(job_id,name,qty,unit) VALUES (?,?,?,?)", (jid, name, float(qty), unit))
@@ -554,7 +562,7 @@ def api_job_photos(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
         data_url = data.get("data_url")
         if not data_url or not data_url.startswith("data:image/"):
             return jsonify({"ok": False, "error":"invalid_image"}), 400
@@ -587,7 +595,7 @@ def api_job_assignments(jid):
     if request.method == "GET":
         rows = db.execute("SELECT employee_id FROM job_assignments WHERE job_id=?", (jid,)).fetchall()
         return jsonify({"ok": True, "employee_ids":[r["employee_id"] for r in rows]})
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     ids = data.get("employee_ids") or []
     if not isinstance(ids, list): return jsonify({"ok": False, "error":"invalid_input"}), 400
     db.execute("DELETE FROM job_assignments WHERE job_id=?", (jid,))
@@ -621,7 +629,7 @@ def api_tasks():
         q += " ORDER BY (due_date IS NULL), due_date ASC, id DESC"
         rows = db.execute(q, params).fetchall()
         return jsonify({"ok": True, "tasks":[dict(r) for r in rows]})
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         title = data.get("title"); description = data.get("description") or ""
         due_date = _normalize_date(data.get("due_date")); status = data.get("status") or "nový"
@@ -769,7 +777,7 @@ def api_timesheets_update():
     u, err = require_role(write=True)
     if err: return err
     db = get_db()
-    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
     tid = data.get("id")
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     fields = ["employee_id","job_id","date","hours","place","activity"]
