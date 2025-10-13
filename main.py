@@ -31,29 +31,20 @@ def get_db():
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
     return g.db
-
-
 def ensure_schema():
     db = get_db()
-    db.executescript("""
-    CREATE TABLE IF NOT EXISTS calendar_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        title TEXT NOT NULL,
-        kind TEXT NOT NULL DEFAULT 'note',
-        job_id INTEGER,
-        start_time TEXT,
-        end_time TEXT,
-        note TEXT DEFAULT ''
-    );
-    """ )
-    db.commit()
+    # Full schema managed by versioned migrate(db)
+    migrate(db)
+    # Make sure calendar has extended columns (idempotent)
+    try:
+        migrate_calendar_columns()
+    except Exception:
+        pass
 @app.teardown_appcontext
 def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
-
 
 # ---------- defensive fixes ----------
 def ensure_columns(db):
@@ -178,8 +169,6 @@ def seed_admin(db):
                     datetime.utcnow().isoformat()))
         db.commit()
 
-
-
 def ensure_jobs_schema(db):
     """Ensure jobs table exists and is compatible (title/name + owner_id + created_at)."""
     db.execute("""
@@ -282,7 +271,7 @@ def api_me():
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     db = get_db()
@@ -310,7 +299,7 @@ def api_users():
         return jsonify({"ok": True, "users":[dict(r) for r in rows]})
     if u["role"] != "admin":
         return jsonify({"ok": False, "error": "forbidden"}), 403
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         email = (data.get("email") or "").strip().lower()
         name = data.get("name") or ""
@@ -354,7 +343,7 @@ def api_employees():
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
     if request.method == "POST":
-        data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role")
         if not (name and role): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
@@ -388,7 +377,7 @@ def api_timesheets():
         rows = db.execute(q, params).fetchall()
         return jsonify({"ok": True, "rows":[dict(r) for r in rows]})
     if request.method == "POST":
-        data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
         emp = data.get("employee_id"); job = data.get("job_id"); date=data.get("date"); hours = data.get("hours")
         place = data.get("place") or ""
         activity = data.get("activity") or ""
@@ -416,7 +405,7 @@ def api_items():
         q = "SELECT * FROM items" + (" WHERE site=?" if site in ('lipnik','praha') else "") + " ORDER BY id DESC"
         rows = db.execute(q, (site, ) if site in ('lipnik','praha') else ()).fetchall()
         return jsonify({"ok": True, "items":[dict(r) for r in rows]})
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         req = ["site","category","name","qty","unit"]
         if not all(k in data and data[k] not in (None,"") for k in req):
@@ -527,7 +516,7 @@ def api_job_materials(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
         name = data.get("name"); qty = data.get("qty"); unit = data.get("unit")
         if not (name and unit and qty is not None): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO job_materials(job_id,name,qty,unit) VALUES (?,?,?,?)", (jid, name, float(qty), unit))
@@ -546,7 +535,7 @@ def api_job_tools(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
         name = data.get("name"); qty = data.get("qty"); unit = data.get("unit")
         if not (name and unit and qty is not None): return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO job_tools(job_id,name,qty,unit) VALUES (?,?,?,?)", (jid, name, float(qty), unit))
@@ -565,7 +554,7 @@ def api_job_photos(jid):
     if err: return err
     db = get_db()
     if request.method == "POST":
-        data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+        data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
         data_url = data.get("data_url")
         if not data_url or not data_url.startswith("data:image/"):
             return jsonify({"ok": False, "error":"invalid_image"}), 400
@@ -598,7 +587,7 @@ def api_job_assignments(jid):
     if request.method == "GET":
         rows = db.execute("SELECT employee_id FROM job_assignments WHERE job_id=?", (jid,)).fetchall()
         return jsonify({"ok": True, "employee_ids":[r["employee_id"] for r in rows]})
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     ids = data.get("employee_ids") or []
     if not isinstance(ids, list): return jsonify({"ok": False, "error":"invalid_input"}), 400
     db.execute("DELETE FROM job_assignments WHERE job_id=?", (jid,))
@@ -632,7 +621,7 @@ def api_tasks():
         q += " ORDER BY (due_date IS NULL), due_date ASC, id DESC"
         rows = db.execute(q, params).fetchall()
         return jsonify({"ok": True, "tasks":[dict(r) for r in rows]})
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         title = data.get("title"); description = data.get("description") or ""
         due_date = _normalize_date(data.get("due_date")); status = data.get("status") or "nový"
@@ -750,58 +739,9 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
 
-
 def get_admin_id(db):
     row = db.execute("SELECT id FROM users WHERE email=?", ("admin@greendavid.local",)).fetchone()
     return int(row["id"]) if row else 1
-
-@app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
-def api_calendar():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
-    db = get_db()
-    if request.method == "GET":
-        d_from = request.args.get("from"); d_to = request.args.get("to")
-        if d_from and d_to:
-            rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
-        else:
-            rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
-        return jsonify([dict(r) for r in rows])
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
-    if request.method == "POST":
-        date = normalize_date(data.get("date"))
-        title = (data.get("title") or "").strip()
-        kind = (data.get("kind") or "note").strip()
-        job_id = data.get("job_id")
-        start_time = (data.get("start_time") or None)
-        end_time = (data.get("end_time") or None)
-        note = (data.get("note") or "").strip()
-        if not (date and title):
-            return jsonify({"error":"Missing date or title"}), 400
-        cur = db.execute("INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) VALUES(?,?,?,?,?,?,?)",
-                         (date,title,kind,job_id,start_time,end_time,note))
-        db.commit()
-        return jsonify({"ok":True,"id":cur.lastrowid})
-    if request.method == "PATCH":
-        eid = (data or {}).get("id")
-        if not eid: return jsonify({"error":"Missing id"}), 400
-        fields = ["date","title","kind","job_id","start_time","end_time","note"]
-        sets, vals = [], []
-        for f in fields:
-            if f in data:
-                v = normalize_date(data[f]) if f=="date" else data[f]
-                sets.append(f"{f}=?"); vals.append(v)
-        if not sets: return jsonify({"error":"No changes"}), 400
-        vals.append(eid)
-        db.execute("UPDATE calendar_events SET "+",".join(sets)+" WHERE id=?", vals)
-        db.commit()
-        return jsonify({"ok":True})
-    if request.method == "DELETE":
-        eid = request.args.get("id") or (data.get("id") if data else None)
-        if not eid: return jsonify({"error":"Missing id"}), 400
-        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
-        db.commit()
-        return jsonify({"ok":True})
 
 @app.route("/api/timesheets/export")
 def api_timesheets_export():
@@ -829,7 +769,7 @@ def api_timesheets_update():
     u, err = require_role(write=True)
     if err: return err
     db = get_db()
-    data = request.get_jsonrequest.get_jsonrequest.get_json(force=True, silent=True) or {}
+    data = request.get_jsonrequest.get_json(force=True, silent=True) or {}
     tid = data.get("id")
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     fields = ["employee_id","job_id","date","hours","place","activity"]
@@ -854,3 +794,106 @@ def _alias_gd_api_timesheets_export():
 @app.route("/gd/api/timesheets/update", methods=['POST'])
 def _alias_gd_api_timesheets_update():
     return api_timesheets_update()
+
+def migrate_calendar_columns():
+    db = get_db()
+    cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
+    def add_col(name, ddl):
+        if name not in cols:
+            db.execute(f"ALTER TABLE calendar_events ADD COLUMN {ddl}")
+    add_col("kind", "TEXT NOT NULL DEFAULT 'note'")
+    add_col("job_id", "INTEGER")
+    add_col("start_time", "TEXT")
+    add_col("end_time", "TEXT")
+    add_col("note", "TEXT DEFAULT ''")
+    db.commit()
+
+@app.route("/api/calendar", methods=["GET", "POST", "PATCH", "DELETE"])
+def api_calendar():
+    u, err = require_role(write=(request.method != "GET"))
+    if err:
+        return err
+    db = get_db()
+
+    if request.method == "GET":
+        d_from = request.args.get("from")
+        d_to = request.args.get("to")
+        try:
+            if d_from and d_to:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "WHERE date BETWEEN ? AND ? "
+                    "ORDER BY date ASC, start_time ASC",
+                    (d_from, d_to),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "ORDER BY date DESC, start_time ASC LIMIT 1000"
+                ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        except Exception:
+            migrate_calendar_columns()
+            if d_from and d_to:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "WHERE date BETWEEN ? AND ? "
+                    "ORDER BY date ASC, start_time ASC",
+                    (d_from, d_to),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "ORDER BY date DESC, start_time ASC LIMIT 1000"
+                ).fetchall()
+            return jsonify([dict(r) for r in rows])
+
+    data = request.get_json(force=True, silent=True) or {}
+
+    if request.method == "POST":
+        date = normalize_date(data.get("date"))
+        title = (data.get("title") or "").strip()
+        kind = (data.get("kind") or "note").strip()
+        job_id = data.get("job_id")
+        start_time = (data.get("start_time") or None)
+        end_time = (data.get("end_time") or None)
+        note = (data.get("note") or "").strip()
+        if not (date and title):
+            return jsonify({"error": "Missing date or title"}), 400
+        cur = db.execute(
+            "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) "
+            "VALUES(?,?,?,?,?,?,?)",
+            (date, title, kind, job_id, start_time, end_time, note),
+        )
+        db.commit()
+        return jsonify({"ok": True, "id": cur.lastrowid})
+
+    if request.method == "PATCH":
+        eid = data.get("id")
+        if not eid:
+            return jsonify({"error": "Missing id"}), 400
+        fields = ["date", "title", "kind", "job_id", "start_time", "end_time", "note"]
+        sets, vals = [], []
+        for f in fields:
+            if f in data:
+                v = normalize_date(data[f]) if f == "date" else data[f]
+                sets.append(f"{f}=?")
+                vals.append(v)
+        if not sets:
+            return jsonify({"error": "No changes"}), 400
+        vals.append(eid)
+        db.execute("UPDATE calendar_events SET " + ",".join(sets) + " WHERE id=?", vals)
+        db.commit()
+        return jsonify({"ok": True})
+
+    if request.method == "DELETE":
+        eid = request.args.get("id") or data.get("id")
+        if not eid:
+            return jsonify({"error": "Missing id"}), 400
+        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/gd/api/timesheets", methods=['GET','POST','DELETE'])
+def _alias_gd_api_timesheets():
+    return api_timesheets()
