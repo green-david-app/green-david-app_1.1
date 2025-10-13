@@ -48,6 +48,10 @@ def ensure_schema():
     );
     """ )
     db.commit()
+    try:
+        migrate_calendar_columns()
+    except Exception:
+        pass
 @app.teardown_appcontext
 def close_db(error=None):
     db = g.pop("db", None)
@@ -756,7 +760,6 @@ def get_admin_id(db):
     return int(row["id"]) if row else 1
 
 @app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
-\1
         try:
             d_from = request.args.get("from"); d_to = request.args.get("to")
             if d_from and d_to:
@@ -865,11 +868,18 @@ def _alias_gd_api_timesheets_export():
 @app.route("/gd/api/timesheets/update", methods=['POST'])
 def _alias_gd_api_timesheets_update():
     return api_timesheets_update()
-
 def migrate_calendar_columns():
     db = get_db()
     cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
     def add_col(name, ddl):
+        if name not in cols:
+            db.execute(f"ALTER TABLE calendar_events ADD COLUMN {ddl}")
+    add_col("kind", "TEXT NOT NULL DEFAULT 'note'")
+    add_col("job_id", "INTEGER")
+    add_col("start_time", "TEXT")
+    add_col("end_time", "TEXT")
+    add_col("note", "TEXT DEFAULT ''")
+    db.commit()    def add_col(name, ddl):
         if name not in cols:
             db.execute(f"ALTER TABLE calendar_events ADD COLUMN {ddl}")
     add_col("kind", "TEXT NOT NULL DEFAULT 'note'")
@@ -888,3 +898,92 @@ def admin_migrate_calendar():
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/calendar", methods=["GET", "POST", "PATCH", "DELETE"])
+def api_calendar():
+    u, err = require_role(write=(request.method != "GET"))
+    if err:
+        return err
+    db = get_db()
+
+    # ---- GET: read events (auto-migrate + retry) ----
+    if request.method == "GET":
+        d_from = request.args.get("from")
+        d_to = request.args.get("to")
+        try:
+            if d_from and d_to:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "WHERE date BETWEEN ? AND ? "
+                    "ORDER BY date ASC, start_time ASC",
+                    (d_from, d_to),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "ORDER BY date DESC, start_time ASC LIMIT 1000"
+                ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        except Exception:
+            # if columns missing (first run), migrate and retry
+            migrate_calendar_columns()
+            if d_from and d_to:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "WHERE date BETWEEN ? AND ? "
+                    "ORDER BY date ASC, start_time ASC",
+                    (d_from, d_to),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM calendar_events "
+                    "ORDER BY date DESC, start_time ASC LIMIT 1000"
+                ).fetchall()
+            return jsonify([dict(r) for r in rows])
+
+    # ---- other methods: create/update/delete ----
+    data = request.get_json(force=True, silent=True) or {}
+
+    if request.method == "POST":
+        date = normalize_date(data.get("date"))
+        title = (data.get("title") or "").strip()
+        kind = (data.get("kind") or "note").strip()
+        job_id = data.get("job_id")
+        start_time = (data.get("start_time") or None)
+        end_time = (data.get("end_time") or None)
+        note = (data.get("note") or "").strip()
+        if not (date and title):
+            return jsonify({"error": "Missing date or title"}), 400
+        cur = db.execute(
+            "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) "
+            "VALUES(?,?,?,?,?,?,?)",
+            (date, title, kind, job_id, start_time, end_time, note),
+        )
+        db.commit()
+        return jsonify({"ok": True, "id": cur.lastrowid})
+
+    if request.method == "PATCH":
+        eid = data.get("id")
+        if not eid:
+            return jsonify({"error": "Missing id"}), 400
+        fields = ["date", "title", "kind", "job_id", "start_time", "end_time", "note"]
+        sets, vals = [], []
+        for f in fields:
+            if f in data:
+                v = normalize_date(data[f]) if f == "date" else data[f]
+                sets.append(f"{f}=?")
+                vals.append(v)
+        if not sets:
+            return jsonify({"error": "No changes"}), 400
+        vals.append(eid)
+        db.execute("UPDATE calendar_events SET " + ",".join(sets) + " WHERE id=?", vals)
+        db.commit()
+        return jsonify({"ok": True})
+
+    if request.method == "DELETE":
+        eid = request.args.get("id") or data.get("id")
+        if not eid:
+            return jsonify({"error": "Missing id"}), 400
+        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+        db.commit()
+        return jsonify({"ok": True})
