@@ -98,10 +98,11 @@ def normalize_date(v):
 def api_calendar():
     db = get_db()
     ensure_calendar_table()
+    # Run migrations for ALL methods
+    migrate_calendar_columns()
 
     if request.method == "GET":
         d_from = request.args.get("from"); d_to = request.args.get("to")
-        migrate_calendar_columns()
         if d_from and d_to:
             rows = db.execute(
                 "SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, COALESCE(start_time,'') ASC",
