@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from datetime import datetime, date
-from flask import Flask, request, jsonify, g, render_template, redirect, send_from_directory
+from flask import Flask, request, jsonify, g, render_template, send_from_directory
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
@@ -93,6 +93,7 @@ def normalize_date(v):
     except Exception:
         return s
 
+# ---- Calendar API (DELETE + POST override) ----
 @app.route("/gd/api/calendar", methods=["GET","POST","PATCH","DELETE"])
 def api_calendar():
     db = get_db()
@@ -114,7 +115,7 @@ def api_calendar():
 
     data = request.get_json(force=True, silent=True) or {}
 
-    # Method override for DELETE via POST
+    # DELETE override via POST
     if request.method == "POST" and (data.get("_method") or "").upper() == "DELETE":
         eid = data.get("id") or request.args.get("id")
         if not eid: return jsonify({"error":"Missing id"}), 400
@@ -157,10 +158,13 @@ def api_calendar():
     db.execute("DELETE FROM calendar_events WHERE id=?", (eid,)); db.commit()
     return jsonify({"ok": True})
 
+# ---- UI routes (leave the rest of the app intact) ----
 @app.route("/")
 def index():
-    # Redirect homepage straight to calendar
-    return redirect("/calendar")
+    try:
+        return render_template("index.html", title="green david app")
+    except Exception:
+        return "<!doctype html><title>green david app</title><h1>green david app</h1>", 200
 
 @app.route("/calendar")
 def page_calendar():

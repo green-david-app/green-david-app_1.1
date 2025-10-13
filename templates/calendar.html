@@ -58,7 +58,7 @@ async function loadMonth(){
   for (let i=0;i<42;i++){
     const d = new Date(first); d.setDate(first.getDate()+i);
     const e = document.createElement("div");
-    e.className = "cal-cell" + (d.getMonth()==cur.getMonth()?"":" cal-dim");
+    e.className = "cal-cell"+(d.getMonth()==cur.getMonth()?"":" cal-dim");
     e.dataset.date = ymd(d);
     e.innerHTML = `<div class="cal-date">${d.getDate()}</div><div class="cal-evlist"></div>`;
     grid.appendChild(e);
@@ -80,25 +80,19 @@ function renderEvents(items){
     const textSpan = document.createElement("span");
     textSpan.textContent = (ev.start_time?ev.start_time+" ":"") + (ev.note||"(bez popisu)");
     tag.appendChild(textSpan);
-    const del = document.createElement("button"); del.textContent = "×"; del.className = "cal-del"; del.title = "Smazat";
+    const del = document.createElement("button"); del.textContent="×"; del.className="cal-del"; del.title="Smazat";
     del.addEventListener("click", async (e)=>{
       e.stopPropagation();
       if(!confirm("Smazat tuto položku?")) return;
-      // Try DELETE first
       let ok = false;
       try {
         const resp = await fetch(`/gd/api/calendar?id=${ev.id}`, {method:"DELETE"});
         ok = resp.ok;
       } catch(e){ ok = false; }
-      // Fallback: POST override
-      if(!ok){
-        const resp2 = await fetch(`/gd/api/calendar`, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({id: ev.id, _method: "DELETE"})
-        });
-        ok = resp2.ok;
-      }
+        if(!ok){
+          const resp2 = await fetch("/gd/api/calendar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({id: ev.id, _method:"DELETE"})});
+          ok = resp2.ok;
+        }
       if (ok){ loadMonth(); } else { alert("Mazání selhalo"); }
     });
     tag.appendChild(del);
@@ -140,5 +134,6 @@ form.addEventListener("submit", async (e)=>{
 });
 
 loadMonth();
+}
 </script>
 {% endblock %}
