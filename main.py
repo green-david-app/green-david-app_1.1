@@ -882,7 +882,7 @@ def api_calendar():
             return jsonify({"error": "Missing date or title"}), 400
         cur = db.execute(
             "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note,color) "
-            "VALUES(?,?,?,?,?,?,?)",
+            "VALUES(?,?,?,?,?,?,?,?)",
             (date, title, kind, job_id, start_time, end_time, note, color),
         )
         db.commit()
