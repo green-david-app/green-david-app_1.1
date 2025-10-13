@@ -116,6 +116,7 @@ form.addEventListener("submit", async (e)=>{
   payload.start_time = payload.start_time || null;
   payload.end_time = payload.end_time || null;
   payload.note = payload.note || "";
+  payload.color = form.color.value || "green";
   let url = "/gd/api/calendar", method="POST";
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});

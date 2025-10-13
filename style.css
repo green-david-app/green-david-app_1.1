@@ -56,3 +56,11 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .cal-ev.cal-job{background:rgba(0,128,0,.10);}
 .cal-ev.cal-task{background:rgba(0,128,64,.10);}
 .cal-ev.cal-note{background:rgba(0,0,0,.05);}
+
+
+/* Calendar tag colors and delete button */
+.cal-tag{position:relative; display:flex; justify-content:space-between; align-items:center; gap:8px}
+.cal-tag .cal-del{border:0; background:transparent; font-weight:800; cursor:pointer; line-height:1; padding:0 4px}
+.color-green{background:#e6f5ea; border-color:#9bd3a9}
+.color-red{background:#fde8e8; border-color:#f5a3a3}
+.color-blue{background:#e8f1fd; border-color:#9bb7f0}

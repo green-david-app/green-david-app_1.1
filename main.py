@@ -773,7 +773,7 @@ def api_timesheets_update():
     data = request.get_json(force=True, silent=True) or {}
     tid = data.get("id")
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-    fields = ["employee_id","job_id","date","hours","place","activity"]
+    fields = ["date","title","kind","job_id","start_time","end_time","note","color"]
     sets=[]; vals=[]
     for f in fields:
         if f in data and data[f] is not None:
