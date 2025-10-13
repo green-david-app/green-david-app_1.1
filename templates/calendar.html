@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <h1>Kalendář</h1>
+
 <div class="cal-controls">
   <button id="prev">◀</button>
   <div id="monthLabel"></div>
@@ -9,6 +10,7 @@
   <button id="addTask" class="btn">+ Úkol</button>
   <button id="addJob" class="btn">+ Zakázka</button>
 </div>
+
 <div id="calendar" class="cal-grid"></div>
 
 <dialog id="eventDlg">
@@ -56,20 +58,30 @@ async function loadMonth() {
   grid.innerHTML = "";
   const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
   first.setDate(1-startDow);
+  // hlavička dnů
+  const days = ["Po","Út","St","Čt","Pá","So","Ne"];
+  for (const dn of days){
+    const h = document.createElement("div");
+    h.className = "cal-head";
+    h.textContent = dn;
+    grid.appendChild(h);
+  }
+  // 6 týdnů = 42 buněk
   for (let i=0;i<42;i++){
     const day = new Date(first); day.setDate(first.getDate()+i);
-    const cell = document.createElement("div");
-    cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
-    cell.innerHTML = \`<div class="cal-date">\${day.getDate()}.</div><div class="cal-events"></div>\`;
-    cell.dataset.date = ymd(day);
-    cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
-    grid.appendChild(cell);
+    const d = day;
+    const e = document.createElement("div");
+    e.className = "cal-cell"+(d.getMonth()==cur.getMonth()?"":" cal-dim");
+    e.dataset.date = ymd(d);
+    e.innerHTML = `<div class="cal-date">${d.getDate()}</div><div class="cal-evlist"></div>`;
+    grid.appendChild(e);
   }
   const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
   const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-  const resp = await fetch(\`/gd/api/calendar?from=\${from}&to=\${to}\`);
-  const data = await resp.json();
-  renderEvents(data.items||[]);
+  const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
+  if (!resp.ok){ alert("Načtení selhalo"); return; }
+  const items = await resp.json();
+  renderEvents(items);
 }
 
 function renderEvents(items){
@@ -92,6 +104,7 @@ function renderEvents(items){
       if (resp.ok){ loadMonth(); } else { alert("Mazání selhalo"); }
     });
     tag.appendChild(del);
+    tag.title = ev.note||"";
     tag.addEventListener("click", ()=>openDlg(ev));
     cell.appendChild(tag);
   }
@@ -109,6 +122,12 @@ function openDlg(ev){
   dlg.showModal();
 }
 
+document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
+document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
+document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
   const payload = Object.fromEntries(new FormData(form).entries());
@@ -121,12 +140,6 @@ form.addEventListener("submit", async (e)=>{
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
 });
-
-document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
-document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
-document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 
 loadMonth();
 </script>
