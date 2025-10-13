@@ -1,400 +1,432 @@
-# main.py
-# green david app – minimal backend (Flask + SQLite)
-# - FIX: root/SPA a statiky (už žádné 404 na "/")
-# - FIX: kalendář – schéma + GET/POST/DELETE, bezpečné migrace
-# - FIX: výkazy (timesheets) – get_json, place/note sloupce
-# - BONUS: /admin/resequence-employees pro "přečíslování" čísel zaměstnanců
-# - Základní /api/me, /api/jobs, /api/tasks, /api/employees (kompatibilní JSON)
-
 import os
 import sqlite3
-from datetime import datetime, date as dt_date, timedelta
-from flask import Flask, request, jsonify, send_from_directory
+from datetime import datetime, date
+from typing import Any, Dict, List, Optional, Tuple
 
-# -----------------------------------------------------------------------------
-# App & statické soubory
-# -----------------------------------------------------------------------------
-app = Flask(
-    __name__,
-    static_folder=".",     # očekává style.css / logo.jpg / index.html v kořeni projektu
-    static_url_path=""
-)
+from flask import Flask, jsonify, request, g, send_from_directory, session
 
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def spa(path):
-    """
-    Single-page app router:
-      - pokud existuje konkrýtní soubor (style.css, logo.jpg, ...), pošle ho
-      - jinak servíruje index.html (pokud existuje)
-      - jako úplná poslední záchrana vrátí malou HTML stránku (aby to nebyla 404)
-    """
-    if path and os.path.exists(path) and not os.path.isdir(path):
-        return send_from_directory(".", path)
-    if os.path.exists("index.html"):
-        return send_from_directory(".", "index.html")
-    return ("<!doctype html><meta charset='utf-8'><title>green david app</title>"
-            "<h1>green david app</h1><p>Index soubor chybí.</p>", 200)
+# ---------- App setup ----------
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 
-# -----------------------------------------------------------------------------
-# SQLite – pomocné funkce
-# -----------------------------------------------------------------------------
-def _db_path():
-    # Render ne vždy používá env proměnnou "DATABASE_URL" pro SQLite, proto default
-    return os.getenv("DATABASE_URL", "app.db")
+DB_PATH = os.environ.get("DB_PATH", "app.db")
+os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
 
-def _connect_db():
-    db = sqlite3.connect(_db_path(), check_same_thread=False)
-    db.row_factory = sqlite3.Row
+
+# ---------- DB helpers ----------
+def get_db() -> sqlite3.Connection:
+    db = getattr(g, "_db", None)
+    if db is None:
+        db = g._db = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+        db.row_factory = sqlite3.Row
+        _ensure_base_schema(db)
     return db
 
-def _table_info(db, table):
-    return {row["name"]: row for row in db.execute(f"PRAGMA table_info({table})")}
 
-def _has_table(db, table):
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-        (table,)
-    ).fetchone()
-    return bool(row)
+@app.teardown_appcontext
+def close_db(exc):
+    db = getattr(g, "_db", None)
+    if db is not None:
+        db.close()
 
-def _add_column_if_missing(db, table, col, col_type):
-    cols = _table_info(db, table)
-    if col not in cols:
-        db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
 
-def _ensure_jobs_schema(db):
-    if not _has_table(db, "jobs"):
-        db.execute("""
-            CREATE TABLE jobs(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                location TEXT NOT NULL DEFAULT '',
-                label TEXT NOT NULL DEFAULT '',
-                status TEXT NOT NULL DEFAULT 'plan',   -- plan / running / done
-                created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-    else:
-        _add_column_if_missing(db, "jobs", "location",  "TEXT NOT NULL DEFAULT ''")
-        _add_column_if_missing(db, "jobs", "label",     "TEXT NOT NULL DEFAULT ''")
-        _add_column_if_missing(db, "jobs", "status",    "TEXT NOT NULL DEFAULT 'plan'")
-        _add_column_if_missing(db, "jobs", "created_at","TEXT NOT NULL DEFAULT (datetime('now'))")
+def _col_exists(db: sqlite3.Connection, table: str, column: str) -> bool:
+    cur = db.execute("PRAGMA table_info(%s)" % table)
+    return any(row["name"] == column for row in cur.fetchall())
 
-def _ensure_employees_schema(db):
-    if not _has_table(db, "employees"):
-        db.execute("""
-            CREATE TABLE employees(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                employee_no INTEGER UNIQUE,   -- číselník pro "přečíslování"
-                name TEXT NOT NULL,
-                active INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        # sem vložíme pár základních záznamů, pokud je tabulka nová
-        db.executemany(
-            "INSERT INTO employees(employee_no, name) VALUES (?, ?)",
-            [(1, "michal"), (2, "john"), (3, "honza")]
+
+def _ensure_base_schema(db: sqlite3.Connection) -> None:
+    # Users (simple auth: plaintext password just for internal tool)
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            name TEXT,
+            role TEXT DEFAULT 'admin'
         )
-    else:
-        _add_column_if_missing(db, "employees", "employee_no", "INTEGER")
-        _add_column_if_missing(db, "employees", "active",      "INTEGER NOT NULL DEFAULT 1")
-        _add_column_if_missing(db, "employees", "created_at",  "TEXT NOT NULL DEFAULT (datetime('now'))")
+        """
+    )
 
-def _ensure_tasks_schema(db):
-    if not _has_table(db, "tasks"):
-        db.execute("""
-            CREATE TABLE tasks(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                done INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        db.executemany("INSERT INTO tasks(title, done) VALUES (?, ?)", [
-            ("zavolat klientovi", 0),
-            ("doplnit materiál", 0),
-        ])
-    else:
-        _add_column_if_missing(db, "tasks", "done", "INTEGER NOT NULL DEFAULT 0")
-        _add_column_if_missing(db, "tasks", "created_at", "TEXT NOT NULL DEFAULT (datetime('now'))")
+    # Jobs
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            city TEXT,
+            period TEXT,
+            status TEXT DEFAULT 'Plan',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
 
-def _ensure_timesheets_schema(db):
-    if not _has_table(db, "timesheets"):
-        db.execute("""
-            CREATE TABLE timesheets(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                employee_id INTEGER NOT NULL,
-                job_id INTEGER NOT NULL,
-                hours REAL NOT NULL DEFAULT 0,
-                place TEXT NOT NULL DEFAULT '',
-                note TEXT NOT NULL DEFAULT ''
-            )
-        """)
-    else:
-        _add_column_if_missing(db, "timesheets", "place", "TEXT NOT NULL DEFAULT ''")
-        _add_column_if_missing(db, "timesheets", "note",  "TEXT NOT NULL DEFAULT ''")
+    # Employees
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS employees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            active INTEGER DEFAULT 1,
+            display_order INTEGER
+        )
+        """
+    )
 
-def _ensure_calendar_schema(db):
-    if not _has_table(db, "calendar_events"):
-        db.execute("""
-            CREATE TABLE calendar_events(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                title TEXT NOT NULL,
-                kind TEXT NOT NULL DEFAULT 'note',   -- note/work/...
-                job_id INTEGER,
-                start_time TEXT,
-                end_time TEXT,
-                note TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-    else:
-        _add_column_if_missing(db, "calendar_events", "title",      "TEXT NOT NULL DEFAULT ''")
-        _add_column_if_missing(db, "calendar_events", "kind",       "TEXT NOT NULL DEFAULT 'note'")
-        _add_column_if_missing(db, "calendar_events", "job_id",     "INTEGER")
-        _add_column_if_missing(db, "calendar_events", "start_time", "TEXT")
-        _add_column_if_missing(db, "calendar_events", "end_time",   "TEXT")
-        _add_column_if_missing(db, "calendar_events", "note",       "TEXT NOT NULL DEFAULT ''")
-        _add_column_if_missing(db, "calendar_events", "created_at", "TEXT NOT NULL DEFAULT (datetime('now'))")
+    # Timesheets
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS timesheets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            employee_id INTEGER NOT NULL,
+            job_id INTEGER,
+            hours REAL NOT NULL,
+            place TEXT,
+            note TEXT,
+            FOREIGN KEY(employee_id) REFERENCES employees(id),
+            FOREIGN KEY(job_id) REFERENCES jobs(id)
+        )
+        """
+    )
 
-# -----------------------------------------------------------------------------
-# Utility
-# -----------------------------------------------------------------------------
-def normalize_date(s):
-    """Bezpečně normalizuje datum do ISO YYYY-MM-DD (akceptuje např. '12.10.2025')."""
-    if not s:
-        return dt_date.today().isoformat()
-    s = str(s).strip()
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%Y/%m/%d"):
-        try:
-            return datetime.strptime(s, fmt).date().isoformat()
-        except ValueError:
-            pass
-    # např. '2025-10' -> první den v měsíci
-    if len(s) == 7 and s[4] == "-":
-        return f"{s}-01"
-    return dt_date.today().isoformat()
+    # Calendar events
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            start_time TEXT,
+            end_time TEXT,
+            title TEXT,
+            note TEXT,
+            job_id INTEGER,
+            FOREIGN KEY(job_id) REFERENCES jobs(id)
+        )
+        """
+    )
 
-def month_end_from_first(iso_ymd: str) -> str:
-    y, m, _ = map(int, iso_ymd.split("-"))
-    first = datetime(y, m, 1)
-    # první den dalšího měsíce, mínus 1 den
-    if m == 12:
-        first_next = datetime(y + 1, 1, 1)
-    else:
-        first_next = datetime(y, m + 1, 1)
-    return (first_next - timedelta(days=1)).date().isoformat()
+    # --- Migrations / backfills ---
+    # Add missing columns if DB already existed
+    for tbl, cols in {
+        "timesheets": ["place", "note"],
+        "calendar_events": ["start_time", "end_time", "note", "job_id"],
+        "employees": ["display_order"],
+    }.items():
+        for col in cols:
+            if not _col_exists(db, tbl, col):
+                # Reasonable types chosen to be compatible with existing data
+                ddl_type = "TEXT"
+                if tbl == "employees" and col == "display_order":
+                    ddl_type = "INTEGER"
+                if tbl == "calendar_events" and col == "job_id":
+                    ddl_type = "INTEGER"
+                db.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {ddl_type}")
 
-# -----------------------------------------------------------------------------
-# API – identity / info
-# -----------------------------------------------------------------------------
-@app.route("/api/me")
-def api_me():
-    db = _connect_db()
-    _ensure_tasks_schema(db)
-    tasks_open = db.execute("SELECT COUNT(*) AS c FROM tasks WHERE done=0").fetchone()["c"]
-    return jsonify({
-        "user": "Admin",
-        "role": "admin",
-        "tasks_open": tasks_open
-    })
+    # Ensure default admin exists
+    cur = db.execute("SELECT COUNT(*) AS c FROM users")
+    if cur.fetchone()["c"] == 0:
+        db.execute(
+            "INSERT INTO users(email, password, name, role) VALUES (?, ?, ?, ?)",
+            ("admin@greendavid.local", "admin123", "Admin", "admin"),
+        )
 
-# -----------------------------------------------------------------------------
-# API – employees
-# -----------------------------------------------------------------------------
-@app.route("/api/employees")
-def api_employees():
-    db = _connect_db()
-    _ensure_employees_schema(db)
-    rows = db.execute(
-        "SELECT id, COALESCE(employee_no, id) AS employee_no, name, active "
-        "FROM employees ORDER BY active DESC, employee_no ASC, id ASC"
-    ).fetchall()
-    return jsonify([dict(r) for r in rows])
+    # Ensure some default employees (so select boxes are not empty)
+    cur = db.execute("SELECT COUNT(*) AS c FROM employees")
+    if cur.fetchone()["c"] == 0:
+        db.executemany(
+            "INSERT INTO employees(name, active, display_order) VALUES (?, 1, ?)",
+            [("michal", 1), ("john", 2), ("honza", 3)],
+        )
 
-@app.route("/admin/resequence-employees")
-def resequence_employees():
-    """
-    Přečísluje sloupec employee_no na kompaktní pořadí 1..N pouze pro active=1.
-    (PRIMARY KEY id se nemění – je to bezpečné.)
-    """
-    db = _connect_db()
-    _ensure_employees_schema(db)
-    active = db.execute(
-        "SELECT id FROM employees WHERE active=1 ORDER BY COALESCE(employee_no,id), id"
-    ).fetchall()
-    n = 1
-    for r in active:
-        db.execute("UPDATE employees SET employee_no=? WHERE id=?", (n, r["id"]))
-        n += 1
     db.commit()
-    return jsonify({"ok": True, "assigned": n - 1})
 
-# -----------------------------------------------------------------------------
-# API – jobs (základ, kompatibilní s frontendem)
-# -----------------------------------------------------------------------------
+
+# ---------- Helpers ----------
+def _now_iso() -> str:
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _normalize_date(s: Optional[str]) -> str:
+    """Accept 'YYYY-MM-DD' or 'DD.MM.YYYY' and return 'YYYY-MM-DD'."""
+    if not s:
+        return date.today().isoformat()
+    s = s.strip()
+    # 2025-10-13
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        pass
+    # 13.10.2025
+    try:
+        return datetime.strptime(s, "%d.%m.%Y").date().isoformat()
+    except ValueError:
+        pass
+    return date.today().isoformat()
+
+
+def _json_ok(**extra):
+    d = {"ok": True}
+    d.update(extra)
+    return jsonify(d)
+
+
+def _json_err(msg: str, code: int = 400):
+    return jsonify({"ok": False, "error": msg}), code
+
+
+# ---------- Auth ----------
+@app.route("/api/me", methods=["GET"])
+def api_me():
+    if session.get("user_id"):
+        return jsonify(
+            {
+                "authenticated": True,
+                "email": session.get("email"),
+                "name": session.get("name", ""),
+                "role": session.get("role", "admin"),
+            }
+        )
+    return jsonify({"authenticated": False})
+
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    db = get_db()
+    data = request.get_json(force=True, silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = (data.get("password") or "")
+
+    if not email or not password:
+        return _json_err("email and password required", 400)
+
+    cur = db.execute("SELECT * FROM users WHERE LOWER(email)=?", (email,))
+    row = cur.fetchone()
+    if not row or row["password"] != password:
+        return _json_err("bad credentials", 401)
+
+    session["user_id"] = row["id"]
+    session["email"] = row["email"]
+    session["name"] = row["name"]
+    session["role"] = row["role"]
+    return _json_ok()
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.clear()
+    return _json_ok()
+
+
+# ---------- Jobs ----------
 @app.route("/api/jobs", methods=["GET", "POST", "DELETE"])
 def api_jobs():
-    db = _connect_db()
-    _ensure_jobs_schema(db)
-
+    db = get_db()
     if request.method == "GET":
         rows = db.execute(
-            "SELECT id, name, location, label, status FROM jobs "
-            "ORDER BY id DESC"
+            "SELECT id, name, city, period, status FROM jobs ORDER BY id DESC"
         ).fetchall()
         return jsonify([dict(r) for r in rows])
 
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
-        name = (data.get("name") or data.get("title") or "").strip()
-        location = (data.get("location") or "").strip()
-        label = (data.get("label") or "").strip()
-        status = (data.get("status") or "plan").strip() or "plan"
+        name = (data.get("name") or "").strip()
+        city = (data.get("city") or "").strip()
+        period = (data.get("period") or "").strip()
+        status = (data.get("status") or "Plán").strip()
         if not name:
-            return jsonify({"error": "name required"}), 400
-        cur = db.execute(
-            "INSERT INTO jobs(name, location, label, status) VALUES (?,?,?,?)",
-            (name, location, label, status)
+            return _json_err("name required")
+        db.execute(
+            "INSERT INTO jobs(name, city, period, status) VALUES (?, ?, ?, ?)",
+            (name, city, period, status),
         )
         db.commit()
-        new_row = db.execute("SELECT id, name, location, label, status FROM jobs WHERE id=?",
-                             (cur.lastrowid,)).fetchone()
-        return jsonify(dict(new_row)), 200
+        return _json_ok()
 
     # DELETE
     jid = request.args.get("id")
     if not jid:
-        return jsonify({"error": "missing id"}), 400
+        return _json_err("id required", 400)
     db.execute("DELETE FROM jobs WHERE id=?", (jid,))
     db.commit()
-    return jsonify({"ok": True}), 200
+    return _json_ok()
 
-# -----------------------------------------------------------------------------
-# API – tasks (read-only pro dashboard)
-# -----------------------------------------------------------------------------
-@app.route("/api/tasks")
+
+# ---------- Tasks (dummy small store on DB to persist) ----------
+@app.route("/api/tasks", methods=["GET", "POST", "DELETE"])
 def api_tasks():
-    db = _connect_db()
-    _ensure_tasks_schema(db)
-    rows = db.execute("SELECT id, title, done FROM tasks ORDER BY id DESC").fetchall()
-    return jsonify([dict(r) for r in rows])
-
-# -----------------------------------------------------------------------------
-# API – timesheets (výkazy)
-# -----------------------------------------------------------------------------
-@app.route("/gd/api/timesheets", methods=["GET", "POST", "DELETE"])
-@app.route("/api/timesheets", methods=["GET", "POST", "DELETE"])
-def api_timesheets():
-    db = _connect_db()
-    _ensure_timesheets_schema(db)
-
+    db = get_db()
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            done INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
     if request.method == "GET":
-        emp = request.args.get("employee_id")
-        if emp:
-            rows = db.execute(
-                "SELECT * FROM timesheets WHERE employee_id=? ORDER BY date DESC, id DESC",
-                (emp,)
-            ).fetchall()
-        else:
-            rows = db.execute("SELECT * FROM timesheets ORDER BY date DESC, id DESC").fetchall()
-        return jsonify([dict(r) for r in rows]), 200
-
+        rows = db.execute("SELECT id, title, done FROM tasks ORDER BY id DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
-        try:
-            date_ = normalize_date(data.get("date"))
-            employee_id = int(data.get("employee_id"))
-            job_id = int(data.get("job_id"))
-            hours = float(str(data.get("hours")).replace(",", "."))
-        except Exception:
-            return jsonify({"error": "invalid payload"}), 400
-        place = (data.get("place") or "").strip()
-        note  = (data.get("note") or "").strip()
-
-        cur = db.execute(
-            "INSERT INTO timesheets(date, employee_id, job_id, hours, place, note) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (date_, employee_id, job_id, hours, place, note)
-        )
+        title = (data.get("title") or "").strip()
+        if not title:
+            return _json_err("title required")
+        db.execute("INSERT INTO tasks(title) VALUES (?)", (title,))
         db.commit()
-        r = db.execute("SELECT * FROM timesheets WHERE id=?", (cur.lastrowid,)).fetchone()
-        return jsonify(dict(r)), 200
-
+        return _json_ok()
     # DELETE
     tid = request.args.get("id")
     if not tid:
-        return jsonify({"error": "missing id"}), 400
-    db.execute("DELETE FROM timesheets WHERE id=?", (tid,))
+        return _json_err("id required", 400)
+    db.execute("DELETE FROM tasks WHERE id=?", (tid,))
     db.commit()
-    return jsonify({"ok": True}), 200
+    return _json_ok()
 
-# -----------------------------------------------------------------------------
-# API – calendar
-# -----------------------------------------------------------------------------
-@app.route("/gd/api/calendar", methods=["GET", "POST", "DELETE"])
-@app.route("/api/calendar", methods=["GET", "POST", "DELETE"])
+
+# ---------- Employees ----------
+@app.route("/api/employees", methods=["GET"])
+def api_employees():
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, name, active, COALESCE(display_order, id) AS display_order "
+        "FROM employees WHERE active=1 ORDER BY display_order ASC, id ASC"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route("/admin/resequence-employees", methods=["POST", "GET"])
+def resequence_employees():
+    """Compact display_order for active employees to 1..N (removes 'dead' gaps)."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id FROM employees WHERE active=1 ORDER BY COALESCE(display_order, id) ASC, id ASC"
+    ).fetchall()
+    for idx, r in enumerate(rows, start=1):
+        db.execute("UPDATE employees SET display_order=? WHERE id=?", (idx, r["id"]))
+    db.commit()
+    return _json_ok(resequenced=len(rows))
+
+
+# ---------- Timesheets ----------
+def _ensure_timesheets_indexes(db: sqlite3.Connection) -> None:
+    db.execute("CREATE INDEX IF NOT EXISTS idx_timesheets_employee ON timesheets(employee_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_timesheets_date ON timesheets(date)")
+
+
+@app.route("/gd/api/timesheets", methods=["GET", "POST"])
+@app.route("/api/timesheets", methods=["GET", "POST"])
+def api_timesheets():
+    db = get_db()
+    _ensure_timesheets_indexes(db)
+    if request.method == "GET":
+        employee_id = request.args.get("employee_id")
+        sql = (
+            "SELECT t.id, t.date, t.employee_id, e.name AS employee_name, "
+            "t.job_id, j.name AS job_name, t.hours, t.place, t.note "
+            "FROM timesheets t "
+            "LEFT JOIN employees e ON e.id=t.employee_id "
+            "LEFT JOIN jobs j ON j.id=t.job_id "
+        )
+        args: Tuple[Any, ...] = ()
+        if employee_id:
+            sql += "WHERE t.employee_id=? "
+            args = (employee_id,)
+        sql += "ORDER BY t.date DESC, t.id DESC"
+        rows = db.execute(sql, args).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+    # POST
+    data = request.get_json(force=True, silent=True) or {}
+    date_str = _normalize_date(data.get("date"))
+    employee_id = int(data.get("employee_id"))
+    job_id = int(data.get("job_id")) if data.get("job_id") else None
+    hours = float(data.get("hours") or 0)
+    place = (data.get("place") or "").strip()
+    note = (data.get("note") or "").strip()
+
+    cur = db.execute(
+        "INSERT INTO timesheets(date, employee_id, job_id, hours, place, note) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (date_str, employee_id, job_id, hours, place, note),
+    )
+    db.commit()
+    return _json_ok(id=cur.lastrowid)
+
+
+# ---------- Calendar ----------
+def _ensure_calendar_indexes(db: sqlite3.Connection) -> None:
+    db.execute("CREATE INDEX IF NOT EXISTS idx_cal_date ON calendar_events(date)")
+
+
+@app.route("/gd/api/calendar", methods=["GET", "POST"])
+@app.route("/api/calendar", methods=["GET", "POST"])
 def api_calendar():
-    db = _connect_db()
-    _ensure_calendar_schema(db)
+    db = get_db()
+    _ensure_calendar_indexes(db)
 
     if request.method == "GET":
-        d_from = normalize_date(request.args.get("from"))
-        d_to   = request.args.get("to")
-        if d_to:
-            d_to = normalize_date(d_to)
-        else:
-            # pokud není "to", vrátíme celý měsíc d_from
-            d_to = month_end_from_first(d_from)
-
+        d_from = _normalize_date(request.args.get("from"))
+        d_to = _normalize_date(request.args.get("to"))
         rows = db.execute(
-            "SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? "
+            "SELECT id, date, start_time, end_time, title, note, job_id "
+            "FROM calendar_events WHERE date BETWEEN ? AND ? "
             "ORDER BY date ASC, COALESCE(start_time,'') ASC, id ASC",
-            (d_from, d_to)
+            (d_from, d_to),
         ).fetchall()
-        return jsonify([dict(r) for r in rows]), 200
+        return jsonify([dict(r) for r in rows])
 
-    if request.method == "POST":
-        data = request.get_json(force=True, silent=True) or {}
-        date_ = normalize_date(data.get("date"))
-        title = (data.get("title") or "").strip()
-        kind  = (data.get("kind") or "note").strip() or "note"
+    # POST create/update
+    data = request.get_json(force=True, silent=True) or {}
+    ev_id = data.get("id")
+    date_str = _normalize_date(data.get("date"))
+    start_time = (data.get("start_time") or "").strip()
+    end_time = (data.get("end_time") or "").strip()
+    title = (data.get("title") or "").strip()
+    note = (data.get("note") or "").strip()
+    job_id = int(data.get("job_id")) if data.get("job_id") else None
 
-        job_id = data.get("job_id")
-        try:
-            job_id = int(job_id) if job_id not in (None, "") else None
-        except (TypeError, ValueError):
-            job_id = None
-
-        start_time = (data.get("start_time") or "").strip() or None
-        end_time   = (data.get("end_time") or "").strip() or None
-        note       = (data.get("note") or "").strip()
-
-        cur = db.execute(
-            "INSERT INTO calendar_events(date, title, kind, job_id, start_time, end_time, note) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (date_, title, kind, job_id, start_time, end_time, note)
+    if ev_id:
+        db.execute(
+            "UPDATE calendar_events SET date=?, start_time=?, end_time=?, title=?, note=?, job_id=? "
+            "WHERE id=?",
+            (date_str, start_time, end_time, title, note, job_id, ev_id),
         )
         db.commit()
-        row = db.execute("SELECT * FROM calendar_events WHERE id=?", (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 200
+        return _json_ok(id=ev_id)
 
-    # DELETE
-    event_id = request.args.get("id")
-    if not event_id:
-        return jsonify({"error": "missing id"}), 400
-    db.execute("DELETE FROM calendar_events WHERE id=?", (event_id,))
+    cur = db.execute(
+        "INSERT INTO calendar_events(date, start_time, end_time, title, note, job_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (date_str, start_time, end_time, title, note, job_id),
+    )
     db.commit()
-    return jsonify({"ok": True}), 200
+    return _json_ok(id=cur.lastrowid)
 
-# -----------------------------------------------------------------------------
-# WSGI – Render očekává "from main import app"
-# -----------------------------------------------------------------------------
+
+# ---------- Static (logo/style) ----------
+@app.route("/logo.jpg")
+def logo():
+    return send_from_directory(".", "logo.jpg")
+
+
+@app.route("/style.css")
+def style():
+    return send_from_directory(".", "style.css")
+
+
+# ---------- Root (optional info page) ----------
+@app.route("/", methods=["GET"])
+def root():
+    # Serve bare page if your frontend is separate. Keeping 200 for Render healthcheck.
+    return "", 200
+
+
+# ---------- WSGI ----------
 if __name__ == "__main__":
-    # Lokální běh (Render použije gunicorn/wsgi)
-    port = int(os.getenv("PORT", "10000"))
+    port = int(os.environ.get("PORT", "10000"))
     app.run(host="0.0.0.0", port=port, debug=True)
