@@ -27,7 +27,7 @@ html,body{margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-app
 .cal-cell{border:1px solid #ddd;border-radius:8px;min-height:100px;padding:6px;display:flex;flex-direction:column}
 .cal-cell.muted{opacity:.5}
 .cal-date{font-weight:600;margin-bottom:4px}
-.cal-tag{font-size:.9em;border-radius:6px;padding:3px 6px;margin:2px 0;border:1px solid #bbb;cursor:pointer}
+.cal-tag{background:#f8f9fa;font-size:.9em;border-radius:6px;padding:3px 6px;margin:2px 0;border:1px solid #bbb;cursor:pointer}
 .kind-task{border-color:#6c757d}
 .kind-job{border-color:#0d6efd}
 .kind-note{border-color:#198754}

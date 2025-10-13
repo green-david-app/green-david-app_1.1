@@ -445,6 +445,7 @@ def api_items():
 def api_jobs():
     db = get_db()
     ensure_calendar_table()
+    migrate_calendar_add_color()
 
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
@@ -820,7 +821,8 @@ def ensure_calendar_table():
         job_id INTEGER,
         start_time TEXT,
         end_time TEXT,
-        note TEXT
+        note TEXT,
+        color TEXT
     )""")
     db.commit()
 
@@ -830,6 +832,7 @@ def api_calendar():
         return err
     db = get_db()
     ensure_calendar_table()
+    migrate_calendar_add_color()
 
     if request.method == "GET":
         d_from = request.args.get("from")
@@ -874,12 +877,13 @@ def api_calendar():
         start_time = (data.get("start_time") or None)
         end_time = (data.get("end_time") or None)
         note = (data.get("note") or "").strip()
+        color = (data.get("color") or None)
         if not date:
             return jsonify({"error": "Missing date or title"}), 400
         cur = db.execute(
-            "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) "
+            "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note,color) "
             "VALUES(?,?,?,?,?,?,?)",
-            (date, title, kind, job_id, start_time, end_time, note),
+            (date, title, kind, job_id, start_time, end_time, note, color),
         )
         db.commit()
         return jsonify({"ok": True, "id": cur.lastrowid})
@@ -929,3 +933,12 @@ def page_timesheets():
 
 # Backward-compatible alias
 normalize_date = _normalize_date
+
+
+def migrate_calendar_add_color():
+    db = get_db()
+    cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
+    if "color" not in cols:
+        db.execute("ALTER TABLE calendar_events ADD COLUMN color TEXT")
+        db.commit()
+
