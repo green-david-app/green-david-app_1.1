@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import json
+from urllib.parse import parse_qs
 from datetime import datetime, date
 from flask import Flask, request, jsonify, g, render_template, send_from_directory
 
@@ -93,12 +95,43 @@ def normalize_date(v):
     except Exception:
         return s
 
-# ---- Calendar API (DELETE + POST override) ----
+def payload_any():
+    data = {}
+    j = request.get_json(silent=True, force=True)
+    if isinstance(j, dict):
+        data.update(j)
+    if request.form:
+        for k in request.form:
+            data[k] = request.form.get(k)
+    for k in request.args:
+        data.setdefault(k, request.args.get(k))
+    if not data:
+        raw = request.get_data(as_text=True) or ""
+        if raw:
+            try:
+                j2 = json.loads(raw)
+                if isinstance(j2, dict): data.update(j2)
+            except Exception:
+                try:
+                    q = parse_qs(raw, keep_blank_values=True)
+                    for k, vals in q.items():
+                        if vals: data[k] = vals[0]
+                except Exception:
+                    pass
+    if "note" not in data:
+        for k in ("title","text","desc","description"):
+            if k in data and data[k]:
+                data["note"] = data[k]; break
+    if "color" not in data and "tag" in data:
+        data["color"] = data.get("tag")
+    if "kind" not in data:
+        data["kind"] = "note"
+    return data
+
 @app.route("/gd/api/calendar", methods=["GET","POST","PATCH","DELETE"])
 def api_calendar():
     db = get_db()
     ensure_calendar_table()
-    # Run migrations for ALL methods
     migrate_calendar_columns()
 
     if request.method == "GET":
@@ -114,10 +147,9 @@ def api_calendar():
             ).fetchall()
         return jsonify([dict(r) for r in rows])
 
-    data = request.get_json(force=True, silent=True) or {}
+    data = payload_any()
 
-    # DELETE override via POST
-    if request.method == "POST" and (data.get("_method") or "").upper() == "DELETE":
+    if request.method == "POST" and (str(data.get("_method") or "").upper() == "DELETE"):
         eid = data.get("id") or request.args.get("id")
         if not eid: return jsonify({"error":"Missing id"}), 400
         db.execute("DELETE FROM calendar_events WHERE id=?", (eid,)); db.commit()
@@ -125,13 +157,13 @@ def api_calendar():
 
     if request.method == "POST":
         date_s = normalize_date(data.get("date"))
-        title = (data.get("title") or "").strip() or None
         kind = (data.get("kind") or "note").strip()
         job_id = data.get("job_id")
         start_time = (data.get("start_time") or None)
         end_time = (data.get("end_time") or None)
         note = (data.get("note") or "").strip()
         color = (data.get("color") or "green").strip()
+        title = (data.get("title") or None)
         if not date_s: return jsonify({"error":"Missing date"}), 400
         cur = db.execute(
             "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note,color) VALUES (?,?,?,?,?,?,?,?)",
@@ -153,13 +185,39 @@ def api_calendar():
         db.execute("UPDATE calendar_events SET "+",".join(sets)+" WHERE id=?", vals)
         db.commit(); return jsonify({"ok": True})
 
-    # DELETE
     eid = request.args.get("id") or data.get("id")
     if not eid: return jsonify({"error":"Missing id"}), 400
     db.execute("DELETE FROM calendar_events WHERE id=?", (eid,)); db.commit()
     return jsonify({"ok": True})
 
-# ---- UI routes (leave the rest of the app intact) ----
+@app.route("/gd/api/calendar/save", methods=["POST"])
+def api_calendar_save_legacy():
+    db = get_db(); ensure_calendar_table(); migrate_calendar_columns()
+    data = payload_any()
+    date_s = normalize_date(data.get("date"))
+    kind = (data.get("kind") or "note").strip()
+    job_id = data.get("job_id")
+    start_time = (data.get("start_time") or None)
+    end_time = (data.get("end_time") or None)
+    note = (data.get("note") or "").strip()
+    color = (data.get("color") or "green").strip()
+    title = (data.get("title") or None)
+    if not date_s: return jsonify({"error":"Missing date"}), 400
+    cur = db.execute(
+        "INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note,color) VALUES (?,?,?,?,?,?,?,?)",
+        (date_s, title, kind, job_id, start_time, end_time, note, color)
+    )
+    db.commit(); return jsonify({"ok": True, "id": cur.lastrowid})
+
+@app.route("/gd/api/calendar/delete", methods=["POST"])
+def api_calendar_delete_legacy():
+    db = get_db(); ensure_calendar_table(); migrate_calendar_columns()
+    data = payload_any()
+    eid = data.get("id") or request.args.get("id")
+    if not eid: return jsonify({"error":"Missing id"}), 400
+    db.execute("DELETE FROM calendar_events WHERE id=?", (eid,)); db.commit()
+    return jsonify({"ok": True})
+
 @app.route("/")
 def index():
     try:
