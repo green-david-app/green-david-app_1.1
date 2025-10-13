@@ -14,7 +14,7 @@
 <dialog id="eventDlg">
   <form method="dialog" id="eventForm">
     <h3 id="dlgTitle">Událost</h3>
-    <input type="hidden" name="id" id="event_id"/>
+    <input type="hidden" name="id"/>
     <label>Typ
       <select name="kind">
         <option value="note">Poznámka</option>
@@ -25,10 +25,15 @@
     <label>Datum <input name="date" type="date" required/></label>
     <label>Začátek <input name="start_time" type="time"/></label>
     <label>Konec <input name="end_time" type="time"/></label>
+    <label>Barva
+      <select name="color">
+        <option value="green">Zelená</option>
+        <option value="red">Červená</option>
+        <option value="blue">Modrá</option>
+      </select>
+    </label>
     <label>Poznámka <textarea name="note" rows="3"></textarea></label>
-    <label>Barva <input name="color" type="color"/></label>
     <menu>
-      <button type="button" id="delBtn" style="margin-right:auto;display:none">Smazat</button>
       <button value="cancel">Zrušit</button>
       <button id="saveBtn" value="default">Uložit</button>
     </menu>
@@ -72,8 +77,21 @@ function renderEvents(items){
     const cell = grid.querySelector(\`.cal-cell[data-date="\${ev.date}"] .cal-events\`);
     if (!cell) continue;
     const tag = document.createElement("div");
-    tag.className = "cal-tag kind-"+ev.kind; if (ev.color) { tag.style.borderColor = ev.color; tag.style.background = ev.color+"20"; }
-    tag.textContent = (ev.start_time?ev.start_time+" ":"")+ (ev.note||"(bez popisu)");
+    tag.className = "cal-tag kind-"+ev.kind + " color-" + (ev.color||"green");
+    const textSpan = document.createElement("span");
+    textSpan.textContent = (ev.start_time?ev.start_time+" ":"") + (ev.note||"(bez popisu)");
+    tag.appendChild(textSpan);
+    const del = document.createElement("button");
+    del.textContent = "×";
+    del.className = "cal-del";
+    del.title = "Smazat";
+    del.addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      if(!confirm("Smazat tuto položku?")) return;
+      const resp = await fetch(`/gd/api/calendar?id=${ev.id}`, {method: "DELETE"});
+      if(resp.ok){ loadMonth(); } else { alert("Mazání selhalo"); }
+    });
+    tag.appendChild(del);
     tag.title = ev.note||"";
     tag.addEventListener("click", ()=>openDlg(ev));
     cell.appendChild(tag);
@@ -82,28 +100,25 @@ function renderEvents(items){
 
 function openDlg(ev){
   form.reset();
-  form.elements['id'].value = ev.id || "";
+  form.id.value = ev.id || "";
   form.kind.value = ev.kind || "note";
   form.date.value = ev.date || ymd(new Date());
   form.start_time.value = ev.start_time||"";
   form.end_time.value = ev.end_time||"";
   form.note.value = ev.note||"";
-  form.color.value = ev.color||"#198754";
-  document.getElementById("delBtn").style.display = ev.id? "inline-block":"none";
   dlg.showModal();
 }
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const payload = Object.fromEntries(new FormData(form).entries()); payload.id = payload.id || document.getElementById('event_id').value;
+  const payload = Object.fromEntries(new FormData(form).entries());
   payload.start_time = payload.start_time || null;
   payload.end_time = payload.end_time || null;
   payload.note = payload.note || "";
-  payload.color = payload.color || null;
   let url = "/gd/api/calendar", method="POST";
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  if (resp.ok){ dlg.close(); loadMonth(); } else { const t=await resp.text(); console.error(t); alert("Uložení selhalo"); }
+  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
 });
 
 document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
@@ -111,14 +126,6 @@ document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loa
 document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-
-document.getElementById("delBtn").onclick = async ()=>{
-  const id = (form.elements['id'] && form.elements['id'].value) || document.getElementById('event_id').value;
-  if (!id) return;
-  if (!confirm("Smazat událost #"+id+"?")) return;
-  const r = await fetch("/gd/api/calendar?id="+encodeURIComponent(id), {method:"DELETE"});
-  if (r.ok){ dlg.close(); loadMonth(); } else { alert("Mazání selhalo"); }
-};
 
 loadMonth();
 </script>

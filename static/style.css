@@ -27,9 +27,17 @@ html,body{margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-app
 .cal-cell{border:1px solid #ddd;border-radius:8px;min-height:100px;padding:6px;display:flex;flex-direction:column}
 .cal-cell.muted{opacity:.5}
 .cal-date{font-weight:600;margin-bottom:4px}
-.cal-tag{background:#f8f9fa;font-size:.9em;border-radius:6px;padding:3px 6px;margin:2px 0;border:1px solid #bbb;cursor:pointer}
+.cal-tag{font-size:.9em;border-radius:6px;padding:3px 6px;margin:2px 0;border:1px solid #bbb;cursor:pointer}
 .kind-task{border-color:#6c757d}
 .kind-job{border-color:#0d6efd}
 .kind-note{border-color:#198754}
 .cal-controls{display:flex;align-items:center;gap:8px}
 dialog form{display:flex;flex-direction:column;gap:8px;min-width:320px}
+
+
+/* Calendar tag colors and delete button */
+.cal-tag{position:relative; display:flex; justify-content:space-between; align-items:center; gap:8px}
+.cal-tag .cal-del{border:0; background:transparent; font-weight:800; cursor:pointer; line-height:1; padding:0 4px}
+.color-green{background:#e6f5ea; border-color:#9bd3a9}
+.color-red{background:#fde8e8; border-color:#f5a3a3}
+.color-blue{background:#e8f1fd; border-color:#9bb7f0}

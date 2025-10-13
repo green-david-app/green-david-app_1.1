@@ -445,7 +445,6 @@ def api_items():
 def api_jobs():
     db = get_db()
     ensure_calendar_table()
-    migrate_calendar_add_color()
 
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
@@ -809,6 +808,8 @@ def migrate_calendar_columns():
     add_col("end_time", "TEXT")
     add_col("note", "TEXT DEFAULT ''")
     db.commit()
+    add_col(\"color\", \"TEXT DEFAULT 'green'\")
+    db.commit()
 
 @app.route("/api/calendar", methods=["GET", "POST", "PATCH", "DELETE"])
 def ensure_calendar_table():
@@ -821,8 +822,9 @@ def ensure_calendar_table():
         job_id INTEGER,
         start_time TEXT,
         end_time TEXT,
-        note TEXT,
-        color TEXT
+        note TEXT
+    ,
+        color TEXT DEFAULT 'green'
     )""")
     db.commit()
 
@@ -832,7 +834,6 @@ def api_calendar():
         return err
     db = get_db()
     ensure_calendar_table()
-    migrate_calendar_add_color()
 
     if request.method == "GET":
         d_from = request.args.get("from")
@@ -877,7 +878,6 @@ def api_calendar():
         start_time = (data.get("start_time") or None)
         end_time = (data.get("end_time") or None)
         note = (data.get("note") or "").strip()
-        color = (data.get("color") or None)
         if not date:
             return jsonify({"error": "Missing date or title"}), 400
         cur = db.execute(
@@ -892,7 +892,7 @@ def api_calendar():
         eid = data.get("id")
         if not eid:
             return jsonify({"error": "Missing id"}), 400
-        fields = ["date", "title", "kind", "job_id", "start_time", "end_time", "note"]
+        fields = ["date","title","kind","job_id","start_time","end_time","note","color"]
         sets, vals = [], []
         for f in fields:
             if f in data:
@@ -933,12 +933,3 @@ def page_timesheets():
 
 # Backward-compatible alias
 normalize_date = _normalize_date
-
-
-def migrate_calendar_add_color():
-    db = get_db()
-    cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
-    if "color" not in cols:
-        db.execute("ALTER TABLE calendar_events ADD COLUMN color TEXT")
-        db.commit()
-
