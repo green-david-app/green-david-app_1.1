@@ -1,64 +1,233 @@
-<!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Výkazy hodin – green david app</title>
-<link rel="stylesheet" href="/style.css"/>
-</head><body>
-<header class="header">
-  <div class="brand">
-    <img src="/logo.svg" class="brand-logo" alt="green david"/>
-    <div><div class="brand-title">green david app</div><div class="brand-sub">Výkazy hodin</div></div>
-    <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>green david app · Výkazy hodin</title>
+  <link rel="stylesheet" href="/style.css"/>
+  <style>
+    .container{max-width:1100px;margin:24px auto 80px; padding:0 16px;}
+    .brand{display:flex;align-items:center;gap:12px;margin:18px 0 8px 0;}
+    .brand img{width:36px;height:36px;border-radius:8px;}
+    .brand .title{font-weight:700;font-size:20px}
+    .back a{color:#2e7d32;text-decoration:none;}
+    .card{background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden}
+    .card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d}
+    .card-h .left{font-weight:600}
+    .card-b{padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .grow{flex:1}
+    .btn{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .ghost{background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #3b4549;padding:10px;text-align:left;font-size:14px}
+    th{opacity:.8;font-weight:600}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
+    .modal .dialog{background:#fff;color:#111;border-radius:10px;min-width:680px;max-width:95%;padding:18px;border:2px solid #111}
+    .modal .row{margin-top:8px}
+    .modal input,.modal select,.modal textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0}
+    .mt8{margin-top:8px}
+    .mt12{margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="back"><a href="/">← Zpět do aplikace</a></div>
+    <div class="brand">
+      <img src="/logo.jpg" alt="green david"/>
+      <div class="title">green david app</div>
+      <div style="opacity:.7;margin-left:6px">Výkazy hodin</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="left">Výkazy</div>
+        <div class="right">
+          <button class="btn" id="btnAdd">+ Přidat záznam</button>
+          <button class="ghost" id="btnReload">↻ Obnovit</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div id="summary" class="mt8" style="opacity:.85"></div>
+        <div class="mt12" style="overflow:auto">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Zaměstnanec</th>
+                <th>Zakázka</th>
+                <th>Hodin</th>
+                <th>Pozn.</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-</header>
-<main class="container"><div id="app"></div></main>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script>
-  async function api(url, opts){ const r = await fetch(url, {headers: {'Content-Type':'application/json'}, credentials:'same-origin', ...(opts||{})}); if(!r.ok) throw new Error(await r.text()); return await r.json(); }
-</script>
-<script type="text/babel" data-presets="env,react">
-const {useState,useEffect} = React;
-function Timesheets(){
-  const [rows,setRows]=useState([]);
-  const [emps,setEmps]=useState([]);
-  const [f,setF]=useState({from:"",to:"",emp:""});
-  async function load(){
-    const [ts, es] = await Promise.all([api("/gd/api/timesheets"), api("/gd/api/employees")]);
-    setRows(ts || []); setEmps(es || []);
+
+  <div class="modal" id="modal">
+    <div class="dialog">
+      <div style="font-weight:700;font-size:18px">Přidat výkaz</div>
+      <div class="row mt12">
+        <div class="grow">
+          <div>Datum</div>
+          <input type="date" id="fDate"/>
+        </div>
+        <div class="grow">
+          <div>Zaměstnanec</div>
+          <select id="fEmp"></select>
+        </div>
+        <div class="grow">
+          <div>Zakázka</div>
+          <select id="fJob"></select>
+        </div>
+        <div style="width:120px">
+          <div>Hodin</div>
+          <input type="number" id="fHours" step="0.25" min="0" value="8"/>
+        </div>
+      </div>
+      <div class="row mt8">
+        <div class="grow">
+          <div>Poznámka</div>
+          <textarea id="fNote" rows="3" placeholder="co se dělalo..."></textarea>
+        </div>
+      </div>
+      <div class="row mt12" style="justify-content:flex-end">
+        <button class="ghost" id="btnCancel">Zrušit</button>
+        <button class="btn" id="btnSave">Uložit</button>
+      </div>
+      <div id="formMsg" class="mt8" style="color:#b00020"></div>
+    </div>
+  </div>
+
+  <script>
+  const $ = sel => document.querySelector(sel);
+  const api = {
+    me:      () => fetch('/api/me').then(r=>r.json()),
+    emps:    () => fetch('/gd/api/employees').then(r=>r.json()),
+    jobs:    () => fetch('/api/jobs').then(r=>r.json()),
+    list:    () => fetch('/gd/api/timesheets').then(r=>r.json()),
+    create:  (payload) => fetch('/gd/api/timesheets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}).then(r=>r.json()),
+    remove:  (id) => fetch('/gd/api/timesheets?id='+encodeURIComponent(id), {method:'DELETE'}).then(r=>r.json())
+  };
+
+  const state = { employees:[], jobs:[], rows:[] };
+
+  function fmtDate(s){
+    if(!s) return '';
+    const [y,m,d] = String(s).split('T')[0].split('-');
+    return `${d}.${m}.${y}`;
   }
-  useEffect(()=>{ load(); }, []);
-  const filtered = rows.filter(r=> (!f.emp || String(r.employee_id)===String(f.emp)) &&
-    (!f.from || r.date>=f.from) && (!f.to || r.date<=f.to));
-  const total = filtered.reduce((s,r)=>s + (parseFloat(r.hours)||0), 0);
-  return (<div className="card">
-    <div className="card-h">
-      <div>Výkazy hodin</div>
-      <div className="row-gap">
-        <a className="ghost" href={`/gd/api/timesheets/export${f.from||f.to ? `?from=${f.from}&to=${f.to}` : ''}`}>Export CSV</a>
-      </div>
-    </div>
-    <div className="card-c">
-      <div className="form-row">
-        <select value={f.emp} onChange={e=>setF({...f,emp:e.target.value})}>
-          <option value="">— Všichni zaměstnanci —</option>
-          {emps.map(e=>(<option key={e.id} value={e.id}>{e.name}</option>))}
-        </select>
-        <input type="date" value={f.from} onChange={e=>setF({...f,from:e.target.value})}/>
-        <input type="date" value={f.to} onChange={e=>setF({...f,to:e.target.value})}/>
-        <button className="ghost" onClick={()=>setF({from:"",to:"",emp:""})}>Zrušit filtr</button>
-      </div>
-      <div className="small" style={{marginBottom:'.5rem'}}>Celkem: <b>{total.toFixed(2)} h</b> ({filtered.length} záznamů)</div>
-      <table className="table">
-        <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Hodiny</th><th>Místo</th><th>Popis</th></tr></thead>
-        <tbody>
-          {filtered.map(r=>(<tr key={r.id}><td>{r.date}</td><td>{(emps.find(e=>e.id===r.employee_id)||{}).name||r.employee_id}</td><td>{r.hours}</td><td>{r.place||""}</td><td>{r.activity||""}</td></tr>))}
-        </tbody>
-      </table>
-    </div>
-  </div>);
-}
-function App(){ return <Timesheets/> }
-ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
-</script>
-</body></html>
+  function empName(id){
+    const e = state.employees.find(x=>String(x.id)===String(id));
+    return e? (e.name || e.fullname || e.title || ('#'+id)) : ('#'+id);
+  }
+  function jobName(id){
+    const j = state.jobs.find(x=>String(x.id)===String(id));
+    const nm = j? (j.name || j.title || j.customer || ('#'+id)) : ('#'+id);
+    const city = j && (j.city || j.mesto);
+    return city? nm + ' ('+city+')' : nm;
+  }
+
+  async function loadAll(){
+    const [emps, jobs, rows] = await Promise.all([api.emps(), api.jobs(), api.list()]);
+    state.employees = Array.isArray(emps)? emps: (emps.items||[]);
+    state.jobs = Array.isArray(jobs)? jobs: (jobs.items||jobs||[]);
+    state.rows = Array.isArray(rows)? rows: (rows.items||rows||[]);
+    renderTable();
+  }
+
+  function renderTable(){
+    const tb = $('#tbl tbody');
+    tb.innerHTML = '';
+    let total = 0;
+    state.rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      const hours = Number(r.hours || r.hrs || r.time || 0) || 0;
+      total += hours;
+      tr.innerHTML = `
+        <td>${fmtDate(r.date)}</td>
+        <td>${empName(r.employee_id || r.emp_id || r.user_id)}</td>
+        <td>${jobName(r.job_id)}</td>
+        <td><span class="pill">${hours.toFixed(2)}</span></td>
+        <td>${(r.note||'')}</td>
+        <td style="text-align:right">
+          ${r.id? `<button class="ghost" data-del="${r.id}">Smazat</button>`:''}
+        </td>`;
+      tb.appendChild(tr);
+    });
+    $('#summary').textContent = `Záznamů: ${state.rows.length} · Celkem hodin: ${total.toFixed(2)}`;
+
+    // bind delete buttons
+    tb.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        if(!confirm('Smazat výkaz?')) return;
+        const id = btn.getAttribute('data-del');
+        await api.remove(id);
+        await loadAll();
+      };
+    });
+  }
+
+  function openModal(){
+    $('#modal').style.display='flex';
+    // default date = today
+    const d = new Date();
+    const iso = d.toISOString().slice(0,10);
+    $('#fDate').value = iso;
+    // fill selects
+    const eSel = $('#fEmp'); eSel.innerHTML='';
+    state.employees.forEach(e=>{
+      const opt = document.createElement('option');
+      opt.value = e.id; opt.textContent = e.name || e.fullname || ('#'+e.id);
+      eSel.appendChild(opt);
+    });
+    const jSel = $('#fJob'); jSel.innerHTML='';
+    state.jobs.forEach(j=>{
+      const opt = document.createElement('option');
+      opt.value = j.id; opt.textContent = jobName(j.id);
+      jSel.appendChild(opt);
+    });
+    $('#fHours').value = '8';
+    $('#fNote').value = '';
+    $('#formMsg').textContent = '';
+  }
+  function closeModal(){ $('#modal').style.display='none'; }
+
+  async function saveEntry(){
+    const payload = {
+      date: $('#fDate').value,
+      employee_id: $('#fEmp').value,
+      job_id: $('#fJob').value,
+      hours: parseFloat($('#fHours').value||'0')||0,
+      note: $('#fNote').value||''
+    };
+    try{
+      const res = await api.create(payload);
+      if(res && res.ok===False){
+        $('#formMsg').textContent = res.error || 'Uložení selhalo';
+        return;
+      }
+      closeModal();
+      await loadAll();
+    }catch(err){
+      $('#formMsg').textContent = 'Uložení selhalo: ' + (err.message||err);
+    }
+  }
+
+  $('#btnAdd').onclick = openModal;
+  $('#btnCancel').onclick = closeModal;
+  $('#btnSave').onclick = saveEntry;
+  $('#btnReload').onclick = loadAll;
+
+  loadAll().catch(err=>{
+    console.error(err);
+    document.body.insertAdjacentHTML('beforeend', '<div style="color:#b00020;padding:12px">'+String(err)+'</div>');
+  });
+  </script>
+</body>
+</html>
