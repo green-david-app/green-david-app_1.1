@@ -477,5 +477,20 @@ function JobsList({onOpen}){
 
       ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
-  </body>
+  <script>
+// Hide old green shortcut row "Kalendář Výkazy hodin" if it exists (we keep only the tabs bar)
+document.addEventListener('DOMContentLoaded', function(){
+  const anchors = Array.from(document.querySelectorAll('a'));
+  const kal = anchors.find(a => a.textContent && a.textContent.trim().match(/^Kalend[aá]ř$/));
+  if (kal && kal.parentElement){
+    const sib = kal.parentElement.querySelector('a + a');
+    const txt = sib ? sib.textContent.trim() : "";
+    if (/^V[ýy]kazy\s*hodin$/i.test(txt)) {
+      // Hide the whole container row
+      kal.parentElement.style.display = 'none';
+    }
+  }
+});
+</script>
+</body>
 </html>
