@@ -114,20 +114,24 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-  const items=[
+  const items = [
     {key:"calendar",label:"Kalendář",href:"/calendar.html"},
     {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
     {key:"jobs",label:"Zakázky"},
     {key:"tasks",label:"Úkoly"},
     {key:"employees",label:"Zaměstnanci"},
     {key:"warehouse",label:"Sklad"},
-    ...(canAdmin?[{key:"users",label:"Uživatelé"}]:[])
-  ]:[])
-        ]:[])];
-        return <div className="tabs">{items.map(it=>(<div key={it.key} className={"tab"+(it.key===value?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>))}</div>;
-      }
-
-      function JobsList({onOpen}){
+    ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
+  ];
+  return <div className="tabs">
+    {items.map(it => (
+      it.href
+        ? <a key={it.key} className={"tab"+(value===it.key?" active":"")} href={it.href}>{it.label}</a>
+        : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
+    ))}
+  </div>;
+}
+function JobsList({onOpen}){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
