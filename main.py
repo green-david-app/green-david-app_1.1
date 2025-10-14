@@ -1,4 +1,20 @@
 
+
+# --- helpers for calendar aggregation ---
+def _row_get(row, *keys):
+    for k in keys:
+        if k in row.keys() and row[k] not in (None, ""):
+            return row[k]
+    return None
+
+def _best_job_date(row):
+    # Try common date columns used in the app
+    return _row_get(row, "date", "plan_date", "planned_date", "due_date", "start_date")
+
+def _best_task_date(row):
+    return _row_get(row, "due_date", "date", "planned_date")
+# --- end helpers ---
+
 import os, re, io, base64, sqlite3
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
@@ -436,13 +452,82 @@ def api_calendar():
     if err: return err
     db = get_db()
     if request.method == "GET":
-        # Optional date range filter: ?from=YYYY-MM-DD&to=YYYY-MM-DD
         d_from = request.args.get("from"); d_to = request.args.get("to")
         if d_from and d_to:
-            rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
+            df = _normalize_date(d_from); dt = _normalize_date(d_to)
         else:
-            rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
-        return jsonify([dict(r) for r in rows])
+            # fallback: wide range around today
+            import datetime as _dt
+            today = _dt.date.today()
+            df = (today.replace(day=1) - _dt.timedelta(days=365)).isoformat()
+            dt = (today + _dt.timedelta(days=365)).isoformat()
+
+        items = []
+
+        # 1) explicit calendar_events (user-entered)
+        rows = db.execute(
+            "SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC",
+            (df, dt)
+        ).fetchall()
+        items.extend([dict(r) for r in rows])
+
+        # 2) jobs as virtual events
+        try:
+            cols = [c[1] for c in db.execute("PRAGMA table_info(jobs)").fetchall()]
+            if cols:
+                rs = db.execute("SELECT * FROM jobs").fetchall()
+                for r in rs:
+                    rr = dict(r)
+                    jd = _best_job_date(rr)
+                    if not jd:
+                        continue
+                    jd = _normalize_date(jd)
+                    if jd < df or jd > dt:
+                        continue
+                    title = rr.get("name") or rr.get("title") or "Zakázka"
+                    city = rr.get("city") or rr.get("mesto") or ""
+                    note = rr.get("note") or rr.get("pozn") or ""
+                    items.append({
+                        "id": f"job-{rr.get('id')}",
+                        "date": jd,
+                        "title": title if not city else f"{title} ({city})",
+                        "kind": "job",
+                        "job_id": rr.get("id"),
+                        "note": note,
+                        "color": "#ef6c00"
+                    })
+        except Exception:
+            pass
+
+        # 3) tasks as virtual events (if tasks table exists)
+        try:
+            cols = [c[1] for c in db.execute("PRAGMA table_info(tasks)").fetchall()]
+            if cols:
+                rs = db.execute("SELECT * FROM tasks").fetchall()
+                for r in rs:
+                    rr = dict(r)
+                    td = _best_task_date(rr)
+                    if not td:
+                        continue
+                    td = _normalize_date(td)
+                    if td < df or td > dt:
+                        continue
+                    title = rr.get("title") or rr.get("name") or "Úkol"
+                    items.append({
+                        "id": f"task-{rr.get('id')}",
+                        "date": td,
+                        "title": title,
+                        "kind": "task",
+                        "note": rr.get("note") or "",
+                        "color": "#1976d2"
+                    })
+        except Exception:
+            pass
+
+        # sort & return
+        items.sort(key=lambda x: (x.get("date",""), x.get("start_time") or ""))
+        return jsonify(items)
+
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         date = normalize_date(data.get("date"))
