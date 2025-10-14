@@ -893,3 +893,7 @@ def gd_api_jobs():
 @app.route('/gd/api/calendar', methods=['GET','POST','PATCH','DELETE'])
 def gd_api_calendar():
     return api_calendar()
+
+
+def normalize_date(v):
+    return _normalize_date(v)
