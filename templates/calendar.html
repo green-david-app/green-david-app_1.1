@@ -9,7 +9,7 @@
   <button id="addTask" class="btn">+ Úkol</button>
   <button id="addJob" class="btn">+ Zakázka</button>
 </div>
-<div id="calendar" class="cal-grid"></div>
+<div id="calendar" class="calendar-grid"></div>
 
 <dialog id="eventDlg">
   <form method="dialog" id="eventForm">
@@ -25,13 +25,6 @@
     <label>Datum <input name="date" type="date" required/></label>
     <label>Začátek <input name="start_time" type="time"/></label>
     <label>Konec <input name="end_time" type="time"/></label>
-    <label>Barva
-      <select name="color">
-        <option value="green">Zelená</option>
-        <option value="red">Červená</option>
-        <option value="blue">Modrá</option>
-      </select>
-    </label>
     <label>Poznámka <textarea name="note" rows="3"></textarea></label>
     <menu>
       <button value="cancel">Zrušit</button>
@@ -45,57 +38,40 @@ const grid = document.getElementById("calendar");
 const label = document.getElementById("monthLabel");
 const dlg = document.getElementById("eventDlg");
 const form = document.getElementById("eventForm");
+
 let cur = new Date(); cur.setDate(1);
+
 function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
 function ymd(d){return d.toISOString().slice(0,10);}
 
-async function loadMonth(){
+async function loadMonth() {
   label.textContent = fmtMonth(cur);
   grid.innerHTML = "";
-  const first = new Date(cur); const startDow = (first.getDay()+6)%7; first.setDate(1-startDow);
-  const days = ["Po","Út","St","Čt","Pá","So","Ne"];
-  for (const dn of days){ const h=document.createElement("div"); h.className="cal-head"; h.textContent=dn; grid.appendChild(h); }
+  const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
+  first.setDate(1-startDow);
   for (let i=0;i<42;i++){
-    const d = new Date(first); d.setDate(first.getDate()+i);
-    const e = document.createElement("div");
-    e.className = "cal-cell"+(d.getMonth()==cur.getMonth()?"":" cal-dim");
-    e.dataset.date = ymd(d);
-    e.innerHTML = `<div class="cal-date">${d.getDate()}</div><div class="cal-evlist"></div>`;
-    grid.appendChild(e);
+    const day = new Date(first); day.setDate(first.getDate()+i);
+    const cell = document.createElement("div");
+    cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
+    cell.innerHTML = \`<div class="cal-date">\${day.getDate()}.</div><div class="cal-events"></div>\`;
+    cell.dataset.date = ymd(day);
+    cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
+    grid.appendChild(cell);
   }
   const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
   const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-  const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
-  if(!resp.ok){ alert("Načtení selhalo"); return; }
-  const items = await resp.json();
-  renderEvents(items);
+  const resp = await fetch(\`/gd/api/calendar?from=\${from}&to=\${to}\`);
+  const data = await resp.json();
+  renderEvents(data.items||[]);
 }
 
 function renderEvents(items){
   for (const ev of items){
-    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-evlist`);
+    const cell = grid.querySelector(\`.cal-cell[data-date="\${ev.date}"] .cal-events\`);
     if (!cell) continue;
     const tag = document.createElement("div");
-    tag.className = "cal-ev kind-"+ev.kind + " color-" + (ev.color||"green");
-    const textSpan = document.createElement("span");
-    textSpan.textContent = (ev.start_time?ev.start_time+" ":"") + (ev.note||"(bez popisu)");
-    tag.appendChild(textSpan);
-    const del = document.createElement("button"); del.textContent="×"; del.className="cal-del"; del.title="Smazat";
-    del.addEventListener("click", async (e)=>{
-      e.stopPropagation();
-      if(!confirm("Smazat tuto položku?")) return;
-      let ok = false;
-      try {
-        const resp = await fetch(`/gd/api/calendar?id=${ev.id}`, {method:"DELETE"});
-        ok = resp.ok;
-      } catch(e){ ok = false; }
-        if(!ok){
-          const resp2 = await fetch("/gd/api/calendar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({id: ev.id, _method:"DELETE"})});
-          ok = resp2.ok;
-        }
-      if (ok){ loadMonth(); } else { alert("Mazání selhalo"); }
-    });
-    tag.appendChild(del);
+    tag.className = "cal-tag kind-"+ev.kind;
+    tag.textContent = (ev.start_time?ev.start_time+" ":"")+ (ev.note||"(bez popisu)");
     tag.title = ev.note||"";
     tag.addEventListener("click", ()=>openDlg(ev));
     cell.appendChild(tag);
@@ -109,16 +85,9 @@ function openDlg(ev){
   form.date.value = ev.date || ymd(new Date());
   form.start_time.value = ev.start_time||"";
   form.end_time.value = ev.end_time||"";
-  form.color.value = (ev.color||"green");
   form.note.value = ev.note||"";
   dlg.showModal();
 }
-
-document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
-document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
-document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -126,14 +95,18 @@ form.addEventListener("submit", async (e)=>{
   payload.start_time = payload.start_time || null;
   payload.end_time = payload.end_time || null;
   payload.note = payload.note || "";
-  payload.color = form.color.value || "green";
   let url = "/gd/api/calendar", method="POST";
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
 });
 
+document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
+document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
+document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+
 loadMonth();
-}
 </script>
 {% endblock %}
