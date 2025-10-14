@@ -33,7 +33,9 @@ def get_db():
     return g.db
 
 
+
 def ensure_schema():
+
     db = get_db()
     db.executescript("""
     CREATE TABLE IF NOT EXISTS employees (
@@ -62,7 +64,8 @@ def ensure_schema():
         job_id INTEGER,
         start_time TEXT,                  -- HH:MM optional
         end_time TEXT,                    -- HH:MM optional
-        note TEXT DEFAULT ''
+        note TEXT DEFAULT '',
+        color TEXT DEFAULT '#2e7d32'
     );
     """)
     db.commit()
@@ -83,7 +86,16 @@ def ensure_columns(db):
             db.commit()
     except Exception:
         pass
+
+    try:
+        cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
+        if "color" not in cols:
+            db.execute("ALTER TABLE calendar_events ADD COLUMN color TEXT DEFAULT '#2e7d32'")
+            db.commit()
+    except Exception:
+        pass
 # ---------- migrations ----------
+
 def get_version(db):
     db.execute("CREATE TABLE IF NOT EXISTS app_meta (id INTEGER PRIMARY KEY CHECK (id=1), version INTEGER NOT NULL)")
     row = db.execute("SELECT version FROM app_meta WHERE id=1").fetchone()
@@ -456,6 +468,7 @@ def api_calendar():
         start_time = (data.get("start_time") or None)
         end_time = (data.get("end_time") or None)
         note = (data.get("note") or "")
+        color = (data.get("color") or "#2e7d32")
         if not date or not title:
             return jsonify({"ok": False, "error": "invalid_input"}), 400
         db.execute(
@@ -471,7 +484,7 @@ def api_calendar():
         if not eid:
             return jsonify({"ok": False, "error": "missing_id"}), 400
         updates = {}
-        for k in ("date", "title", "kind", "job_id", "start_time", "end_time", "note"):
+        for k in ("date", "title", "kind", "job_id", "start_time", "end_time", "note", "color"):
             if k in data and data[k] is not None:
                 updates[k] = _normalize_date(data[k]) if k == "date" else data[k]
         if not updates:
