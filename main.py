@@ -12,7 +12,7 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def __normalize_date(v):
+def _normalize_date(v):
     if not v: return v
     # Accept DD.MM.YYYY, DD-MM-YYYY, or YYYY-MM-DD
     import re
@@ -33,9 +33,7 @@ def get_db():
     return g.db
 
 
-
 def ensure_schema():
-
     db = get_db()
     db.executescript("""
     CREATE TABLE IF NOT EXISTS employees (
@@ -64,8 +62,7 @@ def ensure_schema():
         job_id INTEGER,
         start_time TEXT,                  -- HH:MM optional
         end_time TEXT,                    -- HH:MM optional
-        note TEXT DEFAULT '',
-        color TEXT DEFAULT '#2e7d32'
+        note TEXT DEFAULT ''
     );
     """)
     db.commit()
@@ -86,16 +83,7 @@ def ensure_columns(db):
             db.commit()
     except Exception:
         pass
-
-    try:
-        cols = [r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
-        if "color" not in cols:
-            db.execute("ALTER TABLE calendar_events ADD COLUMN color TEXT DEFAULT '#2e7d32'")
-            db.commit()
-    except Exception:
-        pass
 # ---------- migrations ----------
-
 def get_version(db):
     db.execute("CREATE TABLE IF NOT EXISTS app_meta (id INTEGER PRIMARY KEY CHECK (id=1), version INTEGER NOT NULL)")
     row = db.execute("SELECT version FROM app_meta WHERE id=1").fetchone()
@@ -436,72 +424,58 @@ def api_timesheets():
 
 
 @app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
-
 def api_calendar():
-    # Keep same auth behavior as the rest of the app
-    u, err = require_role(write=(request.method != "GET"))
+    u, err = require_role(write=(request.method!="GET"))
     if err: return err
     db = get_db()
-
     if request.method == "GET":
-        d_from = request.args.get("from")
-        d_to = request.args.get("to")
+        # Optional date range filter: ?from=YYYY-MM-DD&to=YYYY-MM-DD
+        d_from = request.args.get("from"); d_to = request.args.get("to")
         if d_from and d_to:
-            df = _normalize_date(d_from); dt = _normalize_date(d_to)
-            rows = db.execute(
-                "SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? "
-                "ORDER BY date ASC, start_time ASC", (df, dt)
-            ).fetchall()
+            rows = db.execute("SELECT * FROM calendar_events WHERE date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC", (d_from, d_to)).fetchall()
         else:
-            rows = db.execute(
-                "SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000"
-            ).fetchall()
+            rows = db.execute("SELECT * FROM calendar_events ORDER BY date DESC, start_time ASC LIMIT 1000").fetchall()
         return jsonify([dict(r) for r in rows])
-
     data = request.get_json(force=True, silent=True) or {}
-
     if request.method == "POST":
-        date = _normalize_date(data.get("date"))
+        date = normalize_date(data.get("date"))
         title = (data.get("title") or "").strip()
         kind = (data.get("kind") or "note").strip()
         job_id = data.get("job_id")
-        start_time = (data.get("start_time") or None)
-        end_time = (data.get("end_time") or None)
-        note = (data.get("note") or "")
-        color = (data.get("color") or "#2e7d32")
-        if not date or not title:
-            return jsonify({"ok": False, "error": "invalid_input"}), 400
-        db.execute(
-            "INSERT INTO calendar_events(date, title, kind, job_id, start_time, end_time, note) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (date, title, kind, job_id, start_time, end_time, note)
-        )
+        start_time = (data.get("start_time") or "").strip() or None
+        end_time = (data.get("end_time") or "").strip() or None
+        note = (data.get("note") or "").strip()
+        if not (date and title):
+            return jsonify({"error":"Missing date or title"}), 400
+        cur = db.execute("INSERT INTO calendar_events(date,title,kind,job_id,start_time,end_time,note) VALUES(?,?,?,?,?,?,?)",
+                         (date,title,kind,job_id,start_time,end_time,note))
         db.commit()
-        return jsonify({"ok": True})
-
+        return jsonify({"ok":True,"id":cur.lastrowid})
     if request.method == "PATCH":
-        eid = request.args.get("id") or data.get("id")
-        if not eid:
-            return jsonify({"ok": False, "error": "missing_id"}), 400
-        updates = {}
-        for k in ("date", "title", "kind", "job_id", "start_time", "end_time", "note", "color"):
-            if k in data and data[k] is not None:
-                updates[k] = _normalize_date(data[k]) if k == "date" else data[k]
-        if not updates:
-            return jsonify({"ok": False, "error": "nothing_to_update"}), 400
-        sets = ", ".join([f"{k}=?" for k in updates])
-        vals = list(updates.values()) + [eid]
-        db.execute(f"UPDATE calendar_events SET {sets} WHERE id=?", vals)
+        eid = data.get("id")
+        if not eid: return jsonify({"error":"Missing id"}), 400
+        fields = ["date","title","kind","job_id","start_time","end_time","note"]
+        sets, vals = [], []
+        for f in fields:
+            if f in data:
+                v = normalize_date(data[f]) if f=="date" else data[f]
+                sets.append(f"{f}=?"); vals.append(v)
+        if not sets: return jsonify({"error":"No changes"}), 400
+        vals.append(eid)
+        db.execute("UPDATE calendar_events SET "+",".join(sets)+" WHERE id=?", vals)
         db.commit()
-        return jsonify({"ok": True})
-
+        return jsonify({"ok":True})
     if request.method == "DELETE":
         eid = request.args.get("id") or (data.get("id") if data else None)
-        if not eid:
-            return jsonify({"ok": False, "error": "missing_id"}), 400
+        if not eid: return jsonify({"error":"Missing id"}), 400
         db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
         db.commit()
-        return jsonify({"ok": True})
+        return jsonify({"ok":True})
+
+# ---------- warehouse ----------
+VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
+
+@app.route("/api/items", methods=["GET","POST","PATCH","DELETE"])
 def api_items():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -563,7 +537,7 @@ def api_jobs():
     title  = str(data["title"]).strip()
     city   = str(data["city"]).strip()
     code   = str(data["code"]).strip()
-    date   = __normalize_date(str(data["date"]).strip())
+    date   = _normalize_date(str(data["date"]).strip())
     status = (data.get("status") or "Plán").strip()
     client = (data.get("client") or "").strip()
     note   = (data.get("note") or None)
@@ -730,7 +704,7 @@ def api_tasks():
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
         title = data.get("title"); description = data.get("description") or ""
-        due_date = __normalize_date(data.get("due_date")); status = data.get("status") or "nový"
+        due_date = _normalize_date(data.get("due_date")); status = data.get("status") or "nový"
         employee_id = data.get("employee_id"); job_id = data.get("job_id")
         if status not in VALID_STATUS:
             return jsonify({"ok": False, "error":"bad_status"}), 400
@@ -862,7 +836,7 @@ def api_timesheets_export():
     args = []
     if d_from and d_to:
         q += " WHERE t.date BETWEEN ? AND ?"
-        args = [_normalize_date(d_from), _normalize_date(d_to)]
+        args = [normalize_date(d_from), normalize_date(d_to)]
     q += " ORDER BY t.date ASC"
     rows = db.execute(q, args).fetchall()
     # Build CSV

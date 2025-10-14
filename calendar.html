@@ -10,68 +10,108 @@
     <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
   </div>
 </header>
-<main class="container"><div id="app"></div></main>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<main class="container"><div id="app"></div>
+<dialog id="eventModal">
+  <form method="dialog" id="eventForm" class="form-vert" style="min-width:320px">
+    <h3>Přidat záznam</h3>
+    <label>Datum <input type="date" id="evDate" required></label>
+    <label>Nadpis <input type="text" id="evTitle" required placeholder="Název"></label>
+    <label>Podrobnosti <textarea id="evNote" rows="3" placeholder="volitelné"></textarea></label>
+    <label>Barva <input type="color" id="evColor" value="#2e7d32"></label>
+    <input type="hidden" id="evType" value="note"/>
+    <menu>
+      <button class="ghost" value="cancel">Zrušit</button>
+      <button class="btn" id="saveEvent" value="default">Uložit</button>
+    </menu>
+  </form>
+</dialog>
+
+</main>
+
 <script>
-  async function api(url, opts){ const r = await fetch(url, {headers: {'Content-Type':'application/json'}, credentials:'same-origin', ...(opts||{})}); if(!r.ok) throw new Error(await r.text()); return await r.json(); }
-  function toISO(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
-</script>
-<script type="text/babel" data-presets="env,react">
-const {useState,useEffect} = React;
-function Calendar(){
-  const [month,setMonth]=useState(()=>{ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  const [events,setEvents]=useState([]);
+(function(){
+  const grid = document.getElementById('app') || document.getElementById('calendarGrid');
+  // Ensure a grid container
+  if(!document.getElementById('calendarGrid')){
+    const cont = document.createElement('div'); cont.id='calendarGrid'; cont.className='grid grid-7 gap'; 
+    const body = document.querySelector('.card-b') || document.querySelector('main'); body.appendChild(cont);
+  }
+  const cg = document.getElementById('calendarGrid');
+  const monthLabel = document.getElementById('monthLabel');
+  const prevBtn = document.getElementById('prevMonth');
+  const nextBtn = document.getElementById('nextMonth');
+  const modal = document.getElementById('eventModal');
+  const evDate = document.getElementById('evDate');
+  const evTitle = document.getElementById('evTitle');
+  const evNote = document.getElementById('evNote');
+  const evColor = document.getElementById('evColor');
+  const evType = document.getElementById('evType');
+
+  let current = new Date(); current.setDate(1);
+  function toISO(d){ return d.toISOString().slice(0,10); }
+  function label(d){ return d.toLocaleString('cs-CZ',{month:'long',year:'numeric'}); }
+
+  async function api(url, opts){
+    const r = await fetch(url, {headers:{'Content-Type':'application/json'}, credentials:'same-origin', ...(opts||{})});
+    if(!r.ok){ throw new Error(await r.text()); }
+    const ct = r.headers.get('content-type')||'';
+    return ct.includes('application/json') ? await r.json() : null;
+  }
+
   async function load(){
-    const start = new Date(month.getFullYear(), month.getMonth(), 1);
-    const end = new Date(month.getFullYear(), month.getMonth()+1, 0);
-    const from = toISO(start), to = toISO(end);
-    setEvents(await api(`/gd/api/calendar?from=${from}&to=${to}`));
+    monthLabel.textContent = label(current);
+    const start = new Date(current.getFullYear(), current.getMonth(), 1);
+    const end = new Date(current.getFullYear(), current.getMonth()+1, 0);
+    const items = await api(`/gd/api/calendar?from=${toISO(start)}&to=${toISO(end)}`);
+    render(items||[]);
   }
-  useEffect(()=>{ load(); }, [month.getFullYear(), month.getMonth()]);
-  function monthDays(){
-    const start = new Date(month.getFullYear(), month.getMonth(), 1);
-    const end = new Date(month.getFullYear(), month.getMonth()+1, 0);
-    const padStart = (start.getDay()+6)%7;
-    const gridStart = new Date(start); gridStart.setDate(start.getDate()-padStart);
-    const a=[]; for(let i=0;i<42;i++){ const x=new Date(gridStart); x.setDate(gridStart.getDate()+i); a.push(x);} return a;
+
+  function render(items){
+    cg.innerHTML='';
+    const first = new Date(current.getFullYear(), current.getMonth(), 1);
+    const pad = (first.getDay()+6)%7;
+    const start = new Date(first); start.setDate(first.getDate()-pad);
+    const by = {}; (items||[]).forEach(x=>{ (by[x.date] ||= []).push(x); });
+    for(let i=0;i<42;i++){
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const cell = document.createElement('div'); cell.className='card p8';
+      const head = document.createElement('div'); head.className='muted small'; head.textContent = d.getDate()+'.';
+      if(d.getMonth()!==current.getMonth()) head.style.opacity='.5';
+      cell.appendChild(head);
+      const list = document.createElement('div');
+      (by[toISO(d)]||[]).forEach(ev=>{
+        const row = document.createElement('div'); row.className='pill mb4 flex between'; row.style.background = ev.color||'#2e7d32'; row.style.color='white';
+        const title = document.createElement('span'); title.className='ellipsis'; title.textContent = ev.title;
+        const del = document.createElement('button'); del.className='ghost'; del.textContent='×'; del.title='Smazat';
+        del.onclick = async (e)=>{ e.stopPropagation(); if(confirm('Smazat záznam?')){ await api('/gd/api/calendar?'+new URLSearchParams({id:String(ev.id)}), {method:'DELETE'}); load(); } };
+        row.appendChild(title); row.appendChild(del); list.appendChild(row);
+      });
+      cell.appendChild(list);
+      cell.ondblclick = ()=> openModal(toISO(d), 'note');
+      cg.appendChild(cell);
+    }
   }
-  async function addQuick(d){
-    const title = prompt("Název události:");
-    if(!title) return;
-    await api("/gd/api/calendar",{method:"POST", body: JSON.stringify({date: toISO(d), title, kind: "note"})});
-    load();
+
+  function openModal(date, type){
+    evDate.value = date; evType.value = type;
+    evColor.value = type==='note' ? '#1976d2' : (type==='job' ? '#ef6c00' : '#2e7d32');
+    evTitle.value = ''; evNote.value = '';
+    modal.showModal();
   }
-  function sameMonth(d){ return d.getMonth()===month.getMonth(); }
-  return (<div className="card">
-    <div className="card-h"><div>Kalendář</div>
-      <div className="row-gap">
-        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1))}>◀</button>
-        <b>{month.toLocaleString('cs-CZ',{month:'long'})} {month.getFullYear()}</b>
-        <button className="ghost" onClick={()=>setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1))}>▶</button>
-      </div>
-    </div>
-    <div className="card-c">
-      <div className="cal-grid">
-        {["Po","Út","St","Čt","Pá","So","Ne"].map(h=>(<div key={h} className="cal-head">{h}</div>))}
-        {monthDays().map((d,i)=>{
-          const key = toISO(d);
-          const dayEvents = events.filter(e=>e.date===key);
-          return (<div key={i} className={"cal-cell"+(sameMonth(d)?"":" cal-dim")} onDoubleClick={()=>addQuick(d)}>
-            <div className="cal-date">{d.getDate()}</div>
-            <div className="cal-evlist">
-              {dayEvents.map(ev=>(<div key={ev.id} className={"cal-ev cal-"+(ev.kind||'note')} title={ev.note||''}>
-                {ev.start_time ? (ev.start_time+" ") : ""}{ev.title}
-              </div>))}
-            </div>
-          </div>);
-        })}
-      </div>
-    </div>
-  </div>);
-}
-function App(){ return <Calendar/> }
-ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+
+  document.getElementById('saveEvent').onclick = async (e)=>{
+    e.preventDefault();
+    const payload = {date: evDate.value, title: evTitle.value, kind: evType.value, note: evNote.value, color: evColor.value};
+    await api('/gd/api/calendar', {method:'POST', body: JSON.stringify(payload)});
+    modal.close(); load();
+  };
+
+  document.querySelectorAll('button.btn[data-type]').forEach(b => b.onclick = ()=> openModal(new Date().toISOString().slice(0,10), b.dataset.type));
+  prevBtn.onclick = ()=>{ current.setMonth(current.getMonth()-1); load(); };
+  nextBtn.onclick = ()=>{ current.setMonth(current.getMonth()+1); load(); };
+
+  load();
+})();
 </script>
+
 </body></html>
