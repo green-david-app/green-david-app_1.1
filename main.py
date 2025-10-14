@@ -66,6 +66,13 @@ def ensure_schema():
     );
     """)
     db.commit()
+    try:
+        cols=[r[1] for r in db.execute("PRAGMA table_info(calendar_events)").fetchall()]
+        if 'color' not in cols:
+            db.execute("ALTER TABLE calendar_events ADD COLUMN color TEXT DEFAULT '#2e7d32'")
+            db.commit()
+    except Exception:
+        pass
 
 @app.teardown_appcontext
 def close_db(error=None):

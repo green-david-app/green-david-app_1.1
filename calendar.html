@@ -1,3 +1,4 @@
+
 <!doctype html><html lang="cs"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Kalendář – green david app</title>
@@ -10,12 +11,30 @@
     <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
   </div>
 </header>
-<main class="container"><div id="app"></div>
+<main class="container">
+  <div class="card">
+    <div class="card-h"><div>Kalendář</div>
+      <div class="row-gap">
+        <button id="prevMonth" class="ghost">◀</button>
+        <b id="monthLabel">Měsíc</b>
+        <button id="nextMonth" class="ghost">▶</button>
+        <span class="spacer"></span>
+        <button class="btn" data-type="note">+ Poznámka</button>
+        <button class="btn" data-type="task">+ Úkol</button>
+        <button class="btn" data-type="job">+ Zakázka</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div id="calendarGrid" class="grid grid-7 gap"></div>
+    </div>
+  </div>
+</main>
+
 <dialog id="eventModal">
   <form method="dialog" id="eventForm" class="form-vert" style="min-width:320px">
     <h3>Přidat záznam</h3>
     <label>Datum <input type="date" id="evDate" required></label>
-    <label>Nadpis <input type="text" id="evTitle" required placeholder="Název"></label>
+    <label>Nadpis <input type="text" id="evTitle" placeholder="Název" required></label>
     <label>Podrobnosti <textarea id="evNote" rows="3" placeholder="volitelné"></textarea></label>
     <label>Barva <input type="color" id="evColor" value="#2e7d32"></label>
     <input type="hidden" id="evType" value="note"/>
@@ -26,17 +45,9 @@
   </form>
 </dialog>
 
-</main>
-
 <script>
 (function(){
-  const grid = document.getElementById('app') || document.getElementById('calendarGrid');
-  // Ensure a grid container
-  if(!document.getElementById('calendarGrid')){
-    const cont = document.createElement('div'); cont.id='calendarGrid'; cont.className='grid grid-7 gap'; 
-    const body = document.querySelector('.card-b') || document.querySelector('main'); body.appendChild(cont);
-  }
-  const cg = document.getElementById('calendarGrid');
+  const grid = document.getElementById('calendarGrid');
   const monthLabel = document.getElementById('monthLabel');
   const prevBtn = document.getElementById('prevMonth');
   const nextBtn = document.getElementById('nextMonth');
@@ -48,12 +59,12 @@
   const evType = document.getElementById('evType');
 
   let current = new Date(); current.setDate(1);
-  function toISO(d){ return d.toISOString().slice(0,10); }
-  function label(d){ return d.toLocaleString('cs-CZ',{month:'long',year:'numeric'}); }
+  function iso(d){ return d.toISOString().slice(0,10); }
+  function label(d){ return d.toLocaleString('cs-CZ',{month:'long', year:'numeric'}); }
 
   async function api(url, opts){
     const r = await fetch(url, {headers:{'Content-Type':'application/json'}, credentials:'same-origin', ...(opts||{})});
-    if(!r.ok){ throw new Error(await r.text()); }
+    if(!r.ok) throw new Error(await r.text());
     const ct = r.headers.get('content-type')||'';
     return ct.includes('application/json') ? await r.json() : null;
   }
@@ -62,16 +73,16 @@
     monthLabel.textContent = label(current);
     const start = new Date(current.getFullYear(), current.getMonth(), 1);
     const end = new Date(current.getFullYear(), current.getMonth()+1, 0);
-    const items = await api(`/gd/api/calendar?from=${toISO(start)}&to=${toISO(end)}`);
+    const items = await api(`/gd/api/calendar?from=${iso(start)}&to=${iso(end)}`);
     render(items||[]);
   }
 
   function render(items){
-    cg.innerHTML='';
+    grid.innerHTML = '';
     const first = new Date(current.getFullYear(), current.getMonth(), 1);
     const pad = (first.getDay()+6)%7;
     const start = new Date(first); start.setDate(first.getDate()-pad);
-    const by = {}; (items||[]).forEach(x=>{ (by[x.date] ||= []).push(x); });
+    const by = {}; (items||[]).forEach(x => { (by[x.date] ||= []).push(x); });
     for(let i=0;i<42;i++){
       const d = new Date(start); d.setDate(start.getDate()+i);
       const cell = document.createElement('div'); cell.className='card p8';
@@ -79,16 +90,16 @@
       if(d.getMonth()!==current.getMonth()) head.style.opacity='.5';
       cell.appendChild(head);
       const list = document.createElement('div');
-      (by[toISO(d)]||[]).forEach(ev=>{
-        const row = document.createElement('div'); row.className='pill mb4 flex between'; row.style.background = ev.color||'#2e7d32'; row.style.color='white';
-        const title = document.createElement('span'); title.className='ellipsis'; title.textContent = ev.title;
+      (by[iso(d)]||[]).forEach(ev => {
+        const row = document.createElement('div'); row.className='pill mb4 flex between'; row.style.background = ev.color || '#2e7d32'; row.style.color = 'white';
+        const span = document.createElement('span'); span.className='ellipsis'; span.textContent = ev.title;
         const del = document.createElement('button'); del.className='ghost'; del.textContent='×'; del.title='Smazat';
         del.onclick = async (e)=>{ e.stopPropagation(); if(confirm('Smazat záznam?')){ await api('/gd/api/calendar?'+new URLSearchParams({id:String(ev.id)}), {method:'DELETE'}); load(); } };
-        row.appendChild(title); row.appendChild(del); list.appendChild(row);
+        row.appendChild(span); row.appendChild(del); list.appendChild(row);
       });
       cell.appendChild(list);
-      cell.ondblclick = ()=> openModal(toISO(d), 'note');
-      cg.appendChild(cell);
+      cell.ondblclick = ()=> openModal(iso(d), 'note');
+      grid.appendChild(cell);
     }
   }
 
@@ -113,5 +124,4 @@
   load();
 })();
 </script>
-
 </body></html>
