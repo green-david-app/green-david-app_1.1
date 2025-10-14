@@ -106,11 +106,23 @@
 
   <script>
   const $ = sel => document.querySelector(sel);
+
+  // Robustní normalizace odpovědí API na pole
+  function asArray(x){
+    if(Array.isArray(x)) return x;
+    if(!x || typeof x!=='object') return [];
+    const keys = ['items','rows','data','list','timesheets','result'];
+    for(const k of keys){ if(Array.isArray(x[k])) return x[k]; }
+    // první pole v objektu
+    for(const k of Object.keys(x)){ if(Array.isArray(x[k])) return x[k]; }
+    return [];
+  }
+
   const api = {
     me:      () => fetch('/api/me').then(r=>r.json()),
-    emps:    () => fetch('/gd/api/employees').then(r=>r.json()),
-    jobs:    () => fetch('/api/jobs').then(r=>r.json()),
-    list:    () => fetch('/gd/api/timesheets').then(r=>r.json()),
+    emps:    () => fetch('/gd/api/employees').then(r=>r.json()).then(asArray),
+    jobs:    () => fetch('/api/jobs').then(r=>r.json()).then(asArray),
+    list:    () => fetch('/gd/api/timesheets').then(r=>r.json()).then(asArray),
     create:  (payload) => fetch('/gd/api/timesheets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}).then(r=>r.json()),
     remove:  (id) => fetch('/gd/api/timesheets?id='+encodeURIComponent(id), {method:'DELETE'}).then(r=>r.json())
   };
@@ -135,9 +147,9 @@
 
   async function loadAll(){
     const [emps, jobs, rows] = await Promise.all([api.emps(), api.jobs(), api.list()]);
-    state.employees = Array.isArray(emps)? emps: (emps.items||[]);
-    state.jobs = Array.isArray(jobs)? jobs: (jobs.items||jobs||[]);
-    state.rows = Array.isArray(rows)? rows: (rows.items||rows||[]);
+    state.employees = emps;
+    state.jobs = jobs;
+    state.rows = rows;
     renderTable();
   }
 
@@ -162,7 +174,6 @@
     });
     $('#summary').textContent = `Záznamů: ${state.rows.length} · Celkem hodin: ${total.toFixed(2)}`;
 
-    // bind delete buttons
     tb.querySelectorAll('button[data-del]').forEach(btn=>{
       btn.onclick = async ()=>{
         if(!confirm('Smazat výkaz?')) return;
@@ -175,11 +186,8 @@
 
   function openModal(){
     $('#modal').style.display='flex';
-    // default date = today
     const d = new Date();
-    const iso = d.toISOString().slice(0,10);
-    $('#fDate').value = iso;
-    // fill selects
+    $('#fDate').value = d.toISOString().slice(0,10);
     const eSel = $('#fEmp'); eSel.innerHTML='';
     state.employees.forEach(e=>{
       const opt = document.createElement('option');
