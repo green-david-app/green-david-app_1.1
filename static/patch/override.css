@@ -1,0 +1,44 @@
+/* gd-mobile-hotfix: general */
+:root{ --vh:100vh; }
+body{margin:0;-webkit-text-size-adjust:100%;}
+html,body{max-width:100%;overflow-x:hidden;}
+.gd-scroll{overflow:auto;-webkit-overflow-scrolling:touch;}
+.gd-force-pe, .gd-event, .gd-day { pointer-events:auto !important; }
+.gd-event, .gd-day, button, a.btn{min-height:44px}
+/* Calendar grid responsive */
+[data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+  display:grid; gap:10px;
+  grid-template-columns: repeat(7, minmax(0,1fr));
+}
+@media (max-width:480px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(1, minmax(0,1fr));
+  }
+}
+@media (min-width:481px) and (max-width:640px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+@media (min-width:641px) and (max-width:900px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+}
+.gd-day{
+  border-radius:16px;
+  padding:8px;
+  display:flex; flex-direction:column; gap:6px;
+  background: rgba(255,255,255,0.02);
+}
+.gd-day .gd-date{opacity:.8;font-weight:600}
+.gd-badges{display:flex;flex-wrap:wrap;gap:6px}
+.gd-event{border-radius:14px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px}
+.gd-calendar-wrap{height:calc(var(--vh) * 100 - 140px);}
+@supports(height:100dvh){
+  .gd-calendar-wrap{height:calc(100dvh - 140px);}
+}
+.gd-calendar-wrap{overflow:auto;-webkit-overflow-scrolling:touch;}
+.gd-overlay-fix{position:relative;z-index:auto;}
+/* Fix iOS focus zoom by ensuring inputs are >=16px */
+input, select, textarea { font-size: 16px; }

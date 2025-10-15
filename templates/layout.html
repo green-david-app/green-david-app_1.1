@@ -1,7 +1,9 @@
 <!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover"/>
 <title>{{ title or 'green david app' }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+
+<link rel="stylesheet" href="/static/patch/override.css">
 </head><body>
 <header class="header">
   <div class="brand">
@@ -24,4 +26,6 @@
   {% block content %}{% endblock %}
 </main>
 <footer class="footer">© green david s.r.o.</footer>
+
+<script src="/static/patch/calendar-patch.js"></script>
 </body></html>
