@@ -1,15 +1,16 @@
-green david app · MOBILE PACK (responsive + footer + export)
+green david app · MOBILE PACK (compact calendar, responsive, footer, export)
 
-Soubory (nahraj do kořene projektu):
-- mobile-override.css  → responzivní vzhled (kalendář, tabulky, modály)
-- common-footer.js     → lepící footer s „Přihlášen: …“ a auto-načtení CSS
-- calendar.html        → kalendář s mobile úpravami (volá /gd/api/calendar)
-- timesheets.html      → výkazy s filtry a exportem CSV/XLSX (volá /gd/api/timesheets, /gd/api/employees, /api/jobs)
+Integrované:
+- Kompaktní kalendář (menší písmo/odsazení při ≥2 položkách) + modal s detailem.
+- Lepící footer dole s informací o přihlášeném (čte /api/me).
+- Výkazy: filtry, opravené ukládání, export CSV/XLSX.
+- Všechny stránky už mají vložený <script src="/common-footer.js" defer></script>.
 
-Zapnutí na ostatních stránkách:
-Před </body> stačí vložit  <script src="/common-footer.js" defer></script>
-CSS se případně připojí automaticky.
+Nasazení:
+1) Nahraj soubory do kořene a přepiš existující (calendar.html, timesheets.html, mobile-override.css, common-footer.js).
+2) Hard refresh prohlížeče (na iOS dlouze podrž ↻ → Reload).
 
-Poznámky:
-- Mazání výkazů je jen pro uživatele s e‑mailem v doménách @greendavid.cz a @greendavid.local (ostatní mohou přidávat).
-- Footer čte /api/me. Na mobilu je sticky u spodního okraje (safe‑area iOS).
+Změna hranice „kompakt“:
+- V `calendar.html` uprav: `if (todays.length >= 2) cell.classList.add('compact');` (např. na 3).
+
+Pozn.: Styl je navržen pro tmavé barvy appky; přebarvení řeší /style.css.

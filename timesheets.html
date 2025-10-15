@@ -60,9 +60,13 @@
 <script src="/common-footer.js" defer></script>
 <script>
 const $ = s => document.querySelector(s);
+
+// Helpers to read arrays from varied API shapes
 function firstArrayDeep(x, depth=0){ if(!x||depth>4) return null; if(Array.isArray(x)) return x; if(typeof x==='object'){ for(const k of Object.keys(x)){ if(Array.isArray(x[k])) return x[k]; } for(const k of Object.keys(x)){ const f=firstArrayDeep(x[k], depth+1); if(f) return f; } } return null; }
 function asArray(x){ const arr=firstArrayDeep(x); return Array.isArray(arr)?arr:[]; }
+
 const ADMIN_DOMAINS=['greendavid.cz','greendavid.local'];
+
 const api={
   me:()=>fetch('/api/me').then(r=>r.json()).catch(()=>({})),
   emps:()=>fetch('/gd/api/employees').then(r=>r.json()).then(asArray),
@@ -71,10 +75,13 @@ const api={
   create:(p)=>fetch('/gd/api/timesheets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(r=>r.json()),
   remove:(id)=>fetch('/gd/api/timesheets?id='+encodeURIComponent(id),{method:'DELETE'}).then(r=>r.json())
 };
+
 const state={me:null,employees:[],jobs:[],rows:[],filtered:[],isAdmin:false};
+
 function fmtDate(s){ if(!s) return ''; const t=String(s); if(t.includes('.')) return t; const [y,m,d]=t.split('T')[0].split('-'); return `${d}.${m}.${y}`; }
 function empName(id){ const e=state.employees.find(x=>String(x.id)===String(id)); return e?(e.name||e.fullname||e.title||('#'+id)):('#'+id); }
 function jobName(id){ const j=state.jobs.find(x=>String(x.id)===String(id)); const nm=j?(j.name||j.title||j.customer||('#'+id)):('#'+id); const city=j&&(j.city||j.mesto); return city? nm+' ('+city+')' : nm; }
+
 function toISO(d){
   if(!d) return null;
   const s=String(d);
@@ -83,53 +90,121 @@ function toISO(d){
   return s.slice(0,10);
 }
 function within(d,df,dt){ const x=toISO(d); if(!x) return true; if(df&&x<df) return false; if(dt&&x>dt) return false; return true; }
+
 async function loadAll(){
   const [me,emps,jobs,rows]=await Promise.all([api.me(),api.emps(),api.jobs(),api.list()]);
   state.me=me||{}; const email=(me&&me.email)?String(me.email):'';
   state.isAdmin=(!!email&&ADMIN_DOMAINS.some(dom=>email.toLowerCase().endsWith('@'+dom)))||me.role==='admin';
-  state.employees=emps; state.jobs=jobs; state.rows=rows; 
+  state.employees=emps; state.jobs=jobs; state.rows=rows;
   $('#fltEmp').innerHTML='<option value=\"\">Všichni</option>'+state.employees.map(e=>`<option value=\"${e.id}\">${empName(e.id)}</option>`).join('');
   $('#fltJob').innerHTML='<option value=\"\">Vše</option>'+state.jobs.map(j=>`<option value=\"${j.id}\">${jobName(j.id)}</option>`).join('');
   applyFilters(true);
 }
+
 function applyFilters(isInitial=false){
-  const df=$('#fltFrom').value||null; const dt=$('#fltTo').value||null; const emp=$('#fltEmp').value||null; const job=$('#fltJob').value||null; const txt=($('#fltText').value||'').toLowerCase().trim();
+  const df=$('#fltFrom').value||null; const dt=$('#fltTo').value||null;
+  const emp=$('#fltEmp').value||null; const job=$('#fltJob').value||null;
+  const txt=($('#fltText').value||'').toLowerCase().trim();
   const noFilt=!df&&!dt&&!emp&&!job&&!txt;
+
   state.filtered = state.rows.filter(r=>{
     if(!noFilt){
       if(emp && String(r.employee_id||r.emp_id||r.user_id)!==String(emp)) return false;
       if(job && String(r.job_id)!==String(job)) return false;
       if(!within(r.date,df,dt)) return false;
-      if(txt){ const hay=[r.note||'', empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id)].join(' ').toLowerCase(); if(!hay.includes(txt)) return false; }
+      if(txt){
+        const hay=[r.note||'', empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id)].join(' ').toLowerCase();
+        if(!hay.includes(txt)) return false;
+      }
     }
     return true;
   });
+
   if(isInitial && state.filtered.length===0 && state.rows.length>0) state.filtered=state.rows.slice();
   renderTable();
 }
+
 function clearFilters(){ $('#fltFrom').value=''; $('#fltTo').value=''; $('#fltEmp').value=''; $('#fltJob').value=''; $('#fltText').value=''; applyFilters(); }
+
 function renderTable(){
   const tb=document.querySelector('#tbl tbody'); tb.innerHTML=''; let total=0;
-  state.filtered.forEach(r=>{ const tr=document.createElement('tr'); const hours=Number(r.hours??r.hrs??r.time??0)||0; total+=hours;
-    tr.innerHTML=`<td>${fmtDate(r.date)}</td><td>${empName(r.employee_id||r.emp_id||r.user_id)}</td><td>${jobName(r.job_id)}</td><td><span class="pill">${hours.toFixed(2)}</span></td><td>${r.note||''}</td><td style="text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}">Smazat</button>`:''}</td>`;
+  state.filtered.forEach(r=>{
+    const tr=document.createElement('tr');
+    const hours=Number(r.hours??r.hrs??r.time??0)||0; total+=hours;
+    tr.innerHTML=`
+      <td>${fmtDate(r.date)}</td>
+      <td>${empName(r.employee_id||r.emp_id||r.user_id)}</td>
+      <td>${jobName(r.job_id)}</td>
+      <td><span class="pill">${hours.toFixed(2)}</span></td>
+      <td>${r.note||''}</td>
+      <td style="text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}">Smazat</button>`:''}</td>`;
     tb.appendChild(tr);
   });
   document.querySelector('#summary').textContent=`Záznamů: ${state.filtered.length} · Celkem hodin: ${total.toFixed(2)}`;
-  tb.querySelectorAll('button[data-del]').forEach(btn=>{ btn.onclick=async()=>{ if(!confirm('Smazat výkaz?'))return; await api.remove(btn.getAttribute('data-del')); await loadAll(); }; });
+  tb.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.onclick=async()=>{ if(!confirm('Smazat výkaz?'))return; await api.remove(btn.getAttribute('data-del')); await loadAll(); };
+  });
 }
-function openModal(){ $('#modal').style.display='flex'; $('#fDate').value=new Date().toISOString().slice(0,10); $('#fEmp').innerHTML=state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join(''); $('#fJob').innerHTML=state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join(''); $('#fHours').value='8'; $('#fNote').value=''; $('#formMsg').textContent=''; }
+
+function openModal(){
+  $('#modal').style.display='flex';
+  $('#fDate').value=new Date().toISOString().slice(0,10);
+  $('#fEmp').innerHTML=state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
+  $('#fJob').innerHTML=state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+  $('#fHours').value='8'; $('#fNote').value=''; $('#formMsg').textContent='';
+}
 function closeModal(){ $('#modal').style.display='none'; }
+
 async function saveEntry(){
-  const payload={ date:$('#fDate').value, employee_id:$('#fEmp').value, job_id:$('#fJob').value, hours:parseFloat(String($('#fHours').value||'0').replace(',','.'))||0, note:$('#fNote').value||'' };
-  try{ const res=await api.create(payload); if(res && (res.ok===false||res.error)){ $('#formMsg').textContent=res.error||'Uložení selhalo'; return; } closeModal(); await loadAll(); }
-  catch(err){ $('#formMsg').textContent='Uložení selhalo: '+(err.message||err); }
+  const payload={
+    date:$('#fDate').value,
+    employee_id:$('#fEmp').value,
+    job_id:$('#fJob').value,
+    hours:parseFloat(String($('#fHours').value||'0').replace(',','.'))||0,
+    note:$('#fNote').value||''
+  };
+  try{
+    const res=await api.create(payload);
+    if(res && (res.ok===false||res.error)){ $('#formMsg').textContent=res.error||'Uložení selhalo'; return; }
+    closeModal(); await loadAll();
+  }catch(err){ $('#formMsg').textContent='Uložení selhalo: '+(err.message||err); }
 }
-function buildArray(){ const header=['Datum','Zaměstnanec','Zakázka','Hodin','Poznámka']; const rows=state.filtered.map(r=>[fmtDate(r.date), empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id), Number(r.hours??r.hrs??r.time??0)||0, r.note||'']); return [header,...rows]; }
-function downloadCSV(name){ const csv=buildArray().map(row=>row.map(v=>{const s=String(v).replaceAll('"','""');return /[",;\n]/.test(s)?`"${s}"`:s;}).join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
-function downloadXLSX(name){ try{ const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet(buildArray()); ws['!cols']=[{wch:12},{wch:20},{wch:28},{wch:8},{wch:35}]; XLSX.utils.book_append_sheet(wb, ws, 'Vykazy'); XLSX.writeFile(wb, name); } catch(e){ alert('Export do XLSX selhal, zkusím CSV.\n'+e.message); const d=new Date().toISOString().slice(0,10); downloadCSV(`vykazy_${d}.csv`); } }
-document.querySelector('#btnAdd').onclick=openModal; document.querySelector('#btnCancel').onclick=closeModal; document.querySelector('#btnSave').onclick=saveEntry;
-document.querySelector('#btnReload').onclick=loadAll; document.querySelector('#btnApply').onclick=()=>applyFilters(false); document.querySelector('#btnClear').onclick=clearFilters;
-document.querySelector('#btnCSV').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadCSV(`vykazy_${d}.csv`)}; document.querySelector('#btnXLSX').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadXLSX(`vykazy_${d}.xlsx`)};
+
+// Export helpers
+function buildArray(){
+  const header=['Datum','Zaměstnanec','Zakázka','Hodin','Poznámka'];
+  const rows=state.filtered.map(r=>[fmtDate(r.date), empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id), Number(r.hours??r.hrs??r.time??0)||0, r.note||'']);
+  return [header,...rows];
+}
+function downloadCSV(name){
+  const csv=buildArray().map(row=>row.map(v=>{
+    const s=String(v).replaceAll('"','""'); return /[",;\n]/.test(s)?`"${s}"`:s;
+  }).join(';')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+function downloadXLSX(name){
+  try{
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet(buildArray());
+    ws['!cols']=[{wch:12},{wch:20},{wch:28},{wch:8},{wch:35}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Vykazy');
+    XLSX.writeFile(wb, name);
+  }catch(e){
+    alert('Export do XLSX selhal, zkusím CSV.\n'+e.message);
+    const d=new Date().toISOString().slice(0,10); downloadCSV(`vykazy_${d}.csv`);
+  }
+}
+
+document.querySelector('#btnAdd').onclick=openModal;
+document.querySelector('#btnCancel').onclick=closeModal;
+document.querySelector('#btnSave').onclick=saveEntry;
+document.querySelector('#btnReload').onclick=loadAll;
+document.querySelector('#btnApply').onclick=()=>applyFilters(false);
+document.querySelector('#btnClear').onclick=clearFilters;
+document.querySelector('#btnCSV').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadCSV(`vykazy_${d}.csv`)};
+document.querySelector('#btnXLSX').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadXLSX(`vykazy_${d}.xlsx`)};
+
 loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
 </script>
 </body></html>
