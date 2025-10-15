@@ -4,6 +4,8 @@
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="/mobile-override.css"/>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+<link rel="stylesheet" href="/static/patch/override.css">
 </head><body>
 <div class="container">
   <div class="brand" style="display:flex;align-items:center;gap:12px;margin:12px 0 8px">
@@ -56,8 +58,6 @@
     <div id="formMsg" style="margin-top:8px;color:#b00020"></div>
   </div>
 </div>
-
-<script src="/common-footer.js" defer></script>
 <script>
 const $ = s => document.querySelector(s);
 
@@ -207,4 +207,6 @@ document.querySelector('#btnXLSX').onclick=()=>{const d=new Date().toISOString()
 
 loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
 </script>
+
+<script src="/static/patch/calendar-patch.js"></script>
 </body></html>

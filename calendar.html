@@ -3,6 +3,8 @@
   <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>green david app · Kalendář</title>
   <link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="/mobile-override.css"/>
+  
+<link rel="stylesheet" href="/static/patch/override.css">
 </head><body>
 <div class="container">
   <div class="brand" style="display:flex;align-items:center;gap:12px;margin:12px 0 8px">
@@ -37,8 +39,6 @@
     <div id="cmBody" style="margin-top:10px;color:#111"></div>
   </div>
 </div>
-
-<script src="/common-footer.js" defer></script>
 <script>
 const grid = document.getElementById('grid');
 const monthTitle = document.getElementById('monthTitle');
@@ -122,4 +122,6 @@ document.getElementById('prev').onclick=()=>{ view=new Date(view.getFullYear(), 
 document.getElementById('next').onclick=()=>{ view=new Date(view.getFullYear(), view.getMonth()+1, 1); load(); };
 load();
 </script>
+
+<script src="/static/patch/calendar-patch.js"></script>
 </body></html>
