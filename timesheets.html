@@ -5,95 +5,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/style.css"/>
-  <!-- XLSX pro export (bezpečně z CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    .container{max-width:1100px;margin:24px auto 80px; padding:0 16px;}
-    .brand{display:flex;align-items:center;gap:12px;margin:18px 0 8px 0;}
-    .brand img{width:36px;height:36px;border-radius:8px;}
-    .brand .title{font-weight:700;font-size:20px}
-    .back a{color:#2e7d32;text-decoration:none;}
-    .card{background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden}
-    .card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d}
-    .card-h .left{font-weight:600}
-    .card-b{padding:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .grow{flex:1}
-    .btn{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-    .ghost{background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #3b4549;padding:10px;text-align:left;font-size:14px}
-    th{opacity:.8;font-weight:600}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
-    .modal .dialog{background:#fff;color:#111;border-radius:10px;min-width:680px;max-width:95%;padding:18px;border:2px solid #111}
-    .modal .row{margin-top:8px}
-    .modal input,.modal select,.modal textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0}
-    .mt8{margin-top:8px}
-    .mt12{margin-top:12px}
-    .filters{background:#1f2629;border:1px solid #3b4549;border-radius:12px;padding:12px;margin-bottom:12px}
-    .filters label{font-size:12px;opacity:.75;display:block;margin-bottom:4px}
-    .filters input,.filters select{width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef}
-  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="back"><a href="/">← Zpět do aplikace</a></div>
-    <div class="brand">
-      <img src="/logo.jpg" alt="green david"/>
-      <div class="title">green david app</div>
+  <div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
+    <div class="back"><a href="/" style="color:#2e7d32;text-decoration:none">← Zpět do aplikace</a></div>
+    <div class="brand" style="display:flex;align-items:center;gap:12px;margin:18px 0 8px 0">
+      <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px"/>
+      <div style="font-weight:700;font-size:20px">green david app</div>
       <div style="opacity:.7;margin-left:6px">Výkazy hodin</div>
     </div>
 
-    <div class="card">
-      <div class="card-h">
-        <div class="left">Výkazy</div>
-        <div class="right">
-          <button class="btn" id="btnAdd">+ Přidat záznam</button>
-          <button class="ghost" id="btnReload">↻ Obnovit</button>
-          <button class="ghost" id="btnCSV">Export CSV</button>
-          <button class="ghost" id="btnXLSX">Export XLSX</button>
+    <div class="card" style="background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden">
+      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d">
+        <div style="font-weight:600">Výkazy</div>
+        <div>
+          <button id="btnAdd"   style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">+ Přidat záznam</button>
+          <button id="btnReload"style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">↻ Obnovit</button>
+          <button id="btnCSV"   style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Export CSV</button>
+          <button id="btnXLSX"  style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Export XLSX</button>
         </div>
       </div>
-      <div class="card-b">
-        <div class="filters row">
-          <div class="grow">
-            <label>Od</label>
-            <input type="date" id="fltFrom">
-          </div>
-          <div class="grow">
-            <label>Do</label>
-            <input type="date" id="fltTo">
-          </div>
-          <div class="grow">
-            <label>Zaměstnanec</label>
-            <select id="fltEmp"><option value="">Všichni</option></select>
-          </div>
-          <div class="grow">
-            <label>Zakázka</label>
-            <select id="fltJob"><option value="">Vše</option></select>
-          </div>
-          <div class="grow">
-            <label>Text</label>
-            <input type="text" id="fltText" placeholder="poznámka, název…">
-          </div>
-          <div style="display:flex;align-items:flex-end;gap:8px">
-            <button class="ghost" id="btnClear">Vymazat</button>
-            <button class="btn" id="btnApply">Filtrovat</button>
+      <div class="card-b" style="padding:16px">
+        <div class="filters" style="background:#1f2629;border:1px solid #3b4549;border-radius:12px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Od</label>
+              <input type="date" id="fltFrom" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Do</label>
+              <input type="date" id="fltTo" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Zaměstnanec</label>
+              <select id="fltEmp" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Všichni</option></select>
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Zakázka</label>
+              <select id="fltJob" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Vše</option></select>
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Text</label>
+              <input type="text" id="fltText" placeholder="poznámka, název…" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px">
+              <button id="btnClear" class="ghost" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Vymazat</button>
+              <button id="btnApply" class="btn" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">Filtrovat</button>
+            </div>
           </div>
         </div>
 
-        <div id="summary" class="mt8" style="opacity:.85"></div>
-        <div class="mt12" style="overflow:auto">
-          <table id="tbl">
+        <div id="summary" style="opacity:.85;margin-top:8px"></div>
+        <div style="overflow:auto;margin-top:12px">
+          <table id="tbl" style="width:100%;border-collapse:collapse">
             <thead>
               <tr>
-                <th>Datum</th>
-                <th>Zaměstnanec</th>
-                <th>Zakázka</th>
-                <th>Hodin</th>
-                <th>Pozn.</th>
-                <th></th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Datum</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Zaměstnanec</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Zakázka</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Hodin</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Pozn.</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left"></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -103,50 +76,54 @@
     </div>
   </div>
 
-  <div class="modal" id="modal">
-    <div class="dialog">
+  <div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center">
+    <div style="background:#fff;color:#111;border-radius:10px;min-width:680px;max-width:95%;padding:18px;border:2px solid #111">
       <div style="font-weight:700;font-size:18px">Přidat výkaz</div>
-      <div class="row mt12">
-        <div class="grow">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <div style="flex:1">
           <div>Datum</div>
-          <input type="date" id="fDate"/>
+          <input type="date" id="fDate" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
         </div>
-        <div class="grow">
+        <div style="flex:1">
           <div>Zaměstnanec</div>
-          <select id="fEmp"></select>
+          <select id="fEmp" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
         </div>
-        <div class="grow">
+        <div style="flex:1">
           <div>Zakázka</div>
-          <select id="fJob"></select>
+          <select id="fJob" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
         </div>
         <div style="width:120px">
           <div>Hodin</div>
-          <input type="text" id="fHours" value="8"/>
+          <input type="text" id="fHours" value="8" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
         </div>
       </div>
-      <div class="row mt8">
-        <div class="grow">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+        <div style="flex:1">
           <div>Poznámka</div>
-          <textarea id="fNote" rows="3" placeholder="co se dělalo..."></textarea>
+          <textarea id="fNote" rows="3" placeholder="co se dělalo..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></textarea>
         </div>
       </div>
-      <div class="row mt12" style="justify-content:flex-end">
-        <button class="ghost" id="btnCancel">Zrušit</button>
-        <button class="btn" id="btnSave">Uložit</button>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
+        <button id="btnCancel" style="background:transparent;border:1px solid #556165;color:#111;border-radius:10px;padding:8px 12px;cursor:pointer">Zrušit</button>
+        <button id="btnSave"   style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">Uložit</button>
       </div>
-      <div id="formMsg" class="mt8" style="color:#b00020"></div>
+      <div id="formMsg" style="margin-top:8px;color:#b00020"></div>
     </div>
   </div>
 
   <script>
-  const $ = (s)=>document.querySelector(s);
-  function asArray(x){
+  const $ = s => document.querySelector(s);
+
+  function firstArrayDeep(x, depth=0){
+    if(!x || depth>4) return null;
     if(Array.isArray(x)) return x;
-    if(!x || typeof x!=='object') return [];
-    for(const k of ['items','rows','data','list','timesheets','result']) if(Array.isArray(x[k])) return x[k];
-    for(const k of Object.keys(x)) if(Array.isArray(x[k])) return x[k];
-    return [];
+    if(typeof x==='object'){
+      for(const k of Object.keys(x)){ if(Array.isArray(x[k])) return x[k]; }
+      for(const k of Object.keys(x)){ const found=firstArrayDeep(x[k], depth+1); if(found) return found; }
+    }
+    return null;
   }
+  function asArray(x){ const arr = firstArrayDeep(x); return Array.isArray(arr)?arr:[]; }
 
   const ADMIN_DOMAINS = ['greendavid.cz','greendavid.local'];
   const api = {
@@ -160,11 +137,17 @@
 
   const state = { me:null, employees:[], jobs:[], rows:[], filtered:[], isAdmin:false };
 
-  function fmtDate(s){ if(!s) return ''; const [y,m,d]=String(s).split('T')[0].split('-'); return `${d}.${m}.${y}`; }
+  function fmtDate(s){ if(!s) return ''; const t=String(s); if(t.includes('.')) return t; const [y,m,d]=t.split('T')[0].split('-'); return `${d}.${m}.${y}`; }
   function empName(id){ const e=state.employees.find(x=>String(x.id)===String(id)); return e?(e.name||e.fullname||e.title||('#'+id)):('#'+id); }
   function jobName(id){ const j=state.jobs.find(x=>String(x.id)===String(id)); const nm=j?(j.name||j.title||j.customer||('#'+id)):('#'+id); const city=j&&(j.city||j.mesto); return city? nm+' ('+city+')' : nm; }
-  function toISO(d){ return d? String(d).slice(0,10) : null; }
-  function within(d, df, dt){ if(!d) return true; const x=toISO(d); if(df && x<df) return false; if(dt && x>dt) return false; return true; }
+  function toISO(d){
+    if(!d) return null;
+    const s=String(d);
+    if(s.includes('-')) return s.slice(0,10);
+    if(s.includes('.')){ const [dd,mm,yy] = s.split('.'); if(dd&&mm&&yy) return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`; }
+    return s.slice(0,10);
+  }
+  function within(d, df, dt){ const x=toISO(d); if(!x) return true; if(df && x<df) return false; if(dt && x>dt) return false; return true; }
 
   async function loadAll(){
     const [me, emps, jobs, rows] = await Promise.all([api.me(), api.emps(), api.jobs(), api.list()]);
@@ -172,152 +155,105 @@
     const email = (me && me.email) ? String(me.email) : '';
     state.isAdmin = (!!email && ADMIN_DOMAINS.some(dom=>email.toLowerCase().endsWith('@'+dom))) || me.role==='admin';
     state.employees = emps; state.jobs = jobs; state.rows = rows;
-    const eSel = $('#fltEmp'); eSel.innerHTML = '<option value="">Všichni</option>' + state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
-    const jSel = $('#fltJob'); jSel.innerHTML = '<option value="">Vše</option>' + state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
-    applyFilters();
+    $('#fltEmp').innerHTML = '<option value="">Všichni</option>' + state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
+    $('#fltJob').innerHTML = '<option value="">Vše</option>' + state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+    applyFilters(true);
   }
 
-  function applyFilters(){
+  function applyFilters(isInitial=false){
     const df = $('#fltFrom').value || null;
     const dt = $('#fltTo').value || null;
     const emp = $('#fltEmp').value || null;
     const job = $('#fltJob').value || null;
-    const txt = ($('#fltText').value || '').toLowerCase();
+    const txt = ($('#fltText').value || '').toLowerCase().trim();
+    const noFilters = !df && !dt && !emp && !job && !txt;
     state.filtered = state.rows.filter(r=>{
-      if(emp && String(r.employee_id||r.emp_id||r.user_id)!==String(emp)) return false;
-      if(job && String(r.job_id)!==String(job)) return false;
-      if(!within(r.date, df, dt)) return false;
-      if(txt){
-        const hay = [
-          r.note||'',
-          empName(r.employee_id||r.emp_id||r.user_id),
-          jobName(r.job_id)
-        ].join(' ').toLowerCase();
-        if(!hay.includes(txt)) return false;
+      if(!noFilters){
+        if(emp && String(r.employee_id||r.emp_id||r.user_id)!==String(emp)) return false;
+        if(job && String(r.job_id)!==String(job)) return false;
+        if(!within(r.date, df, dt)) return false;
+        if(txt){
+          const hay = [r.note||'', empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id)].join(' ').toLowerCase();
+          if(!hay.includes(txt)) return false;
+        }
       }
       return true;
     });
+    if(isInitial && state.filtered.length===0 && state.rows.length>0) state.filtered = state.rows.slice();
     renderTable();
   }
 
-  function clearFilters(){
-    $('#fltFrom').value=''; $('#fltTo').value=''; $('#fltEmp').value=''; $('#fltJob').value=''; $('#fltText').value='';
-    applyFilters();
-  }
+  function clearFilters(){ $('#fltFrom').value=''; $('#fltTo').value=''; $('#fltEmp').value=''; $('#fltJob').value=''; $('#fltText').value=''; applyFilters(); }
 
   function renderTable(){
-    const tb = $('#tbl tbody'); tb.innerHTML='';
+    const tb = document.querySelector('#tbl tbody'); tb.innerHTML='';
     let total=0;
     state.filtered.forEach(r=>{
-      const tr = document.createElement('tr');
-      const hours = Number(r.hours ?? r.hrs ?? r.time ?? 0) || 0;
-      total += hours;
+      const tr=document.createElement('tr');
+      const hours = Number(r.hours ?? r.hrs ?? r.time ?? 0) || 0; total += hours;
       tr.innerHTML = `
-        <td>${fmtDate(r.date)}</td>
-        <td>${empName(r.employee_id || r.emp_id || r.user_id)}</td>
-        <td>${jobName(r.job_id)}</td>
-        <td><span class="pill">${hours.toFixed(2)}</span></td>
-        <td>${(r.note||'')}</td>
-        <td style="text-align:right">
-          ${(state.isAdmin && r.id) ? `<button class="ghost" data-del="${r.id}">Smazat</button>` : ''}
-        </td>`;
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${fmtDate(r.date)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${empName(r.employee_id||r.emp_id||r.user_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${jobName(r.job_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165">${hours.toFixed(2)}</span></td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${r.note||''}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px;text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:6px 10px;cursor:pointer">Smazat</button>`:''}</td>`;
       tb.appendChild(tr);
     });
-    $('#summary').textContent = `Záznamů: ${state.filtered.length} · Celkem hodin: ${total.toFixed(2)}`;
+    document.querySelector('#summary').textContent = `Záznamů: ${state.filtered.length} · Celkem hodin: ${total.toFixed(2)}`;
     tb.querySelectorAll('button[data-del]').forEach(btn=>{
-      btn.onclick = async ()=>{
-        if(!confirm('Smazat výkaz?')) return;
-        const id = btn.getAttribute('data-del');
-        await api.remove(id);
-        await loadAll();
-      };
+      btn.onclick=async()=>{ if(!confirm('Smazat výkaz?'))return; await api.remove(btn.getAttribute('data-del')); await loadAll(); };
     });
   }
 
   function openModal(){
-    $('#modal').style.display='flex';
-    const d=new Date(); $('#fDate').value=d.toISOString().slice(0,10);
-    const eSel=$('#fEmp'); eSel.innerHTML=state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
-    const jSel=$('#fJob'); jSel.innerHTML=state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
-    $('#fHours').value='8'; $('#fNote').value=''; $('#formMsg').textContent='';
+    document.querySelector('#modal').style.display='flex';
+    document.querySelector('#fDate').value = new Date().toISOString().slice(0,10);
+    document.querySelector('#fEmp').innerHTML = state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
+    document.querySelector('#fJob').innerHTML = state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+    document.querySelector('#fHours').value='8'; document.querySelector('#fNote').value=''; document.querySelector('#formMsg').textContent='';
   }
-  function closeModal(){ $('#modal').style.display='none'; }
+  function closeModal(){ document.querySelector('#modal').style.display='none'; }
 
   async function saveEntry(){
     const payload = {
-      date: $('#fDate').value,
-      employee_id: $('#fEmp').value,
-      job_id: $('#fJob').value,
-      hours: parseFloat(String($('#fHours').value||'0').replace(',','.')) || 0,
-      note: $('#fNote').value || ''
+      date: document.querySelector('#fDate').value,
+      employee_id: document.querySelector('#fEmp').value,
+      job_id: document.querySelector('#fJob').value,
+      hours: parseFloat(String(document.querySelector('#fHours').value||'0').replace(',','.')) || 0,
+      note: document.querySelector('#fNote').value || ''
     };
     try{
       const res = await api.create(payload);
-      if(res && (res.ok === false || res.error)){
-        $('#formMsg').textContent = res.error || 'Uložení selhalo';
-        return;
-      }
-      closeModal();
-      await loadAll();
-    }catch(err){
-      $('#formMsg').textContent = 'Uložení selhalo: ' + (err.message||err);
-    }
+      if(res && (res.ok === false || res.error)){ document.querySelector('#formMsg').textContent = res.error || 'Uložení selhalo'; return; }
+      closeModal(); await loadAll();
+    }catch(err){ document.querySelector('#formMsg').textContent = 'Uložení selhalo: ' + (err.message||err); }
   }
 
-  // --- Export ---
-  function buildArray(){ // data podle aktuálního filtru
-    const header = ['Datum','Zaměstnanec','Zakázka','Hodin','Poznámka'];
-    const rows = state.filtered.map(r=>[
-      fmtDate(r.date),
-      empName(r.employee_id || r.emp_id || r.user_id),
-      jobName(r.job_id),
-      Number(r.hours ?? r.hrs ?? r.time ?? 0) || 0,
-      r.note || ''
-    ]);
+  function buildArray(){
+    const header=['Datum','Zaměstnanec','Zakázka','Hodin','Poznámka'];
+    const rows = state.filtered.map(r=>[fmtDate(r.date), empName(r.employee_id||r.emp_id||r.user_id), jobName(r.job_id), Number(r.hours??r.hrs??r.time??0)||0, r.note||'']);
     return [header, ...rows];
   }
-  function downloadCSV(filename){
-    const data = buildArray();
-    const csv = data.map(row => row.map(v => {
-      const s = String(v).replaceAll('"','""');
-      return /[",;
-]/.test(s) ? `"${s}"` : s;
-    }).join(';')).join('\n'); // ; líp sedí pro české Excel prostředí
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  function downloadCSV(name){
+    const csv = buildArray().map(row=>row.map(v=>{const s=String(v).replaceAll('"','""');return /[",;\n]/.test(s)?`"${s}"`:s;}).join(';')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
   }
-  function downloadXLSX(filename){
-    try{
-      if(typeof XLSX==='undefined'){ throw new Error('Knihovna XLSX není načtena'); }
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(buildArray());
-      // nastavit šířky sloupců
-      ws['!cols'] = [{wch:12},{wch:20},{wch:28},{wch:8},{wch:35}];
-      XLSX.utils.book_append_sheet(wb, ws, 'Vykazy');
-      XLSX.writeFile(wb, filename);
-    }catch(e){
-      alert('Export do XLSX selhal, zkusím CSV.\n'+e.message);
-      const d = new Date().toISOString().slice(0,10);
-      downloadCSV(`vykazy_${d}.csv`);
-    }
+  function downloadXLSX(name){
+    try{ const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(buildArray()); ws['!cols']=[{wch:12},{wch:20},{wch:28},{wch:8},{wch:35}]; XLSX.utils.book_append_sheet(wb, ws, 'Vykazy'); XLSX.writeFile(wb, name); }
+    catch(e){ alert('Export do XLSX selhal, zkusím CSV.\n'+e.message); const d=new Date().toISOString().slice(0,10); downloadCSV(`vykazy_${d}.csv`); }
   }
 
-  $('#btnAdd').onclick = openModal;
-  $('#btnCancel').onclick = closeModal;
-  $('#btnSave').onclick = saveEntry;
-  $('#btnReload').onclick = loadAll;
-  $('#btnApply').onclick = applyFilters;
-  $('#btnClear').onclick = clearFilters;
-  $('#btnCSV').onclick = ()=>{ const d=new Date().toISOString().slice(0,10); downloadCSV(`vykazy_${d}.csv`); };
-  $('#btnXLSX').onclick = ()=>{ const d=new Date().toISOString().slice(0,10); downloadXLSX(`vykazy_${d}.xlsx`); };
+  document.querySelector('#btnAdd').onclick=openModal;
+  document.querySelector('#btnCancel').onclick=closeModal;
+  document.querySelector('#btnSave').onclick=saveEntry;
+  document.querySelector('#btnReload').onclick=loadAll;
+  document.querySelector('#btnApply').onclick=()=>applyFilters(false);
+  document.querySelector('#btnClear').onclick=clearFilters;
+  document.querySelector('#btnCSV').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadCSV(`vykazy_${d}.csv`)};
+  document.querySelector('#btnXLSX').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadXLSX(`vykazy_${d}.xlsx`)};
 
-  loadAll().catch(err=>{
-    document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>');
-  });
+  loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
   </script>
 </body>
 </html>
