@@ -1,16 +1,30 @@
-green david app · MOBILE PACK (compact calendar, responsive, footer, export)
 
-Integrované:
-- Kompaktní kalendář (menší písmo/odsazení při ≥2 položkách) + modal s detailem.
-- Lepící footer dole s informací o přihlášeném (čte /api/me).
-- Výkazy: filtry, opravené ukládání, export CSV/XLSX.
-- Všechny stránky už mají vložený <script src="/common-footer.js" defer></script>.
+green david — UI polish patch (2025‑10‑15)
+=========================================
 
-Nasazení:
-1) Nahraj soubory do kořene a přepiš existující (calendar.html, timesheets.html, mobile-override.css, common-footer.js).
-2) Hard refresh prohlížeče (na iOS dlouze podrž ↻ → Reload).
+Co je uvnitř
+------------
+- static/css/app.css            → přepracované styly (mobilní kalendář, spacing, kontrast)
+- static/js/mobile-fixes.js     → drobná JS „pojistka“ (skryje textový banner „Přihlášený uživatel…“ na mobilu a položku „Admin“)
 
-Změna hranice „kompakt“:
-- V `calendar.html` uprav: `if (todays.length >= 2) cell.classList.add('compact');` (např. na 3).
+Jak nasadit (bez úprav šablon)
+------------------------------
+1) Nahraďte *static/css/app.css* tímto souborem.
+2) Ujistěte se, že se načítá *static/js/mobile-fixes.js*. Pokud už máte globální `base.html` / `layout.html`,
+   přidejte TAG před koncem `<body>`:
 
-Pozn.: Styl je navržen pro tmavé barvy appky; přebarvení řeší /style.css.
+   `<script src="{{ url_for('static', filename='js/mobile-fixes.js') }}"></script>`
+
+   (Pokud už skript načítáte jinde, tento krok přeskočte.)
+
+Poznámky
+--------
+- Odkaz „Admin“ je na mobilech automaticky skrytý (zůstává na tabletu/desktopu).
+- Kalendář má konzistentní mřížku, menší rádiusy, čitelnější štítky úkolů a lepší odsazení.
+- Spodní hláška „Přihlášený uživatel neznámý“ se na mobilu schová, aby nepřekážela.
+- Stylování je defenzivní: selektory cílí na elementy obsahující „calendar/day/event“ v názvu třídy/id.
+
+Render
+------
+Po nahrání změn stačí standardní redeploy. Start command beze změny:
+`gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app`
