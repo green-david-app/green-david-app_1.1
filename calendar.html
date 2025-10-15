@@ -10,7 +10,6 @@
   <div class="brand" style="display:flex;align-items:center;gap:12px;margin:12px 0 8px">
     <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px"/>
     <div style="font-weight:700;font-size:20px">green david app</div>
-    <div class="me-below">{% if me %}{{ me.name }}{% endif %}</div>
     <div style="opacity:.7;margin-left:6px">Kalendář</div>
     <div style="margin-left:auto"><a href="/" style="color:#2e7d32;text-decoration:none">← Zpět do aplikace</a></div>
   </div>
@@ -26,7 +25,7 @@
         <button id="addJob"  class="btn">+ Zakázka</button>
       </div>
     </div>
-    <div class="card-b">\1 data-calendar-grid\2</div></div>
+    <div class="card-b"><div id="grid" class="month-grid" data-calendar-grid></div></div>
   </div>
 </div>
 
