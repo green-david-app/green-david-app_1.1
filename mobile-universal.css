@@ -1,0 +1,113 @@
+/* universal mobile patch (green david app) */
+/* Goal: make layouts fluid across phones without changing visual styling */
+/* Safe area + viewport */
+:root {
+  /* fluid type scale; adjust once and the whole app follows */
+  --scale: 1;
+  --font-min: 14px;
+  --font-max: 18px;
+  font-size: clamp(var(--font-min), 0.9rem + 0.4vw, var(--font-max));
+  /* app-wide spacing */
+  --space-1: clamp(6px, 0.35rem + 0.3vw, 10px);
+  --space-2: clamp(10px, 0.6rem + 0.4vw, 14px);
+  --space-3: clamp(14px, 0.9rem + 0.5vw, 18px);
+  --radius: 12px;
+}
+
+/* Respect device safe areas (iPhone notch etc.) */
+body {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+  padding-bottom: calc(max(env(safe-area-inset-bottom), 0px));
+  margin: 0;
+  -webkit-text-size-adjust: 100%; /* avoid font jump on orientation change */
+  touch-action: manipulation;
+}
+
+/* Prevent horizontal scroll bursts */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Make common blocks fluid */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Layout helpers (non-invasive, use by class only) */
+.u-stack > * + * { margin-top: var(--space-2); }
+.u-wrap { padding: var(--space-2); }
+.u-scroll { overflow: auto; -webkit-overflow-scrolling: touch; }
+.u-hidden-sm { display: none !important; }
+@media (min-width: 640px) { .u-hidden-sm { display: initial !important; } }
+
+/* Buttons and inputs: minimum touch size */
+button, .btn, input[type="button"], input[type="submit"], a.btn {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+}
+
+/* Forms: ensure font >= 16px to avoid iOS zoom on focus */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Tables → responsive wrapper (opt-in) */
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.table-responsive > table { min-width: 640px; border-collapse: collapse; }
+
+/* Card list fallback for narrow phones (opt-in) */
+@media (max-width: 480px) {
+  .as-cards table thead { display: none; }
+  .as-cards table, .as-cards tbody, .as-cards tr, .as-cards td { display: block; width: 100%; }
+  .as-cards tr { background: rgba(0,0,0,.02); border-radius: var(--radius); padding: var(--space-2); margin-bottom: var(--space-2); }
+  .as-cards td[data-label]::before {
+    content: attr(data-label) " ";
+    font-weight: 600;
+    display: inline-block;
+    min-width: 40%;
+  }
+}
+
+/* Calendar specific tweaks (class opt-in: .gd-calendar) */
+.gd-calendar {
+  --day-size: clamp(36px, 9.5vw, 48px);
+}
+.gd-calendar .day {
+  width: var(--day-size);
+  height: var(--day-size);
+  line-height: var(--day-size);
+}
+.gd-calendar .badges { gap: 2px; }
+@container (min-width: 400px) {
+  .gd-calendar { --day-size: clamp(40px, 8.5vw, 56px); }
+}
+
+/* Sticky header/footer helpers */
+.sticky-top { position: sticky; top: calc(env(safe-area-inset-top) + 0px); z-index: 100; background: inherit; }
+.sticky-bottom { position: sticky; bottom: 0; z-index: 100; background: inherit; padding-bottom: env(safe-area-inset-bottom); }
+
+/* Avoid tap highlights and 300ms delay on old Android WebView */
+a, button { -webkit-tap-highlight-color: transparent; }
+
+/* Breakpoints – gentle adjustments without changing theme */
+@media (max-width: 400px) {
+  .u-wrap { padding: var(--space-1); }
+}
+@media (min-width: 768px) {
+  :root { --font-min: 15px; --font-max: 19px; }
+}
+
+/* Utility to clamp big headings on tiny phones without touching design */
+h1 { font-size: clamp(1.4rem, 1.1rem + 2.2vw, 2rem); }
+h2 { font-size: clamp(1.2rem, 1rem + 1.8vw, 1.6rem); }
+h3 { font-size: clamp(1.1rem, 0.95rem + 1.2vw, 1.4rem); }
