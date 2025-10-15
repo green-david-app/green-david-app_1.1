@@ -26,3 +26,5 @@ body{-webkit-text-size-adjust:100%}
 .modal-backdrop.show{display:flex}
 .modal-card{max-width:min(720px,96vw);width:100%;max-height:80vh;border-radius:16px;background:#fff;color:#0f1519;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 @media (prefers-color-scheme: dark){ .modal-card{background:#1f2326;color:#e7edf0} }
+
+#js-error{display:none !important;} #js-error.show{display:block !important;}
