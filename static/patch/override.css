@@ -63,3 +63,13 @@ dialog:not([open]){display:none}
 
 /* iOS select overlapping fixes */
 select, input[type="date"]{position:relative; z-index:1}
+
+
+/* header: user line under logo */
+.app-header .me-below{font-size:12px;opacity:.6;margin-top:2px}
+/* better calendar spacing */
+.calendar-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.calendar-grid .day, .gd-day{padding:10px;border-radius:14px}
+.calendar-grid .day .num{font-weight:700;opacity:.8;margin-bottom:6px}
+/* reduce oversized paddings around empty days */
+.card-b > .calendar-grid{margin:8px -4px}
