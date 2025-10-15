@@ -28,3 +28,8 @@ body{-webkit-text-size-adjust:100%}
 @media (prefers-color-scheme: dark){ .modal-card{background:#1f2326;color:#e7edf0} }
 
 #js-error{display:none !important;} #js-error.show{display:block !important;}
+
+/* revert calendar to original boxes */
+.calendar-grid{display:revert !important;grid-template-columns:revert !important;gap:revert !important}
+.gd-day{all:unset}
+.gd-day-panel{all:unset}

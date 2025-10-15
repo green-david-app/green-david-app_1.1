@@ -216,7 +216,4 @@ document.querySelector('#btnCSV').onclick=()=>{const d=new Date().toISOString().
 document.querySelector('#btnXLSX').onclick=()=>{const d=new Date().toISOString().slice(0,10);downloadXLSX(`vykazy_${d}.xlsx`)};
 
 loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
-</script>
-
-<script src="/static/patch/calendar-patch.js"></script>
-</body></html>
+</script></body></html>
