@@ -17,7 +17,7 @@
       <div class="brand-sub">interní systém</div>
     </div>
     <div class="user-area">
-      {% if me %}Přihlášen: {{ me.name }}{% endif %}
+      {% if me %}<span class="me-badge" title="Přihlášen">{{ me.name }}</span>{% endif %}
       <a class="btn ghost" href="/logout">Odhlásit</a>
     </div>
   </div>

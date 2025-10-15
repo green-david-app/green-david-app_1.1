@@ -42,3 +42,24 @@ html,body{max-width:100%;overflow-x:hidden;}
 .gd-overlay-fix{position:relative;z-index:auto;}
 /* Fix iOS focus zoom by ensuring inputs are >=16px */
 input, select, textarea { font-size: 16px; }
+
+
+/* --- mobile overrides (v2) --- */
+.me-badge{display:none;white-space:nowrap;opacity:.7}
+@media (min-width:1024px){ .me-badge{display:inline-block} }
+.header .brand{display:flex;align-items:center;gap:8px}
+
+/* Calendar scrolling safety */
+.container, main, .page { min-height: 0; }
+.gd-calendar-wrap{max-height:calc(100dvh - 160px); height:auto;}
+#calendarGrid, .calendar-grid { contain: paint; } /* avoid Safari repaint glitches */
+
+/* Dialog/backdrop normalization to prevent full-screen white sheets */
+dialog{max-width:min(520px, 96vw); margin:auto; border-radius:16px; border:1px solid rgba(0,0,0,.12);}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog:not([open]){display:none}
+/* Ensure generic overlays don't block taps when hidden */
+.overlay[hidden], .modal[hidden], .backdrop[hidden]{pointer-events:none !important}
+
+/* iOS select overlapping fixes */
+select, input[type="date"]{position:relative; z-index:1}
