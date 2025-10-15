@@ -5,61 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/style.css"/>
-  <style>
-    .container{max-width:1100px;margin:24px auto 80px; padding:0 16px;}
-    .brand{display:flex;align-items:center;gap:12px;margin:18px 0 8px 0;}
-    .brand img{width:36px;height:36px;border-radius:8px;}
-    .brand .title{font-weight:700;font-size:20px}
-    .back a{color:#2e7d32;text-decoration:none;}
-    .card{background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden}
-    .card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d}
-    .card-h .left{font-weight:600}
-    .card-b{padding:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .grow{flex:1}
-    .btn{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-    .ghost{background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #3b4549;padding:10px;text-align:left;font-size:14px}
-    th{opacity:.8;font-weight:600}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
-    .modal .dialog{background:#fff;color:#111;border-radius:10px;min-width:680px;max-width:95%;padding:18px;border:2px solid #111}
-    .modal .row{margin-top:8px}
-    .modal input,.modal select,.modal textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0}
-    .mt8{margin-top:8px}
-    .mt12{margin-top:12px}
-  </style>
 </head>
 <body>
   <div class="container">
     <div class="back"><a href="/">← Zpět do aplikace</a></div>
     <div class="brand">
-      <img src="/logo.jpg" alt="green david"/>
-      <div class="title">green david app</div>
-      <div style="opacity:.7;margin-left:6px">Výkazy hodin</div>
+      <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px;margin-right:12px"/>
+      <span style="font-weight:700;font-size:20px">green david app</span>
+      <span style="opacity:.7;margin-left:6px">Výkazy hodin</span>
     </div>
 
-    <div class="card">
-      <div class="card-h">
-        <div class="left">Výkazy</div>
+    <div class="card" style="background:#2b3235;border-radius:14px;border:1px solid #3b4549;overflow:hidden">
+      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d">
+        <div class="left" style="font-weight:600">Výkazy</div>
         <div class="right">
-          <button class="btn" id="btnAdd">+ Přidat záznam</button>
-          <button class="ghost" id="btnReload">↻ Obnovit</button>
+          <button class="btn" id="btnAdd" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">+ Přidat záznam</button>
+          <button class="ghost" id="btnReload" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">↻ Obnovit</button>
         </div>
       </div>
-      <div class="card-b">
+      <div class="card-b" style="padding:16px">
         <div id="summary" class="mt8" style="opacity:.85"></div>
         <div class="mt12" style="overflow:auto">
-          <table id="tbl">
+          <table id="tbl" style="width:100%;border-collapse:collapse">
             <thead>
               <tr>
-                <th>Datum</th>
-                <th>Zaměstnanec</th>
-                <th>Zakázka</th>
-                <th>Hodin</th>
-                <th>Pozn.</th>
-                <th></th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px">Datum</th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px">Zaměstnanec</th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px">Zakázka</th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px">Hodin</th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px">Pozn.</th>
+                <th style="text-align:left;border-bottom:1px solid #3b4549;padding:10px"></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -69,57 +44,54 @@
     </div>
   </div>
 
-  <div class="modal" id="modal">
-    <div class="dialog">
+  <div class="modal" id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center">
+    <div class="dialog" style="background:#fff;color:#111;border-radius:10px;min-width:680px;max-width:95%;padding:18px;border:2px solid #111">
       <div style="font-weight:700;font-size:18px">Přidat výkaz</div>
-      <div class="row mt12">
-        <div class="grow">
+      <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <div class="grow" style="flex:1">
           <div>Datum</div>
-          <input type="date" id="fDate"/>
+          <input type="date" id="fDate" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
         </div>
-        <div class="grow">
+        <div class="grow" style="flex:1">
           <div>Zaměstnanec</div>
-          <select id="fEmp"></select>
+          <select id="fEmp" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
         </div>
-        <div class="grow">
+        <div class="grow" style="flex:1">
           <div>Zakázka</div>
-          <select id="fJob"></select>
+          <select id="fJob" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
         </div>
         <div style="width:120px">
           <div>Hodin</div>
-          <input type="number" id="fHours" step="0.25" min="0" value="8"/>
+          <input type="text" id="fHours" value="8" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
         </div>
       </div>
-      <div class="row mt8">
-        <div class="grow">
+      <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+        <div class="grow" style="flex:1">
           <div>Poznámka</div>
-          <textarea id="fNote" rows="3" placeholder="co se dělalo..."></textarea>
+          <textarea id="fNote" rows="3" placeholder="co se dělalo..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></textarea>
         </div>
       </div>
-      <div class="row mt12" style="justify-content:flex-end">
-        <button class="ghost" id="btnCancel">Zrušit</button>
-        <button class="btn" id="btnSave">Uložit</button>
+      <div class="row" style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
+        <button class="ghost" id="btnCancel" style="background:transparent;border:1px solid #556165;color:#111;border-radius:10px;padding:8px 12px;cursor:pointer">Zrušit</button>
+        <button class="btn" id="btnSave" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">Uložit</button>
       </div>
-      <div id="formMsg" class="mt8" style="color:#b00020"></div>
+      <div id="formMsg" style="margin-top:8px;color:#b00020"></div>
     </div>
   </div>
 
   <script>
   const $ = sel => document.querySelector(sel);
 
-  // Robustní normalizace odpovědí API na pole
   function asArray(x){
     if(Array.isArray(x)) return x;
     if(!x || typeof x!=='object') return [];
     const keys = ['items','rows','data','list','timesheets','result'];
     for(const k of keys){ if(Array.isArray(x[k])) return x[k]; }
-    // první pole v objektu
     for(const k of Object.keys(x)){ if(Array.isArray(x[k])) return x[k]; }
     return [];
   }
 
   const api = {
-    me:      () => fetch('/api/me').then(r=>r.json()),
     emps:    () => fetch('/gd/api/employees').then(r=>r.json()).then(asArray),
     jobs:    () => fetch('/api/jobs').then(r=>r.json()).then(asArray),
     list:    () => fetch('/gd/api/timesheets').then(r=>r.json()).then(asArray),
@@ -147,32 +119,29 @@
 
   async function loadAll(){
     const [emps, jobs, rows] = await Promise.all([api.emps(), api.jobs(), api.list()]);
-    state.employees = emps;
-    state.jobs = jobs;
-    state.rows = rows;
+    state.employees = emps; state.jobs = jobs; state.rows = rows;
     renderTable();
   }
 
   function renderTable(){
-    const tb = $('#tbl tbody');
-    tb.innerHTML = '';
+    const tb = document.querySelector('#tbl tbody'); tb.innerHTML = '';
     let total = 0;
     state.rows.forEach(r=>{
       const tr = document.createElement('tr');
-      const hours = Number(r.hours || r.hrs || r.time || 0) || 0;
+      const hours = Number((r.hours ?? r.hrs ?? r.time ?? 0));
       total += hours;
       tr.innerHTML = `
-        <td>${fmtDate(r.date)}</td>
-        <td>${empName(r.employee_id || r.emp_id || r.user_id)}</td>
-        <td>${jobName(r.job_id)}</td>
-        <td><span class="pill">${hours.toFixed(2)}</span></td>
-        <td>${(r.note||'')}</td>
-        <td style="text-align:right">
-          ${r.id? `<button class="ghost" data-del="${r.id}">Smazat</button>`:''}
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${fmtDate(r.date)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${empName(r.employee_id || r.emp_id || r.user_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${jobName(r.job_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165">${hours.toFixed(2)}</span></td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${(r.note||'')}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px;text-align:right">
+          ${r.id? `<button class="ghost" data-del="${r.id}" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:6px 10px;cursor:pointer">Smazat</button>`:''}
         </td>`;
       tb.appendChild(tr);
     });
-    $('#summary').textContent = `Záznamů: ${state.rows.length} · Celkem hodin: ${total.toFixed(2)}`;
+    document.querySelector('#summary').textContent = `Záznamů: ${state.rows.length} · Celkem hodin: ${total.toFixed(2)}`;
 
     tb.querySelectorAll('button[data-del]').forEach(btn=>{
       btn.onclick = async ()=>{
@@ -185,55 +154,54 @@
   }
 
   function openModal(){
-    $('#modal').style.display='flex';
-    const d = new Date();
-    $('#fDate').value = d.toISOString().slice(0,10);
-    const eSel = $('#fEmp'); eSel.innerHTML='';
+    document.querySelector('#modal').style.display='flex';
+    document.querySelector('#fDate').value = new Date().toISOString().slice(0,10);
+    const eSel = document.querySelector('#fEmp'); eSel.innerHTML='';
     state.employees.forEach(e=>{
       const opt = document.createElement('option');
       opt.value = e.id; opt.textContent = e.name || e.fullname || ('#'+e.id);
       eSel.appendChild(opt);
     });
-    const jSel = $('#fJob'); jSel.innerHTML='';
+    const jSel = document.querySelector('#fJob'); jSel.innerHTML='';
     state.jobs.forEach(j=>{
       const opt = document.createElement('option');
       opt.value = j.id; opt.textContent = jobName(j.id);
       jSel.appendChild(opt);
     });
-    $('#fHours').value = '8';
-    $('#fNote').value = '';
-    $('#formMsg').textContent = '';
+    document.querySelector('#fHours').value = '8';
+    document.querySelector('#fNote').value = '';
+    document.querySelector('#formMsg').textContent = '';
   }
-  function closeModal(){ $('#modal').style.display='none'; }
+  function closeModal(){ document.querySelector('#modal').style.display='none'; }
 
   async function saveEntry(){
     const payload = {
-      date: $('#fDate').value,
-      employee_id: $('#fEmp').value,
-      job_id: $('#fJob').value,
-      hours: parseFloat($('#fHours').value||'0')||0,
-      note: $('#fNote').value||''
+      date: document.querySelector('#fDate').value,
+      employee_id: document.querySelector('#fEmp').value,
+      job_id: document.querySelector('#fJob').value,
+      hours: parseFloat(String(document.querySelector('#fHours').value||'0').replace(',','.')) || 0,
+      note: document.querySelector('#fNote').value || ''
     };
     try{
       const res = await api.create(payload);
-      if(res && res.ok===False){
-        $('#formMsg').textContent = res.error || 'Uložení selhalo';
+      // FIX: check 'false' (lowercase) + tolerate different server shapes
+      if(res && (res.ok === false || res.error)){
+        document.querySelector('#formMsg').textContent = res.error || 'Uložení selhalo';
         return;
       }
       closeModal();
       await loadAll();
     }catch(err){
-      $('#formMsg').textContent = 'Uložení selhalo: ' + (err.message||err);
+      document.querySelector('#formMsg').textContent = 'Uložení selhalo: ' + (err && err.message ? err.message : String(err));
     }
   }
 
-  $('#btnAdd').onclick = openModal;
-  $('#btnCancel').onclick = closeModal;
-  $('#btnSave').onclick = saveEntry;
-  $('#btnReload').onclick = loadAll;
+  document.querySelector('#btnAdd').onclick = openModal;
+  document.querySelector('#btnCancel').onclick = closeModal;
+  document.querySelector('#btnSave').onclick = saveEntry;
+  document.querySelector('#btnReload').onclick = loadAll;
 
   loadAll().catch(err=>{
-    console.error(err);
     document.body.insertAdjacentHTML('beforeend', '<div style="color:#b00020;padding:12px">'+String(err)+'</div>');
   });
   </script>
