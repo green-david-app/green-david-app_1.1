@@ -1,32 +1,32 @@
-# Universal Mobile Patch (green david app)
+# green david – Mobile hot‑fix (Kalendář)
 
-Drop‑in sada pro "univerzální" chování na telefonech různých velikostí – beze změny vizuálního stylu.
+**Co opravuje:**
+- Kalendář se dá **scrollovat** (uvnitř obrazovky, i na iOS).
+- Dny se **přeskupí podle šířky** (1 sloupec → 2 → 3 → 7 na širokých displejích).
+- **Kliknutí na záznam** funguje přes `data-href` nebo vnitřní `<a>`.
+- Zabraňuje, aby **neviditelný overlay** „sežral“ tapy.
 
-## Co je uvnitř
-- `mobile-universal.css` – bezpečné fluidní typy, bezpečné zóny (notch), utility pro sticky prvky, tabulky jako karty, základní minimální tap velikosti.
-- `mobile-universal.js` – korektní výška 100vh na mobilech, doplnění `viewport-fit=cover`, pomoc při posunu formulářů nad klávesnici.
+## Instalace
+1) Do `<head>` **za** vaše CSS přidejte:
+```html
+<link rel="stylesheet" href="/static/patch/override.css">
+```
+2) Před `</body>` přidejte:
+```html
+<script src="/static/patch/calendar-patch.js"></script>
+```
 
-## Jak nasadit (bez zásahů do existujícího UI)
-1. Přidejte do `<head>` **za** existující CSS:
-   ```html
-   <link rel="stylesheet" href="/static/css/mobile-universal.css">
-   ```
-2. Přidejte do konce `<body>`:
-   ```html
-   <script src="/static/js/mobile-universal.js"></script>
-   ```
-3. (Volitelné) Obalte široké tabulky:
-   ```html
-   <div class="table-responsive">
-     <table>…</table>
-   </div>
-   ```
-   Nebo pro zobrazení „karty“ na extra úzkých telefonech přidejte nad tabulku třídu `as-cards` a do `<td>` doplňte `data-label="Název sloupce"`.
-
-4. (Volitelné) Kalendářní gridu přidejte třídu `gd-calendar`, která automaticky přizpůsobí velikost dnů.
-5. (Volitelné) Na lepší mobile UX použijte utility třídy: `u-stack`, `u-wrap`, `u-scroll`, `sticky-top`, `sticky-bottom`.
+## Minimální markup
+Kontejner s dny ideálně označte:
+```html
+<div data-calendar-grid> … denní buňky … </div>
+```
+Záznamy (badge) udělejte klikací přes `data-href`:
+```html
+<div class="gd-event" data-href="/gd/jobs/123">…</div>
+```
+Nemáte-li `data-href`, patch vezme první `<a href>` uvnitř.
 
 ## Poznámky
-- Písmo ve formulářích je >= 16px, takže iOS nezvětšuje při fokusu celou stránku.
-- Výška obrazovky na mobilech: v CSS můžete použít `height: calc(var(--vh) * 100);` např. pro plnoobrazovkové panely.
-- Patch je „additive“: nepřepisuje vaše barvy ani layouty, jen přidává mobilní jističe.
+- Jestli máte fixní header/tabbar, výšku dolaďte v `.gd-calendar-wrap` (výchozí odečet ~140px).
+- Pokud už používáte vlastní overlaye, ponechte jim `pointer-events:auto` pouze když jsou viditelné.
