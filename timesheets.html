@@ -6,6 +6,12 @@
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/style.css"/>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    .me-footer{margin:24px 0 0 0;padding:10px 14px;border-top:1px solid #3b4549;color:#cdd7db;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;background:#1f2629;border-radius:12px;}
+    .me-footer .left{opacity:.85}
+    .me-footer .right a{color:#8ab4ff;text-decoration:none}
+    @media (max-width: 640px){ .me-footer{ position:sticky; bottom:0; left:0; right:0; border-radius:12px; z-index:50; } }
+  </style>
 </head>
 <body>
   <div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
@@ -74,6 +80,12 @@
         </div>
       </div>
     </div>
+
+    <div id="meFooter" class="me-footer" style="display:none">
+      <div class="left" id="meText"></div>
+      <div class="right"><a href="/">Domů</a></div>
+    </div>
+
   </div>
 
   <div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center">
@@ -155,8 +167,16 @@
     const email = (me && me.email) ? String(me.email) : '';
     state.isAdmin = (!!email && ADMIN_DOMAINS.some(dom=>email.toLowerCase().endsWith('@'+dom))) || me.role==='admin';
     state.employees = emps; state.jobs = jobs; state.rows = rows;
+
     $('#fltEmp').innerHTML = '<option value="">Všichni</option>' + state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
     $('#fltJob').innerHTML = '<option value="">Vše</option>' + state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+
+    // Footer user info
+    const name = me && (me.name || me.fullname || me.title);
+    const who = (name ? name + ' ' : '') + (email ? `(${email})` : '');
+    $('#meText').textContent = who ? 'Přihlášen: ' + who : 'Přihlášený uživatel neznámý';
+    $('#meFooter').style.display = 'flex';
+
     applyFilters(true);
   }
 
