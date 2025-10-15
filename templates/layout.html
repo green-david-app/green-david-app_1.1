@@ -1,5 +1,5 @@
 <!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover, viewport-fit=cover"/>
 <title>{{ title or 'green david app' }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 
@@ -8,7 +8,8 @@
 <header class="header">
   <div class="brand">
     <img class="brand-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="green david"/>
-    <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
+    <div><div class="brand-title">green david app</div>
+    <div class="me-below">{% if me %}{{ me.name }}{% endif %}</div><div class="brand-sub">interní systém</div></div>
   </div>
   <nav class="nav">
     <a href="/dashboard">Dashboard</a>

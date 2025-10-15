@@ -4,10 +4,12 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
+
+<link rel="stylesheet" href="/static/patch/override.css">
 </head>
 <body>
   <div class="app-header">
@@ -55,5 +57,7 @@
     else { insertTabs(); }
   })();
   </script>
+
+<script src="/static/patch/calendar-patch.js"></script>
 </body>
 </html>

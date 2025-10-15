@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="cs"><head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="/mobile-override.css"/>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -22,6 +22,7 @@
   <div class="brand" style="display:flex;align-items:center;gap:12px;margin:12px 0 8px">
     <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px"/>
     <div style="font-weight:700;font-size:20px">green david app</div>
+    <div class="me-below">{% if me %}{{ me.name }}{% endif %}</div>
     <div style="opacity:.7;margin-left:6px">Výkazy hodin</div>
     <div style="margin-left:auto"><a href="/" style="color:#2e7d32;text-decoration:none">← Zpět do aplikace</a></div>
   </div>

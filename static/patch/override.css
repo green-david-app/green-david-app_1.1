@@ -1,75 +1,27 @@
-/* gd-mobile-hotfix: general */
+
+/* --- green david mobile overrides --- */
 :root{ --vh:100vh; }
-body{margin:0;-webkit-text-size-adjust:100%;}
-html,body{max-width:100%;overflow-x:hidden;}
-.gd-scroll{overflow:auto;-webkit-overflow-scrolling:touch;}
-.gd-force-pe, .gd-event, .gd-day { pointer-events:auto !important; }
-.gd-event, .gd-day, button, a.btn{min-height:44px}
-/* Calendar grid responsive */
-[data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
-  display:grid; gap:10px;
-  grid-template-columns: repeat(7, minmax(0,1fr));
+html,body{max-width:100%;overflow-x:hidden}
+body{-webkit-text-size-adjust:100%}
+.gd-scroll{overflow:auto;-webkit-overflow-scrolling:touch}
+
+/* user line under brand */
+.brand .me-below{display:block;font-size:12px;opacity:.6;margin-top:2px}
+
+/* calendar grid compact + responsive */
+.calendar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.gd-day{position:relative;background:rgba(255,255,255,.02);border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px;transition:background .2s}
+
+/* expandable day panel */
+.gd-day-panel{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.gd-day.open .gd-day-panel{max-height:220px}
+@media (min-width:768px){
+  .gd-day-panel{max-height:none;overflow:visible}
+  .gd-day.open .gd-day-panel{max-height:none}
 }
-@media (max-width:480px){
-  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
-    grid-template-columns: repeat(1, minmax(0,1fr));
-  }
-}
-@media (min-width:481px) and (max-width:640px){
-  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
-    grid-template-columns: repeat(2, minmax(0,1fr));
-  }
-}
-@media (min-width:641px) and (max-width:900px){
-  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
-    grid-template-columns: repeat(3, minmax(0,1fr));
-  }
-}
-.gd-day{
-  border-radius:16px;
-  padding:8px;
-  display:flex; flex-direction:column; gap:6px;
-  background: rgba(255,255,255,0.02);
-}
-.gd-day .gd-date{opacity:.8;font-weight:600}
-.gd-badges{display:flex;flex-wrap:wrap;gap:6px}
-.gd-event{border-radius:14px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px}
-.gd-calendar-wrap{height:calc(var(--vh) * 100 - 140px);}
-@supports(height:100dvh){
-  .gd-calendar-wrap{height:calc(100dvh - 140px);}
-}
-.gd-calendar-wrap{overflow:auto;-webkit-overflow-scrolling:touch;}
-.gd-overlay-fix{position:relative;z-index:auto;}
-/* Fix iOS focus zoom by ensuring inputs are >=16px */
-input, select, textarea { font-size: 16px; }
 
-
-/* --- mobile overrides (v2) --- */
-.me-badge{display:none;white-space:nowrap;opacity:.7}
-@media (min-width:1024px){ .me-badge{display:inline-block} }
-.header .brand{display:flex;align-items:center;gap:8px}
-
-/* Calendar scrolling safety */
-.container, main, .page { min-height: 0; }
-.gd-calendar-wrap{max-height:calc(100dvh - 160px); height:auto;}
-#calendarGrid, .calendar-grid { contain: paint; } /* avoid Safari repaint glitches */
-
-/* Dialog/backdrop normalization to prevent full-screen white sheets */
-dialog{max-width:min(520px, 96vw); margin:auto; border-radius:16px; border:1px solid rgba(0,0,0,.12);}
-dialog::backdrop{background:rgba(0,0,0,.4)}
-dialog:not([open]){display:none}
-/* Ensure generic overlays don't block taps when hidden */
-.overlay[hidden], .modal[hidden], .backdrop[hidden]{pointer-events:none !important}
-
-/* iOS select overlapping fixes */
-select, input[type="date"]{position:relative; z-index:1}
-
-
-/* header: user line under logo */
-.app-header .me-below{font-size:12px;opacity:.6;margin-top:2px}
-/* better calendar spacing */
-.calendar-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-.calendar-grid .day, .gd-day{padding:10px;border-radius:14px}
-.calendar-grid .day .num{font-weight:700;opacity:.8;margin-bottom:6px}
-/* reduce oversized paddings around empty days */
-.card-b > .calendar-grid{margin:8px -4px}
+/* modal scroll helpers */
+.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1000;padding:16px}
+.modal-backdrop.show{display:flex}
+.modal-card{max-width:min(720px,96vw);width:100%;max-height:80vh;border-radius:16px;background:#fff;color:#0f1519;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@media (prefers-color-scheme: dark){ .modal-card{background:#23272a;color:#eaeff2} }
