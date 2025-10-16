@@ -117,3 +117,34 @@ select, input[type="date"]{position:relative; z-index:1}
 #calendarGrid > *, .calendar-grid > *, .cal-grid > *, .calendar-month > *{ pointer-events: auto; }
 #calendarGrid a, .calendar-grid a, .cal-grid a, .calendar-month a,
 #calendarGrid button, .calendar-grid button, .cal-grid button, .calendar-month button{ pointer-events: auto; }
+
+/* === v8: Mobile modal & popup safety === */
+@media (max-width: 900px){
+  /* generic dialog wrappers often used */
+  .modal, .dialog, .popup, .sheet, .drawer, [role="dialog"], [aria-modal="true"]{
+    max-height: 85vh !important;
+    max-width: 96vw !important;
+    width: 96vw !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    inset: 2vh auto auto 2vw;
+  }
+  /* inner content containers */
+  .modal-content, .dialog-content, .popup-content, .sheet-content, .drawer-content{
+    max-height: 82vh !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* forms inside modals */
+  .modal form, .dialog form, .popup form{
+    display: block !important;
+  }
+}
+/* Make sure calendar add buttons are clickable */
+#calendar, #calendarGrid, .calendar-grid, .calendar-month{
+  pointer-events:auto;
+}
+#calendar button, #calendar a, #calendar .btn{
+  pointer-events:auto;
+}
