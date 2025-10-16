@@ -1,122 +1,43 @@
 <!doctype html>
-<html lang="cs"><head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>green david app · Kalendář</title>
-  <link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="/static/patch/override.css">
-</head><body>
-<div class="container">
-  <div class="brand" style="display:flex;align-items:center;gap:12px;margin:12px 0 8px">
-    <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px"/>
-    <div style="font-weight:700;font-size:20px">green david app</div>
-    <div style="opacity:.7;margin-left:6px">Kalendář</div>
-    <div style="margin-left:auto"><a href="/" style="color:#2e7d32;text-decoration:none">← Zpět do aplikace</a></div>
-  </div>
-  <div class="card">
-    <div class="card-h toolbar">
-      <div style="font-weight:600">Kalendář</div>
-      <div>
-        <button id="prev" class="ghost">◀︎</button>
-        <span id="monthTitle" style="margin:0 8px"></span>
-        <button id="next" class="ghost">▶︎</button>
-        <button id="addNote" class="btn">+ Poznámka</button>
-        <button id="addTask" class="btn">+ Úkol</button>
-        <button id="addJob"  class="btn">+ Zakázka</button>
+  <link rel="stylesheet" href="/style.css?v=20251016a">
+  <link rel="stylesheet" href="/static/patch/override.css?v=20251016a">
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <a href="/" class="brand">
+        <img src="/logo.jpg" alt="logo" class="logo">
+        <div class="brand-text">
+          <div class="app-title">green david app</div>
+          <div class="app-subtitle">Kalendář</div>
+        </div>
+      </a>
+      <a class="backlink" href="/">← Zpět do aplikace</a>
+    </header>
+
+    <main class="card">
+      <div class="cal-toolbar">
+        <button id="prev" class="btn ghost">◀</button>
+        <div id="monthLabel" class="month-label"></div>
+        <button id="next" class="btn ghost">▶</button>
+
+        <div class="toolbar-spacer"></div>
+        <button id="btnAddNote" class="btn solid">+ Poznámka</button>
+        <button id="btnAddTask" class="btn solid">+ Úkol</button>
+        <button id="btnAddJob"  class="btn solid">+ Zakázka</button>
       </div>
-    </div>
-    <div class="card-b"><div id="grid" class="month-grid" data-calendar-grid></div></div>
+
+      <div id="calendar" class="cal-grid" aria-live="polite"></div>
+    </main>
   </div>
-</div>
 
-<!-- Modal pro detail události -->
-<div id="calModal" class="modal-backdrop">
-  <div class="modal-card" style="max-width:680px">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div style="font-weight:700;font-size:18px" id="cmTitle">Detail</div>
-      <button class="ghost" id="cmClose">Zavřít</button>
-    </div>
-    <div id="cmBody" style="margin-top:10px;color:#111"></div>
-  </div>
-</div>
-<script>
-const grid = document.getElementById('grid');
-const monthTitle = document.getElementById('monthTitle');
-let view = new Date();
+  <div id="js-error" class="toast" style="display:none"></div>
 
-function title(d){ const cs=['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec']; return cs[d.getMonth()]+' '+d.getFullYear(); }
-function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-function iso(d){ return d.toISOString().slice(0,10); }
-
-async function load(){
-  const first = startOfMonth(view);
-  const from = new Date(first); from.setDate(1 - ((first.getDay()+6)%7));
-  const to   = new Date(from);  to.setDate(to.getDate()+41);
-  monthTitle.textContent = title(view);
-  const url = `/gd/api/calendar?from=${iso(from)}&to=${iso(to)}`;
-  let data=[]; try{ data = await fetch(url).then(r=>r.json()); }catch(e){ data=[]; }
-  const items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
-  render(from, items);
-}
-
-function color(c){ return c||'#2e7d32'; }
-
-function render(from, items){
-  grid.innerHTML='';
-  for(let i=0;i<42;i++){
-    const d=new Date(from); d.setDate(d.getDate()+i);
-    const cell=document.createElement('div'); cell.className='day-cell';
-    const dn=document.createElement('div'); dn.className='day-num'; dn.textContent=d.getDate()+'.'; cell.appendChild(dn);
-
-    const isoDay = d.toISOString().slice(0,10);
-    const todays = items.filter(x => (x.date||x.day||'').slice(0,10)===isoDay);
-
-    // kompaktní režim už od 2 položek
-    if (todays.length >= 2) cell.classList.add('compact');
-
-    todays.forEach(x=>{
-      const ev=document.createElement('div'); ev.className='cal-event'; ev.style.background=color(x.color);
-      const shortText = (x.title||x.name||x.text||'').trim();
-      ev.innerHTML = `<div class="txt">${shortText}</div>` + (x.id?`<button class="del" data-id="${x.id}" title="Smazat">×</button>`:'');
-      // detail
-      ev.querySelector('.txt').addEventListener('click',()=>openDetail(x, isoDay));
-      // smazání
-      const del = ev.querySelector('.del');
-      if(del){
-        del.addEventListener('click', async (e)=>{
-          e.stopPropagation(); e.preventDefault();
-          if(!confirm('Smazat záznam?')) return;
-          await fetch('/gd/api/calendar?id='+encodeURIComponent(x.id), { method:'DELETE' });
-          await load();
-        });
-      }
-      cell.appendChild(ev);
-    });
-
-    grid.appendChild(cell);
-  }
-}
-
-// ---- Modal s detaily ----
-const $ = s => document.querySelector(s);
-const modal = $('#calModal'), cmBody = $('#cmBody'), cmTitle = $('#cmTitle');
-$('#cmClose').onclick = ()=> modal.style.display='none';
-
-function openDetail(item, dayISO){
-  modal.style.display='flex';
-  cmTitle.textContent = 'Detail záznamu';
-  const when = dayISO?.split('-').reverse().join('.') || '';
-  const name = (item.title||item.name||item.text||'').trim();
-  const note = (item.note||item.details||'').trim();
-  cmBody.innerHTML = `
-    <div style="display:flex;gap:10px;align-items:center;margin:8px 0">
-      <div style="width:14px;height:14px;border-radius:4px;background:${color(item.color)};border:1px solid #ccc"></div>
-      <div><b>${when}</b></div>
-    </div>
-    <div style="font-size:16px;margin:6px 0">${name||'(bez názvu)'}</div>
-    ${note ? `<div style="margin-top:8px;white-space:pre-wrap">${note}</div>` : ''}
-  `;
-}
-
-document.getElementById('prev').onclick=()=>{ view=new Date(view.getFullYear(), view.getMonth()-1, 1); load(); };
-document.getElementById('next').onclick=()=>{ view=new Date(view.getFullYear(), view.getMonth()+1, 1); load(); };
-load();
-</script></body></html>
+  <script src="/static/patch/calendar-patch.js?v=20251016a" defer></script>
+</body>
+</html>
