@@ -13,3 +13,10 @@ def calendar():
     # month param optional
     month = request.args.get("month")
     return render_template("calendar.html", month=month)
+
+
+@ui_bp.route("/calendar.html")
+def calendar_html():
+    # Force using Flask template (not any stale static file)
+    month = request.args.get("month")
+    return render_template("calendar.html", month=month)
