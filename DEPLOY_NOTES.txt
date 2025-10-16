@@ -1,0 +1,8 @@
+FIX: Odstraněny kořenové soubory (calendar.html, calendar-patch.js, index.html), které na některých hostinzích přepisovaly Flask šablony a způsobovaly, že tlačítka pro přidání/mazání vůbec nevolala API. 
+
+Funkční šablona je nyní výhradně v app/templates/calendar.html a používá app/static/js/calendar.js, který volá /gd/api/calendar (GET/POST/DELETE).
+
+Pokud jste na Renderu, ponechte start command:
+gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app
+
+SQLite databáze: app.db v pracovním adresáři.
