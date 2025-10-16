@@ -14,11 +14,10 @@
     <div class="brand">
       <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
       <div class="brand-text">green david app</div>
-      <div class="me-below">{% if me %}{{ me.name }}{% endif %}</div>
       <div class="brand-sub">interní systém</div>
     </div>
     <div class="user-area">
-      {% if me %}<span class="me-badge" title="Přihlášen">{{ me.name }}</span>{% endif %}
+      {% if me %}Přihlášen: {{ me.name }}{% endif %}
       <a class="btn ghost" href="/logout">Odhlásit</a>
     </div>
   </div>
