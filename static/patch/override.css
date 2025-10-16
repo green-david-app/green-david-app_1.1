@@ -29,7 +29,35 @@ body{-webkit-text-size-adjust:100%}
 
 #js-error{display:none !important;} #js-error.show{display:block !important;}
 
-/* revert calendar to original boxes */
-.calendar-grid{display:revert !important;grid-template-columns:revert !important;gap:revert !important}
-.gd-day{all:unset}
-.gd-day-panel{all:unset}
+
+
+
+/* === Calendar boxed month layout (CSS-only) === */
+:root{ --gd-cal-gap: 14px; --gd-cal-min: 135px; }
+.calendar-grid, .calendar-month, #calendarGrid, .cal-grid{
+  display:grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(var(--gd-cal-min), 1fr)) !important;
+  gap: var(--gd-cal-gap) !important;
+  align-items: stretch;
+}
+/* likely day cells */
+.cal-day, .day, .day-cell, .calendar-day, .month-day, .gd-cal-day{
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 16px;
+  padding: 10px 10px 12px;
+  position: relative;
+  overflow: hidden;
+}
+/* date number in corner */
+.cal-day .num, .day .num, .day-cell .num, .calendar-day .num, .month-day .num{
+  font-weight: 600; opacity: .8;
+}
+/* events inside stay clickable */
+.cal-day a, .day a, .day-cell a, .calendar-day a, .month-day a{ position: relative; z-index: 1; }
+/* make sure the grid doesn't block page scroll */
+.calendar-grid, .calendar-month, #calendarGrid, .cal-grid{ overflow: visible; }
+/* mobile tuning */
+@media (max-width: 640px){
+  :root{ --gd-cal-min: 140px; --gd-cal-gap: 10px; }
+}
