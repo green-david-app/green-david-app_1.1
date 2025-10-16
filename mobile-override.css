@@ -1,41 +1,15 @@
+/* === GDA hotfix – mobilní úpravy === */
+@media (max-width: 1024px){
+  /* 3 sloupce (tři dny vedle sebe) – jen layout, logiku necháme stejnou */
+  .calendar-grid{ grid-template-columns: repeat(3, 1fr); }
+  .day{ min-height: 140px; }
 
-/* mobile-override.css — green david app (responsive + compact events) */
-:root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
-*{box-sizing:border-box}
-body{margin:0}
-.container{ max-width:1100px; margin:24px auto 80px; padding:0 16px; }
-.card{ background:#2b3235; border-radius:14px; border:1px solid #3b4549; overflow:hidden; }
-.card-h{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #3b4549; background:#232a2d; }
-.card-b{ padding:16px; }
-.btn,.ghost{ display:inline-flex; align-items:center; gap:8px; font:inherit; cursor:pointer; border-radius:10px; padding:10px 14px }
-.btn{ background:#2e7d32; color:#fff; border:0 }
-.ghost{ background:transparent; color:#cdd7db; border:1px solid #556165 }
-table{ width:100%; border-collapse:collapse } table th,table td{ padding:10px; border-bottom:1px solid #3b4549; text-align:left }
-.me-footer{ margin:24px 0 0; padding:10px 14px calc(10px + var(--safe-bottom)); border-top:1px solid #3b4549; color:#cdd7db; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; background:#1f2629; border-radius:12px }
-.month-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:14px; padding:12px }
-.day-cell{ background:#2a3134; border:1px solid #3b4549; border-radius:18px; padding:10px 8px; min-height:140px }
-.day-num{ opacity:.8; font-weight:700; margin-bottom:6px }
-.cal-event{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; margin:6px 0; border-radius:14px; font-size:16px; line-height:1.25; border:1px solid rgba(255,255,255,.08); word-break:break-word }
-.cal-event .txt{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }  /* clamp to 2 lines */
-.cal-event .del{ width:28px; height:28px; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.25); cursor:pointer }
+  /* menší text i křížek na čipech */
+  .event{ font-size: 12px; }
+  .event .close{ transform: scale(.85); }
 
-/* COMPACT mode when the day has many items */
-.day-cell.compact .cal-event{ padding:6px 8px; border-radius:10px; font-size:13px; line-height:1.2; margin:4px 0 }
-.day-cell.compact .cal-event .del{ width:24px; height:24px; border-radius:8px }
-
-/* Modal */
-.modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000 }
-.modal-card{ background:#fff; color:#111; border-radius:12px; min-width:680px; max-width:95%; padding:18px; border:2px solid #111 }
-
-.pill{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #556165 }
-
-@media (max-width:640px){
-  .toolbar{ gap:8px; flex-wrap:wrap }
-  .btn,.ghost{ padding:8px 10px; border-radius:10px; font-size:14px }
-  .month-grid{ gap:10px; padding:8px }
-  .day-cell{ min-height:120px }
-  .cal-event{ padding:8px 10px; border-radius:12px; font-size:15px }
-  .cal-event .del{ width:26px; height:26px; border-radius:9px }
-  #meFooter{ position:sticky; bottom:0; left:0; right:0; z-index:40 }
-  .modal-card{ width:100%; max-width:none; min-height:40vh; border-radius:0 }
+  /* Akční tlačítka v toolbaru, ať NIKDY nepřekryjí mřížku */
+  .calendar-actions{
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+  }
 }
