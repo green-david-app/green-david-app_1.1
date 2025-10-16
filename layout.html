@@ -1,23 +1,25 @@
+
+{% set title = title or 'green david app' %}
 <!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
-
-<link rel="stylesheet" href="/static/patch/override.css">
 </head>
 <body>
   <div class="app-header">
     <div class="brand">
       <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
       <div class="brand-text">green david app</div>
-      <div class="me-below"></div>
+      <div class="me-below">{% if me %}{{ me.name }}{% endif %}</div>
       <div class="brand-sub">interní systém</div>
     </div>
-    <div class="user-area"><span class="me-badge" title="Přihlášen">{{ me.name }}</span><a class="btn ghost" href="/logout">Odhlásit</a>
+    <div class="user-area">
+      {% if me %}<span class="me-badge" title="Přihlášen">{{ me.name }}</span>{% endif %}
+      <a class="btn ghost" href="/logout">Odhlásit</a>
     </div>
   </div>
 
@@ -25,7 +27,9 @@
     <!-- původní odkazy (Zakázky, Úkoly, …) se načtou ze stávajícího layoutu -->
   </div>
 
-  <div class="container" style="margin-top: 12px;"></div>
+  <div class="container" style="margin-top: 12px;">
+    {% block content %}{% endblock %}
+  </div>
 
   <script>
   (function(){

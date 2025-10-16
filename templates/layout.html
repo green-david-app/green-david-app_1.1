@@ -1,5 +1,5 @@
 <!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover, viewport-fit=cover"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover"/>
 <title>{{ title or 'green david app' }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 
@@ -15,7 +15,14 @@
     <a href="/jobs">Zakázky</a>
     <a href="/time">Hodiny</a>
     <a href="/stock">Sklad</a>
-    <a href="/export/xlsx" class="btn ghost">Export XLSX</a><a href="/logout">Odhlásit</a><a href="/login">Přihlásit</a></nav>
+    <a href="/export/xlsx" class="btn ghost">Export XLSX</a>
+    {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
+  </nav>
 </header>
-<main class="container"><div id="toasts"><div class="toast {{c}}">{{ m }}</div></div></main>
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}<div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
 <footer class="footer">© green david s.r.o.</footer></body></html>

@@ -1,3 +1,5 @@
+{% extends "layout.html" %}
+{% block content %}
 <h1>Výkazy práce</h1>
 <div class="row">
   <label>Zaměstnanec <input id="emp" type="number" placeholder="ID"/></label>
@@ -67,3 +69,4 @@ document.getElementById("export").onclick = async ()=>{
 };
 load();
 </script>
+{% endblock %}

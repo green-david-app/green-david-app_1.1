@@ -1,63 +1,119 @@
-
-/* === green david SAFE mobile fixes (v3) === */
+/* gd-mobile-hotfix: general */
 :root{ --vh:100vh; }
-html,body{max-width:100%;overflow-x:hidden; height:auto; overflow-y:auto !important;}
-body{-webkit-text-size-adjust:100%}
-.gd-scroll{overflow:auto;-webkit-overflow-scrolling:touch}
-
-/* Hide 'Přihlášen…' header strip everywhere (no replacement badge) */
-.header-right, .topbar-right, .login, .logged, [class*="prihlas"], [class*="Přihlášen"], [class*="Přihlášený"]{
-  display:none !important;
+body{margin:0;-webkit-text-size-adjust:100%;}
+html,body{max-width:100%;overflow-x:hidden;}
+.gd-scroll{overflow:auto;-webkit-overflow-scrolling:touch;}
+.gd-force-pe, .gd-event, .gd-day { pointer-events:auto !important; }
+.gd-event, .gd-day, button, a.btn{min-height:44px}
+/* Calendar grid responsive */
+[data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+  display:grid; gap:10px;
+  grid-template-columns: repeat(7, minmax(0,1fr));
 }
+@media (max-width:480px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(1, minmax(0,1fr));
+  }
+}
+@media (min-width:481px) and (max-width:640px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+@media (min-width:641px) and (max-width:900px){
+  [data-calendar-grid], .calendar-grid, #calendar-grid, .gd-calendar-grid{
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+}
+.gd-day{
+  border-radius:16px;
+  padding:8px;
+  display:flex; flex-direction:column; gap:6px;
+  background: rgba(255,255,255,0.02);
+}
+.gd-day .gd-date{opacity:.8;font-weight:600}
+.gd-badges{display:flex;flex-wrap:wrap;gap:6px}
+.gd-event{border-radius:14px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px}
+.gd-calendar-wrap{height:calc(var(--vh) * 100 - 140px);}
+@supports(height:100dvh){
+  .gd-calendar-wrap{height:calc(100dvh - 140px);}
+}
+.gd-calendar-wrap{overflow:auto;-webkit-overflow-scrolling:touch;}
+.gd-overlay-fix{position:relative;z-index:auto;}
+/* Fix iOS focus zoom by ensuring inputs are >=16px */
+input, select, textarea { font-size: 16px; }
 
-/* Calendar compact layout + expandable day panel (mobile-first) */
-@media (max-width: 900px){
-  .calendar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
-  .gd-day{position:relative;background:rgba(255,255,255,.02);border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px;transition:background .2s}
-  .gd-day-panel{max-height:0;overflow:hidden;transition:max-height .25s ease}
-  .gd-day.open .gd-day-panel{max-height:220px}
+
+/* --- mobile overrides (v2) --- */
+.me-badge{display:none;white-space:nowrap;opacity:.7}
+@media (min-width:1024px){ .me-badge{display:inline-block} }
+.header .brand{display:flex;align-items:center;gap:8px}
+
+/* Calendar scrolling safety */
+.container, main, .page { min-height: 0; }
+.gd-calendar-wrap{max-height:calc(100dvh - 160px); height:auto;}
+#calendarGrid, .calendar-grid { contain: paint; } /* avoid Safari repaint glitches */
+
+/* Dialog/backdrop normalization to prevent full-screen white sheets */
+dialog{max-width:min(520px, 96vw); margin:auto; border-radius:16px; border:1px solid rgba(0,0,0,.12);}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog:not([open]){display:none}
+/* Ensure generic overlays don't block taps when hidden */
+.overlay[hidden], .modal[hidden], .backdrop[hidden]{pointer-events:none !important}
+
+/* iOS select overlapping fixes */
+select, input[type="date"]{position:relative; z-index:1}
+
+
+/* header: user line under logo */
+.app-header .me-below{font-size:12px;opacity:.6;margin-top:2px}
+/* better calendar spacing */
+.calendar-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.calendar-grid .day, .gd-day{padding:10px;border-radius:14px}
+.calendar-grid .day .num{font-weight:700;opacity:.8;margin-bottom:6px}
+/* reduce oversized paddings around empty days */
+.card-b > .calendar-grid{margin:8px -4px}
+
+/* === Calendar "chlívečky" v7 === */
+:root{ --gd-cal-gap: 14px; }
+#calendarGrid, .calendar-grid, .cal-grid, .calendar-month{
+  display: grid !important;
+  grid-auto-rows: 1fr;
+  gap: var(--gd-cal-gap);
 }
 @media (min-width: 901px){
-  .gd-day-panel{max-height:none;overflow:visible}
+  #calendarGrid, .calendar-grid, .cal-grid, .calendar-month{
+    grid-template-columns: repeat(7, 1fr) !important;
+  }
 }
-
-/* Timesheets modal – internal scroll on iOS */
-.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1000;padding:16px}
-.modal-backdrop.show{display:flex}
-.modal-card{max-width:min(720px,96vw);width:100%;max-height:80vh;border-radius:16px;background:#fff;color:#0f1519;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-@media (prefers-color-scheme: dark){ .modal-card{background:#1f2326;color:#e7edf0} }
-
-#js-error{display:none !important;} #js-error.show{display:block !important;}
-
-
-
-
-/* === Calendar boxed month layout (CSS-only) === */
-:root{ --gd-cal-gap: 14px; --gd-cal-min: 135px; }
-.calendar-grid, .calendar-month, #calendarGrid, .cal-grid{
-  display:grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(var(--gd-cal-min), 1fr)) !important;
-  gap: var(--gd-cal-gap) !important;
-  align-items: stretch;
+@media (max-width: 900px){
+  #calendarGrid, .calendar-grid, .cal-grid, .calendar-month{
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
 }
-/* likely day cells */
-.cal-day, .day, .day-cell, .calendar-day, .month-day, .gd-cal-day{
+#calendarGrid > *, .calendar-grid > *, .cal-grid > *, .calendar-month > *{
   background: rgba(255,255,255,.02);
   border: 1px solid rgba(0,0,0,.12);
   border-radius: 16px;
   padding: 10px 10px 12px;
+  min-height: 120px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
-/* date number in corner */
-.cal-day .num, .day .num, .day-cell .num, .calendar-day .num, .month-day .num{
-  font-weight: 600; opacity: .8;
+#calendarGrid > * .num, .calendar-grid > * .num, .cal-grid > * .num, .calendar-month > * .num{ 
+  font-weight: 700; opacity: .85;
 }
-/* events inside stay clickable */
-.cal-day a, .day a, .day-cell a, .calendar-day a, .month-day a{ position: relative; z-index: 1; }
-/* make sure the grid doesn't block page scroll */
-.calendar-grid, .calendar-month, #calendarGrid, .cal-grid{ overflow: visible; }
-/* mobile tuning */
-@media (max-width: 640px){
-  :root{ --gd-cal-min: 140px; --gd-cal-gap: 10px; }
+[class*="event"], [class*="Event"], [class*="task"], [class*="Task"]{
+  font-size: 12px !important;
+  line-height: 1.15;
+  padding: 6px 8px !important;
+  border-radius: 12px !important;
 }
+[class*="event"] [class*="x"], [class*="event"] [class*="close"], [class*="Task"] [class*="x"]{
+  transform: scale(.85);
+  width: 20px; height: 20px; min-width:20px;
+}
+#calendarGrid, .calendar-grid, .cal-grid, .calendar-month{ pointer-events: auto; }
+#calendarGrid > *, .calendar-grid > *, .cal-grid > *, .calendar-month > *{ pointer-events: auto; }
+#calendarGrid a, .calendar-grid a, .cal-grid a, .calendar-month a,
+#calendarGrid button, .calendar-grid button, .cal-grid button, .calendar-month button{ pointer-events: auto; }

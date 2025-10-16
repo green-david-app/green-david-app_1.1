@@ -1,3 +1,6 @@
+
+{% extends "base.html" %}
+{% block content %}
 <h1>Kalendář</h1>
 
 <div class="calendar-controls">
@@ -10,7 +13,7 @@
   <button class="btn add" data-type="job">+ Zakázka</button>
 </div>
 
-<div id="calendarGrid" class="calendar-grid"></div>
+<div id="calendarGrid" class="calendar-grid" data-calendar-grid></div>
 
 <!-- Modal -->
 <dialog id="eventModal">
@@ -37,3 +40,4 @@
 </dialog>
 
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

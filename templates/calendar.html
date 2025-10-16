@@ -1,3 +1,5 @@
+{% extends "layout.html" %}
+{% block content %}
 <h1>Kalendář</h1>
 <div class="cal-controls">
   <button id="prev">◀</button>
@@ -7,7 +9,7 @@
   <button id="addTask" class="btn">+ Úkol</button>
   <button id="addJob" class="btn">+ Zakázka</button>
 </div>
-<div id="calendar" class="calendar-grid"></div>
+<div id="calendar" class="calendar-grid" data-calendar-grid></div>
 
 <dialog id="eventDlg">
   <form method="dialog" id="eventForm">
@@ -107,3 +109,4 @@ document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new
 
 loadMonth();
 </script>
+{% endblock %}
