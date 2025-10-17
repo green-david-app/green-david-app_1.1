@@ -661,58 +661,55 @@ def api_calendar():
 
 # ---------- jobs ----------
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
-
-@app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
     db = get_db()
+
     if request.method == "GET":
-        rows = db.execute("SELECT * FROM jobs ORDER BY id DESC").fetchall()
-        return jsonify({"ok": True, "jobs":[dict(r) for r in rows]})
-    data = request.get_json(force=True, silent=True) or {}
-    if request.method == "POST":
-        title = data.get("title"); number = data.get("number")
-        if not title:
-            return jsonify({"ok": False, "error":"missing_title"}), 400
-        db.execute("INSERT INTO jobs(title, number, created_by, created_at) VALUES (?,?,?,?)",
-                   (title, number, u["id"], now()))
-        db.commit()
-        return jsonify({"ok": True})
-    if request.method == "PATCH":
-        jid = request.args.get("id", type=int) or data.get("id")
-        if not jid:
-            return jsonify({"ok": False, "error":"missing_id"}), 400
-        fields = []; params = []
-        for col in ("title","number","status","customer"):
-            if col in data and data[col] is not None:
-                fields.append(f"{col}=?"); params.append(data[col])
-        if not fields:
-            return jsonify({"ok": False, "error":"nothing_to_update"}), 400
-        params.append(int(re.search(r"(\d+)", str(jid)).group(1)))
-        db.execute("UPDATE jobs SET "+",".join(fields)+" WHERE id=?", params)
-        db.commit()
-        return jsonify({"ok": True})
-    # DELETE via query param (?id=10) with optional ?force=1
-    raw_id = request.args.get("id")
-    if raw_id is None:
-        raw_id = data.get("id")
-    if raw_id is None:
-        return jsonify({"ok": False, "error":"missing_id"}), 400
-    m = re.search(r"(\d+)", str(raw_id))
-    if not m:
-        return jsonify({"ok": False, "error":"bad_id"}), 400
-    jid = int(m.group(1))
-    ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
-    tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
-    force = str(request.args.get("force")).lower() in ("1","true","yes")
-    if (ts and ts["c"]>0) or (tk and tk["c"]>0):
-        if force:
-            db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
-            db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
-        else:
-            return jsonify({"ok": False, "error":"has_dependents", "timesheets": (ts['c'] if ts else 0), "tasks": (tk['c'] if tk else 0)}), 409
-    db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
+        return jsonify({"ok": True, "jobs": rows})
+
+    data = request.get_json(silent=True) or {}
+    for k in ("title", "city", "code", "date"):
+        if not (data.get(k) and str(data.get(k)).strip()):
+            return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
+
+    title  = str(data["title"]).strip()
+    city   = str(data["city"]).strip()
+    code   = str(data["code"]).strip()
+    date   = _normalize_date(str(data["date"]).strip())
+    status = (data.get("status") or "Plán").strip()
+    client = (data.get("client") or "").strip()
+    note   = (data.get("note") or None)
+
+    uid = session.get("uid")
+    if uid is None:
+        uid = get_admin_id(db)
+
+    cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    need_name = ("name" in cols)
+    has_created_at = ("created_at" in cols)
+
+    if need_name and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, title, client, status, city, code, date, note, uid)
+        )
+    elif need_name and not has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
+            (title, title, client, status, city, code, date, note, uid)
+        )
+    elif (not need_name) and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, client, status, city, code, date, note, uid)
+        )
+    else:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
+            (title, client, status, city, code, date, note, uid)
+        )
+
     db.commit()
     return jsonify({"ok": True})
 @app.route("/api/jobs/<int:jid>", methods=["GET"])
@@ -875,8 +872,6 @@ def api_job_assignments(jid):
 VALID_STATUS = ('nový','probíhá','hotovo')
 
 @app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
-
-@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def api_tasks():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -895,9 +890,7 @@ def api_tasks():
         q += " ORDER BY (due_date IS NULL), due_date ASC, id DESC"
         rows = db.execute(q, params).fetchall()
         return jsonify({"ok": True, "tasks":[dict(r) for r in rows]})
-
     data = request.get_json(force=True, silent=True) or {}
-
     if request.method == "POST":
         title = data.get("title"); description = data.get("description") or ""
         due_date = _normalize_date(data.get("due_date")); status = data.get("status") or "nový"
@@ -908,51 +901,49 @@ def api_tasks():
             return jsonify({"ok": False, "error":"missing_title"}), 400
         db.execute("""INSERT INTO tasks(title,description,status,due_date,employee_id,job_id,created_by,created_at)
                       VALUES (?,?,?,?,?,?,?,?)""",
-                   (title, description, status, due_date, employee_id, job_id, u["id"], now()))
+                   (title, description, status, due_date, employee_id, job_id, u["id"], datetime.utcnow().isoformat()))
         db.commit()
         return jsonify({"ok": True})
-
     if request.method == "PATCH":
-        tid = request.args.get("id", type=int) or data.get("id")
-        if not tid:
+        tid = data.get("id")
+        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        updates=[]; params=[]
+        for f in ["title","description","status","due_date","employee_id","job_id"]:
+            if f in data:
+                if f=="status" and data[f] not in VALID_STATUS:
+                    return jsonify({"ok": False, "error":"bad_status"}), 400
+                updates.append(f"{f}=?"); params.append(data[f])
+        if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+        params.append(tid)
+        db.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id=?", params)
+        db.commit()
+        return jsonify({"ok": True})
+    if request.method == "DELETE":
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        fields = []
-        params = []
-        for col in ("title","description","status","employee_id","job_id"):
-            if col in data and data[col] is not None:
-                fields.append(f"{col}=?"); params.append(data[col])
-        if "due_date" in data:
-            fields.append("due_date=?"); params.append(_normalize_date(data.get("due_date")))
-        if not fields:
-            return jsonify({"ok": False, "error":"nothing_to_update"}), 400
-        params.append(int(re.search(r"(\d+)", str(tid)).group(1)))
-        db.execute("UPDATE tasks SET "+",".join(fields)+" WHERE id=?", params)
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
-    # DELETE
-    raw_id = request.args.get("id")
-    if raw_id is None:
-        raw_id = (data or {}).get("id")
-    if raw_id is None:
-        return jsonify({"ok": False, "error":"missing_id"}), 400
-    m = re.search(r"(\d+)", str(raw_id))
-    if not m:
-        return jsonify({"ok": False, "error":"bad_id"}), 400
-    tid = int(m.group(1))
-    # If your schema has dependent rows referencing task_id, block unless ?force=1.
-    force = str(request.args.get("force")).lower() in ("1","true","yes")
-    try:
-        dep = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE task_id=?", (tid,)).fetchone()
-    except Exception:
-        dep = {"c": 0}
-    if dep and dep["c"]>0 and not force:
-        return jsonify({"ok": False, "error":"has_dependents", "timesheets": dep["c"]}), 409
-    if dep and dep["c"]>0 and force:
-        db.execute("DELETE FROM timesheets WHERE task_id=?", (tid,))
-    db.execute("DELETE FROM tasks WHERE id=?", (tid,))
-    db.commit()
-    return jsonify({"ok": True})
+# ---------- exports ----------
 @app.route("/export/employee_hours.xlsx")
 def export_employee_hours():
     u, err = require_auth()
