@@ -1,0 +1,54 @@
+# --- NA VRŠEK SOUBORU (pokud chybí) ---
+# import re
+
+# --- ROUTE: jednotné mazání přes PATH /api/jobs/<id> ---
+@app.route("/api/jobs/<int:jid>", methods=["DELETE"])
+def api_job_delete_path(jid):
+    u, err = require_role(write=True)
+    if err:
+        return err
+    return _delete_job_impl(jid)
+
+# --- ROUTE: proxy /gd/api/jobs (kvůli starším voláním z FE) ---
+@app.route("/gd/api/jobs", methods=["DELETE"])
+def gd_api_jobs_delete_proxy():
+    return api_jobs()
+
+def _parse_job_id(raw_id):
+    s = str(raw_id) if raw_id is not None else ""
+    m = re.search(r"(\d+)", s)
+    return int(m.group(1)) if m else None
+
+def _delete_job_impl(jid):
+    db = get_db()
+    ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+    tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+    force = str(request.args.get("force")).lower() in ("1","true","yes")
+    if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+        if not force:
+            return jsonify({
+                "ok": False,
+                "error": "has_dependencies",
+                "timesheets": ts["c"] if ts else 0,
+                "tasks": tk["c"] if tk else 0
+            }), 409
+        # kaskádové smazání
+        db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+        db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+    db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+    db.commit()
+    return jsonify({"ok": True})
+
+# --- UVNITŘ FUNKCE api_jobs(): BLOK DELETE NAHRAĎTE TÍMTO ---
+if request.method == "DELETE":
+    u, err = require_role(write=True)
+    if err:
+        return err
+    raw_id = request.args.get("id")
+    if raw_id is None:
+        data = request.get_json(force=True, silent=True) or {}
+        raw_id = data.get("id")
+    jid = _parse_job_id(raw_id)
+    if jid is None:
+        return jsonify({"ok": False, "error": "missing_or_bad_id"}), 400
+    return _delete_job_impl(jid)
