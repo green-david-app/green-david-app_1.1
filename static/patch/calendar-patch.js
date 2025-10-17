@@ -1,1 +1,0 @@
-// kompatibilita s původní strukturou

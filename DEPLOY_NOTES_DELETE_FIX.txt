@@ -1,4 +1,0 @@
-Kalendář – oprava mazání (DELETE):
-- Backend nyní podporuje jak DELETE /gd/api/calendar/<int:id>, tak i DELETE /gd/api/calendar?id=task-6 (z řetězce vytáhne číselné ID).
-- GET /gd/api/calendar nově akceptuje i ?from=YYYY-MM-DD&to=YYYY-MM-DD (kromě month/date).
-- Přidaná route /calendar.html, která vždy vrátí Flask šablonu (zamezí přebití statickým souborem).
