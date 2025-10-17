@@ -1,4 +1,1 @@
-/* Patch override stylesheet - 2025-10-17a */
-.gd-toast{position:fixed;right:12px;bottom:12px;padding:10px 12px;border-radius:8px;background:#222;color:#fff;font-size:14px;opacity:.95;z-index:9999}
-.gd-toast.error{background:#b00020}
-.gd-toast.ok{background:#1b5e20}
+/* patch css 2025-10-17: reserved for future */
