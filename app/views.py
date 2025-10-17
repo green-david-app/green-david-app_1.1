@@ -13,3 +13,9 @@ def calendar():
     # month param optional
     month = request.args.get("month")
     return render_template("calendar.html", month=month)
+
+
+@ui_bp.route("/calendar.html")
+def calendar_html():
+    month = request.args.get("month")
+    return render_template("calendar.html", month=month)
