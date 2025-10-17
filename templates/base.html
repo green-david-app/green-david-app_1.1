@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>green david app</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% if calendar_page %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='patch/override.css') }}">
+    {% endif %}
+  </head>
+  <body>
+    <div class="header">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">green david app</div>
+        <div class="subtitle">interní systém</div>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <a href="/" class="{{ 'active' if active_tab=='calendar' else '' }}">Kalendář</a>
+      <a href="/timesheets" class="{{ 'active' if active_tab=='timesheets' else '' }}">Výkazy hodin</a>
+      <a href="/jobs" class="{{ 'active' if active_tab=='jobs' else '' }}">Zakázky</a>
+      <a href="/tasks" class="{{ 'active' if active_tab=='tasks' else '' }}">Úkoly</a>
+      <a href="/employees" class="{{ 'active' if active_tab=='employees' else '' }}">Zaměstnanci</a>
+      <a href="/stock" class="{{ 'active' if active_tab=='stock' else '' }}">Sklad</a>
+      <a href="/users" class="{{ 'active' if active_tab=='users' else '' }}">Uživatelé</a>
+      <span style="margin-left:auto" class="small">Přihlášen: Admin (admin)</span>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <div class="footer">© green david s.r.o.</div>
+  </body>
+</html>

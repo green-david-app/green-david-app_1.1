@@ -1,1 +1,4 @@
-/* kompatibilní přepisy (volitelné) */
+/* calendar-specific tweaks kept */
+.fc .fc-daygrid-day-number{color:#e6f0ed}
+.fc .fc-toolbar-title{color:#e6f0ed}
+.fc-theme-standard td, .fc-theme-standard th{border-color:rgba(255,255,255,.08)}
