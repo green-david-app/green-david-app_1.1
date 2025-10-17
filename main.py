@@ -613,7 +613,7 @@ def api_items():
         return jsonify({"ok": True})
 
 # ---------- jobs ----------
-@app.route("/api/jobs", methods=["GET","POST"])
+@app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
 
@@ -982,3 +982,21 @@ def gd_api_calendar():
 
 def normalize_date(v):
     return _normalize_date(v)
+
+
+@app.route("/api/jobs/<int:jid>", methods=["DELETE"])
+def api_job_delete(jid):
+    u, err = require_role(write=True)
+    if err: return err
+    db = get_db()
+    ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+    tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+    if (ts and ts['c']>0) or (tk and tk['c']>0):
+            if request.args.get('force') in ('1','true','yes'):
+                db.execute('DELETE FROM timesheets WHERE job_id=?', (jid,))
+                db.execute('DELETE FROM tasks WHERE job_id=?', (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts['c'] if ts else 0, "tasks": tk['c'] if tk else 0}), 409
+    db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+    db.commit()
+    return jsonify({"ok": True})

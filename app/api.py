@@ -11,20 +11,8 @@ def get_events():
     # month=YYYY-MM or date=YYYY-MM-DD
     month_str = request.args.get("month")
     date_str = request.args.get("date")
-    from_str = request.args.get("from")
-    to_str = request.args.get("to")
     q = Event.query
-    if from_str or to_str:
-        try:
-            if from_str:
-                d_from = datetime.fromisoformat(from_str).date()
-                q = q.filter(Event.date >= d_from)
-            if to_str:
-                d_to = datetime.fromisoformat(to_str).date()
-                q = q.filter(Event.date <= d_to)
-        except Exception:
-            abort(400, "bad from/to")
-    elif month_str:
+    if month_str:
         try:
             year, month = [int(x) for x in month_str.split("-")]
             from datetime import date as d, timedelta
@@ -71,25 +59,6 @@ def default_color(etype):
 @api_bp.delete("/calendar/<int:event_id>")
 def delete_event(event_id):
     ev = Event.query.get_or_404(event_id)
-    db.session.delete(ev)
-    db.session.commit()
-    return jsonify({"ok": True})
-
-
-@api_bp.delete("/calendar")
-def delete_event_qs():
-    # Support: DELETE /gd/api/calendar?id=task-6 or id=123
-    id_str = request.args.get("id", "").strip()
-    if not id_str:
-        abort(400, "missing id")
-    import re as _re
-    m = _re.search(r"(\d+)", id_str)
-    if not m:
-        abort(400, "bad id")
-    event_id = int(m.group(1))
-    ev = Event.query.get(event_id)
-    if not ev:
-        return jsonify({"ok": False, "reason": "not found"}), 200
     db.session.delete(ev)
     db.session.commit()
     return jsonify({"ok": True})
