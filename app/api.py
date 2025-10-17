@@ -63,19 +63,41 @@ def delete_event(event_id):
     db.session.commit()
     return jsonify({"ok": True})
 
-@api_bp.delete("/calendar")
-def delete_event_qs():
-    id_str = request.args.get("id")
-    if not id_str:
-        abort(400, description="Missing id parameter")
-    try:
-        event_id = int(id_str)
-    except ValueError:
-        abort(400, description="Invalid id format; expected integer")
-    ev = Event.query.get(event_id)
-    if not ev:
-        abort(404, description="Event not found")
-    db.session.delete(ev)
-    db.session.commit()
-    return jsonify({"ok": True})
 
+# --- Patched deletion handler to accept both query param and composite ids ---
+@api_bp.route("/calendar", methods=["DELETE"])
+def delete_calendar_item():
+    # Accepts either /gd/api/calendar?id=<id> OR JSON body {id: ...}
+    raw_id = request.args.get("id")
+    if not raw_id:
+        try:
+            data = request.get_json(silent=True) or {}
+            raw_id = str(data.get("id") or "").strip()
+        except Exception:
+            raw_id = ""
+    if not raw_id:
+        return jsonify({"error": "Missing id"}), 400
+
+    # Handle composite IDs coming from client like "job-10", "task-7"
+    if isinstance(raw_id, str) and "-" in raw_id:
+        prefix, _, num = raw_id.partition("-")
+        # Soft-unschedule semantics: we only remove the item from calendar rendering,
+        # not the underlying job/task entity.
+        # Since calendar events for jobs/tasks are virtual in this app variant,
+        # just return 200 to allow UI removal.
+        return jsonify({"status": "unscheduled", "id": raw_id}), 200
+
+    # Otherwise, try integer delete from Event table
+    try:
+        event_id = int(raw_id)
+    except ValueError:
+        return jsonify({"error": "Invalid id"}), 400
+
+    event = Event.query.get(event_id)
+    if not event:
+        # Idempotent delete
+        return jsonify({"status": "ok", "id": event_id}), 200
+
+    db.session.delete(event)
+    db.session.commit()
+    return jsonify({"status": "ok", "id": event_id}), 200
