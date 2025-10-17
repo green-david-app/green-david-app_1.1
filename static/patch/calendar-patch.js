@@ -1,1 +1,1 @@
-// placeholder
+// kompatibilita s původní strukturou

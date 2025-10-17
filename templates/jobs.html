@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Zakázky</h2>
+  <div id="jobsList" class="list"></div>
+
+  <h3>Přidat zakázku</h3>
+  <div class="form-grid">
+    <input id="jobTitle" class="input" placeholder="Název zakázky">
+    <select id="jobStatus" class="input">
+      <option value="nová">nová</option>
+      <option value="probíhá">probíhá</option>
+      <option value="hotovo">hotovo</option>
+    </select>
+    <button class="btn success" onclick="ui.addJob()">Přidat zakázku</button>
+  </div>
+</section>
+{% endblock %}

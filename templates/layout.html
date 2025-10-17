@@ -1,32 +1,34 @@
-<!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>{{ title or 'green david app' }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>green david app</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/static/patch/override.css?v=20251016a">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <img src="/logo.jpg" alt="logo" class="logo">
+    <h1>green david app</h1>
+    <div class="user">Přihlášen: <strong id="userName">...</strong></div>
+  </header>
 
-    <link rel="stylesheet" href="/static/patch/override.css?v=20251017">
-  </head><body>
-<header class="header">
-  <div class="brand">
-    <img class="brand-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="green david"/>
-    <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
-  </div>
-  <nav class="nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/jobs">Zakázky</a>
-    <a href="/time">Hodiny</a>
-    <a href="/stock">Sklad</a>
-    <a href="/export/xlsx" class="btn ghost">Export XLSX</a>
-    {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
+  <nav class="tabs">
+    <a href="/" data-tab="calendar">Kalendář</a>
+    <a href="/timesheets.html" data-tab="timesheets">Výkazy hodin</a>
+    <a href="/jobs.html" data-tab="jobs">Zakázky</a>
+    <a href="/tasks.html" data-tab="tasks">Úkoly</a>
+    <a href="/employees.html" data-tab="employees">Zaměstnanci</a>
+    <a href="/store.html" data-tab="store">Sklad</a>
+    <a href="/users.html" data-tab="users">Uživatelé</a>
   </nav>
-</header>
-<main class="container">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>{% endif %}
-  {% endwith %}
-  {% block content %}{% endblock %}
-</main>
-<footer class="footer">© green david s.r.o.</footer>
 
-    <script src="/static/patch/ui-patch.js?v=20251017" defer></script>
-    <script src="/static/patch/autoload-patch.js?v=20251017" defer></script>
-  </body></html>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">© green david s.r.o.</footer>
+</body>
+</html>
