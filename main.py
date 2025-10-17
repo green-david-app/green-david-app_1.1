@@ -403,30 +403,29 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 @app.route("/api/timesheets", methods=["GET","POST","DELETE"])
 def api_timesheets():
@@ -458,30 +457,29 @@ def api_timesheets():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 
 @app.route("/api/calendar", methods=["GET","POST","PATCH","DELETE"])
@@ -596,40 +594,29 @@ def api_calendar():
         db.commit()
         return jsonify({"ok":True})
     if request.method == "DELETE":
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        deleted = 0
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM calendar_events WHERE job_id=?", (num,))
-            deleted += cur.rowcount or 0
-        elif s.lower().startswith("task-"):
-            cur = db.execute("SELECT job_id FROM tasks WHERE id=?", (num,))
-            row = cur.fetchone()
-            if row and row["job_id"] is not None:
-                cur2 = db.execute("DELETE FROM calendar_events WHERE kind='task' AND job_id= ?", (row["job_id"],))
-                deleted += cur2.rowcount or 0
-        else:
-            cur = db.execute("DELETE FROM calendar_events WHERE id=?", (num,))
-            deleted += cur.rowcount or 0
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
         db.commit()
-        if deleted == 0:
-            return jsonify({"ok": False, "error":"not_found"}), 404
-        return jsonify({"ok": True, "deleted": deleted})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        return jsonify({"ok": True})
     if request.method == "PATCH":
         iid = data.get("id")
         if not iid: return jsonify({"ok": False, "error":"missing_id"}), 400
@@ -648,40 +635,29 @@ def api_calendar():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        deleted = 0
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM calendar_events WHERE job_id=?", (num,))
-            deleted += cur.rowcount or 0
-        elif s.lower().startswith("task-"):
-            cur = db.execute("SELECT job_id FROM tasks WHERE id=?", (num,))
-            row = cur.fetchone()
-            if row and row["job_id"] is not None:
-                cur2 = db.execute("DELETE FROM calendar_events WHERE kind='task' AND job_id= ?", (row["job_id"],))
-                deleted += cur2.rowcount or 0
-        else:
-            cur = db.execute("DELETE FROM calendar_events WHERE id=?", (num,))
-            deleted += cur.rowcount or 0
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
         db.commit()
-        if deleted == 0:
-            return jsonify({"ok": False, "error":"not_found"}), 404
-        return jsonify({"ok": True, "deleted": deleted})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        return jsonify({"ok": True})
 
 # ---------- jobs ----------
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
@@ -766,30 +742,29 @@ def api_job_materials(jid):
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 @app.route("/api/jobs/<int:jid>/tools", methods=["POST","DELETE"])
 def api_job_tools(jid):
@@ -804,30 +779,29 @@ def api_job_tools(jid):
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 @app.route("/api/jobs/<int:jid>/photos", methods=["POST","DELETE"])
 def api_job_photos(jid):
@@ -850,30 +824,29 @@ def api_job_photos(jid):
         db.commit()
         return jsonify({"ok": True, "filename": fname})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 @app.route("/api/jobs/<int:jid>/assignments", methods=["GET","POST"])
 def api_job_assignments(jid):
@@ -946,30 +919,29 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        # Delete calendar item(s):
-        # - If id like "job-10": bulk delete all entries for that job_id
-        # - Else: treat id as timesheet row id (from calendar feed) and delete a single row
+        # Accept id from qs or JSON; tolerate strings like "job-7"
         raw_id = request.args.get("id")
         if raw_id is None:
             data = request.get_json(force=True, silent=True) or {}
             raw_id = data.get("id")
         if raw_id is None:
             return jsonify({"ok": False, "error":"missing_id"}), 400
-        s = str(raw_id).strip()
+        s = str(raw_id)
         m = re.search(r"(\d+)", s)
         if not m:
             return jsonify({"ok": False, "error":"bad_id"}), 400
-        num = int(m.group(1))
-        if s.lower().startswith("job-"):
-            cur = db.execute("DELETE FROM timesheets WHERE job_id=?", (num,))
-            db.commit()
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
-        else:
-            cur = db.execute("DELETE FROM timesheets WHERE id=?", (num,))
-            db.commit()
-            if (cur.rowcount or 0) == 0:
-                return jsonify({"ok": False, "error":"not_found"}), 404
-            return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        db.commit()
+        return jsonify({"ok": True})
 
 # ---------- exports ----------
 @app.route("/export/employee_hours.xlsx")
@@ -1139,7 +1111,7 @@ def api_job_delete(jid):
                 db.execute('DELETE FROM timesheets WHERE job_id=?', (jid,))
                 db.execute('DELETE FROM tasks WHERE job_id=?', (jid,))
             else:
-                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts['c'] if ts else 0, "tasks": tk['c'] if tk else 0}), 409
+                return jsonify({"ok": False, "error":"has_related", "timesheets": (ts["c"] if ts else 0), "tasks": (tk["c"] if tk else 0)}), 409
     db.execute("DELETE FROM jobs WHERE id=?", (jid,))
     db.commit()
     return jsonify({"ok": True})
