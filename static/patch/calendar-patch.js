@@ -68,13 +68,79 @@
     return true;
   }
 
-  async function smartDeleteCalendarItem(id) {
-    const isJob = /^job-/.test(id) || /^[0-9]+$/.test(id);
+  async function smartDeleteCalendarItem(itemOrId) {
+  const toId = (v) => (typeof v === "string" ? v : (v && (v.id || v._id)) || "");
+  const id = toId(itemOrId);
+  if (!id) throw new Error("Missing calendar item id");
 
-    if (isJob) {
-      try {
-        await deleteJobCascade(id);
-      } catch (e) {
+  const isNumeric = /^\d+$/.test(id);
+  const isJob = /^job-(\d+)$/.exec(id);
+  const isTask = /^task-(\d+)$/.exec(id);
+
+  const attempt = async (url) => {
+    try {
+      const res = await fetch(url, { method: "DELETE" });
+      if (res.ok) return true;
+      if (res.status === 200) return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  if (isNumeric) {
+    const pathUrl = `/gd/api/calendar/${id}`;
+    const qsUrl = `/gd/api/calendar?id=${encodeURIComponent(id)}`;
+    if (await attempt(pathUrl) || await attempt(qsUrl)) {
+      if (window.fcApi?.removeById) {
+        window.fcApi.removeById(id);
+      } else {
+        if (typeof window.refreshCalendar === "function") window.refreshCalendar();
+      }
+      return true;
+    }
+    throw new Error("Delete failed for event #" + id);
+  }
+
+  const tryJobDelete = async (jobId) => {
+    const byPath = `/api/jobs/${jobId}`;
+    const byQuery = `/api/jobs?id=${jobId}`;
+    return (await attempt(byPath)) || (await attempt(byQuery));
+  };
+
+  const tryTaskDelete = async (taskId) => {
+    const byPath = `/api/tasks/${taskId}`;
+    const byQuery = `/api/tasks?id=${taskId}`;
+    return (await attempt(byPath)) || (await attempt(byQuery));
+  };
+
+  if (isJob) {
+    const num = isJob[1];
+    if (await tryJobDelete(num)) {
+      if (typeof window.refreshCalendar === "function") window.refreshCalendar();
+      return true;
+    }
+    throw new Error("Delete failed for job " + num);
+  }
+
+  if (isTask) {
+    const num = isTask[1];
+    if (await tryTaskDelete(num)) {
+      if (typeof window.refreshCalendar === "function") window.refreshCalendar();
+      return true;
+    }
+    throw new Error("Delete failed for task " + num);
+  }
+
+  const uA = `/gd/api/calendar/${encodeURIComponent(id)}`;
+  const uB = `/gd/api/calendar?id=${encodeURIComponent(id)}`;
+  if (await attempt(uA) || await attempt(uB)) {
+    if (typeof window.refreshCalendar === "function") window.refreshCalendar();
+    return true;
+  }
+  throw new Error("Delete failed for id " + id);
+}
+catch (e) {
         const msg = String(e && e.message || e);
         if (/HTTP 409/.test(msg)) {
           toast("Zakázku nelze smazat – má navázané záznamy (úkoly/výkazy). Zkusím odstranit jen výskyt v kalendáři…", "error", 4500);

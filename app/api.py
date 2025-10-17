@@ -62,3 +62,20 @@ def delete_event(event_id):
     db.session.delete(ev)
     db.session.commit()
     return jsonify({"ok": True})
+
+@api_bp.delete("/calendar")
+def delete_event_qs():
+    id_str = request.args.get("id")
+    if not id_str:
+        abort(400, description="Missing id parameter")
+    try:
+        event_id = int(id_str)
+    except ValueError:
+        abort(400, description="Invalid id format; expected integer")
+    ev = Event.query.get(event_id)
+    if not ev:
+        abort(404, description="Event not found")
+    db.session.delete(ev)
+    db.session.commit()
+    return jsonify({"ok": True})
+
