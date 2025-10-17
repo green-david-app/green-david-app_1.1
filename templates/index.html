@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"/><title>green david app</title>
+<link rel="stylesheet" href="/style.css"/></head><body>
+<div class="top"><img src="/logo.jpg" width="36" height="36"/><h1>green david app</h1></div>
+<div class="card"><h2>Zakázky</h2><div id="jobs"></div><button class="btn" onclick="addJob()">Přidat zakázku</button></div>
+<div class="card"><h2>Kalendář</h2><div id="cal"></div><button class="btn" onclick="addEvent()">Přidat event</button></div>
+<script>
+async function refresh(){
+  const jobs = await (await fetch('/api/jobs')).json();
+  document.getElementById('jobs').innerHTML = jobs.map(j => `<div class='card'><div><b>${j.title}</b> <span class='badge'>${j.status}</span></div><button class='btn danger' onclick="delJob(${j.id})">Smazat</button></div>`).join('');
+  const evs = await (await fetch('/gd/api/calendar?from=2000-01-01&to=2100-01-01')).json();
+  document.getElementById('cal').innerHTML = evs.map(e => `<div class='event'><b>${e.title}</b> (${e.id}) — ${e.date}<button class='btn danger' onclick="delEvent('${e.id}')">Smazat</button></div>`).join('');
+}
+async function addJob(){const title = prompt('Název zakázky'); if(!title) return; await fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})}); await refresh();}
+async function delJob(id){const r = await fetch('/api/jobs?id='+id,{method:'DELETE'}); if(!r.ok){alert('DELETE jobs failed: '+(await r.text()));} await refresh();}
+async function addEvent(){const title = prompt('Název eventu'); if(!title) return; await fetch('/gd/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})}); await refresh();}
+async function delEvent(id){const r = await fetch('/gd/api/calendar?id='+encodeURIComponent(id),{method:'DELETE'}); if(!r.ok){alert('DELETE event failed: '+(await r.text()));} await refresh();}
+refresh();
+</script></body></html>
