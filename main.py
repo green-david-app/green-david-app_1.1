@@ -403,9 +403,27 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        eid = request.args.get("id", type=int)
-        if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM employees WHERE id=?", (eid,))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -439,9 +457,27 @@ def api_timesheets():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        tid = request.args.get("id", type=int)
-        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM timesheets WHERE id=?", (tid,))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -558,34 +594,27 @@ def api_calendar():
         db.commit()
         return jsonify({"ok":True})
     if request.method == "DELETE":
-        eid = request.args.get("id") or (data.get("id") if data else None)
-        if not eid: return jsonify({"error":"Missing id"}), 400
-        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
-        db.commit()
-        return jsonify({"ok":True})
-
-# ---------- warehouse ----------
-VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
-
-@app.route("/api/items", methods=["GET","POST","PATCH","DELETE"])
-def api_items():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
-    db = get_db()
-    if request.method == "GET":
-        site = request.args.get("site")
-        q = "SELECT * FROM items" + (" WHERE site=?" if site in ('lipnik','praha') else "") + " ORDER BY id DESC"
-        rows = db.execute(q, (site, ) if site in ('lipnik','praha') else ()).fetchall()
-        return jsonify({"ok": True, "items":[dict(r) for r in rows]})
-    data = request.get_json(force=True, silent=True) or {}
-    if request.method == "POST":
-        req = ["site","category","name","qty","unit"]
-        if not all(k in data and data[k] not in (None,"") for k in req):
-            return jsonify({"ok": False, "error":"invalid_input"}), 400
-        if data["site"] not in ("lipnik","praha") or data["category"] not in VALID_CATS:
-            return jsonify({"ok": False, "error":"bad_site_or_category"}), 400
-        db.execute("""INSERT INTO items(site,category,name,qty,unit) VALUES (?,?,?,?,?)""",
-                   (data["site"], data["category"], data["name"], float(data["qty"]), data["unit"]))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
     if request.method == "PATCH":
@@ -606,9 +635,27 @@ def api_items():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        iid = request.args.get("id", type=int)
-        if not iid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM items WHERE id=?", (iid,))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -695,9 +742,27 @@ def api_job_materials(jid):
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        mid = request.args.get("id", type=int)
-        if not mid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM job_materials WHERE id=? AND job_id=?", (mid, jid))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -714,9 +779,27 @@ def api_job_tools(jid):
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        tid = request.args.get("id", type=int)
-        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM job_tools WHERE id=? AND job_id=?", (tid, jid))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -741,13 +824,27 @@ def api_job_photos(jid):
         db.commit()
         return jsonify({"ok": True, "filename": fname})
     if request.method == "DELETE":
-        pid = request.args.get("id", type=int)
-        if not pid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        row = db.execute("SELECT filename FROM job_photos WHERE id=? AND job_id=?", (pid, jid)).fetchone()
-        if row:
-            try: os.remove(os.path.join(UPLOAD_DIR, row["filename"]))
-            except Exception: pass
-        db.execute("DELETE FROM job_photos WHERE id=? AND job_id=?", (pid, jid))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
@@ -822,9 +919,27 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
-        tid = request.args.get("id", type=int)
-        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM tasks WHERE id=?", (tid,))
+        # Accept id from qs or JSON; tolerate strings like "job-7"
+        raw_id = request.args.get("id")
+        if raw_id is None:
+            data = request.get_json(force=True, silent=True) or {}
+            raw_id = data.get("id")
+        if raw_id is None:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        s = str(raw_id)
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return jsonify({"ok": False, "error":"bad_id"}), 400
+        jid = int(m.group(1))
+        ts = db.execute("SELECT COUNT(1) AS c FROM timesheets WHERE job_id=?", (jid,)).fetchone()
+        tk = db.execute("SELECT COUNT(1) AS c FROM tasks WHERE job_id=?", (jid,)).fetchone()
+        if (ts and ts["c"]>0) or (tk and tk["c"]>0):
+            if str(request.args.get("force")).lower() in ("1","true","yes"):
+                db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
+                db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
+            else:
+                return jsonify({"ok": False, "error":"has_dependencies", "timesheets": ts["c"] if ts else 0, "tasks": tk["c"] if tk else 0}), 409
+        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
 
