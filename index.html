@@ -137,6 +137,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
+        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
           <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
@@ -152,10 +153,34 @@ function JobsList({onOpen}){
               <input placeholder="Poznámka" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:1}}/>
               <button type="submit">Přidat</button>
             </div></form>{err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}</div></div>
-          {list.map(z=> (<div className="card" key={z.id}><div className="card-h"><div><div style={{fontWeight:700}}><span className="linklike" onClick={()=> onOpen(z.id)}>{z.title}</span></div><div className="small">{z.client} • {z.city} • {z.code}</div></div><span className="badge">{z.status}</span></div>
+          {list.map(z=> (<div className="card" key={z.id}><div className="card-h"><div><div style={{fontWeight:700}}><span className="linklike" onClick={()=> onOpen(z.id)}>{z.title}</span></div><div className="small">{z.client} • {z.city} • {z.code} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><span className="badge">{z.status}</span></div>
             <div className="card-c"><div className="kv small"><span>📅</span> <span>{toCZ(z.date)}</span></div><div style={{marginTop:12, display:"flex", gap:8}}>
-              <button onClick={()=> onOpen(z.id)}>Otevřít detail</button><button className="ghost" onClick={()=> del(z.id)}>Smazat</button></div></div></div>))}
-          {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše.</div></div>}
+              <button onClick={()=> onOpen(z.id)}>Otevřít detail</button><button className="ghost" onClick={()=> del(z.id)}>Smazat</button> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div></div>))}
+          {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše. <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>}
         </div>);
       }
 
@@ -191,7 +216,15 @@ function JobsList({onOpen}){
         async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date), job_id: jobId || null})}); setForm({title:"",description:"",due_date:"",employee_id:""}); load(); }
         async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
         async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
-        return (<div className="card"><div className="card-h"><div>Úkoly zakázky</div></div><div className="card-c">
+        return (<div className="card"><div className="card-h"><div>Úkoly zakázky <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
           <form onSubmit={add}><div className="form-row">
             <input placeholder="Nadpis úkolu" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required style={{flex:2}}/>
             <input placeholder="Do kdy (YYYY-MM-DD)" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})}/>
@@ -201,7 +234,15 @@ function JobsList({onOpen}){
           <table className="table"><thead><tr><th>Stav</th><th>Název</th><th>Přiřazeno</th><th>Termín</th><th></th></tr></thead><tbody>
             {list.map(t=>(<tr key={t.id}><td><span className="badge">{t.status}</span></td><td>{t.title}</td><td>{t.employee_id || "-"}</td><td>{t.due_date || "-"}</td><td className="small">
               <button className="ghost" onClick={()=>setStatus(t,"nový")}>nový</button><button className="ghost" onClick={()=>setStatus(t,"probíhá")}>probíhá</button><button className="ghost" onClick={()=>setStatus(t,"hotovo")}>hotovo</button><button className="ghost" onClick={()=>del(t)}>smazat</button></td></tr>))}
-          </tbody></table>{list.length===0 && <div className="small">Žádné úkoly.</div>}</div></div>);
+          </tbody></table>{list.length===0 && <div className="small">Žádné úkoly.</div>} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>);
       }
 
       function JobHours({jobId}){
@@ -211,8 +252,17 @@ function JobsList({onOpen}){
         async function load(){ try{ const [h,e]=await Promise.all([api("/api/timesheets?job_id="+jobId), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]);}catch(e){ console.error(e);} }
         useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
+        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
-        return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div></div><div className="card-c">
+        return (<div className="card"><div className="card-h"><div>Hodiny na zakázce <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
           <form onSubmit={add}><div className="form-row">
             <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} required><option value="">Zaměstnanec…</option>{employees.map(emp=>(<option key={emp.id} value={emp.id}>{emp.name}</option>))}</select>
             <input type="text" placeholder="DD.MM.RRRR" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
@@ -227,7 +277,15 @@ function JobsList({onOpen}){
             {rows.map(r=>(<tr key={r.id}><td>{toCZ(r.date)}</td><td>{r.hours}</td><td>{r.employee_name || r.employee_id}</td><td>{r.place||"-"}</td><td>{r.activity||"-"}</td>
               <td><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></td></tr>))}
           </tbody></table>{rows.length===0 && <div className="small">Zatím žádné hodiny.</div>}
-        </div></div>);
+         <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>);
       }
 
       function JobDetail({jobId,onBack}){
@@ -245,12 +303,52 @@ function JobsList({onOpen}){
         const j = data.job;
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
           <button className="ghost" onClick={onBack}>← Zpět na seznam</button>
-          <div className="card"><div className="card-h"><div><div style={{fontWeight:800,fontSize:18}}>{j.title}</div><div className="small">{j.client} • {j.city} • {j.code}</div></div><span className="badge">{j.status}</span></div>
-            <div className="card-c"><div className="kv small"><span>📅</span> <span>{toCZ(j.date)}</span></div>{j.note && <div className="small" style={{marginTop:8}}>{j.note}</div>}</div></div>
+          <div className="card"><div className="card-h"><div><div style={{fontWeight:800,fontSize:18}}>{j.title}</div><div className="small">{j.client} • {j.city} • {j.code} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><span className="badge">{j.status}</span></div>
+            <div className="card-c"><div className="kv small"><span>📅</span> <span>{toCZ(j.date)}</span></div>{j.note && <div className="small" style={{marginTop:8}}>{j.note}</div>} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
           <div className="card"><div className="card-h"><div>Přiřazení zaměstnanci</div><button onClick={setAssign}>Uložit přiřazení</button></div>
-            <div className="card-c small"><div className="row h"><div style={{gridColumn:"span 6"}}>Jméno</div><div style={{gridColumn:"span 6"}}>Přiřazen</div></div>
-              {employees.map(e=> (<div className="row" key={e.id}><div style={{gridColumn:"span 6"}}>{e.name}</div><div style={{gridColumn:"span 6"}}><input type="checkbox" checked={selEmp.includes(e.id)} onChange={(ev)=>{ const checked=ev.target.checked; setSelEmp(s=> checked? [...new Set([...s, e.id])] : s.filter(x=>x!==e.id)); }}/></div></div>))}
-            </div></div>
+            <div className="card-c small"><div className="row h"><div style={{gridColumn:"span 6"}}>Jméno</div><div style={{gridColumn:"span 6"}}>Přiřazen <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+              {employees.map(e=> (<div className="row" key={e.id}><div style={{gridColumn:"span 6"}}>{e.name}</div><div style={{gridColumn:"span 6"}}><input type="checkbox" checked={selEmp.includes(e.id)} onChange={(ev)=>{ const checked=ev.target.checked; setSelEmp(s=> checked? [...new Set([...s, e.id])] : s.filter(x=>x!==e.id)); }}/> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>))}
+             <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
           <JobTasks jobId={jobId}/>
           <JobHours jobId={jobId}/>
           <div className="card"><div className="card-h"><div>Materiál</div><a className="ghost" href={`/export/job_materials.xlsx?job_id=${jobId}`}>Export XLSX</a></div>
@@ -259,25 +357,97 @@ function JobsList({onOpen}){
               <input type="number" step="0.01" placeholder="Množství" value={mat.qty} onChange={e=>setMat({...mat,qty:e.target.value})} required style={{width:120}}/>
               <input placeholder="Jedn." value={mat.unit} onChange={e=>setMat({...mat,unit:e.target.value})} required style={{width:80}}/>
               <button type="submit">Přidat</button></div></form>
-              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}></div></div>
-              {(data.materials||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delMat(r.id)}>Smazat</button></div></div>))}
-              {data.materials?.length===0 && <div className="small">Zatím žádný materiál.</div>}</div></div>
-          <div className="card"><div className="card-h"><div>Nářadí</div></div>
+              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+              {(data.materials||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delMat(r.id)}>Smazat</button> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>))}
+              {data.materials?.length===0 && <div className="small">Zatím žádný materiál.</div>} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+          <div className="card"><div className="card-h"><div>Nářadí <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
             <div className="card-c"><form onSubmit={addTool}><div className="form-row">
               <input placeholder="Název" value={tool.name} onChange={e=>setTool({...tool,name:e.target.value})} required style={{flex:2}}/>
               <input type="number" step="0.01" placeholder="Množství" value={tool.qty} onChange={e=>setTool({...tool,qty:e.target.value})} required style={{width:120}}/>
               <input placeholder="Jedn." value={tool.unit} onChange={e=>setTool({...tool,unit:e.target.value})} required style={{width:80}}/>
               <button type="submit">Přidat</button></div></form>
-              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}></div></div>
-              {(data.tools||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delTool(r.id)}>Smazat</button></div></div>))}
-              {data.tools?.length===0 && <div className="small">Zatím žádné nářadí.</div>}</div></div>
-          <div className="card"><div className="card-h"><div>Fotky</div></div>
+              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+              {(data.tools||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delTool(r.id)}>Smazat</button> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>))}
+              {data.tools?.length===0 && <div className="small">Zatím žádné nářadí.</div>} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+          <div className="card"><div className="card-h"><div>Fotky <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
             <div className="card-c"><PhotoUploader jobId={jobId} onUploaded={load}/>
               <div className="grid" style={{gridTemplateColumns:"repeat(5,1fr)"}}>
                 {(data.photos||[]).map(p=> (<div key={p.id}><img className="img-preview" src={`/uploads/${p.filename}`} alt="foto"/></div>))}
               </div>
               {data.photos?.length===0 && <div className="small">Zatím žádné fotky.</div>}
-            </div></div>
+             <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
         </div>);
       }
 
@@ -288,6 +458,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const [t,j] = await Promise.all([api("/api/timesheets?employee_id="+employee.id), api("/api/jobs")]); setRows(t.rows||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
         useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({employee_id:employee.id, ...form})}); setForm({job_id:"",date:"",hours:0,place:"",activity:""}); load(); }
+        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (
           <div className="grid" style={{gridTemplateColumns:"1fr"}}>
@@ -333,25 +504,82 @@ function JobsList({onOpen}){
         const [site,setSite]=useState("lipnik"); const [list,setList]=useState([]); const [form,setForm]=useState({category:CATS[0],name:"",qty:0,unit:"ks"}); const [q,setQ]=useState("");
         async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } useEffect(()=>{ load().catch(()=>{}); },[site]);
         async function add(e){ e.preventDefault(); await api("/api/items",{method:"POST",body:JSON.stringify({...form,site})}); setForm({category:CATS[0],name:"",qty:0,unit:"ks"}); load(); }
+        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat položku?")) return; await api("/api/items?id="+id,{method:"DELETE"}); load(); }
         const filtered = React.useMemo(()=> list.filter(r=> (r.name||"").toLowerCase().includes(q.toLowerCase())), [list,q]);
         return (<div><div style={{display:"flex",gap:8,alignItems:"center",margin:"8px 0 12px"}}>
-          <div className="tabs"><div className={"tab"+(site==="lipnik"?" active":"")} onClick={()=>setSite("lipnik")}>Lipník</div><div className={"tab"+(site==="praha"?" active":"")} onClick={()=>setSite("praha")}>Praha</div></div>
+          <div className="tabs"><div className={"tab"+(site==="lipnik"?" active":"")} onClick={()=>setSite("lipnik")}>Lipník</div><div className={"tab"+(site==="praha"?" active":"")} onClick={()=>setSite("praha")}>Praha <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
           <div className="search" style={{flex:1}}><input value={q} onChange={e=> setQ(e.target.value)} placeholder="Hledat položku…"/><button className="ghost">Hledat</button></div>
           <a className="ghost" href="/export/warehouse.xlsx">Export XLSX</a></div>
-          <div className="card"><div className="card-h"><div>Nová položka</div></div><div className="card-c">
+          <div className="card"><div className="card-h"><div>Nová položka <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
             <form onSubmit={add}><div className="form-row">
               <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATS.map(c=>(<option key={c}>{c}</option>))}</select>
               <input placeholder="Název" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={{flex:2}}/>
               <input type="number" step="0.01" placeholder="Množství" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} required style={{width:120}}/>
               <input placeholder="Jedn." value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} required style={{width:80}}/>
-              <button type="submit">Přidat</button></div></form></div></div>
-          <div className="card"><div className="card-h"><div>Inventář – {site==="lipnik"?"Lipník":"Praha"}</div></div><div className="card-c">
-            <div className="row h"><div style={{gridColumn:"span 4"}}>Kategorie</div><div style={{gridColumn:"span 6"}}>Název</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Jedn.</div></div>
+              <button type="submit">Přidat</button></div></form> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+          <div className="card"><div className="card-h"><div>Inventář – {site==="lipnik"?"Lipník":"Praha"} <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
+            <div className="row h"><div style={{gridColumn:"span 4"}}>Kategorie</div><div style={{gridColumn:"span 6"}}>Název</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Jedn. <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
             {filtered.length===0 && <div className="small">Prázdné – přidej položky výše.</div>}
             {filtered.map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 4"}}>{r.category}</div><div style={{gridColumn:"span 6"}}>{r.name}</div><div style={{gridColumn:"span 1",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1",textAlign:"right"}}>{r.unit}</div>
-              <div style={{gridColumn:"span 12",textAlign:"right"}}><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></div></div>))}
-          </div></div></div>);
+              <div style={{gridColumn:"span 12",textAlign:"right"}}><button className="ghost" onClick={()=>del(r.id)}>Smazat</button> <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>))}
+           <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div></div>);
       }
 
       function UsersTab(){
@@ -361,14 +589,38 @@ function JobsList({onOpen}){
         async function setRole(id,role){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id,role})}); load(); }
         async function toggleActive(u){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id:u.id,active:!u.active})}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nový uživatel</div></div><div className="card-c">
+          <div className="card"><div className="card-h"><div>Nový uživatel <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
             <form onSubmit={create}><div className="form-row">
               <input placeholder="E‑mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required style={{flex:1}}/>
               <input placeholder="Jméno" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={{flex:1}}/></div>
               <div className="form-row"><select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option value="worker">worker</option><option value="manager">manager</option><option value="admin">admin</option></select>
               <input type="password" placeholder="Heslo" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/><button type="submit">Vytvořit</button></div></form>
-          </div></div>
-          <div className="card"><div className="card-h"><div>Uživatelé</div></div><div className="card-c">
+           <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
+          <div className="card"><div className="card-h"><div>Uživatelé <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div><div className="card-c">
             {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
             <table className="table"><thead><tr><th>ID</th><th>E‑mail</th><th>Jméno</th><th>Role</th><th>Aktivní</th><th></th></tr></thead><tbody>
               {list.map(u=>(<tr key={u.id}><td>{u.id}</td><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td><td>{u.active? "ano":"ne"}</td>
@@ -377,7 +629,15 @@ function JobsList({onOpen}){
                   <button className="ghost" onClick={()=>setRole(u.id,"admin")}>admin</button>
                   <button className="ghost" onClick={()=>toggleActive(u)}>{u.active?"deaktivovat":"aktivovat"}</button></td></tr>))}
             </tbody></table>
-          </div></div>
+           <div className="small" style={{marginTop:4}}>
+                <label>Stav:&nbsp;
+                  <select value={z.status||"Plán"} onChange={e=>updateJobStatus(z.id, e.target.value)}>
+                    <option>Plán</option>
+                    <option>Probíhá</option>
+                    <option>Dokončeno</option>
+                  </select>
+                </label>
+              </div></div></div>
         </div>);
       }
 
@@ -434,6 +694,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
+        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
         if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
         return (
