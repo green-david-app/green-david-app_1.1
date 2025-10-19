@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
-import os
-import sqlite3
-from datetime import datetime, date
+import os, sqlite3
+from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 
-# ---- Flask app MUST be created before any @app.route ----
+# Create app BEFORE any @app.route
 app = Flask(__name__)
-
 DB_PATH = os.environ.get("DB_PATH", "db.sqlite3")
 
-# ---- Helpers ----
+# ------------- Helpers -------------
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 def normalize_date(s):
+    if not s:
+        return None
     try:
         return datetime.strptime(s[:10], "%Y-%m-%d").date().isoformat()
     except Exception:
@@ -25,26 +25,24 @@ def normalize_date(s):
             return s[:10]
 
 def get_admin_id(db):
-    # Fallback owner_id if not provided
     row = db.execute("SELECT id FROM employees ORDER BY id LIMIT 1").fetchone()
-    return (row["id"] if row else 1)
+    return row["id"] if row else 1
 
-# ---- Static pages (keep current simple server behavior) ----
+# ------------- Minimal static -------------
 @app.route("/")
 def root():
-    return send_from_directory(".", "index.html")
+    if os.path.exists("index.html"):
+        return send_from_directory(".", "index.html")
+    return "", 200
 
 @app.route("/<path:fname>")
 def static_files(fname):
-    # serve simple static files that the app references (index.html, css, images, other html)
     if os.path.exists(fname):
         return send_from_directory(".", fname)
-    return ("", 404)
+    return "", 404
 
-# ---- Small helper endpoint seen in your logs ----
 @app.route("/api/me")
 def api_me():
-    # Keep length similar to logs (~136 bytes) but content isn't critical
     return jsonify({"user":"admin","role":"owner","name":"Green David","tz":"Europe/Prague"})
 
 # ========================= JOBS ==============================
@@ -53,7 +51,9 @@ def api_jobs():
     db = get_db()
 
     if request.method == "GET":
-        rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
+        rows = [dict(r) for r in db.execute(
+            "SELECT * FROM jobs ORDER BY date(date) DESC, id DESC"
+        ).fetchall()]
         return jsonify({"ok": True, "jobs": rows})
 
     data = request.get_json(silent=True) or {}
@@ -87,17 +87,9 @@ def api_jobs():
         if not jid:
             return jsonify({"ok": False, "error": "missing_or_bad_id"}), 400
         deleted = 0
-        for tbl, col in [
-            ("job_materials","job_id"),
-            ("job_tools","job_id"),
-            ("job_photos","job_id"),
-            ("job_assignments","job_id"),
-            ("tasks","job_id"),
-            ("timesheets","job_id"),
-            ("calendar_events","job_id"),
-        ]:
+        for tbl in ["job_materials","job_tools","job_photos","job_assignments","tasks","timesheets","calendar_events"]:
             try:
-                cur = db.execute(f"DELETE FROM {tbl} WHERE {col}=?", (jid,))
+                cur = db.execute(f"DELETE FROM {tbl} WHERE job_id=?", (jid,))
                 deleted += cur.rowcount or 0
             except Exception:
                 pass
@@ -106,7 +98,7 @@ def api_jobs():
         db.commit()
         return jsonify({"ok": True, "deleted": int(deleted)})
 
-    # POST create
+    # POST
     for k in ("title", "city", "code", "date"):
         if not (data.get(k) and str(data.get(k)).strip()):
             return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
@@ -118,9 +110,7 @@ def api_jobs():
     status = str((data.get("status") or "Plán")).strip()
     date_s = normalize_date(str(data["date"]).strip())
     note   = (data.get("note") or "").strip()
-    uid    = data.get("owner_id")
-    if uid is None:
-        uid = get_admin_id(db)
+    uid    = data.get("owner_id") or get_admin_id(db)
 
     cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
     need_name = ("name" in cols)
@@ -146,11 +136,10 @@ def api_jobs():
             "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
             (title, client, status, city, code, date_s, note, uid)
         )
-
     db.commit()
     return jsonify({"ok": True})
 
-# Item route MUST be after app + after api_jobs()
+# Item route AFTER app + api_jobs()
 @app.route("/api/jobs/<int:jid>", methods=["GET","PATCH","DELETE"])
 def api_jobs_item(jid):
     db = get_db()
@@ -174,19 +163,10 @@ def api_jobs_item(jid):
         db.commit()
         return jsonify({"ok": True})
 
-    # DELETE cascade
     deleted = 0
-    for tbl, col in [
-        ("job_materials","job_id"),
-        ("job_tools","job_id"),
-        ("job_photos","job_id"),
-        ("job_assignments","job_id"),
-        ("tasks","job_id"),
-        ("timesheets","job_id"),
-        ("calendar_events","job_id"),
-    ]:
+    for tbl in ["job_materials","job_tools","job_photos","job_assignments","tasks","timesheets","calendar_events"]:
         try:
-            cur = db.execute(f"DELETE FROM {tbl} WHERE {col}=?", (jid,))
+            cur = db.execute(f"DELETE FROM {tbl} WHERE job_id=?", (jid,))
             deleted += cur.rowcount or 0
         except Exception:
             pass
@@ -201,7 +181,6 @@ def api_calendar():
     db = get_db()
 
     if request.method == "GET":
-        # expected params: from=YYYY-MM-DD, to=YYYY-MM-DD
         frm = request.args.get("from")
         to  = request.args.get("to")
         if frm and to:
@@ -236,11 +215,9 @@ def api_calendar():
             return jsonify({"error":"Bad id"}), 400
         if deleted == 0:
             return jsonify({"ok": False, "deleted": 0}), 404
-        return jsonify({"ok": True, "deleted": deleted})
+        return jsonify({"ok": True, "deleted": int(deleted)})
 
-    # POST/PATCH (very light implementation)
     if request.method in ("POST","PATCH"):
-        # Expect at least: date, title; optionally job_id
         need = ("date","title")
         for k in need:
             if not (data.get(k) and str(data.get(k)).strip()):
@@ -268,6 +245,3 @@ def api_calendar():
             return jsonify({"ok": True})
 
     return jsonify({"ok": False, "error":"unsupported"}), 405
-
-# ---- WSGI entry (Render uses wsgi:app) ----
-# Nothing else needed – 'app' is defined above.
