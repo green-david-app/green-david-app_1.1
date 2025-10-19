@@ -1,169 +1,352 @@
 # -*- coding: utf-8 -*-
-import os, sqlite3
+import os, sqlite3, re
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, Response, send_from_directory, abort
 
-app = Flask(__name__, static_folder=".", static_url_path="")
-DB_PATH = os.environ.get("DB_PATH", "app.db")
+app = Flask(__name__)
+DB_PATH = os.environ.get("DB_PATH", "db.sqlite3")
 
-def db():
+# --------- Utilities ---------
+def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def norm_date(s):
-    if not s: return None
-    s = str(s)[:10]
-    for fmt in ("%Y-%m-%d","%d.%m.%Y","%d-%m-%Y"):
+def normalize_date(s):
+    if not s:
+        return None
+    s = str(s)
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
         try:
-            return datetime.strptime(s, fmt).date().isoformat()
+            return datetime.strptime(s[:10], fmt).date().isoformat()
         except Exception:
             pass
-    return s
+    return s[:10]
 
-def ensure_schema():
-    c = db()
-    c.execute("CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, client TEXT, status TEXT, city TEXT, code TEXT, date TEXT, note TEXT, owner_id INTEGER)")
-    c.execute("CREATE TABLE IF NOT EXISTS calendar_events (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, title TEXT NOT NULL, note TEXT, job_id INTEGER)")
-    c.commit(); c.close()
+def get_admin_id(db):
+    row = db.execute("SELECT id FROM employees ORDER BY id LIMIT 1").fetchone()
+    return row["id"] if row else 1
 
-ensure_schema()
+INJECT_SNIPPET = '<script src="/fix-frontend.js?v=20251019"></script>'
 
-@app.route('/api/me')
+def serve_html_with_injection(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            html = f.read()
+    except UnicodeDecodeError:
+        with open(path, "rb") as f:
+            raw = f.read()
+        try:
+            html = raw.decode("cp1250")
+        except Exception:
+            html = raw.decode("latin-1", errors="ignore")
+    # inject only if not present
+    if "fix-frontend.js" not in html:
+        if re.search(r"</body\s*>", html, flags=re.I):
+            html = re.sub(r"</body\s*>", INJECT_SNIPPET + "</body>", html, count=1, flags=re.I)
+        else:
+            html = html + INJECT_SNIPPET
+    return Response(html, mimetype="text/html; charset=utf-8")
+
+# --------- Static / index with auto‑inject ---------
+@app.route("/")
+def root():
+    if os.path.exists("index.html"):
+        return serve_html_with_injection("index.html")
+    return Response("<!doctype html><html><body>OK "+INJECT_SNIPPET+"</body></html>", mimetype="text/html")
+
+@app.route("/<path:fname>")
+def static_files(fname):
+    # serve HTML with injection, others as-is
+    if os.path.exists(fname):
+        if fname.lower().endswith(".html"):
+            return serve_html_with_injection(fname)
+        return send_from_directory(".", fname)
+    abort(404)
+
+# Serve the helper JS from file if present, otherwise from embedded string
+FIX_JS_TEXT = r"""
+(function(){
+  function qsAll(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  async function httpDelete(url){
+    const res = await fetch(url, { method: 'DELETE' });
+    if(!res.ok){ throw new Error('HTTP '+res.status+' '+(await res.text().catch(()=>''))); }
+    return res.json().catch(()=> ({}));
+  }
+  async function httpPatch(url, patch){
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch || {})
+    });
+    if(!res.ok){ throw new Error('HTTP '+res.status+' '+(await res.text().catch(()=>''))); }
+    return res.json().catch(()=> ({}));
+  }
+  async function reloadAfter(promise){
+    try{ await promise; location.reload(); }catch(e){ alert('Chyba: '+e.message); }
+  }
+  window.deleteJob = function(id){
+    if(!id){ alert('Chybí ID zakázky'); return; }
+    if(!confirm('Opravdu smazat zakázku #'+id+'?')) return;
+    reloadAfter(httpDelete(`/api/jobs/${id}`));
+  };
+  window.updateJobStatus = function(id, newStatus){
+    if(!id){ alert('Chybí ID zakázky'); return; }
+    const s = (newStatus || prompt('Nový stav (např. "Probíhá", "Dokončeno"):', 'Probíhá')) || '';
+    if(!s.trim()) return;
+    reloadAfter(httpPatch(`/api/jobs/${id}`, { status: s.trim() }));
+  };
+  window.deleteCalendarForJob = function(jobId){
+    if(!jobId){ alert('Chybí ID zakázky'); return; }
+    reloadAfter(httpDelete(`/gd/api/calendar?id=job-${jobId}`));
+  };
+  function bind(){
+    qsAll('[data-action="delete"][data-id]').forEach(btn=>{
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        window.deleteJob(btn.getAttribute('data-id'));
+      });
+    });
+    qsAll('.delete-job[data-id]').forEach(btn=>{
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        window.deleteJob(btn.getAttribute('data-id'));
+      });
+    });
+    qsAll('a[data-id],button[data-id]').forEach(el=>{
+      const t=(el.textContent||'').toLowerCase();
+      if(t.includes('smazat')){
+        el.addEventListener('click', function(ev){
+          ev.preventDefault();
+          window.deleteJob(el.getAttribute('data-id'));
+        });
+      }
+    });
+    qsAll('[data-action="set-status"][data-id]').forEach(btn=>{
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        window.updateJobStatus(btn.getAttribute('data-id'), btn.getAttribute('data-status')||undefined);
+      });
+    });
+    qsAll('[data-action="cal-del"][data-id]').forEach(btn=>{
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        window.deleteCalendarForJob(btn.getAttribute('data-id'));
+      });
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); }
+  else { bind(); }
+})();
+"""
+
+@app.route("/fix-frontend.js")
+def serve_fix_js():
+    path = "fix-frontend.js"
+    if os.path.exists(path):
+        return send_from_directory(".", path)
+    return Response(FIX_JS_TEXT, mimetype="application/javascript; charset=utf-8")
+
+@app.route("/api/me")
 def api_me():
     return jsonify({"user":"admin","role":"owner","name":"Green David","tz":"Europe/Prague"})
 
-@app.route('/')
-def root():
-    if os.path.exists('index.html'):
-        return send_from_directory('.', 'index.html')
-    return '', 200
+# ========================= JOBS ==============================
+@app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
+def api_jobs():
+    db = get_db()
 
-@app.route('/<path:path>')
-def static_files(path):
-    if os.path.exists(path):
-        return send_from_directory('.', path)
-    return '', 404
-
-# ---------- JOBS ----------
-@app.route('/api/jobs', methods=['GET','POST','PATCH','DELETE'])
-def jobs():
-    conn = db()
-    if request.method == 'GET':
-        rows = [dict(r) for r in conn.execute('SELECT * FROM jobs ORDER BY date(date) DESC, id DESC').fetchall()]
-        conn.close()
-        return jsonify(rows if request.args.get('flat') else {"ok": True, "jobs": rows})
+    if request.method == "GET":
+        rows = [dict(r) for r in db.execute(
+            "SELECT * FROM jobs ORDER BY date(date) DESC, id DESC"
+        ).fetchall()]
+        return jsonify({"ok": True, "jobs": rows})
 
     data = request.get_json(silent=True) or {}
-    jid = request.args.get('id') or data.get('id')
 
-    if request.method == 'DELETE':
-        try: jid = int(jid)
-        except: conn.close(); return jsonify({"ok": False, "error":"missing_or_bad_id"}), 400
-        conn.execute('DELETE FROM calendar_events WHERE job_id=?', (jid,))
-        cur = conn.execute('DELETE FROM jobs WHERE id=?', (jid,))
-        conn.commit(); conn.close()
-        return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+    def parse_id():
+        v = request.args.get("id")
+        if v is None and isinstance(data, dict):
+            v = data.get("id")
+        try:
+            return int(str(v).strip()) if v is not None else None
+        except Exception:
+            return None
 
-    if request.method == 'PATCH':
-        try: jid = int(jid)
-        except: conn.close(); return jsonify({"ok": False, "error":"missing_id"}), 400
+    if request.method == "PATCH":
+        jid = parse_id()
+        if not jid:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
         updates, params = [], []
-        for f in ['title','client','status','city','code','date','note']:
-            if f in data and data[f] is not None:
-                val = norm_date(data[f]) if f=='date' else data[f]
-                updates.append(f"{f}=?"); params.append(val)
-        if not updates: conn.close(); return jsonify({"ok": False, "error":"no_changes"}), 400
+        for f in ["title","client","status","city","code","date","note"]:
+            if f in data and data.get(f) is not None:
+                updates.append(f"{f}=?"); params.append(data.get(f))
+        if not updates:
+            return jsonify({"ok": False, "error": "no_changes"}), 400
         params.append(jid)
-        conn.execute('UPDATE jobs SET '+','.join(updates)+' WHERE id=?', params)
-        conn.commit(); conn.close()
+        db.execute("UPDATE jobs SET " + ",".join(updates) + " WHERE id=?", params)
+        db.commit()
         return jsonify({"ok": True})
+
+    if request.method == "DELETE":
+        jid = parse_id()
+        if not jid:
+            return jsonify({"ok": False, "error": "missing_or_bad_id"}), 400
+        deleted = 0
+        for tbl in ["job_materials","job_tools","job_photos","job_assignments","tasks","timesheets","calendar_events"]:
+            try:
+                cur = db.execute(f"DELETE FROM {tbl} WHERE job_id=?", (jid,))
+                deleted += cur.rowcount or 0
+            except Exception:
+                pass
+        cur = db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+        deleted += cur.rowcount or 0
+        db.commit()
+        return jsonify({"ok": True, "deleted": int(deleted)})
 
     # POST
-    for k in ('title','city','code','date'):
-        if not str(data.get(k) or '').strip():
-            conn.close(); return jsonify({"ok": False, "error":"missing_fields","field":k}), 400
-    vals = (
-        data.get('title','').strip(),
-        data.get('client','').strip(),
-        data.get('status','Plán').strip(),
-        data.get('city','').strip(),
-        data.get('code','').strip(),
-        norm_date(data.get('date')),
-        data.get('note','').strip(),
-        int(data.get('owner_id') or 1),
-    )
-    conn.execute('INSERT INTO jobs(title,client,status,city,code,date,note,owner_id) VALUES (?,?,?,?,?,?,?,?)', vals)
-    conn.commit(); conn.close()
+    for k in ("title", "city", "code", "date"):
+        if not (data.get(k) and str(data.get(k)).strip()):
+            return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
+
+    title  = str(data["title"]).strip()
+    city   = str(data["city"]).strip()
+    code   = str(data["code"]).strip()
+    client = str((data.get("client") or "")).strip()
+    status = str((data.get("status") or "Plán")).strip()
+    date_s = normalize_date(str(data["date"]).strip())
+    note   = (data.get("note") or "").strip()
+    uid    = data.get("owner_id") or get_admin_id(db)
+
+    cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    need_name = ("name" in cols)
+    has_created_at = ("created_at" in cols)
+
+    if need_name and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, title, client, status, city, code, date_s, note, uid)
+        )
+    elif need_name and not has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
+            (title, title, client, status, city, code, date_s, note, uid)
+        )
+    elif (not need_name) and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, client, status, city, code, date_s, note, uid)
+        )
+    else:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
+            (title, client, status, city, code, date_s, note, uid)
+        )
+    db.commit()
     return jsonify({"ok": True})
 
-@app.route('/api/jobs/<int:jid>', methods=['GET','PATCH','DELETE'])
-def jobs_item(jid):
-    conn = db()
-    if request.method == 'GET':
-        r = conn.execute('SELECT * FROM jobs WHERE id=?',(jid,)).fetchone()
-        conn.close()
-        return (jsonify(dict(r)) if r else (jsonify({"error":"not_found"}),404))
+@app.route("/api/jobs/<int:jid>", methods=["GET","PATCH","DELETE"])
+def api_jobs_item(jid):
+    db = get_db()
 
-    if request.method == 'PATCH':
+    if request.method == "GET":
+        row = db.execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+        if not row:
+            return jsonify({"error": "not_found"}), 404
+        return jsonify(dict(row))
+
+    if request.method == "PATCH":
         data = request.get_json(silent=True) or {}
         updates, params = [], []
-        for f in ['title','client','status','city','code','date','note']:
-            if f in data and data[f] is not None:
-                val = norm_date(data[f]) if f=='date' else data[f]
-                updates.append(f"{f}=?"); params.append(val)
-        if not updates: conn.close(); return jsonify({"ok": False, "error":"no_changes"}), 400
+        for f in ["title","client","status","city","code","date","note"]:
+            if f in data and data.get(f) is not None:
+                updates.append(f"{f}=?"); params.append(data.get(f))
+        if not updates:
+            return jsonify({"ok": False, "error": "no_changes"}), 400
         params.append(jid)
-        conn.execute('UPDATE jobs SET '+','.join(updates)+' WHERE id=?', params)
-        conn.commit(); conn.close()
+        db.execute("UPDATE jobs SET " + ",".join(updates) + " WHERE id=?", params)
+        db.commit()
         return jsonify({"ok": True})
 
-    conn.execute('DELETE FROM calendar_events WHERE job_id=?', (jid,))
-    cur = conn.execute('DELETE FROM jobs WHERE id=?', (jid,))
-    conn.commit(); conn.close()
-    return jsonify({"ok": True, "deleted": cur.rowcount or 0})
+    deleted = 0
+    for tbl in ["job_materials","job_tools","job_photos","job_assignments","tasks","timesheets","calendar_events"]:
+        try:
+            cur = db.execute(f"DELETE FROM {tbl} WHERE job_id=?", (jid,))
+            deleted += cur.rowcount or 0
+        except Exception:
+            pass
+    cur = db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+    deleted += cur.rowcount or 0
+    db.commit()
+    return jsonify({"ok": True, "deleted": int(deleted)})
 
-# ---------- CALENDAR ----------
-@app.route('/gd/api/calendar', methods=['GET','POST','PATCH','DELETE'])
-def calendar():
-    conn = db()
-    if request.method == 'GET':
-        frm = request.args.get('from'); to = request.args.get('to')
+# ========================= CALENDAR ==============================
+@app.route("/gd/api/calendar", methods=["GET","POST","PATCH","DELETE"])
+def api_calendar():
+    db = get_db()
+
+    if request.method == "GET":
+        frm = request.args.get("from")
+        to  = request.args.get("to")
         if frm and to:
-            rows = [dict(r) for r in conn.execute('SELECT * FROM calendar_events WHERE date(date)>=? AND date(date)<=? ORDER BY date(date), id', (norm_date(frm), norm_date(to))).fetchall()]
+            rows = [dict(r) for r in db.execute(
+                "SELECT * FROM calendar_events WHERE date(date)>=? AND date(date)<=? ORDER BY date(date) ASC, id ASC",
+                (normalize_date(frm), normalize_date(to))
+            ).fetchall()]
         else:
-            rows = [dict(r) for r in conn.execute('SELECT * FROM calendar_events ORDER BY date(date), id').fetchall()]
-        conn.close(); return jsonify({"ok": True, "events": rows})
+            rows = [dict(r) for r in db.execute(
+                "SELECT * FROM calendar_events ORDER BY date(date) ASC, id ASC"
+            ).fetchall()]
+        return jsonify({"ok": True, "events": rows})
 
     data = request.get_json(silent=True) or {}
-    if request.method == 'DELETE':
-        idv = request.args.get('id') or data.get('id')
-        if not idv: conn.close(); return jsonify({"error":"Missing id"}), 400
+
+    if request.method == "DELETE":
+        eid_raw = request.args.get("id") or (data.get("id") if isinstance(data, dict) else None)
+        if not eid_raw:
+            return jsonify({"error":"Missing id"}), 400
         deleted = 0
         try:
-            if str(idv).startswith('job-'):
-                jid = int(str(idv).split('-',1)[1])
-                cur = conn.execute('DELETE FROM calendar_events WHERE job_id=?', (jid,)); deleted += cur.rowcount or 0
+            if isinstance(eid_raw, str) and eid_raw.startswith("job-"):
+                jid = int(eid_raw.split("-",1)[1])
+                cur = db.execute("DELETE FROM calendar_events WHERE job_id=?", (jid,))
+                deleted = cur.rowcount or 0
             else:
-                cur = conn.execute('DELETE FROM calendar_events WHERE id=?', (int(idv),)); deleted += cur.rowcount or 0
-            conn.commit(); conn.close()
-            return (jsonify({"ok": True, "deleted": deleted}) if deleted else (jsonify({"ok": False, "deleted": 0}),404))
+                eid = int(eid_raw)
+                cur = db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+                deleted = cur.rowcount or 0
+            db.commit()
         except Exception:
-            conn.close(); return jsonify({"error":"Bad id"}), 400
+            return jsonify({"error":"Bad id"}), 400
+        if deleted == 0:
+            return jsonify({"ok": False, "deleted": 0}), 404
+        return jsonify({"ok": True, "deleted": int(deleted)})
 
-    # create/update minimal
-    if request.method in ('POST','PATCH'):
-        for k in ('date','title'):
-            if not str(data.get(k) or '').strip():
-                conn.close(); return jsonify({"ok": False, "error":"missing_fields","field":k}), 400
-        d = norm_date(data['date']); title = data['title']; note = data.get('note',''); job_id = data.get('job_id')
-        if request.method == 'POST':
-            conn.execute('INSERT INTO calendar_events(date,title,note,job_id) VALUES (?,?,?,?)',(d,title,note,job_id))
-            conn.commit(); conn.close(); return jsonify({"ok": True})
+    if request.method in ("POST","PATCH"):
+        need = ("date","title")
+        for k in need:
+            if not (data.get(k) and str(data.get(k)).strip()):
+                return jsonify({"ok": False, "error":"missing_fields", "field": k}), 400
+        d = normalize_date(data["date"])
+        title = str(data["title"]).strip()
+        note  = str((data.get("note") or "")).strip()
+        job_id = data.get("job_id")
+        if request.method == "POST":
+            db.execute(
+                "INSERT INTO calendar_events(date, title, note, job_id) VALUES (?,?,?,?)",
+                (d, title, note, job_id)
+            )
+            db.commit()
+            return jsonify({"ok": True})
         else:
-            eid = data.get('id'); 
-            if not eid: conn.close(); return jsonify({"ok": False, "error":"missing_id"}), 400
-            conn.execute('UPDATE calendar_events SET date=?, title=?, note=?, job_id=? WHERE id=?', (d,title,note,job_id,eid))
-            conn.commit(); conn.close(); return jsonify({"ok": True})
+            eid = data.get("id")
+            if not eid:
+                return jsonify({"ok": False, "error":"missing_id"}), 400
+            db.execute(
+                "UPDATE calendar_events SET date=?, title=?, note=?, job_id=? WHERE id=?",
+                (d, title, note, job_id, eid)
+            )
+            db.commit()
+            return jsonify({"ok": True})
 
-    conn.close(); return jsonify({"ok": False, "error":"unsupported"}), 405
+    return jsonify({"ok": False, "error":"unsupported"}), 405
