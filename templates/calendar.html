@@ -1,112 +1,43 @@
-{% extends "layout.html" %}
+
+{% extends "base.html" %}
 {% block content %}
 <h1>Kalendář</h1>
-<div class="cal-controls">
-  <button id="prev">◀</button>
-  <div id="monthLabel"></div>
-  <button id="next">▶</button>
-  <button id="addNote" class="btn">+ Poznámka</button>
-  <button id="addTask" class="btn">+ Úkol</button>
-  <button id="addJob" class="btn">+ Zakázka</button>
-</div>
-<div id="calendar" class="calendar-grid"></div>
 
-<dialog id="eventDlg">
-  <form method="dialog" id="eventForm">
-    <h3 id="dlgTitle">Událost</h3>
-    <input type="hidden" name="id"/>
-    <label>Typ
-      <select name="kind">
-        <option value="note">Poznámka</option>
-        <option value="task">Úkol</option>
-        <option value="job">Zakázka</option>
-      </select>
+<div class="calendar-controls">
+  <button id="prevMonth" class="btn">&lt;</button>
+  <div id="monthLabel" class="month-label"></div>
+  <button id="nextMonth" class="btn">&gt;</button>
+  <div class="spacer"></div>
+  <button class="btn add" data-type="note">+ Poznámka</button>
+  <button class="btn add" data-type="task">+ Úkol</button>
+  <button class="btn add" data-type="job">+ Zakázka</button>
+</div>
+
+<div id="calendarGrid" class="calendar-grid"></div>
+
+<!-- Modal -->
+<dialog id="eventModal">
+  <form method="dialog" id="eventForm" class="modal-form">
+    <h3 id="modalTitle">Přidat záznam</h3>
+    <label>Datum
+      <input type="date" id="evDate" required>
     </label>
-    <label>Datum <input name="date" type="date" required/></label>
-    <label>Začátek <input name="start_time" type="time"/></label>
-    <label>Konec <input name="end_time" type="time"/></label>
-    <label>Poznámka <textarea name="note" rows="3"></textarea></label>
+    <label>Nadpis
+      <input type="text" id="evTitle" placeholder="Název" required>
+    </label>
+    <label>Podrobnosti
+      <textarea id="evDetails" rows="3" placeholder="volitelné"></textarea>
+    </label>
+    <label>Barva
+      <input type="color" id="evColor" value="#2e7d32">
+    </label>
+    <input type="hidden" id="evType" value="note">
     <menu>
-      <button value="cancel">Zrušit</button>
-      <button id="saveBtn" value="default">Uložit</button>
+      <button class="btn" value="cancel">Zrušit</button>
+      <button class="btn primary" id="saveEvent" value="default">Uložit</button>
     </menu>
   </form>
 </dialog>
 
-<script>
-const grid = document.getElementById("calendar");
-const label = document.getElementById("monthLabel");
-const dlg = document.getElementById("eventDlg");
-const form = document.getElementById("eventForm");
-
-let cur = new Date(); cur.setDate(1);
-
-function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
-function ymd(d){return d.toISOString().slice(0,10);}
-
-async function loadMonth() {
-  label.textContent = fmtMonth(cur);
-  grid.innerHTML = "";
-  const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
-  first.setDate(1-startDow);
-  for (let i=0;i<42;i++){
-    const day = new Date(first); day.setDate(first.getDate()+i);
-    const cell = document.createElement("div");
-    cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
-    cell.innerHTML = \`<div class="cal-date">\${day.getDate()}.</div><div class="cal-events"></div>\`;
-    cell.dataset.date = ymd(day);
-    cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
-    grid.appendChild(cell);
-  }
-  const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
-  const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-  const resp = await fetch(\`/gd/api/calendar?from=\${from}&to=\${to}\`);
-  const data = await resp.json();
-  renderEvents(data.items||[]);
-}
-
-function renderEvents(items){
-  for (const ev of items){
-    const cell = grid.querySelector(\`.cal-cell[data-date="\${ev.date}"] .cal-events\`);
-    if (!cell) continue;
-    const tag = document.createElement("div");
-    tag.className = "cal-tag kind-"+ev.kind;
-    tag.textContent = (ev.start_time?ev.start_time+" ":"")+ (ev.note||"(bez popisu)");
-    tag.title = ev.note||"";
-    tag.addEventListener("click", ()=>openDlg(ev));
-    cell.appendChild(tag);
-  }
-}
-
-function openDlg(ev){
-  form.reset();
-  form.id.value = ev.id || "";
-  form.kind.value = ev.kind || "note";
-  form.date.value = ev.date || ymd(new Date());
-  form.start_time.value = ev.start_time||"";
-  form.end_time.value = ev.end_time||"";
-  form.note.value = ev.note||"";
-  dlg.showModal();
-}
-
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const payload = Object.fromEntries(new FormData(form).entries());
-  payload.start_time = payload.start_time || null;
-  payload.end_time = payload.end_time || null;
-  payload.note = payload.note || "";
-  let url = "/gd/api/calendar", method="POST";
-  if (payload.id){ method="PATCH"; }
-  const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
-});
-
-document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
-document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
-document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-
-loadMonth();
-</script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
