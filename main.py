@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, sqlite3, re
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, request, jsonify, Response, send_from_directory, abort, make_response
 
 app = Flask(__name__)
@@ -148,19 +148,19 @@ def serve_fix_js():
     return Response(FIX_JS_TEXT, mimetype="application/javascript; charset=utf-8")
 
 # ========================= AUTH (dummy) ==============================
+def _user_payload(name="admin"):
+    return {"name": name or "admin", "role": "owner", "tz": "Europe/Prague"}
+
 @app.route("/api/login", methods=["POST", "OPTIONS"])
 def api_login():
     if request.method == "OPTIONS":
-        # simple CORS preflight allow
         r = make_response("", 204)
         r.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         r.headers["Access-Control-Allow-Headers"] = "Content-Type"
         return r
     data = request.get_json(silent=True) or {}
     username = (data.get("username") or data.get("email") or "admin").strip()
-    # Always accept (no real password check) – front-end očekává jen 200 a nějaké info o uživateli
-    resp = jsonify({"ok": True, "token": "devtoken", "user": {"name": username or "admin", "role": "owner"}})
-    # set a simple cookie that index.html může číst (pokud ho používá)
+    resp = jsonify({"ok": True, "token": "devtoken", "user": _user_payload(username)})
     resp.set_cookie("gd_token", "devtoken", max_age=7*24*3600, httponly=False, samesite="Lax")
     return resp
 
@@ -172,8 +172,12 @@ def api_logout():
 
 @app.route("/api/me")
 def api_me():
-    # if cookie/token needed in the future, read it
-    return jsonify({"user":"admin","role":"owner","name":"Green David","tz":"Europe/Prague"})
+    # respond in the same shape that many dashboards expect
+    return jsonify({"ok": True, "token": "devtoken", "user": _user_payload("Green David")})
+
+@app.route("/api/auth")
+def api_auth_status():
+    return jsonify({"ok": True, "authenticated": True, "user": _user_payload("Green David")})
 
 # ========================= JOBS ==============================
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
