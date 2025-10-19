@@ -133,14 +133,25 @@
 function JobsList({onOpen}){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
+        const [editId,setEditId]=useState(null);
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
+        async function save(e){ 
+          e.preventDefault(); 
+          try{ 
+            const payload = {...form}; 
+            await api("/api/jobs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({id: editId, ...payload})}); 
+            setEditId(null); 
+            setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); 
+            load(); 
+          }catch(e){ setErr(e.message || String(e)); } 
+        }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
           <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
-            <form onSubmit={add}><div className="form-row">
+            <form onSubmit={editId ? save : add}><div className="form-row">
               <input placeholder="Název" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} style={{flex:2}} required/>
               <input placeholder="Zákazník" value={form.client} onChange={e=>setForm({...form,client:e.target.value})} style={{flex:2}} required/>
               <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
