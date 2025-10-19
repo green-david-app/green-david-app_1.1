@@ -526,7 +526,7 @@ def api_calendar():
 
         # sort & return
         items.sort(key=lambda x: (x.get("date",""), x.get("start_time") or ""))
-        return jsonify({"items": items})
+        return jsonify(items)
 
     data = request.get_json(force=True, silent=True) or {}
     if request.method == "POST":
@@ -559,13 +559,9 @@ def api_calendar():
         return jsonify({"ok":True})
     if request.method == "DELETE":
         eid = request.args.get("id") or (data.get("id") if data else None)
-        # try numeric calendar event id; ignore "job-*" and "task-*" virtual ids gracefully
-        try:
-            int_eid = int(eid)
-            db.execute("DELETE FROM calendar_events WHERE id=?", (int_eid,))
-            db.commit()
-        except Exception:
-            pass
+        if not eid: return jsonify({"error":"Missing id"}), 400
+        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+        db.commit()
         return jsonify({"ok":True})
 
 # ---------- warehouse ----------
@@ -631,6 +627,7 @@ def api_jobs():
 
     if request.method == "POST":
         data = request.get_json(silent=True) or {}
+        # basic required fields; adjust if your UI sends different ones
         for k in ("title", "city", "code", "date"):
             if not (data.get(k) and str(data.get(k)).strip()):
                 return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
@@ -642,15 +639,21 @@ def api_jobs():
         client = str(data.get("client","")).strip()
         status = str(data.get("status","Plán")).strip() or "Plán"
         note   = str(data.get("note","")).strip()
-        try:
-            uid    = u["id"]
-        except Exception:
-            uid    = get_admin_id(db)
 
-        ensure_jobs_schema(db)
+        try:
+            uid = u["id"]
+        except Exception:
+            uid = get_admin_id(db)
+
+        # Ensure schema compatible; add columns if missing
+        try:
+            ensure_jobs_schema(db)
+        except Exception:
+            pass
+
         cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-        # Sync name with title if name exists (older schemas require NOT NULL name)
-        name = title
+        name = title  # keep legacy 'name' in sync when present
+
         if {"owner_id","created_at","name"}.issubset(cols):
             db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
                        (title, name, client, status, city, code, date, note, uid))
@@ -689,7 +692,6 @@ def api_jobs():
                 if k == "date":
                     v = _normalize_date(v)
                 sets.append(f"{k}=?"); vals.append(v)
-                # keep 'name' in sync with 'title' if schema has 'name'
                 if k == "title" and "name" in cols:
                     sets.append("name=?"); vals.append(v)
         if not sets:
@@ -707,6 +709,7 @@ def api_jobs():
     except Exception:
         return jsonify({"ok": False, "error":"missing_id"}), 400
 
+    # cascade deletes on related tables (best effort)
     for table in ["timesheets","tasks","job_materials","job_tools","job_assignments","job_photos","calendar_events"]:
         try:
             db.execute(f"DELETE FROM {table} WHERE job_id=?", (jid,))

@@ -27,7 +27,6 @@
     <label>Konec <input name="end_time" type="time"/></label>
     <label>Poznámka <textarea name="note" rows="3"></textarea></label>
     <menu>
-      <button type="button" id="deleteBtn" class="danger" style="display:none">Smazat</button>
       <button value="cancel">Zrušit</button>
       <button id="saveBtn" value="default">Uložit</button>
     </menu>
@@ -54,21 +53,21 @@ async function loadMonth() {
     const day = new Date(first); day.setDate(first.getDate()+i);
     const cell = document.createElement("div");
     cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
-    cell.innerHTML = `<div class="cal-date">${day.getDate()}.</div><div class="cal-events"></div>`;
+    cell.innerHTML = \`<div class="cal-date">\${day.getDate()}.</div><div class="cal-events"></div>\`;
     cell.dataset.date = ymd(day);
     cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
     grid.appendChild(cell);
   }
   const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
   const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-  const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
+  const resp = await fetch(\`/gd/api/calendar?from=\${from}&to=\${to}\`);
   const data = await resp.json();
   renderEvents(data.items||[]);
 }
 
 function renderEvents(items){
   for (const ev of items){
-    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-events`);
+    const cell = grid.querySelector(\`.cal-cell[data-date="\${ev.date}"] .cal-events\`);
     if (!cell) continue;
     const tag = document.createElement("div");
     tag.className = "cal-tag kind-"+ev.kind;
@@ -87,18 +86,8 @@ function openDlg(ev){
   form.start_time.value = ev.start_time||"";
   form.end_time.value = ev.end_time||"";
   form.note.value = ev.note||"";
-  document.getElementById('deleteBtn').style.display = ev.id ? 'inline-block' : 'none';
   dlg.showModal();
 }
-
-
-document.getElementById("deleteBtn").addEventListener("click", async ()=>{
-  const id = form.id.value;
-  if (!id) return;
-  if (!confirm("Opravdu smazat tuto událost?")) return;
-  const resp = await fetch("/gd/api/calendar?id="+encodeURIComponent(id), {method:"DELETE"});
-  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Mazání selhalo"); }
-});
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
