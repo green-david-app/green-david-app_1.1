@@ -1,41 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="cs">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>green david app</title>
-    <link rel="stylesheet" href="/style.css"/>
-  </head>
-  <body>
-    <header class="header">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'"/>
-        <div>
-          <div class="brand-title">green david app</div>
-          <div class="brand-sub">interní systém</div>
-        </div>
-        <div class="right small" id="userbox"></div>
-      </div>
-    </header>
-
-    <div class="container" style="margin-top:.5rem">
-      <div class="row-gap" style="justify-content:flex-start">
-        
-      </div>
-    </div>
-
-
-    <main class="container">
-      <div id="app"></div>
-      <div id="js-error" class="error-overlay" style="display:none"></div>
-      <p class="small footer">© green david s.r.o.</p>
-    </main>
-
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <script>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>green david app</title>
+<link href="/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<div class="brand">
+<img alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'" src="/logo.jpg"/>
+<div>
+<div class="brand-title">green david app</div>
+<div class="brand-sub">interní systém</div>
+</div>
+<div class="right small" id="userbox"></div>
+</div>
+</header>
+<div class="container" style="margin-top:.5rem">
+<div class="row-gap" style="justify-content:flex-start">
+</div>
+</div>
+<main class="container">
+<div id="app"></div>
+<div class="error-overlay" id="js-error" style="display:none"></div>
+<p class="small footer">© green david s.r.o.</p>
+</main>
+<script crossorigin="anonymous" src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
       
       function toISODateFlex(v){
         if(!v) return v;
@@ -98,8 +93,7 @@
         }catch(e){ box.innerText = ""; }
       }
     </script>
-
-    <script type="text/babel" data-presets="env,react">
+<script data-plugins="proposal-class-properties,proposal-object-rest-spread" data-presets="env,react" type="text/babel">
       const { useState, useEffect, useMemo } = React;
 
       function Login({onLogged}){
@@ -137,7 +131,9 @@ function JobsList({onOpen}){
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
-        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+        
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
           <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
@@ -252,7 +248,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const [h,e]=await Promise.all([api("/api/timesheets?job_id="+jobId), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]);}catch(e){ console.error(e);} }
         useEffect(()=>{ load().catch(()=>{}); },[jobId]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
-        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (<div className="card"><div className="card-h"><div>Hodiny na zakázce <div className="small" style={{marginTop:4}}>
                 <label>Stav:&nbsp;
@@ -458,7 +454,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const [t,j] = await Promise.all([api("/api/timesheets?employee_id="+employee.id), api("/api/jobs")]); setRows(t.rows||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
         useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
         async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({employee_id:employee.id, ...form})}); setForm({job_id:"",date:"",hours:0,place:"",activity:""}); load(); }
-        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
         return (
           <div className="grid" style={{gridTemplateColumns:"1fr"}}>
@@ -504,7 +500,7 @@ function JobsList({onOpen}){
         const [site,setSite]=useState("lipnik"); const [list,setList]=useState([]); const [form,setForm]=useState({category:CATS[0],name:"",qty:0,unit:"ks"}); const [q,setQ]=useState("");
         async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } useEffect(()=>{ load().catch(()=>{}); },[site]);
         async function add(e){ e.preventDefault(); await api("/api/items",{method:"POST",body:JSON.stringify({...form,site})}); setForm({category:CATS[0],name:"",qty:0,unit:"ks"}); load(); }
-        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat položku?")) return; await api("/api/items?id="+id,{method:"DELETE"}); load(); }
         const filtered = React.useMemo(()=> list.filter(r=> (r.name||"").toLowerCase().includes(q.toLowerCase())), [list,q]);
         return (<div><div style={{display:"flex",gap:8,alignItems:"center",margin:"8px 0 12px"}}>
@@ -694,7 +690,7 @@ function JobsList({onOpen}){
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
-        async function updateJobStatus(id, status){ try{ await api(`/api/jobs?id=${id}`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
+`, {method:'PATCH', body: JSON.stringify({status})}); load(); }catch(e){ setErr(e.message||String(e)); } }
         async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
         if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
         return (
@@ -738,7 +734,7 @@ function JobsList({onOpen}){
 
       ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
     </script>
-  <script>
+<script>
 // Hide old green shortcut row "Kalendář Výkazy hodin" if it exists (we keep only the tabs bar)
 document.addEventListener('DOMContentLoaded', function(){
   const anchors = Array.from(document.querySelectorAll('a'));
@@ -753,5 +749,12 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 </script>
-</body>
+<script>
+window.addEventListener('error', function(e){
+  var box = document.querySelector('.err');
+  if (!box) return;
+  var msg = (e && e.error && (e.error.stack || e.error.message)) || (e && e.message) || 'Script error.';
+  box.textContent = String(msg);
+}, true);
+</script></body>
 </html>
