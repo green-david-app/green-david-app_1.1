@@ -613,7 +613,7 @@ def api_items():
         return jsonify({"ok": True})
 
 # ---------- jobs ----------
-@app.route("/api/jobs", methods=["GET","POST","PATCH"])
+@app.route("/api/jobs", methods=["GET","POST"])
 def api_jobs():
     db = get_db()
 

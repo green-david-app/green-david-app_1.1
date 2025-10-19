@@ -522,14 +522,9 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     form.scrollIntoView({behavior:'smooth', block:'start'});
   }
+  window.__gdLoadJob = loadJob;
 
-  // delegate edit clicks
-  document.addEventListener('click', (e)=>{
-    const b=e.target.closest('[data-edit="1"]'); if(!b) return;
-    e.preventDefault(); const id=b.getAttribute('data-id'); if(id) loadJob(id);
-  });
-
-  // handle submit override for PATCH
+  // Intercept submit to switch POST→PATCH when patchMode
   form.addEventListener('submit', async (e)=>{
     if(!patchMode) return; // let original POST handler run
     e.preventDefault();
@@ -547,6 +542,17 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }, true);
 })();
+</script>
+
+
+<script>
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-edit="1"]');
+  if (!b) return;
+  e.preventDefault();
+  const id = b.getAttribute('data-id');
+  if (id && window.__gdLoadJob) window.__gdLoadJob(id);
+});
 </script>
 
 </body>
