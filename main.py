@@ -621,98 +621,85 @@ def api_jobs():
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
         return jsonify({"ok": True, "jobs": rows})
 
-    data = request.get_json(silent=True) or {}
-    for k in ("title", "city", "code", "date"):
-        if not (data.get(k) and str(data.get(k)).strip()):
-            return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
+    # WRITE methods require elevated role
+    u, err = require_role(write=True)
+    if err: return err
 
-    title  = str(data["title"]).strip()
-    city   = str(data["city"]).strip()
-    code   = str(data["code"]).strip()
-    date   = _normalize_date(str(data["date"]).strip())
-    status = (data.get("status") or "Plán").strip()
-    client = (data.get("client") or "").strip()
-    note   = (data.get("note") or None)
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        for k in ("title", "city", "code", "date"):
+            if not (data.get(k) and str(data.get(k)).strip()):
+                return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
 
-    uid = session.get("uid")
-    if uid is None:
-        uid = get_admin_id(db)
+        title  = str(data.get("title","")).strip()
+        city   = str(data.get("city","")).strip()
+        code   = str(data.get("code","")).strip()
+        date   = _normalize_date(str(data.get("date","")).strip())
+        client = str(data.get("client","")).strip()
+        status = str(data.get("status","Plán")).strip() or "Plán"
+        note   = str(data.get("note","")).strip()
+        uid    = u["id"] if isinstance(u, dict) and "id" in u else get_admin_id(db)
 
-    cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-    need_name = ("name" in cols)
-    has_created_at = ("created_at" in cols)
+        # Ensure schema compatible
+        ensure_jobs_schema(db)
 
-    if need_name and has_created_at:
-        db.execute(
-            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
-            (title, title, client, status, city, code, date, note, uid)
-        )
-    elif need_name and not has_created_at:
-        db.execute(
-            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
-            (title, title, client, status, city, code, date, note, uid)
-        )
-    elif (not need_name) and has_created_at:
-        db.execute(
-            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
-            (title, client, status, city, code, date, note, uid)
-        )
-    else:
-        db.execute(
-            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
-            (title, client, status, city, code, date, note, uid)
-        )
-
-    db.commit()
-    return jsonify({"ok": True})
-    if request.method == "PATCH":
-        u, err = require_role(write=True)
-        if err: return err
-        data = request.get_json(force=True, silent=True) or {}
-        jid = data.get("id") or request.args.get("id", type=int)
-        if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        # only allow known fields
-        allowed = ["title","client","status","city","code","date","note"]
-        sets = []; vals = []
-        for k in allowed:
-            if k in data:
-                if k == "date":
-                    vals.append(_normalize_date(str(data[k]).strip()))
-                else:
-                    vals.append(str(data[k]).strip())
-                sets.append(f"{k}=?")
-        if not sets:
-            return jsonify({"ok": False, "error":"no_fields"}), 400
-        db.execute("UPDATE jobs SET "+",".join(sets)+" WHERE id=?", (*vals, jid))
+        # Insert with available columns
+        cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+        if {"owner_id","created_at"}.issubset(cols):
+            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+                       (title, client, status, city, code, date, note, uid))
+        elif "owner_id" in cols:
+            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
+                       (title, client, status, city, code, date, note, uid))
+        else:
+            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?)",
+                       (title, client, status, city, code, date, note))
         db.commit()
         return jsonify({"ok": True})
+
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        jid = data.get("id") or request.args.get("id", type=int)
+        if not jid:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        allowed = ["title","client","status","city","code","date","note"]
+        sets, vals = [], []
+        for k in allowed:
+            if k in data:
+                v = str(data[k]).strip()
+                if k == "date":
+                    v = _normalize_date(v)
+                sets.append(f"{k}=?")
+                vals.append(v)
+        if not sets:
+            return jsonify({"ok": False, "error":"no_fields"}), 400
+        vals.append(jid)
+        db.execute("UPDATE jobs SET "+",".join(sets)+" WHERE id=?", vals)
+        db.commit()
+        return jsonify({"ok": True})
+
     if request.method == "DELETE":
-        u, err = require_role(write=True)
-        if err: return err
-        jid = request.args.get("id", type=int)
-        if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        # delete children
+        jid = request.args.get("id", type=int) or (request.get_json(silent=True) or {}).get("id")
         try:
-            db.execute("DELETE FROM timesheets WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM tasks WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM job_materials WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM job_tools WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM job_assignments WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM job_photos WHERE job_id=?", (jid,))
-        except Exception: pass
-        try:
-            db.execute("DELETE FROM calendar_events WHERE job_id=?", (jid,))
-        except Exception: pass
+            jid = int(jid)
+        except Exception:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+
+        # cascade deletes on related tables if they exist
+        for table, cond in [
+            ("timesheets", "job_id=?"),
+            ("tasks", "job_id=?"),
+            ("job_materials", "job_id=?"),
+            ("job_tools", "job_id=?"),
+            ("job_assignments", "job_id=?"),
+            ("job_photos", "job_id=?"),
+            ("calendar_events", "job_id=?"),
+        ]:
+            try:
+                db.execute(f"DELETE FROM {table} WHERE {cond}", (jid,))
+            except Exception:
+                pass
+
         db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
         return jsonify({"ok": True})
