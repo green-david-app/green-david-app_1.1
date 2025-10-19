@@ -558,26 +558,11 @@ def api_calendar():
         db.commit()
         return jsonify({"ok":True})
     if request.method == "DELETE":
-        # Support id=<int> or id=job-<job_id>
-        eid_raw = request.args.get("id") or (data.get("id") if isinstance(data, dict) else None)
-        if not eid_raw:
-            return jsonify({"error":"Missing id"}), 400
-        deleted = 0
-        try:
-            if isinstance(eid_raw, str) and eid_raw.startswith("job-"):
-                jid = int(eid_raw.split("-",1)[1])
-                cur = db.execute("DELETE FROM calendar_events WHERE job_id=?", (jid,))
-                deleted = cur.rowcount or 0
-            else:
-                eid = int(eid_raw)
-                cur = db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
-                deleted = cur.rowcount or 0
-            db.commit()
-        except Exception:
-            return jsonify({"error":"Bad id"}), 400
-        if deleted == 0:
-            return jsonify({"ok": False, "deleted": 0}), 404
-        return jsonify({"ok": True, "deleted": deleted})
+        eid = request.args.get("id") or (data.get("id") if data else None)
+        if not eid: return jsonify({"error":"Missing id"}), 400
+        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
+        db.commit()
+        return jsonify({"ok":True})
 
 # ---------- warehouse ----------
 VALID_CATS = ('trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba')
@@ -637,46 +622,6 @@ def api_jobs():
         return jsonify({"ok": True, "jobs": rows})
 
     data = request.get_json(silent=True) or {}
-
-    # PATCH: update existing job
-    if request.method == "PATCH":
-        jid = request.args.get("id", type=int) or data.get("id")
-        if not jid:
-            return jsonify({"ok": False, "error":"missing_id"}), 400
-        updates, params = [], []
-        for f in ["title","client","status","city","code","date","note"]:
-            if f in data:
-                updates.append(f"{f}=?"); params.append(data.get(f))
-        if not updates:
-            return jsonify({"ok": False, "error":"no_changes"}), 400
-        params.append(jid)
-        db.execute("UPDATE jobs SET " + ",".join(updates) + " WHERE id=?", params)
-        db.commit()
-        return jsonify({"ok": True})
-
-    # DELETE: remove job and related records
-    if request.method == "DELETE":
-        jid = request.args.get("id", type=int) or data.get("id")
-        if not jid:
-            return jsonify({"ok": False, "error":"missing_id"}), 400
-        for tbl, col in [
-            ("job_materials","job_id"),
-            ("job_tools","job_id"),
-            ("job_photos","job_id"),
-            ("job_assignments","job_id"),
-            ("tasks","job_id"),
-            ("timesheets","job_id"),
-            ("calendar_events","job_id"),
-        ]:
-            try:
-                db.execute(f"DELETE FROM {tbl} WHERE {col}=?", (jid,))
-            except Exception:
-                pass
-        db.execute("DELETE FROM jobs WHERE id=?", (jid,))
-        db.commit()
-        return jsonify({"ok": True})
-
-    # POST: create new job
     for k in ("title", "city", "code", "date"):
         if not (data.get(k) and str(data.get(k)).strip()):
             return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
@@ -684,11 +629,12 @@ def api_jobs():
     title  = str(data["title"]).strip()
     city   = str(data["city"]).strip()
     code   = str(data["code"]).strip()
-    client = str((data.get("client") or "")).strip()
-    status = str((data.get("status") or "Plán")).strip()
-    date   = normalize_date(str(data["date"]).strip())
-    note   = (data.get("note") or "").strip()
-    uid    = data.get("owner_id")
+    date   = _normalize_date(str(data["date"]).strip())
+    status = (data.get("status") or "Plán").strip()
+    client = (data.get("client") or "").strip()
+    note   = (data.get("note") or None)
+
+    uid = session.get("uid")
     if uid is None:
         uid = get_admin_id(db)
 
@@ -719,7 +665,6 @@ def api_jobs():
 
     db.commit()
     return jsonify({"ok": True})
-
 @app.route("/api/jobs/<int:jid>", methods=["GET"])
 def api_job_detail(jid):
     u, err = require_auth()
@@ -1029,40 +974,6 @@ def gd_api_items():
 @app.route('/gd/api/jobs', methods=['GET','POST','PATCH','DELETE'])
 def gd_api_jobs():
     return api_jobs()
-
-
-
-@app.route('/gd/api/calendar/<int:eid>', methods=['GET','PATCH','DELETE'])
-def gd_api_calendar_item(eid):
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
-    db = get_db()
-    if request.method == "GET":
-        row = db.execute("SELECT * FROM calendar_events WHERE id=?", (eid,)).fetchone()
-        if not row: return jsonify({"error":"not_found"}), 404
-        return jsonify(dict(row))
-    if request.method == "PATCH":
-        data = request.get_json(force=True, silent=True) or {}
-        fields = ["date","title","kind","job_id","start_time","end_time","note"]
-        sets, vals = [], []
-        if "date" in data and data["date"]:
-            try:
-                data["date"] = normalize_date(data["date"])
-            except Exception:
-                pass
-        for f in fields:
-            if f in data:
-                sets.append(f"{f}=?"); vals.append(data.get(f))
-        if not sets: return jsonify({"error":"No changes"}), 400
-        vals.append(eid)
-        db.execute("UPDATE calendar_events SET " + ",".join(sets) + " WHERE id=?", vals)
-        db.commit()
-        return jsonify({"ok": True})
-    if request.method == "DELETE":
-        db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
-        db.commit()
-        return jsonify({"ok": True})
-
 
 @app.route('/gd/api/calendar', methods=['GET','POST','PATCH','DELETE'])
 def gd_api_calendar():
