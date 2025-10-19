@@ -619,6 +619,9 @@ def api_jobs():
 
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
+        for _row in rows:
+            if "date" in _row and _row["date"]:
+                _row["date"] = _normalize_date(_row["date"])
         return jsonify({"ok": True, "jobs": rows})
 
     # WRITE methods require elevated role
