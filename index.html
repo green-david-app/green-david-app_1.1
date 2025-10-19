@@ -492,5 +492,62 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 </script>
+
+<script>
+(function(){
+  const form = document.getElementById('jobForm');
+  if (!form) return;
+  const submitBtn = form.querySelector('button[type="submit"], .save');
+  let patchMode = false;
+
+  async function loadJob(id){
+    const r = await fetch(`/api/jobs/${id}`);
+    const {ok, job} = await r.json();
+    if (!ok) return;
+    (form.querySelector('[name="id"]')||{}).value = job.id;
+    (form.querySelector('[name="title"]')||{}).value = job.title || "";
+    const set = n => { const el=form.querySelector(`[name="${n}"]`); if (el) el.value = job[n] || ""; };
+    ["client","status","city","code","note"].forEach(set);
+    const d=form.querySelector('[name="date"]'); if(d) d.value=(job.date||"").substring(0,10);
+    patchMode = true;
+    if (submitBtn) submitBtn.textContent = "Uložit změny";
+    if (!document.getElementById('cancelEdit')) {
+      const cancel = document.createElement('button');
+      cancel.type = 'button'; cancel.id = 'cancelEdit'; cancel.className='btn secondary'; cancel.textContent='Zrušit úpravy';
+      cancel.addEventListener('click', ()=>{
+        patchMode=false; form.reset(); if (form.querySelector('[name="id"]')) form.querySelector('[name="id"]').value="";
+        if (submitBtn) submitBtn.textContent = "Přidat zakázku";
+      });
+      submitBtn && submitBtn.parentNode && submitBtn.parentNode.appendChild(cancel);
+    }
+    form.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // delegate edit clicks
+  document.addEventListener('click', (e)=>{
+    const b=e.target.closest('[data-edit="1"]'); if(!b) return;
+    e.preventDefault(); const id=b.getAttribute('data-id'); if(id) loadJob(id);
+  });
+
+  // handle submit override for PATCH
+  form.addEventListener('submit', async (e)=>{
+    if(!patchMode) return; // let original POST handler run
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = {};
+    payload.id = Number(fd.get('id')||0);
+    ["title","client","status","city","code","date","note"].forEach(k=>{ if(fd.has(k)) payload[k]=fd.get(k); });
+    const r = await fetch("/api/jobs", {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+    const js = await r.json();
+    if(js && js.ok){
+      patchMode=false;
+      (window.reloadJobs || (()=>location.reload()))();
+    } else {
+      alert("Uložení se nepovedlo");
+    }
+  }, true);
+})();
+</script>
+
 </body>
 </html>

@@ -613,115 +613,58 @@ def api_items():
         return jsonify({"ok": True})
 
 # ---------- jobs ----------
-@app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
+@app.route("/api/jobs", methods=["GET","POST","PATCH"])
 def api_jobs():
     db = get_db()
 
     if request.method == "GET":
         rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
-        for _row in rows:
-            if "date" in _row and _row["date"]:
-                _row["date"] = _normalize_date(_row["date"])
         return jsonify({"ok": True, "jobs": rows})
 
-    # WRITE methods require elevated role
-    u, err = require_role(write=True)
-    if err: return err
-
-    if request.method == "POST":
-        data = request.get_json(silent=True) or {}
-        # basic required fields; adjust if your UI sends different ones
-        for k in ("title", "city", "code", "date"):
-            if not (data.get(k) and str(data.get(k)).strip()):
-                return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
-
-        title  = str(data.get("title","")).strip()
-        city   = str(data.get("city","")).strip()
-        code   = str(data.get("code","")).strip()
-        date   = _normalize_date(str(data.get("date","")).strip())
-        client = str(data.get("client","")).strip()
-        status = str(data.get("status","Plán")).strip() or "Plán"
-        note   = str(data.get("note","")).strip()
-
-        try:
-            uid = u["id"]
-        except Exception:
-            uid = get_admin_id(db)
-
-        # Ensure schema compatible; add columns if missing
-        try:
-            ensure_jobs_schema(db)
-        except Exception:
-            pass
-
-        cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-        name = title  # keep legacy 'name' in sync when present
-
-        if {"owner_id","created_at","name"}.issubset(cols):
-            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
-                       (title, name, client, status, city, code, date, note, uid))
-        elif {"owner_id","name"}.issubset(cols):
-            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
-                       (title, name, client, status, city, code, date, note, uid))
-        elif "name" in cols:
-            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?,?)",
-                       (title, name, client, status, city, code, date, note))
-        elif {"owner_id","created_at"}.issubset(cols):
-            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
-                       (title, client, status, city, code, date, note, uid))
-        elif "owner_id" in cols:
-            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
-                       (title, client, status, city, code, date, note, uid))
-        else:
-            db.execute("INSERT INTO jobs(title, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?)",
-                       (title, client, status, city, code, date, note))
-        db.commit()
-        return jsonify({"ok": True})
-
-    if request.method == "PATCH":
-        data = request.get_json(force=True, silent=True) or {}
-        jid = data.get("id") or request.args.get("id", type=int)
-        try:
-            jid = int(jid)
-        except Exception:
-            return jsonify({"ok": False, "error":"missing_id"}), 400
-
-        cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-        allowed = ["title","client","status","city","code","date","note"]
-        sets, vals = [], []
-        for k in allowed:
-            if k in data:
-                v = str(data[k]).strip()
-                if k == "date":
-                    v = _normalize_date(v)
-                sets.append(f"{k}=?"); vals.append(v)
-                if k == "title" and "name" in cols:
-                    sets.append("name=?"); vals.append(v)
-        if not sets:
-            return jsonify({"ok": False, "error":"no_fields"}), 400
-        vals.append(jid)
-        db.execute("UPDATE jobs SET "+",".join(sets)+" WHERE id=?", vals)
-        db.commit()
-        return jsonify({"ok": True})
-
-    # DELETE
     data = request.get_json(silent=True) or {}
-    jid = request.args.get("id") or data.get("id")
-    try:
-        jid = int(jid)
-    except Exception:
-        return jsonify({"ok": False, "error":"missing_id"}), 400
+    for k in ("title", "city", "code", "date"):
+        if not (data.get(k) and str(data.get(k)).strip()):
+            return jsonify({"ok": False, "error": "missing_fields", "field": k}), 400
 
-    # cascade deletes on related tables (best effort)
-    for table in ["timesheets","tasks","job_materials","job_tools","job_assignments","job_photos","calendar_events"]:
-        try:
-            db.execute(f"DELETE FROM {table} WHERE job_id=?", (jid,))
-        except Exception:
-            pass
-    db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+    title  = str(data["title"]).strip()
+    city   = str(data["city"]).strip()
+    code   = str(data["code"]).strip()
+    date   = _normalize_date(str(data["date"]).strip())
+    status = (data.get("status") or "Plán").strip()
+    client = (data.get("client") or "").strip()
+    note   = (data.get("note") or None)
+
+    uid = session.get("uid")
+    if uid is None:
+        uid = get_admin_id(db)
+
+    cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    need_name = ("name" in cols)
+    has_created_at = ("created_at" in cols)
+
+    if need_name and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, title, client, status, city, code, date, note, uid)
+        )
+    elif need_name and not has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
+            (title, title, client, status, city, code, date, note, uid)
+        )
+    elif (not need_name) and has_created_at:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+            (title, client, status, city, code, date, note, uid)
+        )
+    else:
+        db.execute(
+            "INSERT INTO jobs(title, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?)",
+            (title, client, status, city, code, date, note, uid)
+        )
+
     db.commit()
     return jsonify({"ok": True})
-
 @app.route("/api/jobs/<int:jid>", methods=["GET"])
 def api_job_detail(jid):
     u, err = require_auth()
