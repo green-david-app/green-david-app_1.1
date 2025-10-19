@@ -649,7 +649,18 @@ def api_jobs():
 
         ensure_jobs_schema(db)
         cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
-        if {"owner_id","created_at"}.issubset(cols):
+        # Sync name with title if name exists (older schemas require NOT NULL name)
+        name = title
+        if {"owner_id","created_at","name"}.issubset(cols):
+            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+                       (title, name, client, status, city, code, date, note, uid))
+        elif {"owner_id","name"}.issubset(cols):
+            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note, owner_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                       (title, name, client, status, city, code, date, note, uid))
+        elif "name" in cols:
+            db.execute("INSERT INTO jobs(title, name, client, status, city, code, date, note) VALUES (?,?,?,?,?,?,?,?)",
+                       (title, name, client, status, city, code, date, note))
+        elif {"owner_id","created_at"}.issubset(cols):
             db.execute("INSERT INTO jobs(title, client, status, city, code, date, note, owner_id, created_at) VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
                        (title, client, status, city, code, date, note, uid))
         elif "owner_id" in cols:
@@ -669,6 +680,7 @@ def api_jobs():
         except Exception:
             return jsonify({"ok": False, "error":"missing_id"}), 400
 
+        cols = {r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
         allowed = ["title","client","status","city","code","date","note"]
         sets, vals = [], []
         for k in allowed:
@@ -677,6 +689,9 @@ def api_jobs():
                 if k == "date":
                     v = _normalize_date(v)
                 sets.append(f"{k}=?"); vals.append(v)
+                # keep 'name' in sync with 'title' if schema has 'name'
+                if k == "title" and "name" in cols:
+                    sets.append("name=?"); vals.append(v)
         if not sets:
             return jsonify({"ok": False, "error":"no_fields"}), 400
         vals.append(jid)
