@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, sqlite3, re
-from datetime import datetime
-from flask import Flask, request, jsonify, Response, send_from_directory, abort
+from datetime import datetime, timedelta
+from flask import Flask, request, jsonify, Response, send_from_directory, abort, make_response
 
 app = Flask(__name__)
 DB_PATH = os.environ.get("DB_PATH", "db.sqlite3")
@@ -48,7 +48,7 @@ def serve_html_with_injection(path):
             html = html + INJECT_SNIPPET
     return Response(html, mimetype="text/html; charset=utf-8")
 
-# --------- Static / index with auto‑inject ---------
+# --------- Static / index with auto-inject ---------
 @app.route("/")
 def root():
     if os.path.exists("index.html"):
@@ -147,8 +147,32 @@ def serve_fix_js():
         return send_from_directory(".", path)
     return Response(FIX_JS_TEXT, mimetype="application/javascript; charset=utf-8")
 
+# ========================= AUTH (dummy) ==============================
+@app.route("/api/login", methods=["POST", "OPTIONS"])
+def api_login():
+    if request.method == "OPTIONS":
+        # simple CORS preflight allow
+        r = make_response("", 204)
+        r.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        r.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return r
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or data.get("email") or "admin").strip()
+    # Always accept (no real password check) – front-end očekává jen 200 a nějaké info o uživateli
+    resp = jsonify({"ok": True, "token": "devtoken", "user": {"name": username or "admin", "role": "owner"}})
+    # set a simple cookie that index.html může číst (pokud ho používá)
+    resp.set_cookie("gd_token", "devtoken", max_age=7*24*3600, httponly=False, samesite="Lax")
+    return resp
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    resp = jsonify({"ok": True})
+    resp.set_cookie("gd_token", "", expires=0)
+    return resp
+
 @app.route("/api/me")
 def api_me():
+    # if cookie/token needed in the future, read it
     return jsonify({"user":"admin","role":"owner","name":"Green David","tz":"Europe/Prague"})
 
 # ========================= JOBS ==============================
