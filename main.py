@@ -28,7 +28,7 @@ def get_admin_id(db):
     row = db.execute("SELECT id FROM employees ORDER BY id LIMIT 1").fetchone()
     return row["id"] if row else 1
 
-# ------------- Minimal static -------------
+# ------------- Static passthrough -------------
 @app.route("/")
 def root():
     if os.path.exists("index.html"):
@@ -139,7 +139,6 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# Item route AFTER app + api_jobs()
 @app.route("/api/jobs/<int:jid>", methods=["GET","PATCH","DELETE"])
 def api_jobs_item(jid):
     db = get_db()
