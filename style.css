@@ -57,3 +57,26 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .cal-ev.cal-job{background:rgba(0,128,0,.10);}
 .cal-ev.cal-task{background:rgba(0,128,64,.10);}
 .cal-ev.cal-note{background:rgba(0,0,0,.05);}
+
+
+/* === mobile auth pill (inserted by patch) === */
+@media (max-width: 768px) {
+  #authBar {
+    position: fixed !important;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    left: auto;
+    z-index: 1000;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgba(20,28,23,0.86);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #authBar .auth-text { display: none !important; }
+}
+
