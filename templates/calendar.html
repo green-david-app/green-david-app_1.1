@@ -91,6 +91,15 @@ function openDlg(ev){
   dlg.showModal();
 }
 
+
+document.getElementById("deleteBtn").addEventListener("click", async ()=>{
+  const id = form.id.value;
+  if (!id) return;
+  if (!confirm("Opravdu smazat tuto událost?")) return;
+  const resp = await fetch("/gd/api/calendar?id="+encodeURIComponent(id), {method:"DELETE"});
+  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Mazání selhalo"); }
+});
+
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
   const payload = Object.fromEntries(new FormData(form).entries());
@@ -101,15 +110,6 @@ form.addEventListener("submit", async (e)=>{
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Uložení selhalo"); }
-});
-
-
-document.getElementById("deleteBtn").addEventListener("click", async ()=>{
-  const id = form.id.value;
-  if (!id) return;
-  if (!confirm("Opravdu smazat tuto událost?")) return;
-  const resp = await fetch("/gd/api/calendar?id="+encodeURIComponent(id), {method:"DELETE"});
-  if (resp.ok){ dlg.close(); loadMonth(); } else { alert("Mazání selhalo"); }
 });
 
 document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
