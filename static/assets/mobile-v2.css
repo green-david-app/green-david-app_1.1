@@ -1,0 +1,134 @@
+/* green david app — Mobile Patch v2 (focus: calendar overflow & header stacking)
+   Safe to include after your main stylesheet.
+*/
+
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* Generic container padding on narrow screens */
+@media (max-width: 768px){
+  :where(.container, .page, main, .content){
+    padding-inline: clamp(10px, 3.2vw, 18px);
+  }
+}
+
+/* ===== HEADER / TITLE / ACTION BUTTONS ===== */
+@media (max-width: 768px){
+  /* Ensure header content stacks and doesn't collide */
+  .page-header,
+  .calendar-header,
+  :where(.panel>.header, .card>.header){
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Title size clamp */
+  h1, .title, .panel .title, .calendar .title {
+    font-size: clamp(18px, 4.4vw, 22px);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  /* Action buttons wrap neatly to new row if needed */
+  .calendar-actions,
+  .toolbar,
+  .action-bar{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .calendar-actions > *,
+  .toolbar > *,
+  .action-bar > *{
+    flex: 1 1 auto;
+    min-width: 44%;
+  }
+}
+
+/* ===== CALENDAR PANEL ===== */
+:where(.calendar-panel, .calendar, #calendar, .month-view){
+  /* Keep panel within the viewport */
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+/* Avoid the rounded corners being cut off by parents */
+:where(.calendar-panel, .calendar, #calendar, .month-view){
+  contain: layout paint;
+}
+
+/* Header (month + arrows) – keep inside safely */
+:where(.calendar .month-header, .month-header){
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+/* ===== CALENDAR GRID ===== */
+/* Wrap grid in a safe scroller to prevent right overflow */
+.calendar-scroller{
+  overflow: auto hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px; /* room for iOS bottom bar */
+}
+
+/* If you can't add a wrapper, the selector below will still help */
+:where(.calendar-grid, .month-grid, .grid-days){
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 10px 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Day cells */
+:where(.calendar-grid .day, .month-grid .day, .grid-days .day){
+  min-height: 64px;
+  padding: 8px;
+  border-radius: 12px;
+  overflow: hidden;             /* keep rounded corners intact */
+  box-sizing: border-box;
+}
+
+/* Typography & density adjustments on small screens */
+@media (max-width: 640px){
+  :where(.calendar-grid, .month-grid, .grid-days){ gap: 6px; padding: 8px; }
+  :where(.calendar-grid .day, .month-grid .day, .grid-days .day){ min-height: 56px; padding: 6px; border-radius: 10px; }
+  :where(.calendar .weekday, .weekday){ font-size: 12px; }
+  :where(.calendar .date, .date){ font-size: 13px; }
+}
+
+/* Super-narrow devices: maintain 7 columns but ensure grid never exceeds viewport width */
+@media (max-width: 380px){
+  :root{ --day-min: 44px; }
+  :where(.calendar-grid, .month-grid, .grid-days){
+    grid-template-columns: repeat(7, minmax(var(--day-min), 1fr));
+  }
+}
+
+/* ===== FORMS / FILTERS ===== */
+@media (max-width: 768px){
+  :where(form){
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  :where(form .row, form .grid, .form-row){ display: contents; }
+  :where(input, select, textarea){ width: 100%; }
+}
+
+/* ===== TABLES ===== */
+.table-responsive, .scroll-x{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table{ width: 100%; border-collapse: collapse; }
+
+/* ===== MISC ===== */
+@media (max-width: 768px){
+  .hide-mobile{ display: none !important; }
+  .show-mobile{ display: initial !important; }
+  a, button{ min-height: 40px; }
+}
