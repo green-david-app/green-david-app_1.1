@@ -1,0 +1,67 @@
+/* Mobile Patch v3 — finer polish for iPhone layout
+   - Keep last column clear of rounded clipping
+   - Tidy header/actions stacking
+   - Event chip layout when an inline delete button exists
+*/
+
+/* ===== Header stacking ===== */
+@media (max-width: 768px){
+  .calendar-header,
+  .page-header,
+  :where(.panel>.header, .card>.header){
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-auto-rows: min-content;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Put action buttons on their own row across full width */
+  .calendar-actions, .toolbar, .action-bar{
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+}
+
+/* ===== Calendar frame and grid insets ===== */
+:where(.calendar-panel, .calendar, #calendar, .month-view){
+  /* Keep rounded corners visible but avoid cutting the last column */
+  overflow: hidden;
+}
+/* Add inner padding to keep right-most column away from the rounded edge */
+:where(.calendar-grid, .month-grid, .grid-days){
+  padding-right: 14px;   /* creates a safe inset on the right */
+  padding-left: 14px;    /* symmetric */
+}
+
+/* ===== Day cells look tighter on mobile ===== */
+@media (max-width: 768px){
+  :where(.calendar-grid .day, .month-grid .day, .grid-days .day){
+    border-radius: 9px;
+  }
+}
+
+/* ===== Events: make room for inline action (x) and wrap text nicely ===== */
+:where(.event, .event-item, .calendar-event){
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* text node wrapper if present */
+:where(.event .title, .event .label, .calendar-event .title){
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* any button inside the chip goes to the end */
+:where(.event .btn, .event button, .calendar-event .btn, .calendar-event button){
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* preserve multi-line wrapping while using flex */
+:where(.event, .event-item, .calendar-event){
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+/* Slightly smaller padding so chips don't look oversized */
+:where(.event, .event-item, .calendar-event){ padding: 5px 8px; }
