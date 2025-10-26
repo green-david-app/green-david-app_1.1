@@ -19,11 +19,9 @@ def to_dict(obj):
         return {"id": obj.id, "employee_id": obj.employee_id, "date": obj.date.isoformat(), "hours": obj.hours, "job_id": obj.job_id, "task_id": obj.task_id, "note": obj.note}
     return {}
 
-# Helper to parse date
 def parse_date(s):
     return datetime.strptime(s, "%Y-%m-%d").date()
 
-# Generic simple CRUD endpoints (minimal validation)
 @api_bp.route('/employees', methods=['GET', 'POST'])
 def employees():
     if request.method == 'POST':
@@ -61,7 +59,6 @@ def calendar_events():
         ce = CalendarEvent(date=parse_date(data['date']), title=data['title'], note=data.get('note'), job_id=data.get('job_id'), task_id=data.get('task_id'))
         db_session.add(ce); db_session.commit()
         return jsonify(to_dict(ce)), 201
-    # optional ?month=YYYY-MM
     month = request.args.get('month')
     q = db_session.query(CalendarEvent)
     if month:
@@ -80,7 +77,6 @@ def timesheets():
         ts = Timesheet(employee_id=data['employee_id'], date=parse_date(data['date']), hours=float(data['hours']), job_id=data.get('job_id'), task_id=data.get('task_id'), note=data.get('note'))
         db_session.add(ts); db_session.commit()
         return jsonify(to_dict(ts)), 201
-    # optional filters: employee_id, from, to
     q = db_session.query(Timesheet)
     emp = request.args.get('employee_id')
     if emp:

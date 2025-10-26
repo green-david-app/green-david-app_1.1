@@ -29,13 +29,11 @@ def add_timesheet():
 
 @bp.route('/timesheets/export.csv')
 def export_csv():
-    # Optional filter by employee_id
     emp_id = request.args.get('employee_id', type=int)
     q = db_session.query(Timesheet)
     if emp_id:
         q = q.filter(Timesheet.employee_id == emp_id)
     times = q.order_by(Timesheet.date.asc()).all()
-    # Prepare CSV
     lines = ["id;employee_id;date;hours;job_id;task_id;note"]
     for t in times:
         lines.append(f"{t.id};{t.employee_id};{t.date.isoformat()};{t.hours};{t.job_id or ''};{t.task_id or ''};{(t.note or '').replace(';', ',')}")

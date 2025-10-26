@@ -23,9 +23,15 @@ gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app
 ```
 
 
-## Hotfix 1.2.1 (Render deploy fix)
-- Přidán `runtime.txt` s **python-3.11.9**, aby se na Renderu nepoužil Python 3.13.
-- `SQLAlchemy==2.0.32` (kompatibilní vydání 2.0.x).
-- Přidán `Procfile` pro jistotu.
+## green david app 1.3 (opraveno)
+- `/` přesměrovává na `/calendar`
+- Stránky: `/calendar`, `/timesheets` (+ export CSV)
+- API: `/gd/api/*` (employees, jobs, tasks, calendar, timesheets)
+- `runtime.txt` (python-3.11.9), `Procfile`, `wsgi.py` (wsgi:app)
 
-Pokud jste nasazovali na Pythonu 3.13 a viděli AssertionError v SQLAlchemy, tento balíček to řeší.
+### Lokální spuštění
+```
+pip install -r requirements.txt
+gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:5000 wsgi:app
+# http://localhost:5000/
+```

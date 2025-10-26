@@ -11,11 +11,9 @@ def create_app():
     app.config['JSON_AS_ASCII'] = False
     app.config['SECRET_KEY'] = 'change-me'
 
-    # Initialize DB and ensure tables exist
     with app.app_context():
         init_db()
 
-    # Register blueprints
     app.register_blueprint(api_bp, url_prefix='/gd/api')
     app.register_blueprint(views_bp)
 

@@ -9,16 +9,12 @@ bp = Blueprint('calendar', __name__)
 
 @bp.route('/calendar')
 def calendar_page():
-    # iPhone-like simple monthly grid with prev/next
     today = date.today()
     y = int(request.args.get('y', today.year))
     m = int(request.args.get('m', today.month))
 
     first_weekday, days_in_month = monthrange(y, m)
-    # Build calendar grid starting from Monday (0)
-    # Calculate the first day in grid (Monday before the 1st)
     grid_start = date(y, m, 1) - timedelta(days=(first_weekday if first_weekday != 6 else 0))
-    # 6 weeks x 7 days grid
     grid = [grid_start + timedelta(days=i) for i in range(6*7)]
 
     events = db_session.query(CalendarEvent).filter(CalendarEvent.date >= grid[0], CalendarEvent.date <= grid[-1]).all()
@@ -26,7 +22,6 @@ def calendar_page():
     for e in events:
         events_by_day.setdefault(e.date, []).append(e)
 
-    # prev/next month
     prev_m = m - 1 or 12
     prev_y = y - 1 if m == 1 else y
     next_m = m + 1 if m < 12 else 1
@@ -43,6 +38,7 @@ def add_event():
     note = request.form.get('note')
     if d and title:
         ce = CalendarEvent(date=date.fromisoformat(d), title=title, note=note)
+        from ..db import db_session
         db_session.add(ce)
         db_session.commit()
     return redirect(url_for('calendar.calendar_page'))

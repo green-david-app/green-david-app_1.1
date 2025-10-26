@@ -2,7 +2,6 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Výkazy</h1>
-
 <form method="get" action="/timesheets" class="row">
   <label>Zaměstnanec:</label>
   <select name="employee_id" onchange="this.form.submit()">
@@ -13,7 +12,6 @@
   </select>
   <a class="btn" href="/timesheets/export.csv{% if emp_id %}?employee_id={{emp_id}}{% endif %}">Export CSV</a>
 </form>
-
 <h2>Přidat záznam</h2>
 <form method="post" action="/timesheets/add" class="row">
   <label>Zaměstnanec ID</label>
@@ -26,7 +24,6 @@
   <input type="text" name="note">
   <button type="submit" class="btn">Uložit</button>
 </form>
-
 <h2>Položky</h2>
 <table class="table">
   <thead><tr><th>ID</th><th>Zaměstnanec</th><th>Datum</th><th>Hodiny</th><th>Poznámka</th></tr></thead>
