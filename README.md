@@ -21,3 +21,11 @@ Start Command:
 ```
 gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app
 ```
+
+
+## Hotfix 1.2.1 (Render deploy fix)
+- Přidán `runtime.txt` s **python-3.11.9**, aby se na Renderu nepoužil Python 3.13.
+- `SQLAlchemy==2.0.32` (kompatibilní vydání 2.0.x).
+- Přidán `Procfile` pro jistotu.
+
+Pokud jste nasazovali na Pythonu 3.13 a viděli AssertionError v SQLAlchemy, tento balíček to řeší.
