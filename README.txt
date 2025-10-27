@@ -1,16 +1,24 @@
-green david app — Mobile Overflow HOTFIX 2
-=========================================
+green david app — READY FIX: redirect calendar.html → /calendar
+===============================================================
 
-Co je v balíčku
-- app/templates/base.html – přidán link na /static/assets/mobile-hotfix.css (silnější clamp)
-- app/templates/calendar.html – zabaleno do .calendar-panel > .calendar-wrapper a grid je uvnitř
-- static/assets/mobile-hotfix.css – pravidla, která zabrání přetečení doprava na mobilu
+Co to udělá
+- Přepíše kořenový `calendar.html` na jednoduchou stránku, která **okamžitě přesměruje** na `/calendar`.
+- Přidá `app/views_redirect.py` (volitelné) — server‑side redirect 301 na `/calendar`.
 
-Nasazení
-1) Nahraj soubory tak, aby nahradily stejné cesty v repozitáři.
-2) Ujisti se, že už natahuješ /static/assets/mobile-lock.css (zůstává) a nově i /static/assets/mobile-hotfix.css.
-3) Redeploy / restart na Renderu.
+Proč: Statická `calendar.html` obcházela Flask šablonu a tím **mobilní CSS** — proto se layout na mobilu rozlézal.
 
-Kontrola
-- iPhone/Android: na stránce /calendar se nesmí objevit horizontální scroll.
-- 7 sloupců měsíce drží 100% šířky; pravý okraj se neusekává a nic nepřetéká.
+Jak nasadit
+1) Nakopíruj obsah ZIPu do kořene repa (přepiš existující `calendar.html`).
+2) (Doporučeno) Registruj redirect blueprint: ve `wsgi.py` nebo tam, kde registruješ blueprinty, přidej:
+   from app.views_redirect import redirects_bp
+   app.register_blueprint(redirects_bp)
+3) Redeploy na Renderu.
+
+Volitelně – úklid
+- Pokud chceš mít úplně čisto, můžeš později `calendar.html` **smazat** (redirect zůstane řešen na serveru přes blueprint).
+- Změň v `index.html` odkaz `"/calendar.html"` na `"/calendar"` (není nutné, ale doporučeno).
+- Stejný princip platí i pro případné jiné legacy stránky `*.html` v kořeni.
+
+Ověření
+- Otevření `/calendar.html` i `/calendar` skončí na stejné stránce.
+- Na mobilu už **není** horizontální posuv a mřížka drží 7 sloupců v šířce viewportu.
