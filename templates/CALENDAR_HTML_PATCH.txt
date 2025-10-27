@@ -1,0 +1,10 @@
+<!-- === PATCH for templates/calendar.html ===
+Wrap the calendar div with a .calendar-wrapper to enforce vertical scrolling:
+
+<div class=\"calendar-wrapper\">
+  <div id=\"calendar\"></div>
+</div>
+
+Also, consider adding class \"responsive\" to timesheet tables:
+<table class=\"table responsive\"> ... </table>
+-->
