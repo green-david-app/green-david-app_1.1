@@ -99,3 +99,36 @@ table.responsive, .table.responsive {
     white-space: nowrap;
   }
 }
+
+/* === Calendar Hotfix 1.2 (iOS/Safari dayGrid overlap/overflow) === */
+:root { --gd-radius: 14px; }
+
+.fc .fc-daygrid-day-frame{
+  position: relative;
+  border-radius: var(--gd-radius);
+  overflow: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* events must respect cell width + wrap */
+.fc .fc-daygrid-event-harness{ position: static !important; }
+.fc .fc-daygrid-event,
+.fc .fc-daygrid-block-event .fc-event-main{
+  max-width: 100% !important;
+  width: 100% !important;
+  white-space: normal !important;
+  word-break: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+@media (max-width: 680px){
+  .fc .fc-daygrid-day-frame{ min-height: 118px; }
+  .fc .fc-daygrid-event{ margin-right: 0 !important; }
+}
+
+/* safe area bottom on iPhone */
+body{ padding-bottom: max(0px, env(safe-area-inset-bottom)); }
