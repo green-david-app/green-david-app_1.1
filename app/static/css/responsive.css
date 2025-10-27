@@ -1,101 +1,32 @@
-/* === Responsive fixes for mobile (green-david app) === */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden; /* kill horizontal scroll */
-}
-* { box-sizing: border-box; }
-
-/* Typical main wrappers */
-.container, .content, main, .page-content {
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 12px;
+/* === Extra mobile clamps for calendar overflow (iOS Safari) === */
+.calendar-wrapper, #calendar {
+  max-width: 100vw;
 }
 
-.layout-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* Force FullCalendar grid to never exceed container width */
+.fc,
+.fc .fc-scrollgrid,
+.fc .fc-scrollgrid-sync-table,
+.fc .fc-daygrid,
+.fc .fc-col-header {
+  width: 100% !important;
 }
-
-/* Calendar wrappers */
-#calendar,
-.calendar,
-.calendar-wrapper {
-  min-width: 0;
+.fc .fc-daygrid-body,
+.fc .fc-daygrid-body table {
+  width: 100% !important;
 }
-
-.calendar-wrapper {
-  display: block;
-  overflow-x: hidden;
-  overflow-y: auto; /* scroll DOWN, never sideways */
+.fc .fc-daygrid-day,
+.fc .fc-daygrid-day-frame {
+  min-width: 0 !important;
+  width: auto !important;
 }
-
-/* FullCalendar specific tweaks */
-.fc {
-  max-width: 100%;
-}
-
-.fc-scroller, .fc-scroller-liquid-absolute, .fc-scroller-harness {
+.fc .fc-scroller,
+.fc .fc-scrollgrid {
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
-.fc .fc-toolbar.fc-header-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.fc .fc-toolbar-title {
-  font-size: 1.1rem;
-  line-height: 1.2;
-}
-
-#calendar {
-  min-height: calc(100vh - 220px);
-}
-
-/* Tables (timesheets) – responsive stacked on small screens */
-table.responsive, .table.responsive {
-  width: 100%;
-  display: block;
-  overflow-x: auto; /* fallback if some table still needs horizontal scroll */
-}
-
-@media (max-width: 680px) {
-  .layout-grid {
-    display: block; /* one column on mobile */
-  }
-
-  .sidebar {
-    display: none; /* hide if a sidebar exists */
-  }
-
-  table.responsive thead {
-    display: none;
-  }
-  table.responsive, table.responsive tbody, table.responsive tr, table.responsive td {
-    display: block;
-    width: 100%;
-  }
-  table.responsive tr {
-    margin-bottom: 10px;
-    border-bottom: 1px solid rgba(0,0,0,.08);
-  }
-  table.responsive td {
-    padding-left: 45%;
-    position: relative;
-    word-break: break-word;
-  }
-  table.responsive td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40%;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+/* Generic safety: prevent any .calendar* element from pushing layout */
+[class*="calendar"] {
+  max-width: 100% !important;
 }
