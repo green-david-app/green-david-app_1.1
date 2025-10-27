@@ -6,6 +6,7 @@
   <title>green david app</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <link rel="stylesheet" href="/static/assets/mobile-lock.css">
+  <link rel="stylesheet" href="/static/assets/mobile-hotfix.css">
 </head>
 <body>
   <header class="topbar">
@@ -19,5 +20,6 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">© green david s.r.o.</footer>
+  <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 </body>
 </html>
