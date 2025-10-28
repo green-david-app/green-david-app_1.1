@@ -30,29 +30,27 @@
     renderMonth(current, data.events || []);
   }
 
-  const tzIso = (d)=>{
-  const p = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  return p.toISOString().slice(0,10);
-};
+  function localIso(d){
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+}
 function openDaySheet(date, items){
   const sheet = document.getElementById('daySheet');
+  if(!sheet) return; // if template doesn't contain the sheet yet
   const sDate = document.getElementById('sheetDate');
   const sBody = document.getElementById('sheetBody');
-  if(!sheet) return;
   sDate.textContent = new Intl.DateTimeFormat('cs-CZ',{weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(date);
-  sBody.innerHTML = '';
+  sBody.innerHTML='';
   if(!items || items.length===0){
-    const p = document.createElement('p'); p.textContent = 'Žádné záznamy'; sBody.appendChild(p);
-  } else {
+    const p=document.createElement('p'); p.textContent='Žádné záznamy'; sBody.appendChild(p);
+  }else{
     items.forEach(ev=>{
-      const row = document.createElement('div'); row.className='sheet-item';
-      row.innerHTML = '<div class="swatch" style="background:'+ (ev.color||'#2e7d32') +'"></div>'
-                    + '<div class="meta"><div class="t">'+(ev.title||ev.details||'(bez názvu)')+'</div>'
-                    + (ev.details?'<div class="n">'+ev.details+'</div>':'') + '</div>';
-      const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Smazat';
+      const row=document.createElement('div'); row.className='sheet-item';
+      row.innerHTML = '<div class="swatch" style="background:'+(ev.color||'#2e7d32')+'"></div>'
+                     + '<div class="meta"><div class="t">'+(ev.title||ev.details||'(bez názvu)')+'</div>'
+                     + (ev.details?'<div class="n">'+ev.details+'</div>':'') + '</div>';
+      const del=document.createElement('button'); del.className='btn ghost'; del.textContent='Smazat';
       del.addEventListener('click', async ()=>{ if(confirm('Smazat záznam?')){ await fetch(`/gd/api/calendar/${ev.id}`, {method:'DELETE'}); sheet.close(); load(); } });
-      row.appendChild(del);
-      sBody.appendChild(row);
+      row.appendChild(del); sBody.appendChild(row);
     });
   }
   sheet.showModal();
@@ -92,7 +90,7 @@ function renderMonth(firstDay, events){
       cell.appendChild(head);
 
       const list = document.createElement('div');
-      (byDay[fmtDate(date)] || []).forEach(ev => {
+      (byDay[localIso(date)] || []).forEach(ev => {
         const item = document.createElement('div');
         item.className = 'event';
         item.style.background = ev.color || '#2e7d32';
@@ -115,10 +113,8 @@ function renderMonth(firstDay, events){
         list.appendChild(item);
       });
       cell.appendChild(list);
-      cell.addEventListener('click', ()=>{
-        const k = tzIso(date);
-        openDaySheet(date, byDay[k] || []);
-      });
+
+      cell.addEventListener('click', ()=> openDaySheet(date, byDay[localIso(date)]||[]));
       cell.addEventListener('dblclick', ()=> openModal(fmtDate(date), 'note'));
       grid.appendChild(cell);
     });

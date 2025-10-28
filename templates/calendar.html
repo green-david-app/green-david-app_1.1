@@ -38,8 +38,8 @@
     </menu>
   </form>
 </dialog>
-
 <style>
+  /* Scoped styles for day sheet – do not touch global layout */
   dialog#daySheet{border:none;border-radius:16px;padding:0;max-width:min(94vw,520px)}
   dialog#daySheet::backdrop{background:#0008}
   #sheetHead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e0e0e0;background:#fff;color:#111}
@@ -53,7 +53,7 @@
 <dialog id="daySheet">
   <div id="sheetHead">
     <div id="sheetDate">Den</div>
-    <button class="btn ghost" onclick="document.getElementById('daySheet').close()">Zavřít</button>
+    <button class="btn" onclick="document.getElementById('daySheet').close()">Zavřít</button>
   </div>
   <div id="sheetBody"></div>
 </dialog>
