@@ -84,167 +84,167 @@
 
 <script>
 (function(){
-  const grid = document.getElementById('grid');
-  const label = document.getElementById('label');
-  const prev = document.getElementById('prev');
-  const next = document.getElementById('next');
-  const dlg = document.getElementById('dlg');
-  const fDate = document.getElementById('fDate');
-  const fTitle = document.getElementById('fTitle');
-  const fNote = document.getElementById('fNote');
-  const fColor = document.getElementById('fColor');
-  const fType = document.getElementById('fType');
-  const err = document.getElementById('err');
-  const dayDetail = document.getElementById('dayDetail');
-  const dayDetailDate = document.getElementById('dayDetailDate');
-  const dayEvents = document.getElementById('dayEvents');
+  var grid = document.getElementById('grid');
+  var label = document.getElementById('label');
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var dlg = document.getElementById('dlg');
+  var fDate = document.getElementById('fDate');
+  var fTitle = document.getElementById('fTitle');
+  var fNote = document.getElementById('fNote');
+  var fColor = document.getElementById('fColor');
+  var fType = document.getElementById('fType');
+  var err = document.getElementById('err');
+  var dayDetail = document.getElementById('dayDetail');
+  var dayDetailDate = document.getElementById('dayDetailDate');
+  var dayEvents = document.getElementById('dayEvents');
 
-  let cur = new Date(); cur.setDate(1);
-  let monthItems = [];
-  let selectedDate = null;
+  var cur = new Date(); cur.setDate(1);
+  var monthItems = [];
+  var selectedDate = null;
 
-  const iso = d => d.toISOString().slice(0,10);
-  const fmtMonth = d => d.toLocaleDateString('cs-CZ', {month:'long',year:'numeric'});
+  function iso(d){ return d.toISOString().slice(0,10); }
+  function fmtMonth(d){ try { return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}); } catch(e){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); } }
 
   function renderGrid(){
-    label.textContent = fmtMonth(cur);
-    grid.innerHTML = '';
-    dayDetail.classList.add('hidden');
+    if (label) label.textContent = fmtMonth(cur);
+    if (grid) grid.innerHTML = '';
+    if (dayDetail) dayDetail.classList.add('hidden');
     selectedDate = null;
 
-    const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
-    const startDow = (first.getDay()+6)%7; // Mon=0
+    var first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    var startDow = (first.getDay()+6)%7; // Mon=0
     first.setDate(first.getDate()-startDow);
-    for(let i=0;i<42;i++){
-      const day = new Date(first);
+    for(var i=0;i<42;i++){
+      var day = new Date(first);
       day.setDate(first.getDate()+i);
-      const cell = document.createElement('div');
+      var cell = document.createElement('div');
       cell.className = 'day' + (day.getMonth()===cur.getMonth() ? '' : ' out');
       cell.setAttribute('data-date', iso(day));
-      cell.innerHTML = `<div class="d">${day.getDate()}.</div>`;
-      cell.onclick = ()=>selectDay(iso(day), cell);
+      var head = document.createElement('div'); head.className='d'; head.textContent = day.getDate()+'.';
+      cell.appendChild(head);
+      cell.onclick = (function(ds, el){ return function(){ selectDay(ds, el); }; })(iso(day), cell);
       grid.appendChild(cell);
     }
   }
 
   function renderPills(items){
-    // clear existing pills
-    grid.querySelectorAll('.day .row-gap').forEach(e=>e.remove());
-    items.forEach(ev=>{
-      const cont = grid.querySelector(`.day[data-date="${ev.date}"]`);
-      if(!cont) return;
-      let wrap = cont.querySelector('.row-gap');
+    var pills = grid.querySelectorAll('.day .row-gap');
+    for (var i=0;i<pills.length;i++){ var n=pills[i]; if(n.parentNode) n.parentNode.removeChild(n); }
+    for (var j=0;j<items.length;j++){
+      var ev = items[j];
+      var cont = grid.querySelector('.day[data-date="'+ev.date+'"]');
+      if(!cont) continue;
+      var wrap = cont.querySelector('.row-gap');
       if(!wrap){ wrap = document.createElement('div'); wrap.className='row-gap'; cont.appendChild(wrap); }
-      const pill = document.createElement('div');
-      const kind = ev.type || ev.kind || 'note';
+      var pill = document.createElement('div');
+      var kind = ev.type || ev.kind || 'note';
       pill.className = 'pill badge ' + (kind==='task'?'task':(kind==='job'?'job':''));
-      const title = ev.title || ev.name || ev.description || '(bez názvu)';
-      pill.innerHTML = `<span class="ellipsis">${title}</span>`;
+      var title = ev.title || ev.name || ev.description || '(bez názvu)';
+      pill.innerHTML = '<span class="ellipsis">'+title+'</span>';
       wrap.appendChild(pill);
-    });
+    }
   }
 
   function renderDayDetail(ds){
-    const d = new Date(ds+'T00:00:00');
-    dayDetailDate.textContent = d.toLocaleDateString('cs-CZ', {weekday:'long', day:'numeric', month:'long'});
-    const evs = monthItems.filter(x=>x.date===ds);
+    if (dayDetailDate){ 
+      try { dayDetailDate.textContent = new Date(ds+'T00:00:00').toLocaleDateString('cs-CZ', {weekday:'long', day:'numeric', month:'long'}); }
+      catch(e){ dayDetailDate.textContent = ds; }
+    }
+    var evs = [];
+    for (var i=0;i<monthItems.length;i++){ if(monthItems[i].date===ds) evs.push(monthItems[i]); }
     dayEvents.innerHTML='';
     if(evs.length===0){
-      const li = document.createElement('li'); li.className='day-event';
+      var li = document.createElement('li'); li.className='day-event';
       li.innerHTML = '<div class="meta"><span>Žádné události</span></div><div><button class="btn" id="btnQuickAdd">+ Přidat</button></div>';
       dayEvents.appendChild(li);
-      setTimeout(()=>{
-        const b = document.getElementById('btnQuickAdd');
-        if(b) b.onclick = ()=>openModal(ds, 'note');
+      setTimeout(function(){
+        var b = document.getElementById('btnQuickAdd');
+        if(b) b.onclick = function(){ openModal(ds, 'note'); };
       },0);
     } else {
-      evs.forEach(ev=>{
-        const li = document.createElement('li'); li.className='day-event';
-        const kind = ev.type || ev.kind || 'note';
-        const title = ev.title || ev.name || '(bez názvu)';
-        li.innerHTML = `<div class="meta"><span class="badge ${kind==='task'?'task':(kind==='job'?'job':'')}">${kind}</span><span class="title">${title}</span></div>
-                        <div class="actions"><button class="ghost">Upravit</button></div>`;
-        li.querySelector('button').onclick = ()=>openModal(ds, kind, ev);
-        dayEvents.appendChild(li);
-      });
+      for (var k=0;k<evs.length;k++){
+        var ev = evs[k];
+        var li2 = document.createElement('li'); li2.className='day-event';
+        var kind2 = ev.type || ev.kind || 'note';
+        var title2 = ev.title || ev.name || '(bez názvu)';
+        li2.innerHTML = '<div class="meta"><span class="badge '+(kind2==='task'?'task':(kind2==='job'?'job':''))+'">'+kind2+'</span><span class="title">'+title2+'</span></div><div class="actions"><button class="ghost">Upravit</button></div>';
+        (function(ds2, kind3, ev3, liEl){
+          var btn = liEl.querySelector('button');
+          if(btn) btn.onclick = function(){ openModal(ds2, kind3, ev3); };
+        })(ds, kind2, ev, li2);
+        dayEvents.appendChild(li2);
+      }
     }
     dayDetail.classList.remove('hidden');
-    dayDetail.scrollIntoView({behavior:'smooth', block:'nearest'});
+    try { dayDetail.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch(e){}
   }
 
   function selectDay(ds, cell){
-    grid.querySelectorAll('.day.selected').forEach(c=>c.classList.remove('selected'));
+    var selected = grid.querySelectorAll('.day.selected');
+    for (var i=0;i<selected.length;i++){ selected[i].classList.remove('selected'); }
     if(cell) cell.classList.add('selected');
     selectedDate = ds;
     renderDayDetail(ds);
   }
 
-  async function load(){
-    renderGrid();
-    const from = iso(new Date(cur.getFullYear(),cur.getMonth(),1));
-    const to = iso(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-    const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
-    const data = await resp.json();
-    monthItems = data.items || [];
-    renderPills(monthItems);
-    // auto select today if in current month
-    const today = new Date();
-    if(today.getFullYear()===cur.getFullYear() && today.getMonth()===cur.getMonth()){
-      const ds = iso(today);
-      const cell = grid.querySelector(\`.day[data-date="\${ds}"]\`);
-      if(cell) selectDay(ds, cell);
-    }
-  }
-
-  // modal helpers
-  function openModal(dateStr, type='note', existing){
+  function openModal(dateStr, type, existing){
     err.style.display='none'; err.textContent='';
     fDate.value = dateStr || (selectedDate || iso(new Date()));
-    fType.value = type;
-    fTitle.value = existing?.title || existing?.name || '';
-    fNote.value = existing?.description || '';
-    fColor.value = existing?.color || '#3ea76a';
+    fType.value = type || 'note';
+    fTitle.value = existing && (existing.title || existing.name) ? (existing.title || existing.name) : '';
+    fNote.value = existing && existing.description ? existing.description : '';
+    fColor.value = existing && existing.color ? existing.color : '#2e7d32';
     dlg._existing = existing || null;
-    dlg.showModal();
+    if (dlg && dlg.showModal) dlg.showModal();
   }
-  document.getElementById('quickNote').onclick = ()=>openModal(selectedDate||iso(new Date()), 'note');
-  document.getElementById('quickTask').onclick = ()=>openModal(selectedDate||iso(new Date()), 'task');
-  document.getElementById('quickJob').onclick  = ()=>openModal(selectedDate||iso(new Date()), 'job');
 
-  // Save
-  document.getElementById('btnSave').onclick = async (e)=>{
+  document.getElementById('quickNote').onclick=function(){ openModal(selectedDate||iso(new Date()), 'note'); };
+  document.getElementById('quickTask').onclick=function(){ openModal(selectedDate||iso(new Date()), 'task'); };
+  document.getElementById('quickJob').onclick=function(){ openModal(selectedDate||iso(new Date()), 'job'); };
+
+  document.getElementById('btnSave').onclick = function(e){
     e.preventDefault();
     err.style.display='none'; err.textContent='';
-    const payload = {
-      id: dlg._existing?.id,
+    var payload = {
+      id: dlg._existing ? dlg._existing.id : undefined,
       date: fDate.value,
       kind: fType.value,
       title: fTitle.value,
       description: fNote.value,
       color: fColor.value
     };
-    try{
-      const method = payload.id ? 'PATCH' : 'POST';
-      const resp = await fetch('/gd/api/calendar', {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-      if(!resp.ok) throw new Error(await resp.text());
-      dlg.close();
-      await load();
-      if(selectedDate) selectDay(selectedDate, grid.querySelector(\`.day[data-date="\${selectedDate}"]\`));
-    }catch(ex){
-      err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message;
-    }
+    var method = payload.id ? 'PATCH' : 'POST';
+    fetch('/gd/api/calendar', {method: method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error(t); }); return r.json().catch(function(){ return {}; }); })
+      .then(function(){ if(dlg && dlg.close) dlg.close(); return load(); })
+      .then(function(){ if(selectedDate){ var c = grid.querySelector('.day[data-date="'+selectedDate+'"]'); if(c) selectDay(selectedDate, c); } })
+      .catch(function(ex){ err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message; });
   };
 
-  prev.onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
-  next.onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
+  prev.onclick = function(){ cur.setMonth(cur.getMonth()-1); load(); };
+  next.onclick = function(){ cur.setMonth(cur.getMonth()+1); load(); };
 
-  // Add buttons on top
-  document.querySelectorAll('button.btn[data-type]').forEach(b=>{
-    b.addEventListener('click', ()=>openModal(iso(new Date()), b.dataset.type));
-  });
+  // Top add buttons
+  var tops = document.querySelectorAll('button.btn[data-type]');
+  for (var i=0;i<tops.length;i++){
+    (function(b){ b.addEventListener('click', function(){ openModal(iso(new Date()), b.dataset.type); }); })(tops[i]);
+  }
+
+  function load(){
+    try { renderGrid(); } catch(e){ console.error('renderGrid error', e); }
+    // Fetch is best-effort
+    var from = iso(new Date(cur.getFullYear(),cur.getMonth(),1));
+    var to = iso(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    fetch('/gd/api/calendar?from='+from+'&to='+to)
+      .then(function(r){ return r.ok ? r.json() : {items:[]}; })
+      .then(function(data){ monthItems = data && (data.items || data.events) ? (data.items || data.events) : []; renderPills(monthItems); })
+      .catch(function(){ /* ignore */ });
+  }
 
   load();
 })();
 </script>
+
 
 </body></html>
