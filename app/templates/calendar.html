@@ -1,0 +1,43 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Kalendář</h1>
+
+<div class="calendar-controls">
+  <button id="prevMonth" class="btn">&lt;</button>
+  <div id="monthLabel" class="month-label"></div>
+  <button id="nextMonth" class="btn">&gt;</button>
+  <div class="spacer"></div>
+  <button class="btn add" data-type="note">+ Poznámka</button>
+  <button class="btn add" data-type="task">+ Úkol</button>
+  <button class="btn add" data-type="job">+ Zakázka</button>
+</div>
+
+<div id="calendarGrid" class="calendar-grid"></div>
+
+<!-- Modal -->
+<dialog id="eventModal">
+  <form method="dialog" id="eventForm" class="modal-form">
+    <h3 id="modalTitle">Přidat záznam</h3>
+    <label>Datum
+      <input type="date" id="evDate" required>
+    </label>
+    <label>Nadpis
+      <input type="text" id="evTitle" placeholder="Název" required>
+    </label>
+    <label>Podrobnosti
+      <textarea id="evDetails" rows="3" placeholder="volitelné"></textarea>
+    </label>
+    <label>Barva
+      <input type="color" id="evColor" value="#2e7d32">
+    </label>
+    <input type="hidden" id="evType" value="note">
+    <menu>
+      <button class="btn" value="cancel">Zrušit</button>
+      <button class="btn primary" id="saveEvent" value="default">Uložit</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
