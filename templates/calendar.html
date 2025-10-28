@@ -209,7 +209,7 @@ function openDlg(data){
   f.kind.value = data.kind || data.type || 'note';
   f.date.value = data.date || (selectedDate || ymd(new Date()));
   f.title.value = data.title || data.name || '';
-  f.description.value = data.description || '';
+  f.description.value = data.details || data.description || '';
   f.id.value = data.id || '';
   document.getElementById("dlgTitle").textContent = (data.id?'Upravit':'Přidat') + ' ' + (f.kind.value==='task'?'úkol':(f.kind.value==='job'?'zakázku':'poznámku'));
   dlg.showModal();

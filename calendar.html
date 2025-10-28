@@ -140,7 +140,7 @@
       var pill = document.createElement('div');
       var kind = ev.type || ev.kind || 'note';
       pill.className = 'pill badge ' + (kind==='task'?'task':(kind==='job'?'job':''));
-      var title = ev.title || ev.name || ev.description || '(bez názvu)';
+      var title = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
       pill.innerHTML = '<span class="ellipsis">'+title+'</span>';
       wrap.appendChild(pill);
     }
@@ -167,7 +167,7 @@
         var ev = evs[k];
         var li2 = document.createElement('li'); li2.className='day-event';
         var kind2 = ev.type || ev.kind || 'note';
-        var title2 = ev.title || ev.name || '(bez názvu)';
+        var title2 = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
         li2.innerHTML = '<div class="meta"><span class="badge '+(kind2==='task'?'task':(kind2==='job'?'job':''))+'">'+kind2+'</span><span class="title">'+title2+'</span></div><div class="actions"><button class="ghost">Upravit</button></div>';
         (function(ds2, kind3, ev3, liEl){
           var btn = liEl.querySelector('button');
