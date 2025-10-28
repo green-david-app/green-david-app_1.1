@@ -209,9 +209,9 @@
     var payload = {
       id: dlg._existing ? dlg._existing.id : undefined,
       date: fDate.value,
-      kind: fType.value,
+      type: fType.value,
       title: fTitle.value,
-      description: fNote.value,
+      details: fNote.value,
       color: fColor.value
     };
     var method = payload.id ? 'PATCH' : 'POST';

@@ -186,7 +186,7 @@ function selectDay(dateStr, cellEl){
       li.className = "day-event";
       li.innerHTML = `<div class="meta"><span class="badge ${kind=='task'?'task':(kind=='job'?'job':'')}">${kind}</span><span class="title">${ev.title || ev.name || '(bez názvu)'}</span></div>
                       <div class="actions">
-                        <button class="btn ghost" onclick='openDlg(${JSON.stringify({id:"__ID__",kind:"__K__",date:"__D__",title:"__T__",description:"__DS__"})}
+                        <button class="btn ghost" onclick='openDlg(${JSON.stringify({id:"__ID__",type:"__K__",date:"__D__",title:"__T__",details:"__DS__"})}
                           .replace("__ID__", ev.id || "")
                           .replace("__K__", kind)
                           .replace("__D__", ev.date || "")
@@ -219,7 +219,8 @@ form.addEventListener("submit", async (e)=>{
   e.preventDefault();
   const fd = new FormData(form);
   const payload = Object.fromEntries(fd.entries());
-  const url = "/gd/api/calendar";
+  payload.type = payload.kind || payload.type; delete payload.kind; payload.details = payload.description || payload.details || payload.note || ''; delete payload.description; delete payload.note;
+const url = "/gd/api/calendar";
   let method = "POST";
   if (payload.id){ method="PATCH"; }
   const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
@@ -229,13 +230,13 @@ form.addEventListener("submit", async (e)=>{
 
 document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
 document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
-document.getElementById("addNote").onclick=()=>openDlg({kind:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addTask").onclick=()=>openDlg({kind:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
-document.getElementById("addJob").onclick=()=>openDlg({kind:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addNote").onclick=()=>openDlg({type:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addTask").onclick=()=>openDlg({type:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addJob").onclick=()=>openDlg({type:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
 
-document.getElementById("quickAddNote").onclick=()=>openDlg({kind:"note", date: selectedDate || ymd(new Date())});
-document.getElementById("quickAddTask").onclick=()=>openDlg({kind:"task", date: selectedDate || ymd(new Date())});
-document.getElementById("quickAddJob").onclick=()=>openDlg({kind:"job", date: selectedDate || ymd(new Date())});
+document.getElementById("quickAddNote").onclick=()=>openDlg({type:"note", date: selectedDate || ymd(new Date())});
+document.getElementById("quickAddTask").onclick=()=>openDlg({type:"task", date: selectedDate || ymd(new Date())});
+document.getElementById("quickAddJob").onclick=()=>openDlg({type:"job", date: selectedDate || ymd(new Date())});
 
 // auto select today if in current month
 function autoSelectToday(){
