@@ -1,15 +1,16 @@
-
 <!doctype html><html lang="cs"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Kalendář – green david app</title>
 <link rel="stylesheet" href="/style.css"/>
 <style>
-.weekbar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
-.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative}
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
+.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative;min-width:0}
 .day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
 .day.out{opacity:.45}
-.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff;min-width:0}
+.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 </style>
 </head><body>
 <header class="header">
@@ -96,7 +97,7 @@
     const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
     const pad = (first.getDay()+6)%7;
     const start = new Date(first); start.setDate(first.getDate()-pad);
-    const by = {}; (items||[]).forEach(x=>{ (by[x.date] ||= []).push(x); });
+    const by = {}; (items||[]).forEach(x=>{ (by[iso(x.date? new Date(x.date) : new Date())] ||= []).push(x); });
     for(let i=0;i<42;i++){
       const d = new Date(start); d.setDate(start.getDate()+i);
       const cell = document.createElement('div'); cell.className='day'+(d.getMonth()!==cur.getMonth()?' out':'');
@@ -105,7 +106,8 @@
       const list = document.createElement('div');
       (by[iso(d)]||[]).forEach(ev => {
         const row = document.createElement('div'); row.className='pill';
-        row.style.background = ev.color || '#2e7d32'; row.innerHTML = `<span class="ellipsis">${ev.title}</span>`;
+        row.style.background = ev.color || '#2e7d32';
+        row.innerHTML = `<span class="ellipsis">${ev.title||ev.note||''}</span>`;
         const del = document.createElement('button'); del.className='ghost'; del.textContent='×'; del.title='Smazat';
         del.onclick = async (e)=>{ e.stopPropagation(); if(confirm('Smazat záznam?')){ await api('/gd/api/calendar?'+new URLSearchParams({id:String(ev.id)}), {method:'DELETE'}); load(); } };
         row.appendChild(del); list.appendChild(row);
