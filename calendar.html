@@ -4,12 +4,14 @@
 <title>Kalendář – green david app</title>
 <link rel="stylesheet" href="/style.css"/>
 <style>
-.weekbar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
-.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
 .day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative}
 .day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
 .day.out{opacity:.45}
 .pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 </style>
 </head><body>
 <header class="header">
