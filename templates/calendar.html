@@ -121,7 +121,7 @@ let selectedDate = null;
 
 function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
 function fmtDayLong(d){return d.toLocaleDateString('cs-CZ',{weekday:'long', day:'numeric', month:'long'});}
-function ymd(d){return d.toISOString().slice(0,10);}
+function ymd(d){return d./*utc-cut*/;}
 
 async function loadMonth() {
   label.textContent = fmtMonth(cur);

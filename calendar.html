@@ -103,7 +103,7 @@
   var monthItems = [];
   var selectedDate = null;
 
-  function iso(d){ return d.toISOString().slice(0,10); }
+  function ymd(d){ var y=d.getFullYear(); var m=('0'+(d.getMonth()+1)).slice(-2); var dd=('0'+d.getDate()).slice(-2); return y+'-'+m+'-'+dd; }
   function fmtMonth(d){ try { return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}); } catch(e){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); } }
 
   function renderGrid(){
@@ -120,10 +120,10 @@
       day.setDate(first.getDate()+i);
       var cell = document.createElement('div');
       cell.className = 'day' + (day.getMonth()===cur.getMonth() ? '' : ' out');
-      cell.setAttribute('data-date', iso(day));
+      cell.setAttribute('data-date', ymd(day));
       var head = document.createElement('div'); head.className='d'; head.textContent = day.getDate()+'.';
       cell.appendChild(head);
-      cell.onclick = (function(ds, el){ return function(){ selectDay(ds, el); }; })(iso(day), cell);
+      cell.onclick = (function(ds, el){ return function(){ selectDay(ds, el); }; })(ymd(day), cell);
       grid.appendChild(cell);
     }
   }
@@ -190,7 +190,7 @@
 
   function openModal(dateStr, type, existing){
     err.style.display='none'; err.textContent='';
-    fDate.value = dateStr || (selectedDate || iso(new Date()));
+    fDate.value = dateStr || (selectedDate || ymd(new Date()));
     fType.value = type || 'note';
     fTitle.value = existing && (existing.title || existing.name) ? (existing.title || existing.name) : '';
     fNote.value = existing && existing.description ? existing.description : '';
@@ -199,9 +199,9 @@
     if (dlg && dlg.showModal) dlg.showModal();
   }
 
-  document.getElementById('quickNote').onclick=function(){ openModal(selectedDate||iso(new Date()), 'note'); };
-  document.getElementById('quickTask').onclick=function(){ openModal(selectedDate||iso(new Date()), 'task'); };
-  document.getElementById('quickJob').onclick=function(){ openModal(selectedDate||iso(new Date()), 'job'); };
+  document.getElementById('quickNote').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'note'); };
+  document.getElementById('quickTask').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'task'); };
+  document.getElementById('quickJob').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'job'); };
 
   document.getElementById('btnSave').onclick = function(e){
     e.preventDefault();
@@ -228,14 +228,14 @@
   // Top add buttons
   var tops = document.querySelectorAll('button.btn[data-type]');
   for (var i=0;i<tops.length;i++){
-    (function(b){ b.addEventListener('click', function(){ openModal(iso(new Date()), b.dataset.type); }); })(tops[i]);
+    (function(b){ b.addEventListener('click', function(){ openModal(ymd(new Date()), b.dataset.type); }); })(tops[i]);
   }
 
   function load(){
     try { renderGrid(); } catch(e){ console.error('renderGrid error', e); }
     // Fetch is best-effort
-    var from = iso(new Date(cur.getFullYear(),cur.getMonth(),1));
-    var to = iso(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    var from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+    var to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
     fetch('/gd/api/calendar?from='+from+'&to='+to)
       .then(function(r){ return r.ok ? r.json() : {items:[]}; })
       .then(function(data){ monthItems = data && (data.items || data.events) ? (data.items || data.events) : []; renderPills(monthItems); })
