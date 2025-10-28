@@ -1,4 +1,3 @@
-
 (function(){
   const grid = document.getElementById("calendarGrid");
   const monthLabel = document.getElementById("monthLabel");
@@ -18,8 +17,10 @@
   function fmtMonth(d){
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }
-  function fmtDate(d){
-    return d.toISOString().slice(0,10);
+  function tzIso(d){
+    // local-date ISO without timezone shift (YYYY-MM-DD)
+    const p = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return p.toISOString().slice(0,10);
   }
 
   async function load(){
@@ -28,6 +29,30 @@
     const res = await fetch(`/gd/api/calendar?month=${ym}`);
     const data = await res.json();
     renderMonth(current, data.events || []);
+  }
+
+  function openDaySheet(date, items){
+    const sheet = document.getElementById('daySheet');
+    const sDate = document.getElementById('sheetDate');
+    const sBody = document.getElementById('sheetBody');
+    if(!sheet) return;
+    sDate.textContent = new Intl.DateTimeFormat('cs-CZ',{weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(date);
+    sBody.innerHTML = '';
+    if(!items || items.length===0){
+      const p = document.createElement('p'); p.textContent = 'Žádné záznamy'; sBody.appendChild(p);
+    } else {
+      items.forEach(ev=>{
+        const row = document.createElement('div'); row.className='sheet-item';
+        row.innerHTML = '<div class="swatch" style="background:'+ (ev.color||'#2e7d32') +'"></div>'
+                      + '<div class="meta"><div class="t">'+(ev.title||ev.details||'(bez názvu)')+'</div>'
+                      + (ev.details?'<div class="n">'+ev.details+'</div>':'') + '</div>';
+        const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Smazat';
+        del.addEventListener('click', async ()=>{ if(confirm('Smazat záznam?')){ await fetch(`/gd/api/calendar/${ev.id}`, {method:'DELETE'}); sheet.close(); load(); } });
+        row.appendChild(del);
+        sBody.appendChild(row);
+      });
+    }
+    sheet.showModal();
   }
 
   function renderMonth(firstDay, events){
@@ -51,9 +76,11 @@
       dates.push({date:new Date(year, month+1, i - dates.length + 1), other:true});
     }
 
+    // group by local day to avoid UTC shifts
     const byDay = {};
     for(const e of events){
-      (byDay[e.date] ||= []).push(e);
+      const k = (e.date && typeof e.date === 'string') ? e.date : tzIso(new Date(e.date));
+      (byDay[k] ||= []).push(e);
     }
 
     dates.forEach(({date, other}) => {
@@ -65,7 +92,7 @@
       cell.appendChild(head);
 
       const list = document.createElement('div');
-      (byDay[fmtDate(date)] || []).forEach(ev => {
+      (byDay[tzIso(date)] || []).forEach(ev => {
         const item = document.createElement('div');
         item.className = 'event';
         item.style.background = ev.color || '#2e7d32';
@@ -89,7 +116,14 @@
       });
       cell.appendChild(list);
 
-      cell.addEventListener('dblclick', ()=> openModal(fmtDate(date), 'note'));
+      // iPhone-like: open day detail on single click
+      cell.addEventListener('click', ()=>{
+        const k = tzIso(date);
+        openDaySheet(date, byDay[k] || []);
+      });
+
+      // double click: quick add
+      cell.addEventListener('dblclick', ()=> openModal(tzIso(date), 'note'));
       grid.appendChild(cell);
     });
   }
@@ -105,7 +139,6 @@
   function openModal(dateStr, type){
     evDate.value = dateStr;
     evType.value = type;
-    // default colors per type
     evColor.value = type==='note' ? '#1976d2' : (type==='job' ? '#ef6c00' : '#2e7d32');
     evTitle.value = '';
     evDetails.value = '';
