@@ -1,31 +1,68 @@
+/* green david app – layout + calendar v4 (mobile-first, iPhone-like) */
 *{box-sizing:border-box}
-:root{--bg:#eaf6ef;--panel:#2c3338;--panel-2:#394047;--line:#445058;--txt:#0f1519;--txt-inv:#eaf6ef;--accent:#3ea76a;--accent-2:#2f8d57}
-html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--txt);
-  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-  overflow-x:hidden} /* critical: disable horizontal scroll */
-a{color:var(--accent);text-decoration:none}
-.container{max-width:1100px;margin:0 auto;padding:24px}
-.header{position:sticky;top:0;z-index:20;background:rgba(234,246,239,.8);backdrop-filter:blur(8px);border-bottom:1px solid #d7e8dd}
-.brand{display:flex;align-items:center;gap:12px;padding:16px 24px;justify-content:center;text-align:center}
-.brand-logo{height:40px;width:auto;border-radius:8px}
+:root{
+  --bg:#eaf6ef; --ink:#0e1411; --muted:#3b4942;
+  --panel:#263238; --panel-2:#2f3a40; --line:#3f4b51;
+  --pill:#2e7d32; --pill2:#1b5e20; --brand:#2e7d32;
+}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+/* Prevent any horizontal scroll globally */
+html,body{overflow-x:hidden}
+
+a{color:var(--brand);text-decoration:none}
+
+.header{position:sticky;top:0;z-index:50;background:rgba(234,246,239,.92);backdrop-filter:blur(8px);border-bottom:1px solid #d7e8dd}
+.brand{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px}
+.brand img{height:36px;width:auto;border-radius:9px}
 .brand-title{font-weight:800;font-size:22px}
-.brand-sub{font-size:12px;color:#3b4942}
-.right{position:absolute;right:16px;top:16px}
+.brand-sub{font-size:12px;color:#4f6258}
+.header .right{position:absolute;right:14px;top:12px}
+.header a.ghost{display:inline-block;background:#2c2f33;color:#fff;border-radius:999px;padding:8px 12px}
 
-button{background:var(--accent);color:#ffffff;border:1px solid var(--accent-2);border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
-button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(--line)}
+.container{max-width:1120px;margin:0 auto;padding:18px}
+/* desktop gutters */
+@media (min-width: 960px){ .container{padding:24px 32px} }
 
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;color:var(--txt-inv);overflow:hidden}
-.card .card-h{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.card .card-b{padding:14px}
+.card{background:var(--panel);border:1px solid var(--line);color:#e8f5e9;border-radius:18px;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-b{padding:14px}
 
-.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap} /* NEW */
-.ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* NEW */
+.btn{background:var(--pill);color:#fff;border:1px solid var(--pill2);border-radius:12px;padding:8px 12px;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--panel-2);border:1px solid var(--line)}
 
-.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
-.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%} /* NEW width + minmax */
-.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative;min-width:0}
-.day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
-.day.out{opacity:.45}
-.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff;min-width:0}
-.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} /* prevent long titles from expanding */
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.controls .label{font-weight:800;letter-spacing:.2px}
+
+/* Week row + grid using minmax(0,1fr) to never overflow */
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:2px 0 8px 0;color:#b0bec5}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
+
+/* iPhone-like day cells: rounded, tall enough to tap, inner pill list */
+.day{background:#2b363c;border:1px solid var(--line);border-radius:22px;padding:8px 8px 10px;min-height:106px;min-width:0;display:flex;flex-direction:column}
+.day .d{font-weight:700;opacity:.8;margin-bottom:6px}
+.day.out{opacity:.4}
+
+/* event "pills" – show at most 2, then +X */
+.pill{display:flex;align-items:center;gap:6px;background:var(--pill);border:1px solid var(--pill2);color:#fff;border-radius:14px;padding:4px 8px;margin:2px 0;min-width:0}
+.pill .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill .del{background:transparent;border:none;color:#fff;font-weight:800;cursor:pointer}
+
+/* "+N" more */
+.more{font-size:.85em;opacity:.85;margin-top:2px}
+
+/* Mobile spacing tweaks */
+@media (max-width: 640px){
+  .container{padding:14px 14px}
+  .card-b{padding:12px}
+  .day{min-height:92px;padding:8px}
+}
+
+/* Bottom sheet for daily details (mobile-friendly dialog) */
+dialog{border:none;border-radius:16px;padding:0;max-width:min(94vw,520px)}
+dialog::backdrop{background:#0008}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e0e0e0;background:#fff;color:#111}
+.sheet-b{padding:14px 16px;background:#fff;color:#111;max-height:70vh;overflow:auto}
+.sheet-ev{display:flex;align-items:center;gap:8px;border:1px dashed #ddd;padding:10px;border-radius:12px;margin:8px 0}
+.sheet-ev .color{width:10px;height:10px;border-radius:50%}
+.sheet-ev .title{font-weight:700}
+.sheet-ev .note{opacity:.7}

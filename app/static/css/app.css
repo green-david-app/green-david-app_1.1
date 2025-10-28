@@ -1,17 +1,16 @@
-/* calendar mobile pack v3 */
+/* calendar v4 for Flask template */
 *{box-sizing:border-box}
-body{margin:0;background:#e8f5e9;color:#0a0a0a;overflow-x:hidden}
+body{margin:0;background:#eaf6ef;color:#0e1411;overflow-x:hidden}
 .calendar-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.month-label{font-weight:700;text-align:center;flex:1 1 160px;min-width:0}
+.month-label{font-weight:800;flex:1 1 160px;min-width:0}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
-.day-cell{background:#fff;border-radius:12px;min-height:100px;padding:8px;display:flex;flex-direction:column;min-width:0}
-.event{padding:4px 6px;border-radius:8px;margin:3px 0;font-size:.92em;color:#fff;display:flex;justify-content:space-between;align-items:center}
-.event .title{flex:1;padding-right:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.event .del{background:transparent;border:none;color:#fff;cursor:pointer;font-weight:700}
-.day-other{opacity:.35}
-.modal-form{display:flex;flex-direction:column;gap:10px;min-width:280px}
-dialog::backdrop{background:#0008}
+.day-cell{background:#2b363c;border:1px solid #3f4b51;border-radius:22px;min-height:100px;padding:8px;display:flex;flex-direction:column;min-width:0;color:#e8f5e9}
+.day-cell .date{opacity:.8;font-weight:700;margin-bottom:6px}
+.event{display:flex;align-items:center;gap:6px;border-radius:14px;margin:3px 0;padding:4px 8px;color:#fff}
+.event .title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event .del{background:transparent;border:none;color:#fff;font-weight:800;cursor:pointer}
+.day-other{opacity:.4}
 @media (max-width:640px){
   .calendar-grid{gap:6px}
-  .day-cell{min-height:92px;padding:6px}
+  .day-cell{min-height:92px;padding:8px}
 }
