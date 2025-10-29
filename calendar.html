@@ -12,7 +12,6 @@
 .pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
 .pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-
 .day.selected{outline:2px solid var(--accent); outline-offset:2px}
 .day-detail{margin-top:12px;background:#263238;border:1px solid #607d8b55;border-radius:16px;padding:10px}
 .day-detail.hidden{display:none}
@@ -20,7 +19,6 @@
 .day-detail-header .date{font-weight:800;color:#eaf6ef}
 .day-events{list-style:none;margin:8px 0 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .day-event{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1f262b;border:1px solid #607d8b55;border-radius:12px;padding:8px 10px;color:#eaf6ef}
-.day-event .meta{display:flex;align-items:center;gap:8px}
 .badge.task{background:#2d6cdf}
 .badge.job{background:#9b59b6}
 </style>
@@ -48,19 +46,19 @@
       </div>
     </div>
     <div class="card-b">
-      <div class="weekbar"><div>Po</div><div>Út</div><div>St</div><div>Čt</div><div>Pá</div><div>So</div><div>Ne</div></div>
+      <div class="weekbar"><div>Po</div><div>Út</div><div>St</div><div>Pá</div><div>So</div><div>Ne</div></div>
       <div id="grid" class="daygrid"></div>
-<div id="dayDetail" class="day-detail hidden">
-  <div class="day-detail-header">
-    <div class="date" id="dayDetailDate">—</div>
-    <div class="row-gap">
-      <button class="ghost" id="quickNote">+ Pozn.</button>
-      <button class="ghost" id="quickTask">+ Úkol</button>
-      <button class="ghost" id="quickJob">+ Zak.</button>
-    </div>
-  </div>
-  <ul class="day-events" id="dayEvents"></ul>
-</div>
+      <div id="dayDetail" class="day-detail hidden">
+        <div class="day-detail-header">
+          <div class="date" id="dayDetailDate">—</div>
+          <div class="row-gap">
+            <button class="ghost" id="quickNote">+ Pozn.</button>
+            <button class="ghost" id="quickTask">+ Úkol</button>
+            <button class="ghost" id="quickJob">+ Zak.</button>
+          </div>
+        </div>
+        <ul class="day-events" id="dayEvents"></ul>
+      </div>
     </div>
   </div>
 </main>
@@ -81,108 +79,92 @@
   </form>
 </dialog>
 
-
 <script>
 (function(){
-  var grid = document.getElementById('grid');
-  var label = document.getElementById('label');
-  var prev = document.getElementById('prev');
-  var next = document.getElementById('next');
-  var dlg = document.getElementById('dlg');
-  var fDate = document.getElementById('fDate');
-  var fTitle = document.getElementById('fTitle');
-  var fNote = document.getElementById('fNote');
-  var fColor = document.getElementById('fColor');
-  var fType = document.getElementById('fType');
-  var err = document.getElementById('err');
-  var dayDetail = document.getElementById('dayDetail');
-  var dayDetailDate = document.getElementById('dayDetailDate');
-  var dayEvents = document.getElementById('dayEvents');
+  const grid = document.getElementById('grid');
+  const label = document.getElementById('label');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const dlg = document.getElementById('dlg');
+  const fDate = document.getElementById('fDate');
+  const fTitle = document.getElementById('fTitle');
+  const fNote = document.getElementById('fNote');
+  const fColor = document.getElementById('fColor');
+  const fType = document.getElementById('fType');
+  const err = document.getElementById('err');
+  const dayDetail = document.getElementById('dayDetail');
+  const dayDetailDate = document.getElementById('dayDetailDate');
+  const dayEvents = document.getElementById('dayEvents');
 
-  var cur = new Date(); cur.setDate(1);
-  var monthItems = [];
-  var selectedDate = null;
+  let cur = new Date(); cur.setDate(1);
+  let monthItems = [];
+  let selectedDate = null;
 
-  function ymd(d){ var y=d.getFullYear(); var m=('0'+(d.getMonth()+1)).slice(-2); var dd=('0'+d.getDate()).slice(-2); return y+'-'+m+'-'+dd; }
-  function fmtMonth(d){ try { return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}); } catch(e){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); } }
+  const ymd = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+  const fmtMonth = d => new Intl.DateTimeFormat('cs-CZ',{month:'long', year:'numeric'}).format(d);
 
   function renderGrid(){
-    if (label) label.textContent = fmtMonth(cur);
-    if (grid) grid.innerHTML = '';
-    if (dayDetail) dayDetail.classList.add('hidden');
+    label.textContent = fmtMonth(cur);
+    grid.innerHTML = '';
+    dayDetail.classList.add('hidden');
     selectedDate = null;
-
-    var first = new Date(cur.getFullYear(), cur.getMonth(), 1);
-    var startDow = (first.getDay()+6)%7; // Mon=0
+    const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const startDow = (first.getDay()+6)%7;
     first.setDate(first.getDate()-startDow);
-    for(var i=0;i<42;i++){
-      var day = new Date(first);
+    for(let i=0;i<42;i++){
+      const day = new Date(first);
       day.setDate(first.getDate()+i);
-      var cell = document.createElement('div');
+      const cell = document.createElement('div');
       cell.className = 'day' + (day.getMonth()===cur.getMonth() ? '' : ' out');
-      cell.setAttribute('data-date', ymd(day));
-      var head = document.createElement('div'); head.className='d'; head.textContent = day.getDate()+'.';
+      cell.dataset.date = ymd(day);
+      const head = document.createElement('div'); head.className='d'; head.textContent = day.getDate()+'.';
       cell.appendChild(head);
-      cell.onclick = (function(ds, el){ return function(){ selectDay(ds, el); }; })(ymd(day), cell);
+      cell.onclick = ()=> selectDay(ymd(day), cell);
       grid.appendChild(cell);
     }
   }
 
   function renderPills(items){
-    var pills = grid.querySelectorAll('.day .row-gap');
-    for (var i=0;i<pills.length;i++){ var n=pills[i]; if(n.parentNode) n.parentNode.removeChild(n); }
-    for (var j=0;j<items.length;j++){
-      var ev = items[j];
-      var cont = grid.querySelector('.day[data-date="'+ev.date+'"]');
-      if(!cont) continue;
-      var wrap = cont.querySelector('.row-gap');
+    document.querySelectorAll('.day .row-gap').forEach(n=>n.remove());
+    items.forEach(ev=>{
+      const cont = grid.querySelector('.day[data-date="'+ev.date+'"]');
+      if(!cont) return;
+      let wrap = cont.querySelector('.row-gap');
       if(!wrap){ wrap = document.createElement('div'); wrap.className='row-gap'; cont.appendChild(wrap); }
-      var pill = document.createElement('div');
-      var kind = ev.type || ev.kind || 'note';
+      const pill = document.createElement('div');
+      const kind = ev.type || ev.kind || 'note';
       pill.className = 'pill badge ' + (kind==='task'?'task':(kind==='job'?'job':''));
-      var title = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
+      const title = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
       pill.innerHTML = '<span class="ellipsis">'+title+'</span>';
       wrap.appendChild(pill);
-    }
+    });
   }
 
   function renderDayDetail(ds){
-    if (dayDetailDate){ 
-      try { dayDetailDate.textContent = new Date(ds+'T00:00:00').toLocaleDateString('cs-CZ', {weekday:'long', day:'numeric', month:'long'}); }
-      catch(e){ dayDetailDate.textContent = ds; }
-    }
-    var evs = [];
-    for (var i=0;i<monthItems.length;i++){ if(monthItems[i].date===ds) evs.push(monthItems[i]); }
+    dayDetailDate.textContent = new Date(ds+'T00:00:00').toLocaleDateString('cs-CZ',{weekday:'long', day:'numeric', month:'long'});
+    const evs = monthItems.filter(x=>x.date===ds);
     dayEvents.innerHTML='';
     if(evs.length===0){
-      var li = document.createElement('li'); li.className='day-event';
-      li.innerHTML = '<div class="meta"><span>Žádné události</span></div><div><button class="btn" id="btnQuickAdd">+ Přidat</button></div>';
+      const li=document.createElement('li'); li.className='day-event';
+      li.innerHTML='<div class="meta"><span>Žádné události</span></div><div><button class="btn" id="btnQuickAdd">+ Přidat</button></div>';
       dayEvents.appendChild(li);
-      setTimeout(function(){
-        var b = document.getElementById('btnQuickAdd');
-        if(b) b.onclick = function(){ openModal(ds, 'note'); };
-      },0);
+      setTimeout(()=>{ const b=document.getElementById('btnQuickAdd'); if(b) b.onclick=()=>openModal(ds,'note'); },0);
     } else {
-      for (var k=0;k<evs.length;k++){
-        var ev = evs[k];
-        var li2 = document.createElement('li'); li2.className='day-event';
-        var kind2 = ev.type || ev.kind || 'note';
-        var title2 = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
-        li2.innerHTML = '<div class="meta"><span class="badge '+(kind2==='task'?'task':(kind2==='job'?'job':''))+'">'+kind2+'</span><span class="title">'+title2+'</span></div><div class="actions"><button class="ghost">Upravit</button></div>';
-        (function(ds2, kind3, ev3, liEl){
-          var btn = liEl.querySelector('button');
-          if(btn) btn.onclick = function(){ openModal(ds2, kind3, ev3); };
-        })(ds, kind2, ev, li2);
-        dayEvents.appendChild(li2);
-      }
+      evs.forEach(ev=>{
+        const li=document.createElement('li'); li.className='day-event';
+        const kind=ev.type||ev.kind||'note';
+        const title=ev.title||ev.name||ev.details||ev.description||ev.note||'(bez názvu)';
+        li.innerHTML='<div class="meta"><span class="badge '+(kind==='task'?'task':(kind==='job'?'job':''))+'">'+kind+'</span><span class="title">'+title+'</span></div><div class="actions"><button class="ghost">Upravit</button></div>';
+        const btn=li.querySelector('button'); btn.onclick=()=>openModal(ds,kind,ev);
+        dayEvents.appendChild(li);
+      });
     }
     dayDetail.classList.remove('hidden');
-    try { dayDetail.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch(e){}
+    try{ dayDetail.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
   }
 
   function selectDay(ds, cell){
-    var selected = grid.querySelectorAll('.day.selected');
-    for (var i=0;i<selected.length;i++){ selected[i].classList.remove('selected'); }
+    document.querySelectorAll('.day.selected').forEach(n=>n.classList.remove('selected'));
     if(cell) cell.classList.add('selected');
     selectedDate = ds;
     renderDayDetail(ds);
@@ -193,20 +175,20 @@
     fDate.value = dateStr || (selectedDate || ymd(new Date()));
     fType.value = type || 'note';
     fTitle.value = existing && (existing.title || existing.name) ? (existing.title || existing.name) : '';
-    fNote.value = existing && existing.description ? existing.description : '';
+    fNote.value = existing && (existing.description || existing.note || existing.details) ? (existing.description || existing.note || existing.details) : '';
     fColor.value = existing && existing.color ? existing.color : '#2e7d32';
     dlg._existing = existing || null;
-    if (dlg && dlg.showModal) dlg.showModal();
+    dlg.showModal();
   }
 
-  document.getElementById('quickNote').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'note'); };
-  document.getElementById('quickTask').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'task'); };
-  document.getElementById('quickJob').onclick=function(){ openModal(selectedDate||ymd(new Date()), 'job'); };
+  document.getElementById('quickNote').onclick=()=> openModal(selectedDate||ymd(new Date()), 'note');
+  document.getElementById('quickTask').onclick=()=> openModal(selectedDate||ymd(new Date()), 'task');
+  document.getElementById('quickJob').onclick=()=> openModal(selectedDate||ymd(new Date()), 'job');
 
-  document.getElementById('btnSave').onclick = function(e){
+  document.getElementById('btnSave').onclick = async (e)=>{
     e.preventDefault();
     err.style.display='none'; err.textContent='';
-    var payload = {
+    const payload = {
       id: dlg._existing ? dlg._existing.id : undefined,
       date: fDate.value,
       type: fType.value,
@@ -214,37 +196,42 @@
       details: fNote.value,
       color: fColor.value
     };
-    var method = payload.id ? 'PATCH' : 'POST';
-    fetch('/gd/api/calendar', {method: method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
-      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error(t); }); return r.json().catch(function(){ return {}; }); })
-      .then(function(){ if(dlg && dlg.close) dlg.close(); return load(); })
-      .then(function(){ if(selectedDate){ var c = grid.querySelector('.day[data-date="'+selectedDate+'"]'); if(c) selectDay(selectedDate, c); } })
-      .catch(function(ex){ err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message; });
+    const method = payload.id ? 'PATCH' : 'POST';
+    const res = await fetch('/gd/api/calendar', {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    if(res.ok){
+      dlg.close();
+      await load();
+      if(selectedDate){ const c = grid.querySelector('.day[data-date="'+selectedDate+'"]'); if(c) selectDay(selectedDate, c); }
+    } else {
+      const t = await res.text();
+      err.style.display='block'; err.textContent = 'Uložení selhalo: ' + t;
+    }
   };
 
-  prev.onclick = function(){ cur.setMonth(cur.getMonth()-1); load(); };
-  next.onclick = function(){ cur.setMonth(cur.getMonth()+1); load(); };
+  prev.onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
+  next.onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
 
-  // Top add buttons
-  var tops = document.querySelectorAll('button.btn[data-type]');
-  for (var i=0;i<tops.length;i++){
-    (function(b){ b.addEventListener('click', function(){ openModal(ymd(new Date()), b.dataset.type); }); })(tops[i]);
-  }
+  document.querySelectorAll('button.btn[data-type]').forEach(b=> b.addEventListener('click', ()=> openModal(ymd(new Date()), b.dataset.type)));
 
-  function load(){
-    try { renderGrid(); } catch(e){ console.error('renderGrid error', e); }
-    // Fetch is best-effort
-    var from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
-    var to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-    fetch('/gd/api/calendar?from='+from+'&to='+to)
-      .then(function(r){ return r.ok ? r.json() : {items:[]}; })
-      .then(function(data){ monthItems = data && (data.items || data.events) ? (data.items || data.events) : []; renderPills(monthItems); })
-      .catch(function(){ /* ignore */ });
+  async function load(){
+    renderGrid();
+    const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+    const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    let data;
+    try{
+      const r = await fetch('/gd/api/calendar?from='+from+'&to='+to);
+      data = await r.json();
+    }catch(e){
+      data = [];
+    }
+    // robust unwrapping
+    const arr = Array.isArray(data) ? data : (data && (data.items || data.events) ? (data.items || data.events) : []);
+    console.log('calendar load', {from, to, count: arr.length});
+    monthItems = arr;
+    renderPills(monthItems);
   }
 
   load();
 })();
 </script>
-
-
 </body></html>
