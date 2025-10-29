@@ -1,3 +1,4 @@
+
 *{box-sizing:border-box}
 :root{
   --bg:#eaf6ef;            /* pastel green */
@@ -56,36 +57,3 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .cal-ev.cal-job{background:rgba(0,128,0,.10);}
 .cal-ev.cal-task{background:rgba(0,128,64,.10);}
 .cal-ev.cal-note{background:rgba(0,0,0,.05);}
-
-/* === Auth bar bottom (SAFE override) ===
-   Only affects the login strip on the landing page (#userbox).
-   Keeps the rest of the layout unchanged.
-*/
-#userbox{
-  position: fixed !important;
-  right: 16px;
-  bottom: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(31,38,43,.95);
-  color: #eaf6ef;
-  border: 1px solid rgba(96,125,139,.45);
-  border-radius: 14px;
-  padding: 8px 12px;
-  z-index: 50;
-  box-shadow: 0 6px 24px rgba(0,0,0,.35);
-  font-size: 14px;
-  line-height: 1.2;
-}
-#userbox .ghost, #userbox button, #userbox a{
-  color: inherit;
-  text-decoration: none;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-@media (max-width: 520px){
-  #userbox{ left: 12px; right: 12px; justify-content: center; }
-}
-@supports (padding: max(0px)){
-  #userbox{ padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-}
