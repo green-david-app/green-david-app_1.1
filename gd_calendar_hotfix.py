@@ -1,14 +1,13 @@
 
 # gd_calendar_hotfix.py
-# Hotfix: provide /gd/api/calendar endpoints and fix date normalization bug present in main.api_calendar.
+# Hotfix v1.2.1: safe route registration (no duplicate endpoint assertion)
 from main import app, get_db, require_role, _normalize_date
 from flask import request, jsonify
 
-@app.route("/gd/api/calendar", methods=["GET","POST","PATCH","DELETE"])
 def gd_api_calendar():
     # auth: same as original (write methods require elevated role)
     u, err = require_role(write=(request.method!="GET"))
-    if err: 
+    if err:
         return err
 
     db = get_db()
@@ -36,7 +35,7 @@ def gd_api_calendar():
         except Exception:
             pass
 
-        # 2) jobs as virtual events (best-effort)
+        # 2) jobs as virtual events
         try:
             cols = [c[1] for c in db.execute("PRAGMA table_info(jobs)").fetchall()]
             if cols:
@@ -64,7 +63,7 @@ def gd_api_calendar():
         except Exception:
             pass
 
-        # 3) tasks as virtual events (best-effort)
+        # 3) tasks as virtual events
         try:
             cols = [c[1] for c in db.execute("PRAGMA table_info(tasks)").fetchall()]
             if cols:
@@ -90,11 +89,8 @@ def gd_api_calendar():
             pass
 
         items.sort(key=lambda x: (x.get("date",""), x.get("start_time") or ""))
-        # Return plain array; most templates accept array, others accept items/events. For compatibility,
-        # add mirrored keys too.
         return jsonify({"ok": True, "items": items, "events": items})
 
-    # WRITE METHODS
     data = request.get_json(force=True, silent=True) or {}
 
     if request.method == "POST":
@@ -117,7 +113,7 @@ def gd_api_calendar():
 
     if request.method == "PATCH":
         eid = data.get("id")
-        if not eid: 
+        if not eid:
             return jsonify({"ok": False, "error":"missing_id"}), 400
         fields = ["date","title","kind","job_id","start_time","end_time","note","color"]
         sets, vals = [], []
@@ -143,3 +139,17 @@ def gd_api_calendar():
     db.execute("DELETE FROM calendar_events WHERE id=?", (eid,))
     db.commit()
     return jsonify({"ok": True})
+
+# Register route once (avoid duplicate endpoint mapping on multi-import)
+def _route_exists(path: str) -> bool:
+    try:
+        for r in app.url_map.iter_rules():
+            if str(r.rule) == path:
+                return True
+    except Exception:
+        pass
+    return False
+
+if not _route_exists("/gd/api/calendar"):
+    app.add_url_rule("/gd/api/calendar", view_func=gd_api_calendar,
+                     methods=["GET","POST","PATCH","DELETE"], endpoint="gd_api_calendar_hotfix")
