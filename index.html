@@ -1,89 +1,219 @@
 <!doctype html>
 <html lang="cs">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>green david app</title>
-    <link rel="stylesheet" href="/style.css"/>
-    <meta http-equiv="cache-control" content="no-cache"/>
-  </head>
-  <body>
-    <header class="header">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'"/>
-        <div>
-          <div class="brand-title">green david app</div>
-          <div class="brand-sub">interní systém</div>
-        </div>
-        <div class="right small" id="userbox"></div>
-      </div>
-    </header>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>green david app</title>
+  <link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img src="/logo.jpg" alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'"/>
+      <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
+      <div class="right small" id="userbox"></div>
+    </div>
+  </header>
 
-    <main class="container">
-      <div id="app" class="small" style="opacity:.8;margin:18px 0">
-        Načítám aplikaci… Pokud se nic nestane, <a href="/calendar">přejdi do Kalendáře</a>.
-      </div>
-      <div id="js-error" class="error-overlay" style="display:none"></div>
-      <p class="small footer">© green david s.r.o.</p>
-    </main>
+  <main class="container">
+    <div class="calbar">
+      <button id="prev" class="btn">←</button>
+      <div id="monthLabel" class="small"></div>
+      <button id="next" class="btn">→</button>
+      <button class="btn ghost" id="quickNote" data-type="note">+ Poznámka</button>
+      <button class="btn ghost" id="quickTask" data-type="task">+ Úkol</button>
+      <button class="btn ghost" id="quickJob"  data-type="job">+ Zakázka</button>
+    </div>
+    <div id="grid" class="cal-grid"></div>
+    <div id="js-error" class="error-overlay" style="display:none"></div>
+    <p class="small footer">© green david s.r.o.</p>
+  </main>
 
-    <script>
-      // DATE UTILITIES (fixed)
-      function toISODateFlex(v){
-        if(!v) return v;
-        const s = String(v).trim();
-        const m = s.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
-        if(m){
-          const dd = m[1].padStart(2,'0');
-          const mm = m[2].padStart(2,'0');
-          const yyyy = m[3];
-          return `${yyyy}-${mm}-${dd}`;
+  <dialog id="dlg">
+    <div class="dlg-h">Uložit záznam</div>
+    <form class="dlg-c" id="form">
+      <input type="hidden" name="id"/>
+      <label>Datum <input type="date" id="fDate" name="date" required/></label>
+      <label>Typ
+        <select id="fType" name="kind">
+          <option value="note">Poznámka</option>
+          <option value="task">Úkol</option>
+          <option value="job">Zakázka</option>
+        </select>
+      </label>
+      <label>Název <input type="text" id="fTitle" name="title"/></label>
+      <label>Poznámka <textarea id="fNote" name="description" rows="3"></textarea></label>
+      <label>Barva <input type="color" id="fColor" name="color" value="#3ea76a"/></label>
+      <div id="dlgErr" class="error-overlay" style="display:none"></div>
+    </form>
+    <div class="dlg-f"><button id="btnCancel" class="btn ghost">Zrušit</button><button id="btnSave" class="btn">Uložit</button></div>
+  </dialog>
+
+  <script>
+    // ---- Utils (incl. fixed date parsing) ----
+    function toISODateFlex(v){
+      if(!v) return v;
+      const s = String(v).trim();
+      const m = s.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
+      if(m){
+        const dd = m[1].padStart(2,'0');
+        const mm = m[2].padStart(2,'0');
+        const yyyy = m[3];
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      if(/^(\d{4})-(\d{2})-(\d{2})$/.test(s)) return s;
+      const d = s.replace(/\D+/g, '');
+      if(d.length === 8){
+        const yFirst = parseInt(d.slice(0,4),10);
+        let y, mm, dd;
+        if(yFirst >= 1900 && yFirst <= 2100){
+          y = yFirst; mm = parseInt(d.slice(4,6),10); dd = parseInt(d.slice(6,8),10);
+        } else {
+          dd = parseInt(d.slice(0,2),10); mm = parseInt(d.slice(2,4),10); y = parseInt(d.slice(4,8),10);
         }
-        if(/^(\d{4})-(\d{2})-(\d{2})$/.test(s)) return s;
-        const d = s.replace(/\D+/g, '');
-        if(d.length === 8){
-          const yFirst = parseInt(d.slice(0,4),10);
-          let y, mm, dd;
-          if(yFirst >= 1900 && yFirst <= 2100){
-            y = yFirst; mm = parseInt(d.slice(4,6),10); dd = parseInt(d.slice(6,8),10);
-          } else {
-            dd = parseInt(d.slice(0,2),10); mm = parseInt(d.slice(2,4),10); y = parseInt(d.slice(4,8),10);
+        const pad = (n)=> String(n).padStart(2,'0');
+        if(y && mm>=1 && mm<=12 && dd>=1 && dd<=31) return `${y}-${pad(mm)}-${pad(dd)}`;
+      }
+      return v;
+    }
+    function iso(d){ return d.toISOString().slice(0,10); }
+    function ymd(d){ return iso(d); }
+
+    function showJSError(msg){
+      var el = document.getElementById('js-error');
+      el.style.display = 'block';
+      el.textContent = String(msg || 'Neznámá chyba ve skriptu.');
+      console.error(msg);
+    }
+    window.addEventListener('error', e=> showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)));
+    window.addEventListener('unhandledrejection', e=> showJSError(e.reason ? (e.reason.stack||e.reason) : e));
+
+    // ---- Calendar (based on calendar.html logic) ----
+    (function(){
+      const grid = document.getElementById('grid');
+      const label = document.getElementById('monthLabel');
+      const dlg = document.getElementById('dlg');
+      const form = document.getElementById('form');
+      const fDate = document.getElementById('fDate');
+      const fType = document.getElementById('fType');
+      const fTitle= document.getElementById('fTitle');
+      const fNote = document.getElementById('fNote');
+      const fColor= document.getElementById('fColor');
+      const err = document.getElementById('dlgErr');
+      let cur = new Date();
+      let selectedDate = null;
+      let monthItems = [];
+
+      function renderGrid(){
+        const start = new Date(cur.getFullYear(), cur.getMonth(), 1);
+        const end   = new Date(cur.getFullYear(), cur.getMonth()+1, 0);
+        const firstDay = new Date(start); firstDay.setDate(firstDay.getDate() - ((firstDay.getDay()+6)%7));
+        const total = 42;
+        grid.innerHTML = '';
+        label.textContent = start.toLocaleString('cs-CZ', {month:'long', year:'numeric'});
+        const headDays = ['Po','Út','St','Čt','Pá','So','Ne'];
+        headDays.forEach(h=> {
+          const hd = document.createElement('div');
+          hd.className='cal-head'; hd.textContent=h; grid.appendChild(hd);
+        });
+        for(let i=0;i<total;i++){
+          const d = new Date(firstDay); d.setDate(firstDay.getDate()+i);
+          const ds = iso(d);
+          const cell = document.createElement('div'); cell.className='cal-cell';
+          if(d.getMonth()!==cur.getMonth()) cell.classList.add('cal-dim');
+          cell.dataset.date = ds;
+          const head = document.createElement('div'); head.className='cal-date'; head.textContent = d.getDate()+'.';
+          const list = document.createElement('div'); list.className='cal-events';
+          cell.appendChild(head); cell.appendChild(list);
+          cell.onclick = ()=> selectDay(ds, cell);
+          grid.appendChild(cell);
+        }
+        renderPills(monthItems);
+      }
+
+      function renderPills(items){
+        grid.querySelectorAll('.cal-events').forEach(el=>el.innerHTML='');
+        const by = {};
+        (items||[]).forEach(ev=>{ const ds = ev.date; (by[ds] = by[ds]||[]).push(ev); });
+        Object.keys(by).forEach(ds=>{
+          const cell = grid.querySelector(`.cal-cell[data-date="${ds}"] .cal-events`);
+          if(!cell) return;
+          by[ds].forEach(ev=>{
+            const row = document.createElement('div'); row.className='pill';
+            row.style.background = ev.color || 'rgba(0,128,0,.10)';
+            row.innerHTML = `<span class="ellipsis">${ev.title || ev.name || '(bez názvu)'}</span>`;
+            cell.appendChild(row);
+          });
+        });
+      }
+
+      function selectDay(ds, cell){
+        grid.querySelectorAll('.cal-cell.selected').forEach(c=>c.classList.remove('selected'));
+        if(cell) cell.classList.add('selected');
+        selectedDate = ds;
+      }
+
+      async function load(){
+        renderGrid();
+        const from = iso(new Date(cur.getFullYear(),cur.getMonth(),1));
+        const to   = iso(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+        try{
+          const r = await fetch('/gd/api/calendar?from='+from+'&to='+to);
+          const data = await r.json();
+          const arr = Array.isArray(data) ? data : (data && (data.items || data.events) ? (data.items || data.events) : []);
+          monthItems = arr;
+          renderPills(monthItems);
+        }catch(e){
+          monthItems = [];
+        }
+      }
+
+      document.getElementById('prev').onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
+      document.getElementById('next').onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
+
+      function openModal(dateStr, type='note', existing){
+        err.style.display='none'; err.textContent='';
+        fDate.value = dateStr || (selectedDate || iso(new Date()));
+        fType.value = type;
+        fTitle.value= existing?.title || existing?.name || '';
+        fNote.value = existing?.description || '';
+        fColor.value= existing?.color || '#3ea76a';
+        dlg._existing = existing || null;
+        dlg.showModal();
+      }
+
+      document.getElementById('quickNote').onclick = ()=>openModal(selectedDate||iso(new Date()), 'note');
+      document.getElementById('quickTask').onclick = ()=>openModal(selectedDate||iso(new Date()), 'task');
+      document.getElementById('quickJob').onclick  = ()=>openModal(selectedDate||iso(new Date()), 'job');
+
+      document.getElementById('btnCancel').onclick = ()=> dlg.close();
+      document.getElementById('btnSave').onclick = async (e)=>{
+        e.preventDefault();
+        err.style.display='none'; err.textContent='';
+        const payload = {
+          id: dlg._existing?.id,
+          date: document.getElementById('fDate').value,
+          kind: document.getElementById('fType').value,
+          title: document.getElementById('fTitle').value,
+          description: document.getElementById('fNote').value,
+          color: document.getElementById('fColor').value
+        };
+        try{
+          const method = payload.id ? 'PATCH' : 'POST';
+          const resp = await fetch('/gd/api/calendar', {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+          if(!resp.ok) throw new Error(await resp.text());
+          dlg.close(); await load();
+          if(selectedDate){
+            const cell = grid.querySelector('.cal-cell[data-date="'+selectedDate+'"]');
+            if(cell) selectDay(selectedDate, cell);
           }
-          const pad = (n)=> String(n).padStart(2,'0');
-          if(y && mm>=1 && mm<=12 && dd>=1 && dd<=31) return `${y}-${pad(mm)}-${pad(dd)}`;
+        }catch(ex){
+          err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message;
         }
-        return v;
-      }
-      function toCZ(iso){
-        if(!iso) return iso||'';
-        const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(!m) return iso;
-        const [_,y,mm,dd] = m;
-        return `${dd}.${mm}.${y}`;
-      }
-      function normalizeDate(v){
-        if(!v) return v;
-        var m=v.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
-        if(m){ var d=m[1].padStart(2,'0'); var M=m[2].padStart(2,'0'); var y=m[3]; return y+"-"+M+"-"+d; }
-        return v;
-      }
-      function showJSError(msg){
-        var el = document.getElementById('js-error');
-        el.style.display = 'block';
-        el.textContent = String(msg || 'Neznámá chyba ve skriptu.');
-        console.error(msg);
-      }
-      window.addEventListener('error', function(e){ showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)); });
-      window.addEventListener('unhandledrejection', function(e){ showJSError(e.reason ? (e.reason.stack||e.reason) : e); });
+      };
 
-      // Non-destructive behavior: automaticky přesměruj na kalendář
-      (function(){
-        var redirected = false;
-        function go(){ if(redirected) return; redirected=true; try{ window.location.replace('/calendar'); }catch(e){ window.location.href='/calendar'; } }
-        if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', go); } else { go(); }
-        // fallback if browser blocks replace()
-        setTimeout(function(){ if(!redirected) go(); }, 1000);
-      })();
-    </script>
-  </body>
+      load();
+    })();
+  </script>
+</body>
 </html>
