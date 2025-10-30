@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upravit zakázku</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:#f5f7f8;color:#111;margin:0}
+  .wrap{max-width:900px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .card-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #eee}
+  .card-c{padding:16px}
+  .form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  input, select, textarea{padding:10px;border-radius:10px;border:1px solid #d0d0d0;flex:1}
+  textarea{width:100%}
+  button{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+  .ghost{background:transparent;border:1px solid #556165;color:#111}
+  .small{font-size:12px;opacity:.8}
+  .kv{display:flex;gap:8px;align-items:center}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #ccc}
+  a{color:#2e7d32;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="card-h">
+      <div>Upravit zakázku</div>
+      <div class="small"><a href="/index.html">← Zpět do aplikace</a></div>
+    </div>
+    <div class="card-c">
+      <div id="msg" class="small" style="color:#b00020;margin-bottom:8px"></div>
+      <form id="frm">
+        <div class="form-row">
+          <input id="fTitle" placeholder="Název" required>
+          <input id="fClient" placeholder="Zákazník">
+        </div>
+        <div class="form-row">
+          <select id="fStatus">
+            <option>Plán</option>
+            <option>Probíhá</option>
+            <option>Dokončeno</option>
+          </select>
+          <input id="fCity" placeholder="Město" required>
+          <input id="fCode" placeholder="Kód (např. 2025-091)" required>
+        </div>
+        <div class="form-row">
+          <input id="fDate" type="date" required>
+        </div>
+        <div class="form-row">
+          <textarea id="fNote" rows="3" placeholder="Poznámka"></textarea>
+        </div>
+        <div class="form-row" style="justify-content:flex-end">
+          <button type="button" class="ghost" id="btnCancel">Zrušit</button>
+          <button type="submit" id="btnSave">Uložit změny</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function qs(k){ return new URLSearchParams(location.search).get(k); }
+function token(){ return localStorage.getItem('gd_token') || ''; }
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+token()}, opts.headers||{});
+  const res = await fetch(path, opts);
+  if(!res.ok){ let t=await res.text(); try{t=JSON.parse(t)}catch(_){ } throw new Error(t.error||t||('HTTP '+res.status)); }
+  const t = await res.text();
+  try{ return JSON.parse(t); }catch(_){ return t; }
+}
+function toISODateFlex(s){
+  if(!s) return '';
+  if(/\d{4}-\d{2}-\d{2}/.test(s)) return s;
+  const m = /^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/.exec(s.trim());
+  if(m){
+    let d=String(m[1]).padStart(2,'0'); let mo=String(m[2]).padStart(2,'0'); let y=String(m[3]); if(y.length===2) y='20'+y;
+    return y+'-'+mo+'-'+d;
+  }
+  const dt = new Date(s); if(!isNaN(dt.getTime())) return dt.toISOString().slice(0,10);
+  return s;
+}
+
+const jid = Number(qs('id'));
+const $ = s=>document.querySelector(s);
+const msg = $('#msg');
+
+async function load(){
+  if(!jid){ msg.textContent='Chybí parametr ?id=…'; return; }
+  try{
+    const j = await api('/api/jobs/'+jid);
+    if(!j || !j.job){ msg.textContent='Zakázka nenalezena'; return; }
+    const data = j.job;
+    $('#fTitle').value = data.title || data.name || '';
+    $('#fClient').value = data.client || '';
+    $('#fStatus').value = data.status || 'Plán';
+    $('#fCity').value = data.city || '';
+    $('#fCode').value = data.code || '';
+    $('#fDate').value = toISODateFlex(data.date || '');
+    $('#fNote').value = data.note || '';
+    msg.textContent = '';
+  }catch(e){ msg.textContent = e.message || String(e); }
+}
+
+document.querySelector('#frm').onsubmit = async (e)=>{
+  e.preventDefault();
+  msg.textContent = '';
+  try{
+    const payload = {
+      id: jid,
+      title: $('#fTitle').value.trim(),
+      client: $('#fClient').value.trim(),
+      status: $('#fStatus').value.trim(),
+      city: $('#fCity').value.trim(),
+      code: $('#fCode').value.trim(),
+      date: toISODateFlex($('#fDate').value),
+      note: $('#fNote').value.trim()
+    };
+    const res = await api('/api/jobs', {method:'PATCH', body: JSON.stringify(payload)});
+    if(res && (res.ok === false || res.error)){ msg.textContent = res.error || 'Uložení selhalo'; return; }
+    msg.style.color = '#2e7d32'; msg.textContent = 'Uloženo ✓';
+    setTimeout(()=>{ location.href = '/index.html'; }, 600);
+  }catch(err){ msg.style.color='#b00020'; msg.textContent = 'Uložení selhalo: ' + (err.message||err); }
+};
+
+document.querySelector('#btnCancel').onclick = ()=> history.back();
+
+load();
+</script>
+</body>
+</html>
