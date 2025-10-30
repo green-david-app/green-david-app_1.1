@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>green david app</title>
     <link rel="stylesheet" href="/style.css"/>
+    <meta http-equiv="cache-control" content="no-cache"/>
   </head>
   <body>
     <header class="header">
@@ -18,29 +19,19 @@
       </div>
     </header>
 
-    <div class="container" style="margin-top:.5rem">
-      <div class="row-gap" style="justify-content:flex-start">
-
-      </div>
-    </div>
-
     <main class="container">
-      <div id="app"></div>
+      <div id="app" class="small" style="opacity:.8;margin:18px 0">
+        Načítám aplikaci… Pokud se nic nestane, <a href="/calendar">přejdi do Kalendáře</a>.
+      </div>
       <div id="js-error" class="error-overlay" style="display:none"></div>
       <p class="small footer">© green david s.r.o.</p>
     </main>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <script>
-      // DATE UTILITIES (patched)
+      // DATE UTILITIES (fixed)
       function toISODateFlex(v){
         if(!v) return v;
         const s = String(v).trim();
-
-        // 1) Prefer český formát DD.MM.RRRR (nebo s mezerami/pomlčkami)
         const m = s.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
         if(m){
           const dd = m[1].padStart(2,'0');
@@ -48,11 +39,7 @@
           const yyyy = m[3];
           return `${yyyy}-${mm}-${dd}`;
         }
-
-        // 2) Nech být korektní ISO YYYY-MM-DD
         if(/^(\d{4})-(\d{2})-(\d{2})$/.test(s)) return s;
-
-        // 3) Fallback: 8 číslic bez oddělovačů -> rozhodni mezi YYYYMMDD a DDMMYYYY
         const d = s.replace(/\D+/g, '');
         if(d.length === 8){
           const yFirst = parseInt(d.slice(0,4),10);
@@ -65,9 +52,8 @@
           const pad = (n)=> String(n).padStart(2,'0');
           if(y && mm>=1 && mm<=12 && dd>=1 && dd<=31) return `${y}-${pad(mm)}-${pad(dd)}`;
         }
-        return v; // jinak vrať původní vstup
+        return v;
       }
-
       function toCZ(iso){
         if(!iso) return iso||'';
         const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -75,18 +61,12 @@
         const [_,y,mm,dd] = m;
         return `${dd}.${mm}.${y}`;
       }
-
       function normalizeDate(v){
         if(!v) return v;
-        // Accept 15.09.2025 or 15. 09. 2025 etc.
         var m=v.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
-        if(m){
-          var d=m[1].padStart(2,'0'); var M=m[2].padStart(2,'0'); var y=m[3];
-          return y+"-"+M+"-"+d;
-        }
-        return v; // already YYYY-MM-DD
+        if(m){ var d=m[1].padStart(2,'0'); var M=m[2].padStart(2,'0'); var y=m[3]; return y+"-"+M+"-"+d; }
+        return v;
       }
-
       function showJSError(msg){
         var el = document.getElementById('js-error');
         el.style.display = 'block';
@@ -96,29 +76,14 @@
       window.addEventListener('error', function(e){ showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)); });
       window.addEventListener('unhandledrejection', function(e){ showJSError(e.reason ? (e.reason.stack||e.reason) : e); });
 
-      async function api(path, opts={}){
-        const res = await fetch(path, {credentials:"same-origin", headers:{"Content-Type":"application/json"}, ...opts});
-        if(!res.ok){ let msg = res.statusText; try{ const j = await res.json(); msg = j.error || msg; }catch{} throw new Error(msg); }
-        try{ return await res.json(); }catch{return {};}
-      }
-      async function refreshUserBox(){
-        const box = document.getElementById("userbox");
-        try{
-          const j = await api("/api/me");
-          if(j.authenticated){
-            box.innerHTML = `Přihlášen: <b>${j.user.name}</b> (${j.user.role}) • Úkoly: <b>${j.tasks_count}</b> &nbsp; <button class="ghost" id="logout-btn">Odhlásit</button>`;
-            document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
-          } else {
-            box.innerHTML = '<span>Nepřihlášen</span>';
-          }
-        }catch(e){ box.innerText = ""; }
-      }
-    </script>
-
-    <!-- React app (unchanged placeholder to keep file valid). Your deployed file already contains full components. -->
-    <script type="text/babel" data-presets="env,react">
-      const { useState, useEffect, useMemo } = React;
-      // (Zachováno prázdné – v nasazení už máš plnou verzi.)
+      // Non-destructive behavior: automaticky přesměruj na kalendář
+      (function(){
+        var redirected = false;
+        function go(){ if(redirected) return; redirected=true; try{ window.location.replace('/calendar'); }catch(e){ window.location.href='/calendar'; } }
+        if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', go); } else { go(); }
+        // fallback if browser blocks replace()
+        setTimeout(function(){ if(!redirected) go(); }, 1000);
+      })();
     </script>
   </body>
 </html>
