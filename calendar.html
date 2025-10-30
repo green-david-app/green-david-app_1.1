@@ -1,0 +1,264 @@
+
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kalendář – green david app</title>
+<link rel="stylesheet" href="/style.css"/>
+<style>
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
+.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative}
+.day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
+.day.out{opacity:.45}
+.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.day.selected{outline:2px solid var(--accent); outline-offset:2px}
+.day-detail{margin-top:12px;background:#263238;border:1px solid #607d8b55;border-radius:16px;padding:10px}
+.day-detail.hidden{display:none}
+.day-detail-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.day-detail-header .date{font-weight:800;color:#eaf6ef}
+.day-events{list-style:none;margin:8px 0 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.day-event{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1f262b;border:1px solid #607d8b55;border-radius:12px;padding:8px 10px;color:#eaf6ef}
+.badge.task{background:#2d6cdf}
+.badge.job{background:#9b59b6}
+.actions{display:flex;gap:8px;align-items:center}
+.actions .danger{color:#ff8a80}
+</style>
+</head><body>
+<header class="header">
+  <div class="brand">
+    <img src="/logo.jpg" class="brand-logo" alt="green david"/>
+    <div><div class="brand-title">green david app</div><div class="brand-sub">Kalendář</div></div>
+    <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div class="card-h">
+      <div>Kalendář</div>
+      <div class="row-gap">
+        <button id="prev" class="ghost">◀</button>
+        <b id="label">měsíc</b>
+        <button id="next" class="ghost">▶</button>
+        <span class="spacer"></span>
+        <button class="btn" data-type="note">+ Poznámka</button>
+        <button class="btn" data-type="task">+ Úkol</button>
+        <button class="btn" data-type="job">+ Zakázka</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="weekbar"><div>Po</div><div>Út</div><div>St</div><div>Pá</div><div>So</div><div>Ne</div></div>
+      <div id="grid" class="daygrid"></div>
+      <div id="dayDetail" class="day-detail hidden">
+        <div class="day-detail-header">
+          <div class="date" id="dayDetailDate">—</div>
+          <div class="row-gap">
+            <button class="ghost" id="quickNote">+ Pozn.</button>
+            <button class="ghost" id="quickTask">+ Úkol</button>
+            <button class="ghost" id="quickJob">+ Zak.</button>
+          </div>
+        </div>
+        <ul class="day-events" id="dayEvents"></ul>
+      </div>
+    </div>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form class="form-vert" method="dialog" style="min-width:320px">
+    <h3 id="dlgTitle">Přidat záznam</h3>
+    <label>Datum <input type="date" id="fDate" required></label>
+    <label>Nadpis <input type="text" id="fTitle" required placeholder="Název"></label>
+    <label>Podrobnosti <textarea id="fNote" rows="3" placeholder="volitelné"></textarea></label>
+    <label>Barva <input type="color" id="fColor" value="#2e7d32"></label>
+    <input type="hidden" id="fType" value="note"/>
+    <menu>
+      <button class="ghost" value="cancel">Zrušit</button>
+      <button class="btn" id="btnSave" value="default">Uložit</button>
+    </menu>
+    <div id="err" class="small" style="color:#d32f2f;display:none"></div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  const grid = document.getElementById('grid');
+  const label = document.getElementById('label');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const dlg = document.getElementById('dlg');
+  const fDate = document.getElementById('fDate');
+  const fTitle = document.getElementById('fTitle');
+  const fNote = document.getElementById('fNote');
+  const fColor = document.getElementById('fColor');
+  const fType = document.getElementById('fType');
+  const err = document.getElementById('err');
+  const dayDetail = document.getElementById('dayDetail');
+  const dayDetailDate = document.getElementById('dayDetailDate');
+  const dayEvents = document.getElementById('dayEvents');
+  const dlgTitle = document.getElementById('dlgTitle');
+
+  let cur = new Date(); cur.setDate(1);
+  let monthItems = [];
+  let selectedDate = null;
+
+  const ymd = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+  const fmtMonth = d => new Intl.DateTimeFormat('cs-CZ',{month:'long', year:'numeric'}).format(d);
+
+  function renderGrid(){
+    label.textContent = fmtMonth(cur);
+    grid.innerHTML = '';
+    dayDetail.classList.add('hidden');
+    selectedDate = null;
+    const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const startDow = (first.getDay()+6)%7;
+    first.setDate(first.getDate()-startDow);
+    for(let i=0;i<42;i++){
+      const day = new Date(first);
+      day.setDate(first.getDate()+i);
+      const cell = document.createElement('div');
+      cell.className = 'day' + (day.getMonth()===cur.getMonth() ? '' : ' out');
+      cell.dataset.date = ymd(day);
+      const head = document.createElement('div'); head.className='d'; head.textContent = day.getDate()+'.';
+      cell.appendChild(head);
+      cell.onclick = ()=> selectDay(ymd(day), cell);
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderPills(items){
+    document.querySelectorAll('.day .row-gap').forEach(n=>n.remove());
+    items.forEach(ev=>{
+      const cont = grid.querySelector('.day[data-date="'+ev.date+'"]');
+      if(!cont) return;
+      let wrap = cont.querySelector('.row-gap');
+      if(!wrap){ wrap = document.createElement('div'); wrap.className='row-gap'; cont.appendChild(wrap); }
+      const pill = document.createElement('div');
+      const kind = ev.type || ev.kind || 'note';
+      pill.className = 'pill badge ' + (kind==='task'?'task':(kind==='job'?'job':''));
+      const title = ev.title || ev.name || ev.details || ev.description || ev.note || '(bez názvu)';
+      pill.innerHTML = '<span class="ellipsis">'+title+'</span>';
+      wrap.appendChild(pill);
+    });
+  }
+
+  function isNumericId(val){
+    return typeof val === 'number' || (typeof val === 'string' && /^[0-9]+$/.test(val));
+  }
+
+  function renderDayDetail(ds){
+    dayDetailDate.textContent = new Date(ds+'T00:00:00').toLocaleDateString('cs-CZ',{weekday:'long', day:'numeric', month:'long'});
+    const evs = monthItems.filter(x=>x.date===ds);
+    dayEvents.innerHTML='';
+    if(evs.length===0){
+      const li=document.createElement('li'); li.className='day-event';
+      li.innerHTML='<div class="meta"><span>Žádné události</span></div><div><button class="btn" id="btnQuickAdd">+ Přidat</button></div>';
+      dayEvents.appendChild(li);
+      setTimeout(()=>{ const b=document.getElementById('btnQuickAdd'); if(b) b.onclick=()=>openModal(ds,'note'); },0);
+    } else {
+      evs.forEach(ev=>{
+        const li=document.createElement('li'); li.className='day-event';
+        const kind=ev.type||ev.kind||'note';
+        const title=ev.title||ev.name||ev.details||ev.description||ev.note||'(bez názvu)';
+        const actions=[];
+        actions.push('<button class="ghost" data-act="edit">Upravit</button>');
+        if(isNumericId(ev.id)){ // pouze skutečné kalendářové záznamy
+          actions.push('<button class="ghost danger" data-act="del">Smazat</button>');
+        }
+        li.innerHTML='<div class="meta"><span class="badge '+(kind==='task'?'task':(kind==='job'?'job':''))+'">'+kind+'</span><span class="title">'+title+'</span></div><div class="actions">'+actions.join('')+'</div>';
+        const btnEdit=li.querySelector('button[data-act="edit"]'); 
+        btnEdit.onclick=()=>openModal(ds,kind,ev);
+        const btnDel=li.querySelector('button[data-act="del"]'); 
+        if(btnDel) btnDel.onclick=()=>doDelete(ev);
+        dayEvents.appendChild(li);
+      });
+    }
+    dayDetail.classList.remove('hidden');
+    try{ dayDetail.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+  }
+
+  function selectDay(ds, cell){
+    document.querySelectorAll('.day.selected').forEach(n=>n.classList.remove('selected'));
+    if(cell) cell.classList.add('selected');
+    selectedDate = ds;
+    renderDayDetail(ds);
+  }
+
+  function openModal(dateStr, type, existing){
+    err.style.display='none'; err.textContent='';
+    dlgTitle.textContent = existing ? 'Upravit záznam' : 'Přidat záznam';
+    fDate.value = dateStr || (selectedDate || ymd(new Date()));
+    fType.value = type || 'note';
+    fTitle.value = existing && (existing.title || existing.name) ? (existing.title || existing.name) : '';
+    fNote.value = existing && (existing.description || existing.note || existing.details) ? (existing.description || existing.note || existing.details) : '';
+    fColor.value = existing && existing.color ? existing.color : '#2e7d32';
+    dlg._existing = existing || null;
+    dlg.showModal();
+  }
+
+  async function doDelete(ev){
+    if(!isNumericId(ev.id)) return; // only true calendar events
+    if(!confirm('Opravdu smazat?')) return;
+    const r = await fetch('/gd/api/calendar?id='+ev.id, {method:'DELETE'});
+    if(r.ok){
+      await load();
+      if(selectedDate){ const c = grid.querySelector('.day[data-date="'+selectedDate+'"]'); if(c) selectDay(selectedDate, c); }
+    } else {
+      const t = await r.text(); alert('Smazání selhalo: ' + t);
+    }
+  }
+
+  document.getElementById('quickNote').onclick=()=> openModal(selectedDate||ymd(new Date()), 'note');
+  document.getElementById('quickTask').onclick=()=> openModal(selectedDate||ymd(new Date()), 'task');
+  document.getElementById('quickJob').onclick=()=> openModal(selectedDate||ymd(new Date()), 'job');
+
+  document.getElementById('btnSave').onclick = async (e)=>{
+    e.preventDefault();
+    err.style.display='none'; err.textContent='';
+    const payload = {
+      id: dlg._existing ? dlg._existing.id : undefined,
+      date: fDate.value,
+      type: fType.value,
+      title: fTitle.value,
+      details: fNote.value,
+      color: fColor.value
+    };
+    const method = payload.id ? 'PATCH' : 'POST';
+    const res = await fetch('/gd/api/calendar', {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    if(res.ok){
+      dlg.close();
+      await load();
+      if(selectedDate){ const c = grid.querySelector('.day[data-date="'+selectedDate+'"]'); if(c) selectDay(selectedDate, c); }
+    } else {
+      const t = await res.text();
+      err.style.display='block'; err.textContent = 'Uložení selhalo: ' + t;
+    }
+  };
+
+  prev.onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
+  next.onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
+
+  document.querySelectorAll('button.btn[data-type]').forEach(b=> b.addEventListener('click', ()=> openModal(ymd(new Date()), b.dataset.type)));
+
+  async function load(){
+    renderGrid();
+    const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+    const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    let data;
+    try{
+      const r = await fetch('/gd/api/calendar?from='+from+'&to='+to);
+      data = await r.json();
+    }catch(e){
+      data = [];
+    }
+    const arr = Array.isArray(data) ? data : (data && (data.items || data.events) ? (data.items || data.events) : []);
+    console.log('calendar load', {from, to, count: arr.length});
+    monthItems = arr;
+    renderPills(monthItems);
+  }
+
+  load();
+})();
+</script>
+</body></html>

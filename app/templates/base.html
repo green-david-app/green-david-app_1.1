@@ -1,0 +1,23 @@
+
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>green david app</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">green david app <span class="muted">interní systém</span></div>
+    <nav>
+      <a href="/calendar">Kalendář</a>
+      <a href="/timesheets">Výkazy</a>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">© green david s.r.o.</footer>
+</body>
+</html>
