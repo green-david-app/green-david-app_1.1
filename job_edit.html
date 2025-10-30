@@ -62,10 +62,9 @@
 
 <script>
 function qs(k){ return new URLSearchParams(location.search).get(k); }
-function token(){ return localStorage.getItem('gd_token') || ''; }
 async function api(path, opts){
   opts = opts || {};
-  opts.headers = Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+token()}, opts.headers||{});
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
   const res = await fetch(path, opts);
   if(!res.ok){ let t=await res.text(); try{t=JSON.parse(t)}catch(_){ } throw new Error(t.error||t||('HTTP '+res.status)); }
   const t = await res.text();
