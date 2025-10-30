@@ -1,1 +1,0 @@
-{% extends "layout.html" %}{% block content %}<h1>Reset hesla</h1>{% if allowed %}<form method="post" class="form"><label>Nové heslo <input name="password" type="password" required minlength="8"></label><button class="btn">Nastavit</button></form>{% else %}<p class="muted">Odkaz není platný / není schválen.</p>{% endif %}{% endblock %}
