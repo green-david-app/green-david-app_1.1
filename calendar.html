@@ -13,6 +13,8 @@
       --gd-ink: #dfe9e4;
       --gd-accent: #6bd08c;
       --gd-accent-2: #b78bf6;
+      --gd-blue: #7cc5ff;
+      --gd-orange: #ffb86b;
       --gd-danger: #ff6b6b;
       --safe-top: env(safe-area-inset-top);
       --safe-bottom: env(safe-area-inset-bottom);
@@ -37,51 +39,37 @@
     .sub{ color:#667; font-size:12px; }
     .back{ color:#0a6040; text-decoration:none; font-weight:600; }
     .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
-    .toolbar .month{
-      font-size: clamp(22px,5.5vw,28px); font-weight:800;
-      letter-spacing: -0.3px;
-    }
-    .navbtn{
-      border:0; background:#0a6040; color:white; padding:10px 12px; border-radius:14px; font-weight:700;
-    }
+    .toolbar .month{ font-size: clamp(22px,5.5vw,28px); font-weight:800; letter-spacing: -0.3px; }
+    .navbtn{ border:0; background:#0a6040; color:white; padding:10px 12px; border-radius:14px; font-weight:700; }
     .navbtn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
     .grid-wrap{ padding: 6px 10px 20px; }
     .weekday{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; padding: 0 2px 6px; color:#4d635a; font-weight:700; }
     .weekday span{ text-align:center; font-size:12px; }
     .cal{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
-    .day{
-      position:relative;
-      background:#1a2a23;
-      border-radius:18px;
-      min-height: 74px;
-      padding:10px 8px 8px;
-      color: var(--gd-ink);
-      box-shadow: 0 1px 0 rgba(0,0,0,.07) inset;
-    }
+    .day{ position:relative; background:#1a2a23; border-radius:18px; min-height: 74px; padding:10px 8px 8px; color: var(--gd-ink); box-shadow: 0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; }
     .day.out{ opacity:.35; }
     .num{ font-weight:800; font-size: 14px; opacity:.95; }
-    .badge-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
     .events{ margin-top:6px; display:flex; flex-direction:column; gap:4px; }
-    .chip{
-      display:inline-flex; align-items:center; max-width:100%;
-      padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700;
-      background:#24362f; color:var(--gd-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      border:1px solid rgba(255,255,255,.08);
-    }
-    .chip .t{ overflow:hidden; text-overflow:ellipsis; }
-    .chip.green{ border-color:#4ed296; }
-    .chip.purple{ border-color:#b78bf6; }
-    .chip.blue{ border-color:#7cc5ff; }
-    .chip.orange{ border-color:#ffb86b; }
+    .chip{ display:inline-flex; align-items:center; max-width:100%; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; background:#24362f; color:var(--gd-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid rgba(255,255,255,.08); }
+    .chip.green{ border-color:#4ed296; } .chip.purple{ border-color:#b78bf6; } .chip.blue{ border-color:#7cc5ff; } .chip.orange{ border-color:var(--gd-orange); }
     .today{ outline:2px solid var(--gd-accent); outline-offset:-2px; }
     .legend{ display:flex; gap:10px; align-items:center; padding:8px 10px; color:#4d635a; }
     .legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; }
+    .badge-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+    /* Bottom sheet */
+    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow: 0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition: transform .25s ease, bottom .25s ease; transform: translateY(0); }
+    .sheet.open{ bottom:0; }
+    .sheet .handle{ width:42px; height:5px; background:#ccd; border-radius:999px; margin:6px auto 10px; }
+    .tabs{ display:flex; gap:6px; margin-bottom:10px; }
+    .tabs .t{ flex:1; text-align:center; border:1px solid #0a6040; padding:8px 10px; border-radius:12px; font-weight:700; color:#0a6040; }
+    .tabs .t.active{ background:#0a6040; color:#fff; }
+    .row{ display:flex; gap:8px; margin:8px 0; }
+    .row input, .row select{ flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd; font-size:16px; }
+    .sheet .actions{ display:flex; justify-content:flex-end; gap:8px; }
+    .btn{ border:0; background:#0a6040; color:#fff; padding:10px 14px; border-radius:12px; font-weight:800; }
+    .btn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
     /* Desktop tweaks */
-    @media (min-width: 800px){
-      .grid-wrap{ max-width: 1000px; margin: 0 auto; }
-      .day{ min-height: 120px; padding:12px; border-radius:20px; }
-      .num{ font-size: 16px; }
-    }
+    @media (min-width: 800px){ .grid-wrap{ max-width: 1000px; margin: 0 auto; } .day{ min-height: 120px; padding:12px; border-radius:20px; } .num{ font-size: 16px; } }
   </style>
 </head>
 <body>
@@ -106,46 +94,95 @@
     </div>
   </div>
 
-  <script>
-    const $ = sel => document.querySelector(sel);
-    const monthLabel = $('#monthLabel');
-    const cal = $('#cal');
-    const state = { d: new Date() };
+  <!-- Bottom sheet for quick add -->
+  <div id="sheet" class="sheet" aria-hidden="true">
+    <div class="handle"></div>
+    <div style="text-align:center; font-weight:800; margin-bottom:6px">Přidat na <span id="sheetDate"></span></div>
+    <div class="tabs">
+      <div id="tabJob" class="t active">Zakázka</div>
+      <div id="tabTask" class="t">Úkol</div>
+      <div id="tabNote" class="t">Poznámka</div>
+    </div>
+    <div id="formJob">
+      <div class="row"><input id="jTitle" placeholder="Název zakázky*" required></div>
+      <div class="row"><input id="jClient" placeholder="Zákazník*" required></div>
+      <div class="row">
+        <select id="jStatus"><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
+        <input id="jCity" placeholder="Město">
+      </div>
+      <div class="row"><input id="jCode" placeholder="Kód (např. 2025-091)"></div>
+      <div class="row"><input id="jNote" placeholder="Poznámka"></div>
+    </div>
+    <div id="formTask" style="display:none">
+      <div class="row"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
+      <div class="row"><input id="tDesc" placeholder="Popis"></div>
+    </div>
+    <div id="formNote" style="display:none">
+      <div class="row"><input id="nText" placeholder="Text poznámky*"></div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="cancelBtn">Zrušit</button>
+      <button class="btn" id="saveBtn">Uložit</button>
+    </div>
+  </div>
 
-    function fmtMonth(d){
-      return d.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })
-              .replace(/^./, c => c.toUpperCase());
-    }
-    function ymd(d){
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,'0');
-      const day = String(d.getDate()).padStart(2,'0');
-      return `${y}-${m}-${day}`;
-    }
-    function mondayOfWeek(d){
-      const copy = new Date(d); const wd = (copy.getDay()+6)%7; // 0=Mon
-      copy.setDate(copy.getDate() - wd); return copy;
-    }
+  <script>
+    // Utilities
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    function fmtMonth(d){ return d.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase()); }
+    function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function ymdToCZ(s){ const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return s; return `${m[3]}.${m[2]}.${m[1]}`; }
+    function mondayOfWeek(d){ const copy=new Date(d); const wd=(copy.getDay()+6)%7; copy.setDate(copy.getDate()-wd); return copy; }
     function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
     function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+    async function japi(path, opts={}){
+      const res = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts });
+      if(!res.ok) throw new Error(res.statusText);
+      try{ return await res.json(); }catch{ return {}; }
+    }
 
+    const monthLabel = $('#monthLabel');
+    const cal = $('#cal');
+    const sheet = $('#sheet');
+    const sheetDate = $('#sheetDate');
+    let state = { d: new Date(), focusDate: null, tab: 'job' };
+
+    // ---- Events loading ----
     async function fetchEvents(d){
       const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      // 1) Try unified endpoint if present
       try{
-        const res = await fetch(`/api/calendar?month=${ym}`, {credentials:"same-origin"});
-        if(!res.ok) throw new Error(res.statusText);
-        const j = await res.json();
-        return (j.events||[]).map(e => ({
-          id: e.id,
-          title: e.title || e.name || 'bez názvu',
-          start: e.start || e.date_start || e.date || e.when,
-          end: e.end || e.date_end || e.until || e.start,
-          type: e.type || 'other' // 'job'|'reminder'|'other'
-        }));
-      }catch(e){
-        // Graceful fallback: no events
-        return [];
-      }
+        const res = await fetch(`/api/calendar?month=${ym}`, {credentials:'same-origin'});
+        if(res.ok){
+          const j = await res.json();
+          return (j.events||[]).map(e => ({ id:e.id, title:(e.title||e.name||'bez názvu'), start:e.start||e.date_start||e.date, end:e.end||e.date_end||e.start, type:e.type||'other' }));
+        }
+      }catch(e){ /* ignore */ }
+      // 2) Fallback: compose from /api/jobs & /api/tasks
+      let events = [];
+      try{
+        const jj = await japi('/api/jobs');
+        (jj.jobs||[]).forEach(j => {
+          if(!j.date) return;
+          const dt = new Date(j.date);
+          if(dt.getMonth()+1 === d.getMonth()+1 && dt.getFullYear() === d.getFullYear()){
+            events.push({ id:`job-${j.id}`, title:j.title, start:j.date, end:j.date, type:'job' });
+          }
+        });
+      }catch(e){ /* ignore */ }
+      try{
+        const tt = await japi('/api/tasks');
+        (tt.tasks||[]).forEach(t => {
+          const ds = t.due_date || t.date;
+          if(!ds) return;
+          const dt = new Date(ds);
+          if(dt.getMonth()+1 === d.getMonth()+1 && dt.getFullYear() === d.getFullYear()){
+            events.push({ id:`task-${t.id}`, title:t.title, start:ds, end:ds, type:'reminder' });
+          }
+        });
+      }catch(e){ /* ignore */ }
+      return events;
     }
 
     function render(d, events){
@@ -157,7 +194,7 @@
       const to = new Date(mondayOfWeek(new Date(end.getFullYear(), end.getMonth(), end.getDate()+6)));
       const today = new Date(); today.setHours(0,0,0,0);
 
-      // Index events by day
+      // Index by day
       const byDay = {};
       function spread(e){
         const s = new Date(e.start); const eEnd = new Date(e.end || e.start);
@@ -167,13 +204,14 @@
           (byDay[key] = byDay[key] || []).push(e);
         }
       }
-      events.forEach(spread);
+      (events||[]).forEach(spread);
 
       for(let dt = new Date(from); dt <= to; dt.setDate(dt.getDate()+1)){
         const key = ymd(dt);
         const div = document.createElement('div');
         div.className = 'day' + (dt.getMonth()!==d.getMonth() ? ' out' : '');
         if(+dt === +today) div.classList.add('today');
+        div.setAttribute('data-date', key);
         const num = document.createElement('div');
         num.className = 'num';
         num.textContent = dt.getDate();
@@ -190,23 +228,88 @@
             wrap.appendChild(chip);
           });
           if(evs.length>3){
-            const more = document.createElement('div'); more.className='chip orange'; more.textContent = `+${evs.length-3} další`;
-            wrap.appendChild(more);
+            const more = document.createElement('div'); more.className='chip orange'; more.textContent = `+${evs.length-3} další`; wrap.appendChild(more);
           }
           div.appendChild(wrap);
         }
 
+        // Click to open bottom sheet
+        div.addEventListener('click', () => openSheet(key));
         cal.appendChild(div);
       }
     }
 
-    async function load(){
-      const events = await fetchEvents(state.d);
-      render(state.d, events);
-    }
-
+    async function load(){ const evs = await fetchEvents(state.d); render(state.d, evs); }
     $('#prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
     $('#nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
+
+    // ---- Bottom sheet (Quick Add) ----
+    function openSheet(dateStr){
+      state.focusDate = dateStr;
+      sheetDate.textContent = ymdToCZ(dateStr);
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden','false');
+    }
+    function closeSheet(){
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden','true');
+    }
+    $('#cancelBtn').addEventListener('click', ()=> closeSheet());
+    // Tabs
+    function setTab(k){
+      state.tab = k;
+      $('#tabJob').classList.toggle('active', k==='job');
+      $('#tabTask').classList.toggle('active', k==='task');
+      $('#tabNote').classList.toggle('active', k==='note');
+      $('#formJob').style.display = (k==='job' ? '' : 'none');
+      $('#formTask').style.display = (k==='task' ? '' : 'none');
+      $('#formNote').style.display = (k==='note' ? '' : 'none');
+    }
+    $('#tabJob').addEventListener('click', ()=> setTab('job'));
+    $('#tabTask').addEventListener('click', ()=> setTab('task'));
+    $('#tabNote').addEventListener('click', ()=> setTab('note'));
+
+    // Save handler
+    $('#saveBtn').addEventListener('click', async ()=>{
+      try{
+        if(!state.focusDate) return;
+        if(state.tab==='job'){
+          const payload = {
+            title: $('#jTitle').value.trim(),
+            client: $('#jClient').value.trim(),
+            status: $('#jStatus').value,
+            city: $('#jCity').value.trim(),
+            code: $('#jCode').value.trim(),
+            date: state.focusDate,
+            note: $('#jNote').value.trim()
+          };
+          if(!payload.title || !payload.client) { alert('Vyplň název a zákazníka.'); return; }
+          await japi('/api/jobs', { method:'POST', body: JSON.stringify(payload) });
+        } else if(state.tab==='task'){
+          const payload = {
+            title: $('#tTitle').value.trim(),
+            description: $('#tDesc').value.trim(),
+            due_date: state.focusDate
+          };
+          if(!payload.title) { alert('Vyplň název úkolu.'); return; }
+          await japi('/api/tasks', { method:'POST', body: JSON.stringify(payload) });
+        } else {
+          const payload = {
+            title: 'Poznámka',
+            description: $('#nText').value.trim() || 'Poznámka',
+            due_date: state.focusDate
+          };
+          await japi('/api/tasks', { method:'POST', body: JSON.stringify(payload) });
+        }
+        closeSheet();
+        // Reset fields
+        ['#jTitle','#jClient','#jCity','#jCode','#jNote','#tTitle','#tDesc','#nText'].forEach(sel=>{ const el=$(sel); if(el) el.value=''; });
+        // Refresh
+        await load();
+      }catch(e){
+        alert('Uložení se nepovedlo: ' + (e.message || e));
+      }
+    });
 
     load();
   </script>
