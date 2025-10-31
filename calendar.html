@@ -7,57 +7,30 @@
   <link rel="icon" href="/logo.svg">
   <link rel="stylesheet" href="/style.css">
   <style>
-    :root{
-      --gd-bg: #eaf4ef;
-      --gd-card: #0f1f1a;
-      --gd-ink: #dfe9e4;
-      --gd-accent: #6bd08c;
-      --gd-accent-2: #b78bf6;
-      --gd-blue: #7cc5ff;
-      --gd-orange: #ffb86b;
-      --gd-danger: #ff6b6b;
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-    }
-    body{
-      margin:0;
-      background: var(--gd-bg);
-      color:#111;
-      -webkit-font-smoothing: antialiased;
-      font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
-    }
-    .header-hero{
-      position: sticky; top: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0));
-      backdrop-filter: saturate(140%) blur(10px);
-      padding: calc(10px + var(--safe-top)) 16px 12px;
-      z-index:10;
-    }
-    .hero-row{ display:flex; align-items:center; gap:12px; }
-    .logo{ width:36px; height:36px; border-radius:10px; background:#dff1e7 url('/logo.svg') center/70% no-repeat; flex:0 0 auto; }
-    .h1{ font-weight:800; font-size: clamp(22px, 6vw, 34px); line-height:1.05; }
-    .sub{ color:#667; font-size:12px; }
+    :root{ --gd-bg:#eaf4ef; --gd-ink:#dfe9e4; --gd-accent:#6bd08c; --gd-blue:#7cc5ff; --gd-purple:#b78bf6; --gd-orange:#ffb86b; --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom); }
+    body{ margin:0; background:var(--gd-bg); color:#111; -webkit-font-smoothing:antialiased; font-family:system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; }
+    .header-hero{ position:sticky; top:0; background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0)); backdrop-filter:saturate(140%) blur(10px); padding:calc(10px + var(--safe-top)) 16px 12px; z-index:10; }
     .back{ color:#0a6040; text-decoration:none; font-weight:600; }
     .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
-    .toolbar .month{ font-size: clamp(22px,5.5vw,28px); font-weight:800; letter-spacing: -0.3px; }
+    .toolbar .month{ font-size:clamp(22px,5.5vw,28px); font-weight:800; letter-spacing:-.3px; }
     .navbtn{ border:0; background:#0a6040; color:white; padding:10px 12px; border-radius:14px; font-weight:700; }
     .navbtn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
-    .grid-wrap{ padding: 6px 10px 20px; }
-    .weekday{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; padding: 0 2px 6px; color:#4d635a; font-weight:700; }
+    .grid-wrap{ padding:6px 10px 20px; }
+    .weekday{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding:0 2px 6px; color:#4d635a; font-weight:700; }
     .weekday span{ text-align:center; font-size:12px; }
-    .cal{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
-    .day{ position:relative; background:#1a2a23; border-radius:18px; min-height: 74px; padding:10px 8px 8px; color: var(--gd-ink); box-shadow: 0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; }
+    .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .day{ position:relative; background:#1a2a23; border-radius:18px; min-height:74px; padding:10px 8px 8px; color:var(--gd-ink); box-shadow:0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; }
     .day.out{ opacity:.35; }
-    .num{ font-weight:800; font-size: 14px; opacity:.95; }
+    .num{ font-weight:800; font-size:14px; opacity:.95; }
     .events{ margin-top:6px; display:flex; flex-direction:column; gap:4px; }
     .chip{ display:inline-flex; align-items:center; max-width:100%; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; background:#24362f; color:var(--gd-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid rgba(255,255,255,.08); }
-    .chip.green{ border-color:#4ed296; } .chip.purple{ border-color:#b78bf6; } .chip.blue{ border-color:#7cc5ff; } .chip.orange{ border-color:var(--gd-orange); }
+    .chip.green{ border-color:#4ed296; } .chip.purple{ border-color:var(--gd-purple); } .chip.blue{ border-color:var(--gd-blue); } .chip.orange{ border-color:var(--gd-orange); }
     .today{ outline:2px solid var(--gd-accent); outline-offset:-2px; }
     .legend{ display:flex; gap:10px; align-items:center; padding:8px 10px; color:#4d635a; }
     .legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; }
     .badge-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
     /* Bottom sheet */
-    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow: 0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition: transform .25s ease, bottom .25s ease; transform: translateY(0); }
+    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow:0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition:bottom .25s ease; }
     .sheet.open{ bottom:0; }
     .sheet .handle{ width:42px; height:5px; background:#ccd; border-radius:999px; margin:6px auto 10px; }
     .tabs{ display:flex; gap:6px; margin-bottom:10px; }
@@ -68,15 +41,12 @@
     .sheet .actions{ display:flex; justify-content:flex-end; gap:8px; }
     .btn{ border:0; background:#0a6040; color:#fff; padding:10px 14px; border-radius:12px; font-weight:800; }
     .btn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
-    /* Desktop tweaks */
-    @media (min-width: 800px){ .grid-wrap{ max-width: 1000px; margin: 0 auto; } .day{ min-height: 120px; padding:12px; border-radius:20px; } .num{ font-size: 16px; } }
+    @media (min-width:800px){ .grid-wrap{ max-width:1000px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:20px; } .num{ font-size:16px; } }
   </style>
 </head>
 <body>
   <div class="header-hero">
-    <div class="hero-row">
-      <a class="back" href="/">&larr; Zpět do aplikace</a>
-    </div>
+    <a class="back" href="/">&larr; Zpět do aplikace</a>
     <div class="toolbar">
       <button class="navbtn ghost" id="prevBtn">&#x25C0;</button>
       <div class="month" id="monthLabel">Měsíc</div>
@@ -89,7 +59,7 @@
     <div id="cal" class="cal" aria-live="polite"></div>
     <div class="legend">
       <div class="item"><span class="badge-dot" style="background:#4ed296"></span> zakázky</div>
-      <div class="item"><span class="badge-dot" style="background:#b78bf6"></span> připomínky</div>
+      <div class="item"><span class="badge-dot" style="background:#b78bf6"></span> úkoly / připomínky</div>
       <div class="item"><span class="badge-dot" style="background:#7cc5ff"></span> ostatní</div>
     </div>
   </div>
@@ -127,190 +97,153 @@
   </div>
 
   <script>
-    // Utilities
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
-    function fmtMonth(d){ return d.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase()); }
+    // ---- Utils ----
+    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s));
+    function fmtMonth(d){ return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
     function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-    function ymdToCZ(s){ const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return s; return `${m[3]}.${m[2]}.${m[1]}`; }
-    function mondayOfWeek(d){ const copy=new Date(d); const wd=(copy.getDay()+6)%7; copy.setDate(copy.getDate()-wd); return copy; }
+    function ymdToCZ(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
+    function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
     function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
     function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-    async function japi(path, opts={}){
-      const res = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts });
-      if(!res.ok) throw new Error(res.statusText);
-      try{ return await res.json(); }catch{ return {}; }
-    }
+    async function japi(path,opts={}){ const res=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts}); if(!res.ok) throw new Error(res.statusText); try{return await res.json();}catch{return{};} }
 
-    const monthLabel = $('#monthLabel');
-    const cal = $('#cal');
-    const sheet = $('#sheet');
-    const sheetDate = $('#sheetDate');
-    let state = { d: new Date(), focusDate: null, tab: 'job' };
+    const monthLabel=$('#monthLabel'), cal=$('#cal'), sheet=$('#sheet'), sheetDate=$('#sheetDate');
+    let state={ d:new Date(), focusDate:null, tab:'job', cache:{} };
 
-    // ---- Events loading ----
-    async function fetchEvents(d){
-      const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      // 1) Try unified endpoint if present
+    // ---- Events loading with visible-range filter ----
+    async function fetchEventsForRange(fromDate, toDate){
+      const ym = `${state.d.getFullYear()}-${String(state.d.getMonth()+1).padStart(2,'0')}`;
+      // Prefer unified endpoint with month param if present
       try{
         const res = await fetch(`/api/calendar?month=${ym}`, {credentials:'same-origin'});
         if(res.ok){
           const j = await res.json();
-          return (j.events||[]).map(e => ({ id:e.id, title:(e.title||e.name||'bez názvu'), start:e.start||e.date_start||e.date, end:e.end||e.date_end||e.start, type:e.type||'other' }));
+          return (j.events||[]).map(e => ({
+            id: e.id,
+            title: (e.title||e.name||'bez názvu'),
+            start: e.start||e.date_start||e.date||e.when,
+            end: e.end||e.date_end||e.until||e.start,
+            type: e.type||'other'
+          }));
         }
-      }catch(e){ /* ignore */ }
-      // 2) Fallback: compose from /api/jobs & /api/tasks
-      let events = [];
+      }catch(e){/* ignore */}
+
+      // Fallback: compose from /api/jobs + /api/tasks
+      const from = new Date(fromDate); const to = new Date(toDate);
+      const inRange = (iso)=>{ if(!iso) return false; const d=new Date(iso); d.setHours(0,0,0,0); return d>=from && d<=to; };
+      const events=[];
+
       try{
-        const jj = await japi('/api/jobs');
-        (jj.jobs||[]).forEach(j => {
-          if(!j.date) return;
-          const dt = new Date(j.date);
-          if(dt.getMonth()+1 === d.getMonth()+1 && dt.getFullYear() === d.getFullYear()){
-            events.push({ id:`job-${j.id}`, title:j.title, start:j.date, end:j.date, type:'job' });
+        const jj=await japi('/api/jobs');
+        (jj.jobs||[]).forEach(j=>{
+          const date = j.date || j.when || j.start_date || j.start;
+          if(inRange(date)){
+            events.push({ id:`job-${j.id}`, title:`${j.title}${j.code? ' ('+j.code+')':''}`, start:date, end:date, type:'job' });
           }
         });
-      }catch(e){ /* ignore */ }
+      }catch(e){/* ignore */}
+
       try{
-        const tt = await japi('/api/tasks');
-        (tt.tasks||[]).forEach(t => {
-          const ds = t.due_date || t.date;
-          if(!ds) return;
-          const dt = new Date(ds);
-          if(dt.getMonth()+1 === d.getMonth()+1 && dt.getFullYear() === d.getFullYear()){
-            events.push({ id:`task-${t.id}`, title:t.title, start:ds, end:ds, type:'reminder' });
+        const tt=await japi('/api/tasks');
+        (tt.tasks||[]).forEach(t=>{
+          const date = t.due_date || t.date || t.when || t.start;
+          if(inRange(date)){
+            events.push({ id:`task-${t.id}`, title:t.title, start:date, end:date, type:'reminder' });
           }
         });
-      }catch(e){ /* ignore */ }
+      }catch(e){/* ignore */}
+
       return events;
+    }
+
+    function buildGridRange(d){
+      const start = monthStart(d), end = monthEnd(d);
+      const from = mondayOfWeek(start);
+      const to = new Date(mondayOfWeek(new Date(end.getFullYear(), end.getMonth(), end.getDate()+6)));
+      return {from, to};
     }
 
     function render(d, events){
       monthLabel.textContent = fmtMonth(d);
-      cal.innerHTML = '';
-      const start = monthStart(d);
-      const end = monthEnd(d);
-      const from = mondayOfWeek(start);
-      const to = new Date(mondayOfWeek(new Date(end.getFullYear(), end.getMonth(), end.getDate()+6)));
+      cal.innerHTML='';
+      const {from,to} = buildGridRange(d);
       const today = new Date(); today.setHours(0,0,0,0);
 
-      // Index by day
-      const byDay = {};
+      // Index by yyyy-mm-dd
+      const byDay={};
       function spread(e){
         const s = new Date(e.start); const eEnd = new Date(e.end || e.start);
         s.setHours(0,0,0,0); eEnd.setHours(0,0,0,0);
         for(let t=new Date(s); t<=eEnd; t.setDate(t.getDate()+1)){
           const key = ymd(t);
-          (byDay[key] = byDay[key] || []).push(e);
+          (byDay[key]=byDay[key]||[]).push(e);
         }
       }
       (events||[]).forEach(spread);
 
-      for(let dt = new Date(from); dt <= to; dt.setDate(dt.getDate()+1)){
-        const key = ymd(dt);
-        const div = document.createElement('div');
-        div.className = 'day' + (dt.getMonth()!==d.getMonth() ? ' out' : '');
-        if(+dt === +today) div.classList.add('today');
-        div.setAttribute('data-date', key);
-        const num = document.createElement('div');
-        num.className = 'num';
-        num.textContent = dt.getDate();
-        div.appendChild(num);
+      for(let dt=new Date(from); dt<=to; dt.setDate(dt.getDate()+1)){
+        const key=ymd(dt);
+        const div=document.createElement('div');
+        div.className='day'+(dt.getMonth()!==d.getMonth()?' out':'');
+        if(+dt===+today) div.classList.add('today');
+        div.setAttribute('data-date',key);
 
-        const evs = (byDay[key]||[]);
+        const num=document.createElement('div'); num.className='num'; num.textContent=dt.getDate(); div.appendChild(num);
+        const evs=(byDay[key]||[]);
         if(evs.length){
-          const wrap = document.createElement('div'); wrap.className='events';
-          evs.slice(0,3).forEach(e => {
-            const chip = document.createElement('div');
-            chip.className = 'chip ' + (e.type==='job' ? 'green' : e.type==='reminder' ? 'purple' : 'blue');
-            const t = document.createElement('span'); t.className='t'; t.textContent = e.title;
-            chip.appendChild(t);
-            wrap.appendChild(chip);
-          });
-          if(evs.length>3){
-            const more = document.createElement('div'); more.className='chip orange'; more.textContent = `+${evs.length-3} další`; wrap.appendChild(more);
-          }
+          const wrap=document.createElement('div'); wrap.className='events';
+          evs.slice(0,3).forEach(e=>{ const chip=document.createElement('div'); chip.className='chip '+(e.type==='job'?'green':e.type==='reminder'?'purple':'blue'); chip.title=e.title; chip.innerHTML=`<span class="t">${e.title}</span>`; wrap.appendChild(chip); });
+          if(evs.length>3){ const more=document.createElement('div'); more.className='chip orange'; more.textContent=`+${evs.length-3} další`; wrap.appendChild(more); }
           div.appendChild(wrap);
         }
 
-        // Click to open bottom sheet
-        div.addEventListener('click', () => openSheet(key));
+        div.addEventListener('click',()=> openSheet(key));
         cal.appendChild(div);
       }
     }
 
-    async function load(){ const evs = await fetchEvents(state.d); render(state.d, evs); }
+    async function load(){
+      const {from,to} = buildGridRange(state.d);
+      const evs = await fetchEventsForRange(from, to);
+      render(state.d, evs);
+    }
+
     $('#prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
     $('#nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
 
     // ---- Bottom sheet (Quick Add) ----
     function openSheet(dateStr){
-      state.focusDate = dateStr;
-      sheetDate.textContent = ymdToCZ(dateStr);
-      sheet.classList.add('open');
-      sheet.setAttribute('aria-hidden','false');
+      state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); sheet.classList.add('open'); sheet.setAttribute('aria-hidden','false');
     }
-    function closeSheet(){
-      sheet.classList.remove('open');
-      sheet.setAttribute('aria-hidden','true');
-    }
-    $('#cancelBtn').addEventListener('click', ()=> closeSheet());
-    // Tabs
-    function setTab(k){
-      state.tab = k;
-      $('#tabJob').classList.toggle('active', k==='job');
-      $('#tabTask').classList.toggle('active', k==='task');
-      $('#tabNote').classList.toggle('active', k==='note');
-      $('#formJob').style.display = (k==='job' ? '' : 'none');
-      $('#formTask').style.display = (k==='task' ? '' : 'none');
-      $('#formNote').style.display = (k==='note' ? '' : 'none');
-    }
-    $('#tabJob').addEventListener('click', ()=> setTab('job'));
-    $('#tabTask').addEventListener('click', ()=> setTab('task'));
-    $('#tabNote').addEventListener('click', ()=> setTab('note'));
+    function closeSheet(){ sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
+    $('#cancelBtn').addEventListener('click', closeSheet);
+    function setTab(k){ state.tab=k; $('#tabJob').classList.toggle('active',k==='job'); $('#tabTask').classList.toggle('active',k==='task'); $('#tabNote').classList.toggle('active',k==='note'); $('#formJob').style.display=(k==='job'?'':'none'); $('#formTask').style.display=(k==='task'?'':'none'); $('#formNote').style.display=(k==='note'?'':'none'); }
+    $('#tabJob').addEventListener('click', ()=>setTab('job')); $('#tabTask').addEventListener('click', ()=>setTab('task')); $('#tabNote').addEventListener('click', ()=>setTab('note'));
 
     // Save handler
     $('#saveBtn').addEventListener('click', async ()=>{
       try{
         if(!state.focusDate) return;
         if(state.tab==='job'){
-          const payload = {
-            title: $('#jTitle').value.trim(),
-            client: $('#jClient').value.trim(),
-            status: $('#jStatus').value,
-            city: $('#jCity').value.trim(),
-            code: $('#jCode').value.trim(),
-            date: state.focusDate,
-            note: $('#jNote').value.trim()
-          };
-          if(!payload.title || !payload.client) { alert('Vyplň název a zákazníka.'); return; }
-          await japi('/api/jobs', { method:'POST', body: JSON.stringify(payload) });
-        } else if(state.tab==='task'){
-          const payload = {
-            title: $('#tTitle').value.trim(),
-            description: $('#tDesc').value.trim(),
-            due_date: state.focusDate
-          };
-          if(!payload.title) { alert('Vyplň název úkolu.'); return; }
-          await japi('/api/tasks', { method:'POST', body: JSON.stringify(payload) });
-        } else {
-          const payload = {
-            title: 'Poznámka',
-            description: $('#nText').value.trim() || 'Poznámka',
-            due_date: state.focusDate
-          };
-          await japi('/api/tasks', { method:'POST', body: JSON.stringify(payload) });
+          const payload={ title:$('#jTitle').value.trim(), client:$('#jClient').value.trim(), status:$('#jStatus').value, city:$('#jCity').value.trim(), code:$('#jCode').value.trim(), date:state.focusDate, note:$('#jNote').value.trim() };
+          if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
+          await japi('/api/jobs',{method:'POST', body:JSON.stringify(payload)});
+        }else if(state.tab==='task'){
+          const payload={ title:$('#tTitle').value.trim(), description:$('#tDesc').value.trim(), due_date:state.focusDate };
+          if(!payload.title){ alert('Vyplň název úkolu.'); return; }
+          await japi('/api/tasks',{method:'POST', body:JSON.stringify(payload)});
+        }else{
+          const payload={ title:'Poznámka', description:($('#nText').value.trim()||'Poznámka'), due_date:state.focusDate };
+          await japi('/api/tasks',{method:'POST', body:JSON.stringify(payload)});
         }
-        closeSheet();
-        // Reset fields
+        // Cleanup + refresh
         ['#jTitle','#jClient','#jCity','#jCode','#jNote','#tTitle','#tDesc','#nText'].forEach(sel=>{ const el=$(sel); if(el) el.value=''; });
-        // Refresh
+        closeSheet();
         await load();
-      }catch(e){
-        alert('Uložení se nepovedlo: ' + (e.message || e));
-      }
+      }catch(e){ alert('Uložení se nepovedlo: '+(e.message||e)); }
     });
 
+    // Init
     load();
   </script>
 </body>
