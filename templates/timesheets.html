@@ -1,72 +1,203 @@
+
 {% extends "layout.html" %}
 {% block content %}
-<h1>Výkazy práce</h1>
-<div class="row">
-  <label>Zaměstnanec <input id="emp" type="number" placeholder="ID"/></label>
-  <label>Zakázka <input id="job" type="number" placeholder="ID"/></label>
-  <label>Datum od <input id="from" type="date"/></label>
-  <label>Datum do <input id="to" type="date"/></label>
-  <button id="load">Načíst</button>
-  <button id="export">Export CSV</button>
+<h1>Výkazy hodin — týdenní přehled</h1>
+
+<style>
+/* jednoduché CSS, vychází z designu karty/tabulek */
+.ts-week-bar { display:flex; align-items:center; gap:8px; margin:8px 0 12px; }
+.ts-week-bar .ghost { margin-left: 6px; }
+.ts-grid { overflow:auto; border:1px solid #e0e0e0; border-radius:8px; }
+.ts-grid table { width:100%; border-collapse:collapse; font-size:14px; }
+.ts-grid th, .ts-grid td { border-bottom:1px solid #eee; padding:8px; text-align:center; }
+.ts-grid thead th { position:sticky; top:0; background:#f7f7f7; z-index:1; }
+.ts-grid td:first-child, .ts-grid th:first-child { text-align:left; position:sticky; left:0; background:white; }
+.ts-cell { min-width:110px; }
+.ts-cell .sum { font-weight:600; }
+.ts-cell .list { font-size:12px; opacity:0.85; margin-top:4px; text-align:left; }
+.ts-cell .list div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ts-cell .actions { margin-top:6px; display:flex; gap:6px; justify-content:center; }
+.smallmuted{ font-size:12px; opacity:0.75; }
+.ts-legend{ display:flex; gap:16px; align-items:center; margin:6px 0 0;}
+.ts-legend .dot{ display:inline-block; width:10px; height:10px; border-radius:50%; background:#2e7d32; margin-right:6px; }
+@media (max-width: 900px){
+  .ts-cell { min-width: 90px; }
+}
+</style>
+
+<div class="card">
+  <div class="card-c">
+    <div class="form-row">
+      <label>Týden od <input id="weekStart" type="date"/></label>
+      <button id="prevWeek" class="ghost">← Předchozí</button>
+      <button id="nextWeek" class="ghost">Následující →</button>
+      <span class="smallmuted" id="weekLabel"></span>
+      <span style="flex:1"></span>
+      <button id="exportCsv">Export CSV (týden)</button>
+    </div>
+    <div class="ts-legend smallmuted"><span class="dot"></span> Součet hodin / den. Klikni na <b>+</b> pro přidání záznamu.</div>
+    <div class="ts-grid" style="margin-top:8px;">
+      <table id="tsTable">
+        <thead><tr id="theadRow"><th>Zaměstnanec</th></tr></thead>
+        <tbody id="tsBody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
-<table id="grid" class="table">
-  <thead><tr><th>ID</th><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodin</th><th>Místo</th><th>Činnost</th><th></th></tr></thead>
-  <tbody></tbody>
-</table>
-<h3>Nový záznam</h3>
-<form id="addForm" class="row">
-  <input name="employee_id" type="number" placeholder="Zaměstnanec (ID)" required/>
-  <input name="job_id" type="number" placeholder="Zakázka (ID)" required/>
-  <input name="date" type="date" required/>
-  <input name="hours" type="number" step="0.25" min="0" placeholder="Hodin" required/>
-  <input name="place" type="text" placeholder="Místo"/>
-  <input name="activity" type="text" placeholder="Činnost"/>
-  <button>Přidat</button>
-</form>
+
+<div class="card">
+  <div class="card-h"><div>Záznamy v tomto týdnu</div></div>
+  <div class="card-c">
+    <table class="table">
+      <thead><tr><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodin</th><th>Místo</th><th>Činnost</th><th></th></tr></thead>
+      <tbody id="listBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
-const $ = sel => document.querySelector(sel);
-const tbody = $("#grid tbody");
-async function load(){
-  const p = new URLSearchParams();
-  if ($("#emp").value) p.set("employee_id", $("#emp").value);
-  if ($("#job").value) p.set("job_id", $("#job").value);
-  if ($("#from").value) p.set("from", $("#from").value);
-  if ($("#to").value) p.set("to", $("#to").value);
-  const r = await fetch("/gd/api/timesheets?"+p.toString());
-  const js = await r.json();
-  tbody.innerHTML = "";
-  for (const t of js.items||[]){
-    const tr = document.createElement("tr");
-    tr.innerHTML = \`<td>\${t.id}</td><td>\${t.date}</td><td>\${t.employee_name||t.employee_id}</td><td>\${t.job_title||t.job_id}</td><td>\${t.hours}</td><td>\${t.place||""}</td><td>\${t.activity||""}</td><td><button data-id="\${t.id}" class="del">Smazat</button></td>\`;
-    tbody.appendChild(tr);
+const $ = (s)=>document.querySelector(s);
+function toISO(d){ const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function fromISO(s){ const [y,m,d]=s.split('-').map(Number); const dt = new Date(Date.UTC(y,m-1,d)); return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()); }
+function mondayOf(d){ const day=d.getDay()||7; const nd = new Date(d); nd.setDate(d.getDate() - (day-1)); nd.setHours(0,0,0,0); return nd; }
+function addDays(d,n){ const nd=new Date(d); nd.setDate(d.getDate()+n); return nd; }
+function fmtCZ(d){ return d.toLocaleDateString('cs-CZ', {weekday:'short', day:'2-digit', month:'2-digit'}).replace(/^./, c=>c.toUpperCase()); }
+function toCZ(s){ try{ const [y,m,d]=s.split('-'); return `${d}.${m}.${y}`; }catch(e){ return s; } }
+
+let employees=[], rows=[], jobs=[];
+let weekStart = mondayOf(new Date());
+
+async function api(url, opts){ const r = await fetch(url, {credentials:'same-origin', ...opts}); if(!r.ok) throw new Error(await r.text()); const ct=r.headers.get('content-type')||''; return ct.includes('application/json')? r.json() : r; }
+
+function updateWeekControls(){
+  $("#weekStart").value = toISO(weekStart);
+  const ws = new Date(weekStart);
+  const we = addDays(ws,6);
+  $("#weekLabel").innerText = `(${fmtCZ(ws)} — ${fmtCZ(we)})`;
+}
+
+function buildHeader(){
+  const thead = $("#theadRow");
+  thead.innerHTML = "<th>Zaměstnanec</th>";
+  for (let i=0;i<7;i++){
+    const d = addDays(weekStart, i);
+    const th = document.createElement("th");
+    th.className="ts-cell";
+    th.innerText = fmtCZ(d);
+    thead.appendChild(th);
   }
 }
-$("#load").onclick = load;
-tbody.addEventListener("click", async (e)=>{
-  if (e.target.matches("button.del")){
-    const id = e.target.dataset.id;
-    if (confirm("Smazat záznam #"+id+"?")){
-      const r = await fetch("/gd/api/timesheets?id="+encodeURIComponent(id), {method:"DELETE"});
-      if (r.ok) load(); else alert("Mazání selhalo");
-    }
+
+function groupByDayEmp(list){
+  const map = {}; // key: yyyy-mm-dd|empId -> {sum, items:[]}
+  for (const r of list){
+    const key = `${r.date}|${r.employee_id}`;
+    if(!map[key]) map[key] = {sum:0, items:[]};
+    map[key].sum += Number(r.hours)||0;
+    map[key].items.push(r);
   }
+  return map;
+}
+
+function renderGrid(){
+  buildHeader();
+  const body = $("#tsBody");
+  body.innerHTML = "";
+  const g = groupByDayEmp(rows);
+  for (const emp of employees){
+    const tr = document.createElement("tr");
+    const name = document.createElement("td");
+    name.innerText = emp.name;
+    tr.appendChild(name);
+    for (let i=0;i<7;i++){
+      const d = addDays(weekStart,i);
+      const iso = toISO(d);
+      const td = document.createElement("td");
+      td.className = "ts-cell";
+      const k = `${iso}|${emp.id}`;
+      const info = g[k];
+      td.innerHTML = `
+        <div class="sum">${info ? (Math.round(info.sum*100)/100) : 0}</div>
+        <div class="list">${(info? info.items.slice(0,2) : []).map(x=>`<div>• ${x.job_title||x.job_id}: ${x.hours}h</div>`).join("")}${info && info.items.length>2? `<div>+${info.items.length-2} další…</div>`: ""}</div>
+        <div class="actions"><button class="ghost add" data-emp="${emp.id}" data-date="${iso}">+</button></div>`;
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+}
+
+function renderList(){
+  const lb = $("#listBody");
+  lb.innerHTML = "";
+  for (const r of rows){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${toCZ(r.date)}</td><td>${r.employee_name || r.employee_id}</td><td>${r.job_title || r.job_id}</td><td>${r.hours}</td><td>${r.place||""}</td><td>${r.activity||""}</td>
+      <td><button class="ghost del" data-id="${r.id}">Smazat</button></td>`;
+    lb.appendChild(tr);
+  }
+}
+
+async function loadAll(){
+  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
+  const [emps, ts, js] = await Promise.all([
+    api("/api/employees"),
+    api(`/api/timesheets?from=${ws}&to=${we}`),
+    api("/api/jobs")
+  ]);
+  employees = (emps.employees||[]).sort((a,b)=>String(a.name).localeCompare(b.name));
+  rows = ts.rows || [];
+  jobs = js.jobs || [];
+  renderGrid();
+  renderList();
+}
+
+async function addEntry(empId, isoDate){
+  // simple prompt add – keeps UI compact; values validated on backend
+  const jobOptions = jobs.map(j=>`${j.id}:${j.title}`).join(", ");
+  const jobId = prompt(`Zakázka (ID):\nDostupné: ${jobOptions}`, "");
+  if(jobId===null) return;
+  const hours = prompt("Hodin (např. 7.5):", "8");
+  if(hours===null) return;
+  const place = prompt("Místo (nepovinné):", "") || "";
+  const activity = prompt("Činnost (nepovinné):", "") || "";
+  await api("/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({employee_id: Number(empId), job_id: Number(jobId), date: isoDate, hours: Number(hours), place, activity})
+  });
+  await loadAll();
+}
+
+async function delEntry(id){
+  if(!confirm("Smazat záznam?")) return;
+  await api("/api/timesheets?id="+id, {method:"DELETE"});
+  await loadAll();
+}
+
+$("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
+$("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
+$("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
+
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button.add");
+  if(btn){ addEntry(btn.dataset.emp, btn.dataset.date).catch(err=>alert(err.message||String(err))); }
+  const del = e.target.closest("button.del");
+  if(del){ delEntry(del.dataset.id).catch(err=>alert(err.message||String(err))); }
 });
-document.getElementById("addForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const payload = Object.fromEntries(new FormData(e.target).entries());
-  payload.hours = parseFloat(payload.hours);
-  const r = await fetch("/gd/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  if (r.ok){ e.target.reset(); load(); } else { alert("Uložení selhalo"); }
-});
-document.getElementById("export").onclick = async ()=>{
-  const r = await fetch("/api/timesheets/export");
-  if (!r.ok){ alert("Export selhal"); return; }
+
+$("#exportCsv").addEventListener("click", async ()=>{
+  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
+  const r = await fetch(`/api/timesheets/export?from=${ws}&to=${we}`);
+  if(!r.ok){ alert("Export selhal"); return; }
   const blob = await r.blob();
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "timesheets.csv"; a.click();
-  URL.revokeObjectURL(url);
-};
-load();
+  const a = document.createElement("a"); a.href=url; a.download=`timesheets_${ws}_${we}.csv`; a.click(); URL.revokeObjectURL(url);
+});
+
+// init
+(function init(){
+  const today = new Date();
+  weekStart = mondayOf(today);
+  updateWeekControls();
+  loadAll().catch(err=>alert(err.message||String(err)));
+})();
 </script>
 {% endblock %}
