@@ -1,12 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
 <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-  <a href="/dashboard" class="btn ghost" style="text-decoration:none;">← Zpět na hlavní</a>
+  <a href="/" class="btn ghost" style="text-decoration:none;">← Zpět na hlavní</a>
   <h1 style="margin:0;">Výkazy hodin — týden</h1>
 </div>
 
 <style>
-/* Only minimal overrides; inherit fonts/colors from the app */
 .week-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0 14px; flex-wrap:wrap; }
 .week-toolbar .spacer { flex:1; }
 .smallmuted{ font-size:12px; opacity:0.75; }
@@ -19,7 +18,6 @@
 
 .lane-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
 
-/* Slim entry: rounded, light green, horizontal; ORDER: name -> place -> hours -> activity */
 .entry-pill{
   display:flex; align-items:center; gap:10px;
   background:#eaf4ed; border:1px solid #cfe3d5; border-radius:12px;
@@ -62,7 +60,6 @@
   </div>
 </div>
 
-<!-- Modal -->
 <div id="modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center;">
   <div class="card" style="min-width:640px; max-width:95%;">
     <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
@@ -87,15 +84,13 @@
 </div>
 
 <script>
-// --- Helper utilities (keep tiny to avoid style drift) ---
 function $(s){ return document.querySelector(s); }
-function addDays(d, n){ const x = new Date(d.getTime()+n*86400000); return x; }
+function addDays(d, n){ return new Date(d.getTime()+n*86400000); }
 function mondayOf(d){ const x = new Date(d); const day=(x.getDay()||7)-1; x.setHours(0,0,0,0); return addDays(x, -day); }
 function toISO(d){ return new Date(d).toISOString().slice(0,10); }
 function fromISO(s){ const [y,m,dd]=s.split('-').map(Number); return new Date(y, m-1, dd); }
 let weekStart = mondayOf(new Date());
 let rows=[], employees=[], jobs=[], modalState={mode:'create', id:null};
-
 function api(path, opts){ return fetch(path, opts).then(r=>r.json()); }
 
 function updateWeekControls(){
@@ -224,7 +219,6 @@ async function deleteModal(){
   await loadAll();
 }
 
-// Events
 $("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
 $("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
 $("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
