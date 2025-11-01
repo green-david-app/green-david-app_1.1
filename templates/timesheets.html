@@ -1,67 +1,51 @@
-
+\
 {% extends "layout.html" %}
 {% block content %}
-<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-  <a href="/" class="btn ghost" style="text-decoration:none;">← Zpět na hlavní</a>
-  <h1 style="margin:0;">Výkazy hodin — týden</h1>
-</div>
-
-<style>
-/* Only minimal overrides; inherit fonts/colors from the app */
-.week-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0 14px; flex-wrap:wrap; }
-.week-toolbar .spacer { flex:1; }
-.smallmuted{ font-size:12px; opacity:0.75; }
-
-.week-lanes { display:flex; flex-direction:column; gap:14px; }
-.lane { border:1px solid #e0e6e2; border-radius:14px; background:#f3f7f5; overflow:hidden; }
-.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#e8f2ec; }
-.lane-head .title { font-weight:700; }
-.lane-head small { opacity:0.7; }
-
-.lane-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
-
-/* Slim entry: rounded, light green, horizontal; ORDER: name -> place -> hours -> activity */
-.entry-pill{
-  display:flex; align-items:center; gap:10px;
-  background:#eaf4ed; border:1px solid #cfe3d5; border-radius:12px;
-  padding:6px 10px; width:100%;
-}
-.entry-main{ display:flex; flex-direction:row; align-items:center; gap:14px; flex-wrap:wrap; flex:1; min-width:0; }
-.entry-name{ font-weight:700; }
-.entry-place{ opacity:0.8; }
-.entry-hours{
-  padding:2px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6;
-  font-weight:600;
-}
-.entry-activity{ opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:50vw; }
-.entry-actions{ display:flex; gap:6px; }
-.add-row{ display:flex; justify-content:flex-end; padding:8px 10px; border-top:1px dashed #d6e6de; }
-.add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:6px 12px; background:#f9fbfa; cursor:pointer; }
-</style>
-
-<div class="card">
-  <div class="card-c">
-    <div class="week-toolbar">
-      <label>Týden od <input id="weekStart" type="date"/></label>
-      <button id="prevWeek" class="ghost">← Předchozí</button>
-      <button id="nextWeek" class="ghost">Následující →</button>
-      <span id="weekLabel" class="smallmuted"></span>
-      <div class="spacer"></div>
-      <label>Filtrovat zaměstnance
-        <select id="filterEmployee"><option value="">Všichni</option></select>
-      </label>
-      <label>Filtrovat zakázku
-        <select id="filterJob"><option value="">Vše</option></select>
-      </label>
-      <button id="exportCsv">Export CSV (týden)</button>
-    </div>
-
-    <div id="lanes" class="week-lanes"></div>
-    <div class="smallmuted" style="margin-top:6px;">Klikni na „Přidat záznam“ v řádku dne nebo uprav existující položku.</div>
+<div class="panel-dark" style="background:#1f2a24;border:1px solid #32433b;border-radius:16px;padding:14px;color:#fff;">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+    <a href="/dashboard" class="btn ghost">← Zpět na hlavní</a>
+    <h1 style="margin:0;">Výkazy hodin — týden</h1>
+    <div style="flex:1"></div>
+    <label>Filtrovat zakázku
+      <select id="filterJob"><option value=''>Vše</option></select>
+    </label>
+    <label>Filtrovat zaměstnance
+      <select id="filterEmployee"><option value=''>Všichni</option></select>
+    </label>
+    <button id="exportCsv">Export CSV (týden)</button>
+  </div>
+  <div class="week-toolbar" style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+    <label>Týden od <input id="weekStart" type="date"/></label>
+    <button id="prevWeek" class="ghost">← Předchozí</button>
+    <button id="nextWeek" class="ghost">Následující →</button>
+    <span id="weekLabel" style="opacity:.85;color:#c8e0d3"></span>
   </div>
 </div>
 
-<!-- Modal (inherit app styles) -->
+<style>
+/* Dark lanes (days) */
+.week-lanes{ display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+.lane{ border-radius:14px; overflow:hidden; }
+.lane.lane-dark{ background:#25322c; border:1px solid #384a42; color:#f2fbf7; }
+.lane-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#2b3a33; border-bottom:1px solid #3a4e45; }
+.lane-head .title{ font-weight:700; }
+.lane-body{ padding:10px; display:flex; flex-direction:column; gap:8px; }
+
+/* Light entry pills for contrast */
+.entry-pill{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:12px; background:#eaf4ed; color:#1d2b23; border:1px solid #cfe3d5; }
+.entry-main{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.entry-name{ font-weight:700; }
+.entry-place{ opacity:.85; }
+.entry-hours{ padding:2px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6; font-weight:600; }
+.entry-activity{ opacity:.95; }
+
+.add-row{ display:flex; justify-content:flex-end; padding:8px 10px; border-top:1px dashed #3a4e45; }
+.add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:6px 12px; background:#f9fbfa; cursor:pointer; }
+</style>
+
+<div id="lanes" class="week-lanes"></div>
+
+<!-- Modal kept same visual as layout -->
 <div id="modal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;">
   <div class="card" style="width:min(560px,92vw); overflow:hidden;">
     <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
@@ -128,11 +112,11 @@ function buildLanes(){
     const d = addDays(weekStart,i);
     const iso = toISO(d);
     const lane = document.createElement("div");
-    lane.className="lane";
+    lane.className="lane lane-dark";
     lane.innerHTML = `
       <div class="lane-head"><div class="title">${fmtCZ(d)}</div><small>${toCZ(iso)}</small></div>
       <div class="lane-body" data-day="${iso}"></div>
-      <div class="add-row"><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
+      <div class="add-row"><button class="add-pill" data-add="${iso}">＋ Přidat záznam</button></div>
     `;
     lanes.appendChild(lane);
   }
@@ -244,13 +228,9 @@ async function deleteModal(){
   await loadAll();
 }
 
-// Events
 $("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
 $("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
 $("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
-$("#filterEmployee").addEventListener("change", renderEntries);
-$("#filterJob").addEventListener("change", renderEntries);
-
 document.addEventListener("click", (e)=>{
   const add = e.target.closest("[data-add]");
   if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
@@ -261,11 +241,6 @@ document.addEventListener("click", (e)=>{
     if(item){ openModal("edit", item); }
   }
 });
-
-$("#btnSave").addEventListener("click", ()=>saveModal().catch(err=>alert(err.message||String(err))));
-$("#btnCancel").addEventListener("click", ()=>closeModal());
-$("#btnDelete").addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
-
 $("#exportCsv").addEventListener("click", async ()=>{
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
   const emp = $("#filterEmployee").value;
@@ -283,6 +258,10 @@ $("#exportCsv").addEventListener("click", async ()=>{
   link.click();
   URL.revokeObjectURL(link.href);
 });
+
+document.getElementById("btnSave")?.addEventListener("click", ()=>saveModal().catch(err=>alert(err.message||String(err))));
+document.getElementById("btnCancel")?.addEventListener("click", ()=>closeModal());
+document.getElementById("btnDelete")?.addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
 
 (function init(){
   weekStart = mondayOf(new Date());
