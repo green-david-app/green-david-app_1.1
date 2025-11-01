@@ -1,4 +1,3 @@
-\
 {% extends "base.html" %}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/timesheets.css') }}">
@@ -6,17 +5,8 @@
 {% block content %}
 
 <div class="gd-dark cell pad">
-  <div class="breadcrumbs">
-    <a href="/" class="crumb">Dashboard</a>
-    <a href="/jobs" class="crumb">Zakázky</a>
-    <a href="/calendar" class="crumb">Kalendář</a>
-    <span class="crumb active">Výkazy</span>
-    <a href="/warehouse" class="crumb">Sklad</a>
-    <a href="/export" class="crumb">Export XLSX</a>
-    <a href="/logout" class="crumb right">Odhlásit</a>
-  </div>
   <div class="title-row">
-    <a href="/dashboard" class="btn ghost">← Zpět na hlavní</a>
+    <a href="/" class="btn ghost">← Zpět na hlavní</a>
     <h1>Výkazy hodin — týden</h1>
   </div>
 
@@ -113,43 +103,24 @@ function renderEntries(){
         <div class="entry-name">\${r.employee_name || r.employee_id}</div>
         \${r.place? \`<div class="entry-place">📍 \${r.place}</div>\`:""}
         <div class="entry-hours">\${r.hours} h</div>
-        \${r.activity? \`<div class="entry-activity">\${r.activity}</div>\`:""}
+        \${r.activity ? \`<div class="entry-activity">\${r.activity}</div>\` : ""}
       </div>
       <div class="entry-actions">
-        <button class="ghost" data-edit="\${r.id}" title="Upravit">✏️</button>
+        <button class="ghost" data-edit="\${r.id}">✎</button>
       </div>\`;
     body.appendChild(card);
   }
 }
 
-function fillSelect(el, items, idKey, labelKey){
-  el.innerHTML="";
-  for(const it of items){
-    const opt = document.createElement("option");
-    opt.value = it[idKey]; opt.textContent = it[labelKey];
-    el.appendChild(opt);
-  }
-}
-
 async function loadAll(){
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
-  const [emps, js, ts] = await Promise.all([
-    api("/api/employees"),
-    api("/api/jobs"),
-    api(\`/api/timesheets?from=\${ws}&to=\${we}\`),
-  ]);
+  const [emps, js, ts] = await Promise.all([ api('/api/employees'), api('/api/jobs'), api(`/api/timesheets?from=${ws}&to=${we}`) ]);
   employees = (emps.employees||[]).sort((a,b)=>String(a.name).localeCompare(b.name));
   jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
   rows = ts.rows || [];
-
-  $("#filterEmployee").innerHTML = "<option value=''>Všichni</option>" + employees.map(e=>\`<option value="\${e.id}">\${e.name}</option>\`).join("");
-  $("#filterJob").innerHTML = "<option value=''>Vše</option>" + jobs.map(j=>\`<option value="\${j.id}">\${j.title}</option>\`).join("");
-
-  fillSelect($("#fEmployee"), employees, "id", "name");
-  fillSelect($("#fJob"), jobs, "id", "title");
-
-  buildLanes();
-  renderEntries();
+  $("#filterEmployee").innerHTML = "<option value=''>Všichni</option>" + employees.map(e=>`<option value='${e.id}'>${e.name}</option>`).join("");
+  $("#filterJob").innerHTML = "<option value=''>Vše</option>" + jobs.map(j=>`<option value='${j.id}'>${j.title}</option>`).join("");
+  buildLanes(); renderEntries();
 }
 
 function openModal(mode, data){
@@ -171,11 +142,9 @@ function openModal(mode, data){
     $("#fPlace").value = "";
     $("#fActivity").value = "";
   }
-  $("#modal").style.display = "flex";
+  document.getElementById("modal").style.display="flex";
 }
-
-function closeModal(){ $("#modal").style.display="none"; }
-
+function closeModal(){ document.getElementById("modal").style.display="none"; }
 async function saveModal(){
   const payload = {
     employee_id: Number($("#fEmployee").value),
@@ -191,56 +160,28 @@ async function saveModal(){
   }else{
     await api("/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   }
-  closeModal();
-  await loadAll();
+  closeModal(); await loadAll();
 }
+async function deleteModal(){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+modalState.id, {method:"DELETE"}); closeModal(); await loadAll(); }
 
-async function deleteModal(){
-  if(!confirm("Smazat záznam?")) return;
-  await api("/api/timesheets?id="+modalState.id, {method:"DELETE"});
-  closeModal();
-  await loadAll();
-}
-
-$("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
-$("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
-$("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
 document.addEventListener("click", (e)=>{
-  const add = e.target.closest("[data-add]");
-  if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
-  const editBtn = e.target.closest("[data-edit]");
-  if(editBtn){
-    const id = Number(editBtn.getAttribute("data-edit"));
-    const item = rows.find(r=>r.id===id);
-    if(item){ openModal("edit", item); }
-  }
+  const add = e.target.closest("[data-add]"); if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
+  const editBtn = e.target.closest("[data-edit]"); if(editBtn){ const id = Number(editBtn.getAttribute("data-edit")); const item = rows.find(r=>r.id===id); if(item){ openModal("edit", item); } }
 });
-$("#exportCsv").addEventListener("click", async ()=>{
+document.getElementById("prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
+document.getElementById("nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
+document.getElementById("weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
+document.getElementById("exportCsv").addEventListener("click", async ()=>{
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
-  const emp = $("#filterEmployee").value;
-  const job = $("#filterJob").value;
+  const emp = $("#filterEmployee").value, job = $("#filterJob").value;
   const url = new URL(location.origin + "/api/timesheets/export");
   url.searchParams.set("from", ws); url.searchParams.set("to", we);
   if(emp) url.searchParams.set("employee_id", emp);
   if(job) url.searchParams.set("job_id", job);
-  const r = await fetch(url.toString());
-  if(!r.ok){ alert("Export selhal"); return; }
-  const blob = await r.blob();
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `timesheets_${ws}_${we}.csv`;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  const r = await fetch(url.toString()); if(!r.ok){ alert("Export selhal"); return; }
+  const blob = await r.blob(); const link = document.createElement("a"); link.href=URL.createObjectURL(blob); link.download=`timesheets_${ws}_${we}.csv`; link.click(); URL.revokeObjectURL(link.href);
 });
 
-$("#btnSave")?.addEventListener("click", ()=>saveModal().catch(err=>alert(err.message||String(err))));
-$("#btnCancel")?.addEventListener("click", ()=>closeModal());
-$("#btnDelete")?.addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
-
-(function init(){
-  weekStart = mondayOf(new Date());
-  updateWeekControls();
-  loadAll().catch(err=>alert(err.message||String(err)));
-})();
+(function init(){ weekStart = mondayOf(new Date()); updateWeekControls(); loadAll().catch(err=>alert(err.message||String(err))); })();
 </script>
 {% endblock %}
