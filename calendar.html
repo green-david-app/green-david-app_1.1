@@ -33,7 +33,16 @@
     .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow:0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition:bottom .25s ease; }
     .sheet.open{ bottom:0; }
     .sheet .handle{ width:42px; height:5px; background:#ccd; border-radius:999px; margin:6px auto 10px; }
-    .tabs{ display:flex; gap:6px; margin-bottom:10px; }
+    .daylist{ margin:2px 0 10px; max-height: 40vh; overflow:auto; border:1px solid #e9eef0; border-radius:12px; padding:6px 8px; }
+    .daylist .row{ display:flex; align-items:center; gap:8px; padding:8px 6px; border-bottom:1px dotted #e7ecee; }
+    .daylist .row:last-child{ border-bottom:0; }
+    .tag{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
+    .tag.job{ background:#e8fff2; color:#007e3a; border:1px solid #b3f4cd; }
+    .tag.task{ background:#f4ebff; color:#6a2df5; border:1px solid #dcc7ff; }
+    .tag.other{ background:#e8f4ff; color:#005da3; border:1px solid #c5e4ff; }
+    .trow-title{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .smallmuted{ color:#778; font-size:12px; }
+    .tabs{ display:flex; gap:6px; margin:10px 0; }
     .tabs .t{ flex:1; text-align:center; border:1px solid #0a6040; padding:8px 10px; border-radius:12px; font-weight:700; color:#0a6040; }
     .tabs .t.active{ background:#0a6040; color:#fff; }
     .row{ display:flex; gap:8px; margin:8px 0; }
@@ -66,10 +75,14 @@
     </div>
   </div>
 
-  <!-- Bottom sheet for quick add -->
+  <!-- Bottom sheet for quick view + add -->
   <div id="sheet" class="sheet" aria-hidden="true">
     <div class="handle"></div>
-    <div style="text-align:center; font-weight:800; margin-bottom:6px">Přidat na <span id="sheetDate"></span></div>
+    <div style="text-align:center; font-weight:800;">Den: <span id="sheetDate"></span></div>
+
+    <div id="dayEvents" class="daylist" style="display:none;"></div>
+    <div class="smallmuted" id="dayEventsEmpty" style="display:none; text-align:center; margin-top:6px;">V tento den zatím nic není.</div>
+
     <div class="tabs">
       <div id="tabJob" class="t active">Zakázka</div>
       <div id="tabTask" class="t">Úkol</div>
@@ -130,9 +143,10 @@
     }
 
     const monthLabel=$('#monthLabel'), cal=$('#cal');
-    const sheetEl=$('#sheet'), sheetDate=$('#sheetDate'); // FIX: single declaration
+    const sheetEl=$('#sheet'), sheetDate=$('#sheetDate');
+    const dayEventsBox = $('#dayEvents'); const dayEventsEmpty = $('#dayEventsEmpty');
 
-    let state={ d:new Date(), focusDate:null, tab:'job' };
+    let state={ d:new Date(), focusDate:null, tab:'job', cache:{} };
 
     // ---- Events loading with visible-range filter ----
     async function fetchEventsForRange(fromDate, toDate){
@@ -203,6 +217,7 @@
         }
       }
       (events||[]).forEach(spread);
+      state.cache = byDay; // store for quick open
 
       for(let dt=new Date(from); dt<=to; dt.setDate(dt.getDate()+1)){
         const key=ymd(dt);
@@ -234,8 +249,25 @@
     document.getElementById('prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
     document.getElementById('nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
 
-    // ---- Bottom sheet (Quick Add) ----
-    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
+    // ---- Bottom sheet (Quick View + Add) ----
+    function renderDayList(dateStr){
+      const list = state.cache[dateStr] || [];
+      if(list.length===0){
+        dayEventsBox.style.display='none'; dayEventsEmpty.style.display='block';
+        dayEventsBox.innerHTML='';
+        return;
+      }
+      dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
+      dayEventsBox.innerHTML = list.map(e => {
+        const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
+        return `<div class="row">
+          <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
+          <div class="trow-title">${e.title}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
     function closeSheet(){ sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden','true'); }
     document.getElementById('cancelBtn').addEventListener('click', closeSheet);
     function setTab(k){ state.tab=k; document.getElementById('tabJob').classList.toggle('active',k==='job'); document.getElementById('tabTask').classList.toggle('active',k==='task'); document.getElementById('tabNote').classList.toggle('active',k==='note'); document.getElementById('formJob').style.display=(k==='job'?'':'none'); document.getElementById('formTask').style.display=(k==='task'?'':'none'); document.getElementById('formNote').style.display=(k==='note'?'':'none'); }
@@ -259,7 +291,8 @@
           await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
         }
         ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-        closeSheet(); await load();
+        await load();
+        renderDayList(dateStr); // refresh list in sheet too
       }catch(e){ showErr(e); }
     });
 
