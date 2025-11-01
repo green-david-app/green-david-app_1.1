@@ -5,17 +5,16 @@
 </head><body>
 <header class="header">
   <div class="brand">
-    <img class="brand-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="green david"/>
+    <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david"/>
     <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
   </div>
   <nav class="nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/jobs">Zakázky</a>
-    <a href="/calendar">Kalendář</a>
-    <a href="/timesheets">Výkazy</a>
-    <a href="/time">Hodiny</a>
-    <a href="/stock">Sklad</a>
-    <a href="/export/xlsx" class="btn ghost">Export XLSX</a>
+    <a href="/">Dashboard</a>
+    <a href="/">Zakázky</a>
+    <a href="/calendar.html">Kalendář</a>
+    <a href="/timesheets.html">Výkazy</a>
+    <a href="/">Sklad</a>
+    <a href="/" class="btn ghost">Export XLSX</a>
     {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
   </nav>
 </header>
