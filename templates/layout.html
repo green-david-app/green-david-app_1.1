@@ -1,4 +1,3 @@
-\
 <!doctype html>
 <html lang="cs">
 <head>
@@ -10,20 +9,21 @@
 <body>
   <header class="header">
     <div class="brand">
-      <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david logo" style="height:36px;width:auto;border-radius:6px;">
+      <!-- Stejný způsob zobrazení loga jako na hlavní stránce -->
+      <img class="brand-logo" src="/logo.jpg" alt="green david logo" onerror="this.src='/logo.svg'" style="height:36px;width:auto;border-radius:6px;">
       <div>
         <div class="brand-title">green david app</div>
         <div class="brand-sub">interní systém</div>
       </div>
     </div>
     <nav class="nav">
+      <!-- Odkazy záměrně pouze na existující stránky -->
       <a href="/">Dashboard</a>
-      <a href="/jobs">Zakázky</a>
-      <a href="/calendar.html">Kalendář</a>
+      <a href="/">Zakázky</a>
+      <a href="/calendar2.html">Kalendář</a>
       <a href="/timesheets.html">Výkazy</a>
-      <a href="/warehouse">Sklad</a>
-      <a href="/export">Export XLSX</a>
-      {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
+      <a href="/">Sklad</a>
+      <a href="/logout">Odhlásit</a>
     </nav>
   </header>
 
