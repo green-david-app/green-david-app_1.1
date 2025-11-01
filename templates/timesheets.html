@@ -4,44 +4,54 @@
 <h1>Výkazy hodin — týden</h1>
 
 <style>
-/* --- Calendar-like weekly board layout --- */
+/* === Green David theme-ish (subtle, app-like) === */
+:root{
+  --gd-green:#2e7d32;
+  --gd-green-50:#f2f8f4;
+  --gd-green-100:#e7f1eb;
+  --gd-green-200:#d6e6de;
+  --gd-border:#e5e8eb;
+  --gd-muted:#6b7280;
+  --gd-bg:#ffffff;
+}
 .board-toolbar { display:flex; gap:8px; align-items:center; margin:8px 0 12px; flex-wrap:wrap; }
 .board-toolbar .spacer { flex:1; }
-.week-board { display:grid; grid-template-columns: repeat(7, minmax(220px, 1fr)); gap:12px; }
-.day-col { background:#fff; border:1px solid #e5e8eb; border-radius:10px; display:flex; flex-direction:column; min-height:320px; }
-.day-head { padding:10px 12px; border-bottom:1px solid #eef1f3; background:#f8faf9; border-radius:10px 10px 0 0; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
-.day-head small{ font-weight:400; color:#6b7280; }
-.day-list { padding:10px; display:flex; flex-direction:column; gap:8px; }
-.entry { border:1px solid #e5e8eb; border-radius:8px; padding:8px 10px; box-shadow:0 1px 0 rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:4px; }
-.entry-top { display:flex; align-items:center; gap:8px; }
-.badge { display:inline-block; padding:2px 6px; border-radius:999px; border:1px solid #c6d9cc; font-size:12px; line-height:1.3; }
-.entry .meta { font-size:12px; color:#6b7280; display:flex; gap:8px; flex-wrap:wrap; }
-.entry .job { font-weight:600; }
-.entry-actions { display:flex; gap:8px; margin-left:auto; }
+.btn{ padding:8px 12px; border-radius:8px; border:1px solid #cdd8d1; background:#f5faf7; cursor:pointer; }
+.btn.primary{ background:var(--gd-green); border-color:var(--gd-green); color:white; }
+.btn.ghost{ background:white; }
+.btn.danger{ background:#fff5f5; border-color:#f2c0c0; color:#c0392b; }
+.smallmuted{ font-size:12px; color:var(--gd-muted); }
+.form-row input, .form-row select, .form-row textarea { padding:8px 10px; border:1px solid #dfe5e1; border-radius:8px; min-width:160px; }
+
+/* === Horizontal lanes (one per day) === */
+.week-lanes { display:flex; flex-direction:column; gap:14px; }
+.lane { background:var(--gd-bg); border:1px solid var(--gd-border); border-radius:12px; }
+.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--gd-border); background:var(--gd-green-50); border-radius:12px 12px 0 0; }
+.lane-head .title { font-weight:700; }
+.lane-head small { color:var(--gd-muted); font-weight:400; }
+.lane-body { padding:10px; display:flex; gap:10px; flex-wrap:wrap; }
+.card-entry{ border:1px solid var(--gd-border); background:white; border-radius:10px; padding:10px 12px; min-width:280px; max-width:360px; box-shadow:0 1px 0 rgba(0,0,0,0.03); display:flex; flex-direction:column; gap:6px; }
+.badge{ display:inline-block; padding:2px 8px; border-radius:999px; background:var(--gd-green-100); border:1px solid var(--gd-green-200); font-size:12px; }
+.card-top{ display:flex; align-items:center; gap:8px; }
+.card-top .job{ font-weight:600; }
+.card-meta{ font-size:12px; color:var(--gd-muted); display:flex; gap:10px; flex-wrap:wrap; }
 .icon-btn { border:none; background:transparent; cursor:pointer; padding:4px; border-radius:6px; }
-.icon-btn:hover { background:#f2f6f4; }
-.add-btn { margin:10px; border:1px dashed #b7c7bd; border-radius:8px; background:#f9fbfa; padding:8px; text-align:center; cursor:pointer; transition:0.15s; }
-.add-btn:hover { background:#eef4f0; }
-.smallmuted{ font-size:12px; color:#6b7280; }
+.icon-btn:hover{ background:#eef4f0; }
+.add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:10px 14px; background:#f9fbfa; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.add-pill:hover{ background:#eef4f0; }
+.lane-actions{ padding:10px 12px; border-top:1px dashed var(--gd-border); display:flex; }
+.lane-actions .add-pill{ margin-left:auto; }
 
 /* Modal */
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000; }
-.modal{ width:min(560px, 92vw); background:#fff; border-radius:12px; border:1px solid #e5e8eb; overflow:hidden; }
-.modal-h{ padding:12px 14px; font-weight:600; border-bottom:1px solid #eef1f3; background:#f8faf9; }
+.modal{ width:min(560px, 92vw); background:#fff; border-radius:12px; border:1px solid var(--gd-border); overflow:hidden; }
+.modal-h{ padding:12px 14px; font-weight:600; border-bottom:1px solid var(--gd-border); background:var(--gd-green-50); }
 .modal-c{ padding:14px; display:grid; gap:10px; }
-.modal-f{ padding:12px 14px; display:flex; justify-content:flex-end; border-top:1px solid #eef1f3; gap:8px; background:#fbfcfb; }
+.modal-f{ padding:12px 14px; display:flex; justify-content:flex-end; border-top:1px solid var(--gd-border); gap:8px; background:#fbfcfb; }
 .form-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .form-row > label{ display:flex; flex-direction:column; gap:4px; font-size:13px; }
-.form-row input, .form-row select, .form-row textarea { padding:8px 10px; border:1px solid #dfe5e1; border-radius:8px; min-width:160px; }
-.btn{ padding:8px 12px; border-radius:8px; border:1px solid #cdd8d1; background:#f5faf7; cursor:pointer; }
-.btn.primary{ background:#2e7d32; border-color:#2e7d32; color:white; }
-.btn.ghost{ background:white; }
-.btn.danger{ background:#fff5f5; border-color:#f2c0c0; color:#c0392b; }
-@media (max-width:1100px){
-  .week-board{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
-}
-@media (min-width:1101px) and (max-width:1400px){
-  .week-board{ grid-template-columns: repeat(4, minmax(220px, 1fr)); }
+@media (max-width: 720px){
+  .card-entry{ min-width: 240px; }
 }
 </style>
 
@@ -62,8 +72,8 @@
       <button id="exportCsv" class="btn">Export CSV (týden)</button>
     </div>
 
-    <div id="board" class="week-board"></div>
-    <div class="smallmuted" style="margin-top:8px;">Klikni na „Přidat záznam“ v daném dni nebo otevři existující položku pro úpravu.</div>
+    <div id="lanes" class="week-lanes"></div>
+    <div class="smallmuted" style="margin-top:8px;">Každý den je jeden horizontální „proužek“. Klikni na <b>+ Přidat záznam</b> nebo na ✏️ pro úpravu.</div>
   </div>
 </div>
 
@@ -129,51 +139,46 @@ function updateWeekControls(){
   $("#weekLabel").innerText = `(${fmtCZ(ws)} — ${fmtCZ(we)})`;
 }
 
-function buildBoard(){
-  const board = $("#board");
-  board.innerHTML = "";
+function buildLanes(){
+  const lanes = $("#lanes"); lanes.innerHTML="";
   for(let i=0;i<7;i++){
     const d = addDays(weekStart,i);
     const iso = toISO(d);
-    const col = document.createElement("div");
-    col.className="day-col";
-    col.innerHTML = `
-      <div class="day-head">${fmtCZ(d)} <small>${toCZ(iso)}</small></div>
-      <div class="day-list" data-day="${iso}"></div>
-      <div class="add-btn" data-add="${iso}">+ Přidat záznam</div>
+    const lane = document.createElement("div");
+    lane.className="lane";
+    lane.innerHTML = `
+      <div class="lane-head"><div class="title">${fmtCZ(d)}</div><small>${toCZ(iso)}</small></div>
+      <div class="lane-body" data-day="${iso}"></div>
+      <div class="lane-actions"><div class="spacer"></div><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
     `;
-    board.appendChild(col);
+    lanes.appendChild(lane);
   }
 }
 
 function renderEntries(){
-  // filters
   const empFilter = $("#filterEmployee").value;
   const jobFilter = $("#filterJob").value;
-  // clear lists
-  $$(".day-list").forEach(n=>n.innerHTML="");
+  $$(".lane-body").forEach(n=>n.innerHTML="");
   for(const r of rows){
     if(empFilter && String(r.employee_id)!==String(empFilter)) continue;
     if(jobFilter && String(r.job_id)!==String(jobFilter)) continue;
-    const wrap = document.querySelector(`.day-list[data-day="${r.date}"]`);
-    if(!wrap) continue;
-    const el = document.createElement("div");
-    el.className = "entry";
-    el.innerHTML = `
-      <div class="entry-top">
+    const body = document.querySelector(`.lane-body[data-day="${r.date}"]`);
+    if(!body) continue;
+    const card = document.createElement("div");
+    card.className = "card-entry";
+    card.innerHTML = `
+      <div class="card-top">
         <span class="badge">${r.hours} h</span>
         <div class="job">${r.job_title || ("Zakázka #"+r.job_id)}</div>
-        <div class="entry-actions" style="margin-left:auto">
-          <button class="icon-btn" title="Upravit" data-edit="${r.id}">✏️</button>
-        </div>
+        <button class="icon-btn" title="Upravit" data-edit="${r.id}" style="margin-left:auto">✏️</button>
       </div>
-      <div class="meta">
+      <div class="card-meta">
         <span>👤 ${r.employee_name || r.employee_id}</span>
         ${r.place? `<span>📍 ${r.place}</span>`:""}
       </div>
       ${r.activity? `<div class="smallmuted">${r.activity}</div>`:""}
     `;
-    wrap.appendChild(el);
+    body.appendChild(card);
   }
 }
 
@@ -197,7 +202,6 @@ async function loadAll(){
   jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
   rows = ts.rows || [];
 
-  // Fill filters + modal selects
   const filterEmp = $("#filterEmployee");
   const filterJob = $("#filterJob");
   filterEmp.innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
@@ -206,7 +210,7 @@ async function loadAll(){
   fillSelect($("#fEmployee"), employees, "id", "name");
   fillSelect($("#fJob"), jobs, "id", "title");
 
-  buildBoard();
+  buildLanes();
   renderEntries();
 }
 
@@ -214,7 +218,6 @@ function openModal(mode, data){
   modalState = {mode, id: data?.id||null};
   $("#modalTitle").innerText = mode==="edit"? "Upravit záznam" : "Nový záznam";
   $("#btnDelete").style.display = mode==="edit"? "" : "none";
-  // Prefill
   if(mode==="edit"){
     $("#fEmployee").value = String(data.employee_id);
     $("#fJob").value = String(data.job_id);
@@ -223,7 +226,6 @@ function openModal(mode, data){
     $("#fPlace").value = data.place || "";
     $("#fActivity").value = data.activity || "";
   }else{
-    // for create, date comes from day column
     $("#fEmployee").value = "";
     $("#fJob").value = "";
     $("#fDate").value = data?.date || toISO(new Date());
@@ -270,10 +272,8 @@ $("#filterEmployee").addEventListener("change", renderEntries);
 $("#filterJob").addEventListener("change", renderEntries);
 
 document.addEventListener("click", (e)=>{
-  // Add
   const add = e.target.closest("[data-add]");
   if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
-  // Edit
   const editBtn = e.target.closest("[data-edit]");
   if(editBtn){
     const id = Number(editBtn.getAttribute("data-edit"));
@@ -286,7 +286,6 @@ $("#btnSave").addEventListener("click", ()=>saveModal().catch(err=>alert(err.mes
 $("#btnCancel").addEventListener("click", ()=>closeModal());
 $("#btnDelete").addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
 
-// Export
 $("#exportCsv").addEventListener("click", async ()=>{
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
   const emp = $("#filterEmployee").value;
@@ -305,7 +304,6 @@ $("#exportCsv").addEventListener("click", async ()=>{
   URL.revokeObjectURL(link.href);
 });
 
-// Init
 (function init(){
   weekStart = mondayOf(new Date());
   updateWeekControls();
