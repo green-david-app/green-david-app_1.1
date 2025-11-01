@@ -7,32 +7,27 @@
 </div>
 
 <style>
-/* Keep styling minimal; rely on app classes. Only style the entry pill and lane separators. */
-.week-toolbar{ display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-.week-toolbar .left{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.week-toolbar .right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.week-helper{ font-size:12px; opacity:0.8; }
+/* Minimal overrides (everything else zůstává z layoutu) */
+.week-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.week-toolbar .left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.week-toolbar .right{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.week-helper{ font-size:12px; opacity:.8; }
 
-/* Slim green entry */
+/* Záznam = úzká pilulka v zelenkavém odstínu, zaoblené rohy */
 .entry-pill{
-  display:flex; align-items:center; gap:12px;
-  background:#e8f3ec; border:1px solid #c9dfd1; border-radius:12px;
-  padding:6px 10px; width:100%;
+  display:flex; align-items:center; gap:12px; width:100%;
+  background:#eaf4ed; border:1px solid #cfe3d5; border-radius:12px; padding:6px 10px;
 }
-.entry-main{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; flex:1; min-width:0; }
+.entry-main{ display:flex; align-items:center; gap:14px; flex:1; min-width:0; flex-wrap:wrap; }
 .entry-name{ font-weight:700; }
-.entry-place{ opacity:0.85; }
+.entry-place{ opacity:.85; }
 .entry-hours{ padding:2px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#def0e5; font-weight:600; }
-.entry-activity{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:50vw; opacity:0.95; }
+.entry-activity{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:50vw; opacity:.95; }
 .entry-actions{ display:flex; gap:6px; }
-
 .add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:6px 12px; background:transparent; cursor:pointer; }
-.add-row{ display:flex; justify-content:flex-end; padding:8px 0 0; }
-
-/* Hide browser date icon on dark theme issues */
-input[type="date"]::-webkit-calendar-picker-indicator { filter:contrast(0.1) brightness(2); }
 </style>
 
+<!-- Toolbar v jedné kartě -->
 <div class="card">
   <div class="card-c">
     <div class="week-toolbar">
@@ -55,7 +50,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter:contrast(0.1) bri
   </div>
 </div>
 
-<div id="lanes" class="week-lanes" style="display:flex; flex-direction:column; gap:16px; margin-top:16px;"></div>
+<!-- Dny: každá karta jako v aplikaci -->
+<div id="lanes" style="display:flex; flex-direction:column; gap:16px; margin-top:16px;"></div>
 
 <script>
 const $ = (s)=>document.querySelector(s);
@@ -65,33 +61,34 @@ function fromISO(s){ const [y,m,d]=s.split('-').map(Number); const dt = new Date
 function mondayOf(d){ const day=d.getDay()||7; const nd = new Date(d); nd.setDate(d.getDate() - (day-1)); nd.setHours(0,0,0,0); return nd; }
 function addDays(d,n){ const nd=new Date(d); nd.setDate(d.getDate()+n); return nd; }
 function fmtCZ(d){ return d.toLocaleDateString('cs-CZ', {weekday:'short', day:'2-digit', month:'2-digit'}).replace(/^./, c=>c.toUpperCase()); }
-function toCZ(s){ try{ const [y,m,d]=s.split('-'); return `${d}.${m}.${y}`; }catch(e){ return s; } }
+function toCZ(s){ try{ const [y,m,d]=s.split('-'); return \`\${d}.\${m}.\${y}\`; }catch(e){ return s; } }
 
 let employees=[], jobs=[], rows=[];
 let weekStart = mondayOf(new Date());
-let modalState = { mode:"create", id:null };
 
 async function api(url, opts){ const r = await fetch(url, {credentials:'same-origin', ...opts}); if(!r.ok) throw new Error(await r.text()); const ct=r.headers.get('content-type')||''; return ct.includes('application/json')? r.json() : r; }
 
 function updateWeekControls(){
   $("#weekStart").value = toISO(weekStart);
-  const ws = new Date(weekStart);
-  const we = addDays(ws,6);
-  $("#weekLabel").innerText = `(${fmtCZ(ws)} — ${fmtCZ(we)})`;
+  const ws = new Date(weekStart); const we = addDays(ws,6);
+  $("#weekLabel").innerText = \`(\${fmtCZ(ws)} — \${fmtCZ(we)})\`;
 }
 
 function laneCard(title, iso){
   const wrap = document.createElement("div");
   wrap.className = "card";
-  wrap.innerHTML = `
-    <div class="card-h"><div style="display:flex; align-items:center; justify-content:space-between;">
-      <div>${title}</div><div style="opacity:.8">${toCZ(iso)}</div>
-    </div></div>
-    <div class="card-c">
-      <div class="lane-body" data-day="${iso}" style="display:flex; flex-direction:column; gap:8px;"></div>
-      <div class="add-row"><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
+  wrap.innerHTML = \`
+    <div class="card-h">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>\${title}</div><div style="opacity:.8">\${toCZ(iso)}</div>
+      </div>
     </div>
-  `;
+    <div class="card-c">
+      <div class="lane-body" data-day="\${iso}" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+        <div class="add-pill" data-add="\${iso}">＋ Přidat záznam</div>
+      </div>
+    </div>\`;
   return wrap;
 }
 
@@ -99,8 +96,7 @@ function buildLanes(){
   const lanes = $("#lanes"); lanes.innerHTML="";
   for(let i=0;i<7;i++){
     const d = addDays(weekStart,i);
-    const iso = toISO(d);
-    lanes.appendChild(laneCard(fmtCZ(d), iso));
+    lanes.appendChild(laneCard(fmtCZ(d), toISO(d)));
   }
 }
 
@@ -115,17 +111,16 @@ function renderEntries(){
     if(!body) continue;
     const card = document.createElement("div");
     card.className = "entry-pill";
-    card.innerHTML = `
+    card.innerHTML = \`
       <div class="entry-main">
-        <div class="entry-name">${r.employee_name || r.employee_id}</div>
-        ${r.place? `<div class="entry-place">📍 ${r.place}</div>`:""}
-        <div class="entry-hours">${r.hours} h</div>
-        ${r.activity? `<div class="entry-activity">${r.activity}</div>`:""}
+        <div class="entry-name">\${r.employee_name || r.employee_id}</div>
+        \${r.place? \`<div class="entry-place">📍 \${r.place}</div>\`:""}
+        <div class="entry-hours">\${r.hours} h</div>
+        \${r.activity? \`<div class="entry-activity">\${r.activity}</div>\`:""}
       </div>
       <div class="entry-actions">
-        <button class="ghost" data-edit="${r.id}" title="Upravit">✏️</button>
-      </div>
-    `;
+        <button class="ghost" data-edit="\${r.id}" title="Upravit">✏️</button>
+      </div>\`;
     body.appendChild(card);
   }
 }
@@ -139,34 +134,14 @@ function fillSelect(el, items, idKey, labelKey){
   }
 }
 
-async function loadAll(){
-  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
-  const [emps, js, ts] = await Promise.all([
-    api("/api/employees"),
-    api("/api/jobs"),
-    api(`/api/timesheets?from=${ws}&to=${we}`),
-  ]);
-  employees = (emps.employees||[]).sort((a,b)=>String(a.name).localeCompare(b.name));
-  jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
-  rows = ts.rows || [];
-
-  $("#filterEmployee").innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
-  $("#filterJob").innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
-
-  buildLanes();
-  renderEntries();
-}
-
 function openModal(mode, data){
-  modalState = {mode, id: data?.id||null};
-  const modal = document.querySelector("#modal");
+  let modal = $("#modal");
   if(!modal){
-    // Build once (uses app card styling)
-    const modalHtml = document.createElement("div");
-    modalHtml.id = "modal";
-    modalHtml.className = "modal-backdrop";
-    modalHtml.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;";
-    modalHtml.innerHTML = `
+    modal = document.createElement("div");
+    modal.id = "modal";
+    modal.className = "modal-backdrop";
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;";
+    modal.innerHTML = \`
       <div class="card" style="width:min(560px,92vw); overflow:hidden;">
         <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
         <div class="card-c" style="display:grid; gap:10px;">
@@ -200,11 +175,19 @@ function openModal(mode, data){
           <button id="btnCancel" class="ghost">Zrušit</button>
           <button id="btnSave" class="btn">Uložit</button>
         </div>
-      </div>`;
-    document.body.appendChild(modalHtml);
+      </div>\`;
+    document.body.appendChild(modal);
   }
   $("#modalTitle").innerText = mode==="edit"? "Upravit záznam" : "Nový záznam";
   $("#btnDelete").style.display = mode==="edit"? "" : "none";
+
+  if($("#fEmployee").options.length===0){
+    for(const e of employees){ const o=document.createElement("option"); o.value=e.id; o.textContent=e.name; $("#fEmployee").appendChild(o); }
+  }
+  if($("#fJob").options.length===0){
+    for(const j of jobs){ const o=document.createElement("option"); o.value=j.id; o.textContent=j.title; $("#fJob").appendChild(o); }
+  }
+
   if(mode==="edit"){
     $("#fEmployee").value = String(data.employee_id);
     $("#fJob").value = String(data.job_id);
@@ -220,7 +203,7 @@ function openModal(mode, data){
     $("#fPlace").value = "";
     $("#fActivity").value = "";
   }
-  $("#modal").style.display = "flex";
+  modal.style.display = "flex";
 }
 
 function closeModal(){ $("#modal").style.display="none"; }
@@ -234,7 +217,10 @@ async function saveModal(){
     place: $("#fPlace").value || "",
     activity: $("#fActivity").value || ""
   };
-  if(modalState.mode==="edit"){
+  if($("#btnDelete").style.display !== "none" && modalState?.id){
+    // editing
+  }
+  if(modalState && modalState.mode==="edit"){
     payload.id = modalState.id;
     await api("/api/timesheets", {method:"PATCH", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   }else{
@@ -251,29 +237,25 @@ async function deleteModal(){
   await loadAll();
 }
 
-// Events
 document.addEventListener("click", (e)=>{
   const add = e.target.closest("[data-add]");
-  if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
+  if(add){ modalState={mode:"create", id:null}; openModal("create", {date:add.getAttribute("data-add")}); }
   const editBtn = e.target.closest("[data-edit]");
   if(editBtn){
     const id = Number(editBtn.getAttribute("data-edit"));
     const item = rows.find(r=>r.id===id);
-    if(item){ openModal("edit", item); }
+    if(item){ modalState={mode:"edit", id:id}; openModal("edit", item); }
   }
-});
-window.addEventListener("click", (e)=>{
-  if(e.target && e.target.id==="btnSave") saveModal().catch(err=>alert(err.message||String(err)));
-  if(e.target && e.target.id==="btnCancel") closeModal();
-  if(e.target && e.target.id==="btnDelete") deleteModal().catch(err=>alert(err.message||String(err)));
+  if(e.target && e.target.id==="btnSave"){ saveModal().catch(err=>alert(err.message||String(err))); }
+  if(e.target && e.target.id==="btnCancel"){ closeModal(); }
+  if(e.target && e.target.id==="btnDelete"){ deleteModal().catch(err=>alert(err.message||String(err))); }
 });
 
 $("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
 $("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
 $("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
-
-$("#filterEmployee")?.addEventListener("change", renderEntries);
-$("#filterJob")?.addEventListener("change", renderEntries);
+$("#filterEmployee").addEventListener("change", renderEntries);
+$("#filterJob").addEventListener("change", renderEntries);
 
 $("#exportCsv").addEventListener("click", async ()=>{
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
@@ -293,17 +275,6 @@ $("#exportCsv").addEventListener("click", async ()=>{
   URL.revokeObjectURL(link.href);
 });
 
-function bootstrapModalOptions(){
-  // ensure selects are filled after we load data
-  const empSel = $("#fEmployee"), jobSel = $("#fJob");
-  if(empSel && empSel.options.length===0){
-    for(const e of employees){ const o=document.createElement("option"); o.value=e.id; o.textContent=e.name; empSel.appendChild(o); }
-  }
-  if(jobSel && jobSel.options.length===0){
-    for(const j of jobs){ const o=document.createElement("option"); o.value=j.id; o.textContent=j.title; jobSel.appendChild(o); }
-  }
-}
-
 async function loadAll(){
   const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
   const [emps, js, ts] = await Promise.all([
@@ -315,13 +286,11 @@ async function loadAll(){
   jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
   rows = ts.rows || [];
 
-  // filters
   $("#filterEmployee").innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
   $("#filterJob").innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
 
   buildLanes();
   renderEntries();
-  bootstrapModalOptions();
 }
 
 (function init(){
