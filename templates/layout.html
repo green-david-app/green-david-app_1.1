@@ -1,28 +1,40 @@
-<!doctype html><html lang="cs"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>{{ title or 'green david app' }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-</head><body>
-<header class="header">
-  <div class="brand">
-    <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david"/>
-    <div><div class="brand-title">green david app</div><div class="brand-sub">interní systém</div></div>
-  </div>
-  <nav class="nav">
-    <a href="/">Dashboard</a>
-    <a href="/">Zakázky</a>
-    <a href="/calendar.html">Kalendář</a>
-    <a href="/timesheets.html">Výkazy</a>
-    <a href="/">Sklad</a>
-    <a href="/" class="btn ghost">Export XLSX</a>
-    {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
-  </nav>
-</header>
-<main class="container">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>{% endif %}
-  {% endwith %}
-  {% block content %}{% endblock %}
-</main>
-<footer class="footer">© green david s.r.o.</footer>
-</body></html>
+\
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ title or 'green david app' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david logo" style="height:36px;width:auto;border-radius:6px;">
+      <div>
+        <div class="brand-title">green david app</div>
+        <div class="brand-sub">interní systém</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/">Dashboard</a>
+      <a href="/jobs">Zakázky</a>
+      <a href="/calendar.html">Kalendář</a>
+      <a href="/timesheets.html">Výkazy</a>
+      <a href="/warehouse">Sklad</a>
+      <a href="/export">Export XLSX</a>
+      {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">© green david s.r.o.</footer>
+</body>
+</html>
