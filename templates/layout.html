@@ -1,40 +1,70 @@
-\
-<!doctype html>
+{% set title = title or 'green david app' %}
+<!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ title or 'green david app' }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <title>{{ title }}</title>
+  <link rel="icon" href="/logo.svg"/>
+  <link rel="stylesheet" href="/style.css"/>
 </head>
 <body>
-  <header class="header">
+  <div class="app-header">
     <div class="brand">
-      <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david logo" style="height:36px;width:auto;border-radius:6px;">
-      <div>
-        <div class="brand-title">green david app</div>
-        <div class="brand-sub">interní systém</div>
-      </div>
+      <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
+      <div class="brand-text">green david app</div>
+      <div class="brand-sub">interní systém</div>
     </div>
-    <nav class="nav">
-      <a href="/">Dashboard</a>
-      <a href="/jobs">Zakázky</a>
-      <a href="/calendar.html">Kalendář</a>
-      <a href="/timesheets.html">Výkazy</a>
-      <a href="/warehouse">Sklad</a>
-      <a href="/export">Export XLSX</a>
-      {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
-    </nav>
-  </header>
+    <div class="user-area">
+      {% if me %}Přihlášen: {{ me.name }}{% endif %}
+      <a class="btn ghost" href="/logout">Odhlásit</a>
+    </div>
+  </div>
 
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>
-      {% endif %}
-    {% endwith %}
+  {# HIDE GREEN LINK ROW ON TIMESHEETS PAGE #}
+  {% set _path = request.path if request else '' %}
+  {% if not (_path.startswith('/timesheets') or _path.startswith('/timesheets.html')) %}
+  <nav class="nav" style="margin: 8px 12px;">
+    <a href="/">Dashboard</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/calendar.html">Kalendář</a>
+    <a href="/timesheets.html">Výkazy</a>
+    <a href="/warehouse">Sklad</a>
+    <a href="/export">Export XLSX</a>
+  </nav>
+  {% endif %}
+
+  <div class="tabs" id="main-tabs">
+    <!-- Ponecháno kvůli JS doplňování karet -->
+  </div>
+
+  <div class="container" style="margin-top: 12px;">
     {% block content %}{% endblock %}
-  </main>
-  <footer class="footer">© green david s.r.o.</footer>
+  </div>
+
+  <script>
+  (function(){
+    function insertTabs(){
+      var tabs = document.querySelector('.tabs') || document.getElementById('main-tabs');
+      if(!tabs) return;
+      var first = tabs.querySelector('a') || null;
+      function mk(href, label){
+        var a = document.createElement('a');
+        a.href = href;
+        a.textContent = label;
+        a.className = (first && first.className) ? first.className : 'tab';
+        return a;
+      }
+      if(!tabs.querySelector('a[href="/calendar-page"]') && !tabs.querySelector('a[href="/calendar"]')){
+        tabs.insertBefore(mk('/calendar-page','Kalendář'), first);
+      }
+      if(!tabs.querySelector('a[href="/timesheets-page"]') && !tabs.querySelector('a[href="/timesheets"]')){
+        tabs.insertBefore(mk('/timesheets-page','Výkazy'), first);
+      }
+    }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', insertTabs); }
+    else { insertTabs(); }
+  })();
+  </script>
 </body>
 </html>
