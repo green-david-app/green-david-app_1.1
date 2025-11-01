@@ -25,12 +25,11 @@
     return d.toLocaleDateString('cs-CZ', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(/^./, c=>c.toUpperCase());
   }
   function enhance(){
-    const tbl = document.querySelector('table.table');
+    const tbl = document.querySelector('#grid.table, table.table');
     if(!tbl || !tbl.tBodies || !tbl.tBodies[0]) return;
     const body = tbl.tBodies[0];
     const rows = Array.from(body.rows);
     if(rows.length===0) return;
-    // detect date column
     let dateCol = 0;
     outer: for(let c=0;c<tbl.rows[0].cells.length;c++){
       for(let r=0;r<Math.min(6, rows.length);r++){
@@ -38,14 +37,12 @@
         if(d){ dateCol = c; break outer; }
       }
     }
-    // sort
     rows.sort((ra,rb)=>{
       const da = parseCZDate(ra.cells[dateCol]?.innerText) || new Date(0);
       const db = parseCZDate(rb.cells[dateCol]?.innerText) || new Date(0);
       return +da - +db;
     });
     rows.forEach(r=>body.appendChild(r));
-    // insert groups
     let lastWeek=null, lastDay=null;
     rows.forEach(row=>{
       const d = parseCZDate(row.cells[dateCol]?.innerText);
