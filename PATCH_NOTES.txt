@@ -1,0 +1,31 @@
+Sjednocení designu Výkazů s hlavní aplikací – co udělat po nahrání souborů
+=========================================================================
+
+1) Šablona:
+   - Tento balíček obsahuje `app/templates/timesheets.html`, která **dědí z `base.html`**
+     (tj. používá `app/static/css/app.css` a topbar/navigaci hlavní aplikace).
+
+2) Routing ve Flasku (main.py):
+   - Přidej/ujisti se o této route (klidně hned pod dalšími stránkami):
+
+       @app.route("/timesheets")
+       def timesheets_page():
+           return render_template("timesheets.html")
+
+   - Starší route `/timesheets.html` může zůstat jako alias nebo ji přesměruj na `/timesheets`:
+
+       @app.route("/timesheets.html")
+       def timesheets_legacy():
+           return redirect(url_for("timesheets_page"), code=302)
+
+3) Navigace:
+   - V hlavní navigaci (už je v `base.html`) odkaz `href="/timesheets"` ponech.
+
+4) Úklid staré verze:
+   - V repu smaž nebo ignoruj starý tmavý soubor na kořeni `timesheets.html`
+     (verze s inline styly a odkazem na `/style.css`). Nová stránka je v `app/templates/timesheets.html`.
+
+5) Export CSV:
+   - Nová stránka používá existující endpoint `/api/timesheets/export`. Nemusíš nic měnit.
+
+Hotovo. Po nasazení by `https://…/timesheets` mělo mít stejný „světlý“ vzhled jako zbytek aplikace.
