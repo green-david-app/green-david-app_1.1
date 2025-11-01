@@ -1,3 +1,4 @@
+
 {% extends "layout.html" %}
 {% block content %}
 <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -6,6 +7,7 @@
 </div>
 
 <style>
+/* Only minimal overrides; inherit fonts/colors from the app */
 .week-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0 14px; flex-wrap:wrap; }
 .week-toolbar .spacer { flex:1; }
 .smallmuted{ font-size:12px; opacity:0.75; }
@@ -18,6 +20,7 @@
 
 .lane-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
 
+/* Slim entry: rounded, light green, horizontal; ORDER: name -> place -> hours -> activity */
 .entry-pill{
   display:flex; align-items:center; gap:10px;
   background:#eaf4ed; border:1px solid #cfe3d5; border-radius:12px;
@@ -54,89 +57,111 @@
     </div>
 
     <div id="lanes" class="week-lanes"></div>
-    <div class="add-row">
-      <button class="add-pill" data-add>+ Přidat záznam</button>
-    </div>
+    <div class="smallmuted" style="margin-top:6px;">Klikni na „Přidat záznam“ v řádku dne nebo uprav existující položku.</div>
   </div>
 </div>
 
-<div id="modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center;">
-  <div class="card" style="min-width:640px; max-width:95%;">
+<!-- Modal (inherit app styles) -->
+<div id="modal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;">
+  <div class="card" style="width:min(560px,92vw); overflow:hidden;">
     <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
-    <div class="card-c">
-      <div class="form-row">
-        <label>Zaměstnanec <select id="fEmployee"></select></label>
-        <label>Zakázka <select id="fJob"></select></label>
-        <label>Datum <input id="fDate" type="date"/></label>
-        <label>Hodin <input id="fHours" type="number" step="0.25"/></label>
+    <div class="card-c" style="display:grid; gap:10px;">
+      <div class="form-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <label style="display:flex; flex-direction:column; gap:4px;">Zaměstnanec
+          <select id="fEmployee"></select>
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">Zakázka
+          <select id="fJob"></select>
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">Datum
+          <input id="fDate" type="date"/>
+        </label>
       </div>
-      <div class="form-row">
-        <input id="fPlace" placeholder="Místo" style="flex:1"/>
-        <input id="fActivity" placeholder="Popis činnosti" style="flex:2"/>
+      <div class="form-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <label style="display:flex; flex-direction:column; gap:4px;">Hodin
+          <input id="fHours" type="number" min="0" step="0.25" placeholder="8"/>
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">Místo
+          <input id="fPlace" type="text" placeholder=""/>
+        </label>
+      </div>
+      <div class="form-row" style="display:flex; flex-direction:column; gap:4px;">
+        <label>Činnost
+          <textarea id="fActivity" rows="2" placeholder=""></textarea>
+        </label>
       </div>
     </div>
-    <div class="card-f" style="display:flex; gap:8px; justify-content:flex-end;">
-      <button id="btnDelete" class="ghost" style="display:none">Smazat</button>
+    <div class="card-f" style="display:flex; gap:8px; justify-content:flex-end; padding:12px; border-top:1px solid #e0e6e2;">
+      <button id="btnDelete" class="ghost" style="display:none;">Smazat</button>
       <button id="btnCancel" class="ghost">Zrušit</button>
-      <button id="btnSave" class="btn">Uložit</button>
+      <button id="btnSave">Uložit</button>
     </div>
   </div>
 </div>
 
 <script>
-function $(s){ return document.querySelector(s); }
-function addDays(d, n){ return new Date(d.getTime()+n*86400000); }
-function mondayOf(d){ const x = new Date(d); const day=(x.getDay()||7)-1; x.setHours(0,0,0,0); return addDays(x, -day); }
-function toISO(d){ return new Date(d).toISOString().slice(0,10); }
-function fromISO(s){ const [y,m,dd]=s.split('-').map(Number); return new Date(y, m-1, dd); }
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
+function toISO(d){ const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function fromISO(s){ const [y,m,d]=s.split('-').map(Number); const dt = new Date(Date.UTC(y,m-1,d)); return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()); }
+function mondayOf(d){ const day=d.getDay()||7; const nd = new Date(d); nd.setDate(d.getDate() - (day-1)); nd.setHours(0,0,0,0); return nd; }
+function addDays(d,n){ const nd=new Date(d); nd.setDate(d.getDate()+n); return nd; }
+function fmtCZ(d){ return d.toLocaleDateString('cs-CZ', {weekday:'short', day:'2-digit', month:'2-digit'}).replace(/^./, c=>c.toUpperCase()); }
+function toCZ(s){ try{ const [y,m,d]=s.split('-'); return `${d}.${m}.${y}`; }catch(e){ return s; } }
+
+let employees=[], jobs=[], rows=[];
 let weekStart = mondayOf(new Date());
-let rows=[], employees=[], jobs=[], modalState={mode:'create', id:null};
-function api(path, opts){ return fetch(path, opts).then(r=>r.json()); }
+let modalState = { mode:"create", id:null };
+
+async function api(url, opts){ const r = await fetch(url, {credentials:'same-origin', ...opts}); if(!r.ok) throw new Error(await r.text()); const ct=r.headers.get('content-type')||''; return ct.includes('application/json')? r.json() : r; }
 
 function updateWeekControls(){
   $("#weekStart").value = toISO(weekStart);
-  $("#weekLabel").textContent = `(Po ${toISO(weekStart)} — Ne ${toISO(addDays(weekStart,6))})`;
+  const ws = new Date(weekStart);
+  const we = addDays(ws,6);
+  $("#weekLabel").innerText = `(${fmtCZ(ws)} — ${fmtCZ(we)})`;
 }
 
 function buildLanes(){
-  const lanes = $("#lanes"); lanes.innerHTML = "";
+  const lanes = $("#lanes"); lanes.innerHTML="";
   for(let i=0;i<7;i++){
     const d = addDays(weekStart,i);
-    const el = document.createElement("div");
-    el.className="lane";
-    el.innerHTML = '<div class="lane-head"><div class="title">'
-      + d.toLocaleDateString('cs-CZ', { weekday:'short', day:'2-digit', month:'2-digit'}) +
-      '</div><small data-count></small></div><div class="lane-body" data-day="'+toISO(d)+'"></div>';
-    lanes.appendChild(el);
+    const iso = toISO(d);
+    const lane = document.createElement("div");
+    lane.className="lane";
+    lane.innerHTML = `
+      <div class="lane-head"><div class="title">${fmtCZ(d)}</div><small>${toCZ(iso)}</small></div>
+      <div class="lane-body" data-day="${iso}"></div>
+      <div class="add-row"><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
+    `;
+    lanes.appendChild(lane);
   }
 }
 
 function renderEntries(){
-  document.querySelectorAll(".lane-body").forEach(b=>b.innerHTML="");
-  const byDate = {};
-  for(const r of rows){ (byDate[r.date]=byDate[r.date]||[]).push(r); }
-  document.querySelectorAll(".lane").forEach(lane=>{
-    const body = lane.querySelector(".lane-body");
-    const date = body.getAttribute("data-day");
-    const list = byDate[date]||[];
-    lane.querySelector("[data-count]").textContent = list.length ? list.length + " záznamů" : "";
-    for(const r of list){
-      const card = document.createElement("div");
-      card.className = "entry-pill";
-      card.innerHTML = `
-        <div class="entry-main">
-          <div class="entry-name">${r.employee_name || r.employee_id}</div>
-          ${r.place? `<div class="entry-place">📍 ${r.place}</div>`:""}
-          <div class="entry-hours">${r.hours} h</div>
-          ${r.activity? `<div class="entry-activity">${r.activity}</div>`:""}
-        </div>
-        <div class="entry-actions">
-          <button class="ghost" data-edit="${r.id}" title="Upravit">✏️</button>
-        </div>
-      `;
-      body.appendChild(card);
-    }
-  });
+  const empFilter = $("#filterEmployee").value;
+  const jobFilter = $("#filterJob").value;
+  $$(".lane-body").forEach(n=>n.innerHTML="");
+  for(const r of rows){
+    if(empFilter && String(r.employee_id)!==String(empFilter)) continue;
+    if(jobFilter && String(r.job_id)!==String(jobFilter)) continue;
+    const body = document.querySelector(`.lane-body[data-day="${r.date}"]`);
+    if(!body) continue;
+    const card = document.createElement("div");
+    card.className = "entry-pill";
+    card.innerHTML = `
+      <div class="entry-main">
+        <div class="entry-name">${r.employee_name || r.employee_id}</div>
+        ${r.place? `<div class="entry-place">📍 ${r.place}</div>`:""}
+        <div class="entry-hours">${r.hours} h</div>
+        ${r.activity? `<div class="entry-activity">${r.activity}</div>`:""}
+      </div>
+      <div class="entry-actions">
+        <button class="ghost" data-edit="${r.id}" title="Upravit">✏️</button>
+      </div>
+    `;
+    body.appendChild(card);
+  }
 }
 
 function fillSelect(el, items, idKey, labelKey){
@@ -159,8 +184,8 @@ async function loadAll(){
   jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
   rows = ts.rows || [];
 
-  $("#filterEmployee").innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="\${e.id}">\${e.name}</option>`).join("");
-  $("#filterJob").innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="\${j.id}">\${j.title}</option>`).join("");
+  $("#filterEmployee").innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
+  $("#filterJob").innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
 
   fillSelect($("#fEmployee"), employees, "id", "name");
   fillSelect($("#fJob"), jobs, "id", "title");
@@ -204,9 +229,9 @@ async function saveModal(){
   };
   if(modalState.mode==="edit"){
     payload.id = modalState.id;
-    await fetch("/api/timesheets", {method:"PATCH", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    await api("/api/timesheets", {method:"PATCH", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   }else{
-    await fetch("/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    await api("/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
   }
   closeModal();
   await loadAll();
@@ -214,18 +239,21 @@ async function saveModal(){
 
 async function deleteModal(){
   if(!confirm("Smazat záznam?")) return;
-  await fetch("/api/timesheets?id="+modalState.id, {method:"DELETE"});
+  await api("/api/timesheets?id="+modalState.id, {method:"DELETE"});
   closeModal();
   await loadAll();
 }
 
+// Events
 $("#prevWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
 $("#nextWeek").addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
 $("#weekStart").addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
+$("#filterEmployee").addEventListener("change", renderEntries);
+$("#filterJob").addEventListener("change", renderEntries);
 
 document.addEventListener("click", (e)=>{
   const add = e.target.closest("[data-add]");
-  if(add){ openModal("create", {date:toISO(weekStart)}); }
+  if(add){ openModal("create", {date:add.getAttribute("data-add")}); }
   const editBtn = e.target.closest("[data-edit]");
   if(editBtn){
     const id = Number(editBtn.getAttribute("data-edit"));
@@ -237,6 +265,24 @@ document.addEventListener("click", (e)=>{
 $("#btnSave").addEventListener("click", ()=>saveModal().catch(err=>alert(err.message||String(err))));
 $("#btnCancel").addEventListener("click", ()=>closeModal());
 $("#btnDelete").addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
+
+$("#exportCsv").addEventListener("click", async ()=>{
+  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
+  const emp = $("#filterEmployee").value;
+  const job = $("#filterJob").value;
+  const url = new URL(location.origin + "/api/timesheets/export");
+  url.searchParams.set("from", ws); url.searchParams.set("to", we);
+  if(emp) url.searchParams.set("employee_id", emp);
+  if(job) url.searchParams.set("job_id", job);
+  const r = await fetch(url.toString());
+  if(!r.ok){ alert("Export selhal"); return; }
+  const blob = await r.blob();
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `timesheets_${ws}_${we}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
 
 (function init(){
   weekStart = mondayOf(new Date());
