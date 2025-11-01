@@ -1,5 +1,5 @@
+\
 /* timesheets_enhance.css */
-.ts-wrap{ position:relative }
 .ts-week-header td{ padding:10px 0 2px !important; border:0 !important; }
 .ts-week-row{ display:flex; align-items:center; gap:8px }
 .ts-week-title{ font-weight:800; color:#0a6040; white-space:nowrap }

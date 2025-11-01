@@ -1,6 +1,11 @@
+\
 {% extends "layout.html" %}
 {% block content %}
 <h1>Výkazy práce</h1>
+
+<!-- grouping CSS (loads even without head-block) -->
+<style>@import url('/timesheets_enhance.css');</style>
+
 <div class="row">
   <label>Zaměstnanec <input id="emp" type="number" placeholder="ID"/></label>
   <label>Zakázka <input id="job" type="number" placeholder="ID"/></label>
@@ -37,7 +42,7 @@ async function load(){
   tbody.innerHTML = "";
   for (const t of js.items||[]){
     const tr = document.createElement("tr");
-    tr.innerHTML = \`<td>\${t.id}</td><td>\${t.date}</td><td>\${t.employee_name||t.employee_id}</td><td>\${t.job_title||t.job_id}</td><td>\${t.hours}</td><td>\${t.place||""}</td><td>\${t.activity||""}</td><td><button class="btn ghost edit" data-id="<button data-id="\${t.id}" class="del">Smazat</button>" style="margin-right:6px">Upravit</button><button data-id="\${t.id}" class="del">Smazat</button></td>\`;
+    tr.innerHTML = `<td>${t.id}</td><td>${t.date}</td><td>${t.employee_name||t.employee_id}</td><td>${t.job_title||t.job_id}</td><td>${t.hours}</td><td>${t.place||""}</td><td>${t.activity||""}</td><td><button class="btn ghost edit" data-id="${t.id}" style="margin-right:6px">Upravit</button><button data-id="${t.id}" class="del">Smazat</button></td>`;
     tbody.appendChild(tr);
   }
 }
@@ -76,10 +81,8 @@ load();
   async function japi(url,opts){ const res = await fetch(url,{headers:{'Content-Type':'application/json'}, credentials:'same-origin', ...opts}); if(!res.ok) throw new Error(await res.text()); return res.json(); }
   function openPrompt(prefill){ const title = prompt('Název zakázky:', prefill.title||''); if(title===null) return null; const client = prompt('Zákazník:', prefill.client||''); if(client===null) return null; const status = prompt('Stav (Plán/Probíhá/Dokončeno):', prefill.status||''); const city = prompt('Město:', prefill.city||''); const code = prompt('Kód:', prefill.code||''); const date = prompt('Datum (YYYY-MM-DD):', prefill.date||''); const note = prompt('Poznámka:', prefill.note||''); return {title,client,status,city,code,date,note}; }
   async function tryUpdate(id, payload){
-    // Try PUT /gd/api/jobs/<id>
     try { await japi(`/gd/api/jobs/${id}`, {method:'PUT', body: JSON.stringify(payload)}); return; } catch(e){}
-    // Fallback POST /gd/api/jobs/update
-    try { await japi('/gd/api/jobs/update', {method:'POST', body: JSON.stringify({id, **payload})}); return; } catch(e){}
+    try { await japi('/gd/api/jobs/update', {method:'POST', body: JSON.stringify(Object.assign({id}, payload))}); return; } catch(e){}
     alert('Nepodařilo se uložit změny. Zkontroluj prosím API.');
   }
   function bind(){
@@ -98,3 +101,5 @@ load();
   document.addEventListener('DOMContentLoaded', bind); setTimeout(bind, 800);
 })();
 </script>
+<!-- grouping JS -->
+<script src="/timesheets_enhance.js"></script>
