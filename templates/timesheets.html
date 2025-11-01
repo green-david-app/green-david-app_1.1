@@ -2,57 +2,73 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-/* --- Global tweaks for this page only --- */
-.page-title{ font-size:22px; line-height:1.2; margin:0; } /* smaller H1 */
-.btn.ghost{ background:transparent; }
+/* Page-scoped tweaks */
+.page-title{ font-size:20px; line-height:1.2; margin:0; font-weight:800; }
 .small{ font-size:12px; opacity:.85; }
 
-/* Dark panel at the top (contains title + week controls + filters) */
-.panel-dark{ background:#1f2a24; color:#fff; border:1px solid #32433b; border-radius:16px; padding:14px; }
-.panel-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.panel-dark{ background:#1f2a24; color:#fff; border:1px solid #32433b; border-radius:16px; padding:12px 14px; }
+.panel-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .panel-row .spacer{ flex:1; }
 
+/* Top nav row (inside dark panel) */
+.panel-nav{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+.panel-nav a{ color:#d9f0e3; text-decoration:none; font-weight:600; }
+.panel-nav a:hover{ text-decoration:underline; }
+
+/* Controls compactness */
+.panel-dark select, .panel-dark input[type="date"]{ height:30px; }
+.panel-dark button{ height:30px; }
+
 /* Lanes (days) are dark */
-.week-lanes{ display:flex; flex-direction:column; gap:12px; margin-top:14px; }
-.lane{ border-radius:14px; overflow:hidden; }
+.week-lanes{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.lane{ border-radius:12px; overflow:hidden; }
 .lane.lane-dark{ background:#25322c; border:1px solid #384a42; color:#f2fbf7; }
-.lane-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#2b3a33; border-bottom:1px solid #3a4e45; }
+.lane-head{ display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#2b3a33; border-bottom:1px solid #3a4e45; font-size:13px; }
 .lane-head .title{ font-weight:700; }
 
-/* More compact employee entry */
-.lane-body{ padding:10px; display:flex; flex-direction:column; gap:8px; }
-.entry-pill{ display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:6px 8px; /* smaller */
-  border-radius:10px;
+.lane-body{ padding:8px 10px; display:flex; flex-direction:column; gap:6px; }
+
+/* Even more compact entry pill */
+.entry-pill{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:5px 8px;
+  border-radius:9px;
   background:#eaf4ed; color:#1d2b23;
   border:1px solid #cfe3d5;
-  font-size:14px;
+  font-size:13.5px;
 }
-.entry-main{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.entry-main{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .entry-name{ font-weight:700; }
 .entry-place{ opacity:.85; }
-.entry-hours{ padding:1px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6; font-weight:600; }
+.entry-hours{ padding:0px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6; font-weight:700; font-size:12.5px; }
 .entry-activity{ opacity:.95; }
 
-/* Add-row: high-contrast button on dark background */
+/* Add-row high contrast */
 .add-row{ display:flex; justify-content:flex-end; padding:8px 10px; border-top:1px dashed #3a4e45; }
 .add-pill{
   border:1px dashed #6ea58e;
   border-radius:999px;
   padding:6px 12px;
-  background:#395046; /* darker green */
-  color:#ffffff;       /* high contrast */
+  background:#395046;
+  color:#ffffff;
   cursor:pointer;
-  font-weight:600;
+  font-weight:700;
 }
 .add-pill:hover{ background:#436055; }
-
-/* Make inline selects/inputs visually tighter */
-.panel-dark select, .panel-dark input[type="date"]{ height:32px; }
-.panel-dark button{ height:32px; }
 </style>
 
 <div class="panel-dark">
+  <!-- Replicated top navigation inside dark panel -->
+  <div class="panel-nav">
+    <a href="/">Dashboard</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/calendar">Kalendář</a>
+    <a href="/timesheets.html">Hodiny</a>
+    <a href="/warehouse">Sklad</a>
+    <a href="/export">Export XLSX</a>
+    <a href="/logout" style="margin-left:auto;">Odhlásit</a>
+  </div>
+
   <div class="panel-row">
     <a href="/dashboard" class="btn ghost">← Zpět na hlavní</a>
     <h1 class="page-title">Výkazy hodin — týden</h1>
@@ -65,7 +81,7 @@
     </label>
     <button id="exportCsv">Export CSV (týden)</button>
   </div>
-  <div class="panel-row" style="margin-top:8px;">
+  <div class="panel-row" style="margin-top:6px;">
     <label>Týden od <input id="weekStart" type="date"/></label>
     <button id="prevWeek" class="ghost">← Předchozí</button>
     <button id="nextWeek" class="ghost">Následující →</button>
@@ -75,7 +91,7 @@
 
 <div id="lanes" class="week-lanes"></div>
 
-<!-- Modal (unchanged structure, uses global styles) -->
+<!-- Modal unchanged -->
 <div id="modal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;">
   <div class="card" style="width:min(560px,92vw); overflow:hidden;">
     <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
