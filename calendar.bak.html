@@ -1,0 +1,147 @@
+
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kalendář – green david app</title>
+<link rel="stylesheet" href="/style.css"/>
+<style>
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
+.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative}
+.day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
+.day.out{opacity:.45}
+.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+</style>
+</head><body>
+<header class="header">
+  <div class="brand">
+    <img src="/logo.jpg" class="brand-logo" alt="green david"/>
+    <div><div class="brand-title">green david app</div><div class="brand-sub">Kalendář</div></div>
+    <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div class="card-h">
+      <div>Kalendář</div>
+      <div class="row-gap">
+        <button id="prev" class="ghost">◀</button>
+        <b id="label">měsíc</b>
+        <button id="next" class="ghost">▶</button>
+        <span class="spacer"></span>
+        <button class="btn" data-type="note">+ Poznámka</button>
+        <button class="btn" data-type="task">+ Úkol</button>
+        <button class="btn" data-type="job">+ Zakázka</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="weekbar"><div>Po</div><div>Út</div><div>St</div><div>Čt</div><div>Pá</div><div>So</div><div>Ne</div></div>
+      <div id="grid" class="daygrid"></div>
+    </div>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form class="form-vert" method="dialog" style="min-width:320px">
+    <h3>Přidat záznam</h3>
+    <label>Datum <input type="date" id="fDate" required></label>
+    <label>Nadpis <input type="text" id="fTitle" required placeholder="Název"></label>
+    <label>Podrobnosti <textarea id="fNote" rows="3" placeholder="volitelné"></textarea></label>
+    <label>Barva <input type="color" id="fColor" value="#2e7d32"></label>
+    <input type="hidden" id="fType" value="note"/>
+    <menu>
+      <button class="ghost" value="cancel">Zrušit</button>
+      <button class="btn" id="btnSave" value="default">Uložit</button>
+    </menu>
+    <div id="err" class="small" style="color:#d32f2f;display:none"></div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  const grid = document.getElementById('grid');
+  const label = document.getElementById('label');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const dlg = document.getElementById('dlg');
+  const fDate = document.getElementById('fDate');
+  const fTitle = document.getElementById('fTitle');
+  const fNote = document.getElementById('fNote');
+  const fColor = document.getElementById('fColor');
+  const fType = document.getElementById('fType');
+  const err = document.getElementById('err');
+
+  let cur = new Date(); cur.setDate(1);
+  const iso = d => d.toISOString().slice(0,10);
+  const monthLabel = d => d.toLocaleString('cs-CZ',{month:'long',year:'numeric'});
+
+  async function api(url, opts){
+    const r = await fetch(url, {credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...(opts||{})});
+    const ct = r.headers.get('content-type')||'';
+    const body = ct.includes('application/json') ? await r.json() : await r.text();
+    if(!r.ok) throw new Error(typeof body==='string'?body:JSON.stringify(body));
+    return body;
+  }
+
+  async function load(){
+    label.textContent = monthLabel(cur);
+    const start = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const end = new Date(cur.getFullYear(), cur.getMonth()+1, 0);
+    const items = await api(`/gd/api/calendar?from=${iso(start)}&to=${iso(end)}`);
+    render(items||[]);
+  }
+
+  function render(items){
+    grid.innerHTML='';
+    const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const pad = (first.getDay()+6)%7;
+    const start = new Date(first); start.setDate(first.getDate()-pad);
+    const by = {}; (items||[]).forEach(x=>{ (by[x.date] ||= []).push(x); });
+    for(let i=0;i<42;i++){
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const cell = document.createElement('div'); cell.className='day'+(d.getMonth()!==cur.getMonth()?' out':'');
+      const head = document.createElement('div'); head.className='d'; head.textContent = d.getDate()+'.';
+      cell.appendChild(head);
+      const list = document.createElement('div');
+      (by[iso(d)]||[]).forEach(ev => {
+        const row = document.createElement('div'); row.className='pill';
+        row.style.background = ev.color || '#2e7d32'; row.innerHTML = `<span class="ellipsis">${ev.title}</span>`;
+        const del = document.createElement('button'); del.className='ghost'; del.textContent='×'; del.title='Smazat';
+        del.onclick = async (e)=>{ e.stopPropagation(); if(confirm('Smazat záznam?')){ await api('/gd/api/calendar?'+new URLSearchParams({id:String(ev.id)}), {method:'DELETE'}); load(); } };
+        row.appendChild(del); list.appendChild(row);
+      });
+      cell.appendChild(list);
+      cell.ondblclick = ()=> openModal(iso(d), 'note');
+      grid.appendChild(cell);
+    }
+  }
+
+  function openModal(date, type){
+    fDate.value = date; fType.value = type;
+    fColor.value = type==='note' ? '#1976d2' : (type==='job' ? '#ef6c00' : '#2e7d32');
+    fTitle.value = ''; fNote.value = ''; err.style.display='none'; err.textContent='';
+    dlg.showModal();
+  }
+
+  document.getElementById('btnSave').onclick = async (e)=>{
+    e.preventDefault();
+    try{
+      await api('/gd/api/calendar', {method:'POST', body: JSON.stringify({
+        date: fDate.value, title: fTitle.value, kind: fType.value, note: fNote.value, color: fColor.value
+      })});
+      dlg.close(); load();
+    }catch(ex){
+      err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message;
+    }
+  };
+
+  prev.onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
+  next.onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
+  document.querySelectorAll('button.btn[data-type]').forEach(b=> b.onclick = ()=> openModal(new Date().toISOString().slice(0,10), b.dataset.type));
+
+  load();
+})();
+</script>
+</body></html>
