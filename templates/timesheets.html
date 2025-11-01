@@ -1,63 +1,86 @@
 
 {% extends "layout.html" %}
 {% block content %}
-<h1>Výkazy hodin — týden</h1>
+<div class="topbar" style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+  <a href="/" class="btn back-btn" style="text-decoration:none;">← Zpět na hlavní</a>
+  <h1 style="margin:0;">Výkazy hodin — týden</h1>
+</div>
 
 <style>
-/* === Green David theme-ish (subtle, app-like) === */
+/* Try to blend with app look: dark cards, soft green bg accents, rounded corners */
 :root{
   --gd-green:#2e7d32;
-  --gd-green-50:#f2f8f4;
-  --gd-green-100:#e7f1eb;
-  --gd-green-200:#d6e6de;
-  --gd-border:#e5e8eb;
-  --gd-muted:#6b7280;
-  --gd-bg:#ffffff;
+  --gd-bg-soft:#e7f1eb;
+  --gd-border:#3a4345;
+  --gd-card:#232a2f;
+  --gd-card-2:#1f2529;
+  --gd-text:#e7ecea;
+  --gd-muted:#a2b2aa;
 }
-.board-toolbar { display:flex; gap:8px; align-items:center; margin:8px 0 12px; flex-wrap:wrap; }
-.board-toolbar .spacer { flex:1; }
-.btn{ padding:8px 12px; border-radius:8px; border:1px solid #cdd8d1; background:#f5faf7; cursor:pointer; }
-.btn.primary{ background:var(--gd-green); border-color:var(--gd-green); color:white; }
-.btn.ghost{ background:white; }
-.btn.danger{ background:#fff5f5; border-color:#f2c0c0; color:#c0392b; }
-.smallmuted{ font-size:12px; color:var(--gd-muted); }
-.form-row input, .form-row select, .form-row textarea { padding:8px 10px; border:1px solid #dfe5e1; border-radius:8px; min-width:160px; }
+
+body .card{ background:var(--gd-card); border:1px solid var(--gd-border); color:var(--gd-text); }
+body .card-h{ background:var(--gd-card-2); border-bottom:1px solid var(--gd-border); color:var(--gd-text); }
+body .table th, body .table td{ color:var(--gd-text); }
+
+.btn{ padding:8px 12px; border-radius:10px; border:1px solid #3e4c42; background:#2b342f; color:var(--gd-text); cursor:pointer; }
+.btn:hover{ filter:brightness(1.08); }
+.btn.primary{ background:var(--gd-green); border-color:var(--gd-green); color:#fff; }
+.btn.ghost{ background:transparent; }
+.btn.danger{ background:#5a1f1f; border-color:#7d2e2e; color:#ffd6d6; }
+.btn.back-btn{ background:transparent; border-color:#3e4c42; }
+
+input, select, textarea{
+  background:#1a2023; color:var(--gd-text);
+  border:1px solid #3a4345; border-radius:10px; padding:8px 10px;
+}
 
 /* === Horizontal lanes (one per day) === */
+.week-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0 14px; flex-wrap:wrap; }
+.week-toolbar .spacer { flex:1; }
+.smallmuted{ font-size:12px; color:var(--gd-muted); }
+
 .week-lanes { display:flex; flex-direction:column; gap:14px; }
-.lane { background:var(--gd-bg); border:1px solid var(--gd-border); border-radius:12px; }
-.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--gd-border); background:var(--gd-green-50); border-radius:12px 12px 0 0; }
-.lane-head .title { font-weight:700; }
+.lane { background:var(--gd-card); border:1px solid var(--gd-border); border-radius:14px; overflow:hidden; }
+.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#23302a; }
+.lane-head .title { font-weight:700; color:#fff; }
 .lane-head small { color:var(--gd-muted); font-weight:400; }
-.lane-body { padding:10px; display:flex; gap:10px; flex-wrap:wrap; }
-.card-entry{ border:1px solid var(--gd-border); background:white; border-radius:10px; padding:10px 12px; min-width:280px; max-width:360px; box-shadow:0 1px 0 rgba(0,0,0,0.03); display:flex; flex-direction:column; gap:6px; }
-.badge{ display:inline-block; padding:2px 8px; border-radius:999px; background:var(--gd-green-100); border:1px solid var(--gd-green-200); font-size:12px; }
-.card-top{ display:flex; align-items:center; gap:8px; }
-.card-top .job{ font-weight:600; }
-.card-meta{ font-size:12px; color:var(--gd-muted); display:flex; gap:10px; flex-wrap:wrap; }
-.icon-btn { border:none; background:transparent; cursor:pointer; padding:4px; border-radius:6px; }
-.icon-btn:hover{ background:#eef4f0; }
-.add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:10px 14px; background:#f9fbfa; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
-.add-pill:hover{ background:#eef4f0; }
-.lane-actions{ padding:10px 12px; border-top:1px dashed var(--gd-border); display:flex; }
-.lane-actions .add-pill{ margin-left:auto; }
+
+.lane-body { padding:12px; display:flex; flex-direction:column; gap:10px; }
+
+/* Entry pill: full-width horizontal item */
+.entry-pill{
+  display:flex; align-items:center; gap:12px;
+  background:#1d2427; border:1px solid #344046; border-radius:12px;
+  padding:10px 12px; width:100%;
+}
+.entry-hours{
+  min-width:46px; text-align:center; padding:4px 8px; border-radius:999px;
+  background:#1c3c22; border:1px solid #2f5f3a; color:#d7f2e0; font-weight:600;
+}
+.entry-main{ display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+.entry-top{ display:flex; align-items:center; gap:8px; }
+.entry-job{ font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-meta{ font-size:12px; color:var(--gd-muted); display:flex; gap:12px; flex-wrap:wrap; }
+.entry-actions{ display:flex; gap:8px; }
+.add-row{ display:flex; justify-content:flex-end; padding:10px 12px; border-top:1px dashed #344046; }
+.add-pill{ border:1px dashed #4a5c55; border-radius:999px; padding:8px 14px; background:#1b2225; color:#cfe2d6; cursor:pointer; }
 
 /* Modal */
-.modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000; }
-.modal{ width:min(560px, 92vw); background:#fff; border-radius:12px; border:1px solid var(--gd-border); overflow:hidden; }
-.modal-h{ padding:12px 14px; font-weight:600; border-bottom:1px solid var(--gd-border); background:var(--gd-green-50); }
+.modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal{ width:min(560px, 92vw); background:#1c2124; border-radius:14px; border:1px solid #3a4345; overflow:hidden; color:var(--gd-text); }
+.modal-h{ padding:12px 14px; font-weight:600; border-bottom:1px solid #3a4345; background:#21282c; }
 .modal-c{ padding:14px; display:grid; gap:10px; }
-.modal-f{ padding:12px 14px; display:flex; justify-content:flex-end; border-top:1px solid var(--gd-border); gap:8px; background:#fbfcfb; }
+.modal-f{ padding:12px 14px; display:flex; justify-content:flex-end; border-top:1px solid #3a4345; gap:8px; background:#1a2023; }
 .form-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .form-row > label{ display:flex; flex-direction:column; gap:4px; font-size:13px; }
-@media (max-width: 720px){
-  .card-entry{ min-width: 240px; }
-}
+
+/* date input tweaks for dark */
+input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) hue-rotate(120deg); }
 </style>
 
 <div class="card">
   <div class="card-c">
-    <div class="board-toolbar">
+    <div class="week-toolbar">
       <label>Týden od <input id="weekStart" type="date"/></label>
       <button id="prevWeek" class="btn ghost">← Předchozí</button>
       <button id="nextWeek" class="btn ghost">Následující →</button>
@@ -73,7 +96,7 @@
     </div>
 
     <div id="lanes" class="week-lanes"></div>
-    <div class="smallmuted" style="margin-top:8px;">Každý den je jeden horizontální „proužek“. Klikni na <b>+ Přidat záznam</b> nebo na ✏️ pro úpravu.</div>
+    <div class="smallmuted" style="margin-top:8px;">Každý den je vodorovný pruh; záznamy jsou horizontální buňky pod sebou.</div>
   </div>
 </div>
 
@@ -149,7 +172,7 @@ function buildLanes(){
     lane.innerHTML = `
       <div class="lane-head"><div class="title">${fmtCZ(d)}</div><small>${toCZ(iso)}</small></div>
       <div class="lane-body" data-day="${iso}"></div>
-      <div class="lane-actions"><div class="spacer"></div><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
+      <div class="add-row"><div class="add-pill" data-add="${iso}">＋ Přidat záznam</div></div>
     `;
     lanes.appendChild(lane);
   }
@@ -165,18 +188,22 @@ function renderEntries(){
     const body = document.querySelector(`.lane-body[data-day="${r.date}"]`);
     if(!body) continue;
     const card = document.createElement("div");
-    card.className = "card-entry";
+    card.className = "entry-pill";
     card.innerHTML = `
-      <div class="card-top">
-        <span class="badge">${r.hours} h</span>
-        <div class="job">${r.job_title || ("Zakázka #"+r.job_id)}</div>
-        <button class="icon-btn" title="Upravit" data-edit="${r.id}" style="margin-left:auto">✏️</button>
+      <div class="entry-hours">${r.hours} h</div>
+      <div class="entry-main">
+        <div class="entry-top">
+          <div class="entry-job">${r.job_title || ("Zakázka #"+r.job_id)}</div>
+        </div>
+        <div class="entry-meta">
+          <span>👤 ${r.employee_name || r.employee_id}</span>
+          ${r.place? `<span>📍 ${r.place}</span>`:""}
+        </div>
+        ${r.activity? `<div class="smallmuted">${r.activity}</div>`:""}
       </div>
-      <div class="card-meta">
-        <span>👤 ${r.employee_name || r.employee_id}</span>
-        ${r.place? `<span>📍 ${r.place}</span>`:""}
+      <div class="entry-actions">
+        <button class="btn ghost" data-edit="${r.id}" title="Upravit">✏️</button>
       </div>
-      ${r.activity? `<div class="smallmuted">${r.activity}</div>`:""}
     `;
     body.appendChild(card);
   }
