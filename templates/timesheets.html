@@ -1,17 +1,14 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-/* Sticky dark bar under header */
 .ts-sticky{ position:sticky; top:64px; z-index:50; background:#1f2a24; border:1px solid #32433b; border-radius:16px; padding:8px 12px; color:#fff; margin-bottom:10px; }
 .ts-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 .ts-row .spacer{ flex:1; }
-
 .page-title{ font-size:18px; line-height:1.2; margin:0; font-weight:800; }
 .small{ font-size:12px; opacity:.85; }
 .ts-sticky select, .ts-sticky input[type="date"]{ height:30px; }
 .ts-sticky button{ height:30px; }
 
-/* Lanes */
 .week-lanes{ display:flex; flex-direction:column; gap:10px; }
 .lane{ border-radius:12px; overflow:hidden; }
 .lane.lane-dark{ background:#25322c; border:1px solid #384a42; color:#f2fbf7; }
@@ -19,18 +16,15 @@
 .lane-head .title{ font-weight:700; }
 .lane-body{ padding:8px 10px; display:flex; flex-direction:column; gap:6px; min-height:44px; }
 
-/* Entry pill */
 .entry-pill{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 8px; border-radius:9px; background:#eaf4ed; color:#1d2b23; border:1px solid #cfe3d5; font-size:13.5px; }
 .entry-main{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .entry-name{ font-weight:700; }
 .entry-hours{ padding:0 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6; font-weight:700; font-size:12.5px; }
 
-/* Add row */
 .add-row{ display:flex; justify-content:flex-end; padding:8px 10px; border-top:1px dashed #3a4e45; }
 .add-pill{ border:1px dashed #6ea58e; border-radius:999px; padding:6px 12px; background:#395046; color:#fff; cursor:pointer; font-weight:700; }
 .add-pill:hover{ background:#436055; }
 
-/* Modal */
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1000; }
 .modal-card{ width:min(560px,92vw); }
 .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -57,7 +51,6 @@
 
 <div id="lanes" class="week-lanes"></div>
 
-<!-- Modal -->
 <div id="modal" class="modal-backdrop">
   <div class="card modal-card">
     <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
@@ -170,8 +163,7 @@ function wire(){
   $("#lanes").addEventListener("click", async (e)=>{
     const add = e.target.closest("[data-add]"); if(add){
       const d = add.getAttribute("data-add");
-      // Open minimal modal/create dialog could go here (kept simple)
-      alert("Kliknuto na Přidat záznam pro " + d + ". Vytváření záznamu zůstává stejné jako v předchozí verzi.");
+      alert("Kliknuto na Přidat záznam pro " + d + ".");
     }
   });
 }

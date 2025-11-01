@@ -9,21 +9,21 @@
 <body>
   <header class="header">
     <div class="brand">
-      <!-- Stejný způsob zobrazení loga jako na hlavní stránce -->
-      <img class="brand-logo" src="/logo.jpg" alt="green david logo" onerror="this.src='/logo.svg'" style="height:36px;width:auto;border-radius:6px;">
+      <!-- logo jako na hlavní stránce -->
+      <img class="brand-logo" src="/logo.jpg" alt="green david logo" style="height:36px;width:auto;border-radius:6px;">
       <div>
         <div class="brand-title">green david app</div>
         <div class="brand-sub">interní systém</div>
       </div>
     </div>
     <nav class="nav">
-      <!-- Odkazy záměrně pouze na existující stránky -->
+      <!-- Zachovat funkční cesty: SPA části vedou na /, samostatné stránky na .html -->
       <a href="/">Dashboard</a>
       <a href="/">Zakázky</a>
-      <a href="/calendar2.html">Kalendář</a>
+      <a href="/calendar.html">Kalendář</a>
       <a href="/timesheets.html">Výkazy</a>
       <a href="/">Sklad</a>
-      <a href="/logout">Odhlásit</a>
+      {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
     </nav>
   </header>
 
