@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Výkazy práce</h1>
+<div class="row">
+  <label>Zaměstnanec <input id="emp" type="number" placeholder="ID"/></label>
+  <label>Zakázka <input id="job" type="number" placeholder="ID"/></label>
+  <label>Datum od <input id="from" type="date"/></label>
+  <label>Datum do <input id="to" type="date"/></label>
+  <button id="load">Načíst</button>
+  <button id="export">Export CSV</button>
+</div>
+<table id="grid" class="table">
+  <thead><tr><th>ID</th><th>Datum</th><th>Zaměstnanec</th><th>Zakázka</th><th>Hodin</th><th>Místo</th><th>Činnost</th><th></th></tr></thead>
+  <tbody></tbody>
+</table>
+<h3>Nový záznam</h3>
+<form id="addForm" class="row">
+  <input name="employee_id" type="number" placeholder="Zaměstnanec (ID)" required/>
+  <input name="job_id" type="number" placeholder="Zakázka (ID)" required/>
+  <input name="date" type="date" required/>
+  <input name="hours" type="number" step="0.25" min="0" placeholder="Hodin" required/>
+  <input name="place" type="text" placeholder="Místo"/>
+  <input name="activity" type="text" placeholder="Činnost"/>
+  <button>Přidat</button>
+</form>
+<script>
+const $ = sel => document.querySelector(sel);
+const tbody = $("#grid tbody");
+async function load(){
+  const p = new URLSearchParams();
+  if ($("#emp").value) p.set("employee_id", $("#emp").value);
+  if ($("#job").value) p.set("job_id", $("#job").value);
+  if ($("#from").value) p.set("from", $("#from").value);
+  if ($("#to").value) p.set("to", $("#to").value);
+  const r = await fetch("/gd/api/timesheets?"+p.toString());
+  const js = await r.json();
+  tbody.innerHTML = "";
+  for (const t of js.items||[]){
+    const tr = document.createElement("tr");
+    tr.innerHTML = \`<td>\${t.id}</td><td>\${t.date}</td><td>\${t.employee_name||t.employee_id}</td><td>\${t.job_title||t.job_id}</td><td>\${t.hours}</td><td>\${t.place||""}</td><td>\${t.activity||""}</td><td><button class="btn ghost edit" data-id="<button data-id="\${t.id}" class="del">Smazat</button>" style="margin-right:6px">Upravit</button><button data-id="\${t.id}" class="del">Smazat</button></td>\`;
+    tbody.appendChild(tr);
+  }
+}
+$("#load").onclick = load;
+tbody.addEventListener("click", async (e)=>{
+  if (e.target.matches("button.del")){
+    const id = e.target.dataset.id;
+    if (confirm("Smazat záznam #"+id+"?")){
+      const r = await fetch("/gd/api/timesheets?id="+encodeURIComponent(id), {method:"DELETE"});
+      if (r.ok) load(); else alert("Mazání selhalo");
+    }
+  }
+});
+document.getElementById("addForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const payload = Object.fromEntries(new FormData(e.target).entries());
+  payload.hours = parseFloat(payload.hours);
+  const r = await fetch("/gd/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  if (r.ok){ e.target.reset(); load(); } else { alert("Uložení selhalo"); }
+});
+document.getElementById("export").onclick = async ()=>{
+  const r = await fetch("/api/timesheets/export");
+  if (!r.ok){ alert("Export selhal"); return; }
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "timesheets.csv"; a.click();
+  URL.revokeObjectURL(url);
+};
+load();
+</script>
+{% endblock %}
+<script>
+(function(){
+  function qs(a){return document.querySelector(a)}; function qsa(a){return Array.from(document.querySelectorAll(a))};
+  async function japi(url,opts){ const res = await fetch(url,{headers:{'Content-Type':'application/json'}, credentials:'same-origin', ...opts}); if(!res.ok) throw new Error(await res.text()); return res.json(); }
+  function openPrompt(prefill){ const title = prompt('Název zakázky:', prefill.title||''); if(title===null) return null; const client = prompt('Zákazník:', prefill.client||''); if(client===null) return null; const status = prompt('Stav (Plán/Probíhá/Dokončeno):', prefill.status||''); const city = prompt('Město:', prefill.city||''); const code = prompt('Kód:', prefill.code||''); const date = prompt('Datum (YYYY-MM-DD):', prefill.date||''); const note = prompt('Poznámka:', prefill.note||''); return {title,client,status,city,code,date,note}; }
+  async function tryUpdate(id, payload){
+    // Try PUT /gd/api/jobs/<id>
+    try { await japi(`/gd/api/jobs/${id}`, {method:'PUT', body: JSON.stringify(payload)}); return; } catch(e){}
+    // Fallback POST /gd/api/jobs/update
+    try { await japi('/gd/api/jobs/update', {method:'POST', body: JSON.stringify({id, **payload})}); return; } catch(e){}
+    alert('Nepodařilo se uložit změny. Zkontroluj prosím API.');
+  }
+  function bind(){
+    qsa('button.edit[data-id]').forEach(btn=>{
+      if(btn._gd_edit_bound) return; btn._gd_edit_bound=true;
+      btn.addEventListener('click', async (e)=>{
+        const id = btn.getAttribute('data-id') || prompt('ID zakázky k úpravě:');
+        if(!id) return;
+        let jobs=[]; try{ const j = await japi('/gd/api/jobs', {method:'GET'}); jobs = j.jobs||[]; }catch(e){}
+        const found = jobs.find(x=>String(x.id)===String(id)) || {};
+        const payload = openPrompt(found||{}); if(!payload) return;
+        try{ await tryUpdate(id, payload); location.reload(); }catch(e){ alert('Chyba při ukládání: '+(e.message||e)); }
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', bind); setTimeout(bind, 800);
+})();
+</script>
