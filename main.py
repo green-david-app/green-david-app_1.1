@@ -1,7 +1,7 @@
 
 import os, re, io, base64, sqlite3, csv
 from datetime import datetime, date, timedelta
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -17,11 +17,12 @@ def _normalize_date(v):
     if not v:
         return v
     s = str(v).strip()
-    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
+    import re as _re
+    m = _re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
     if m:
         y, M, d = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
-    m = re.match(r"^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$", s)
+    m = _re.match(r"^(\d{1,2})[\\.\s-](\d{1,2})[\\.\s-](\d{4})$", s)
     if m:
         d, M, y = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
@@ -119,6 +120,7 @@ def seed_admin():
     db = get_db()
     cur = db.execute("SELECT COUNT(*) c FROM users")
     if cur.fetchone()["c"] == 0:
+        from werkzeug.security import generate_password_hash
         db.execute("""INSERT INTO users(email,name,role,password_hash,active,created_at)
                       VALUES (?,?,?,?,1,?)""",
                    (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
@@ -140,9 +142,12 @@ def index():
 
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
-    safe = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
+    import re as _re
+    safe = _re.sub(r"[^a-zA-Z0-9._-]", "_", name)
     path = os.path.join(UPLOAD_DIR, safe)
-    if not os.path.isfile(path): abort(404)
+    if not os.path.isfile(path): 
+        from flask import abort as _abort
+        _abort(404)
     return send_from_directory(UPLOAD_DIR, safe)
 
 @app.route("/health")
@@ -178,7 +183,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# jobs (read only subset here to keep file small)
+# jobs (read only subset)
 @app.route("/api/jobs", methods=["GET"])
 def api_jobs():
     db = get_db()
@@ -295,11 +300,11 @@ def api_timesheets_export():
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
 
-# ----------------- Template routes -----------------
+# ----------------- Template route -----------------
 @app.route("/timesheets.html")
 def page_timesheets():
-    # Render the weekly grid template (Jinja not strictly used here, but we keep layout compatibility if present).
-    return send_from_directory("templates", "timesheets.html")
+    # Render via Jinja so that {% extends "layout.html" %} works, bringing in app fonts/styles.
+    return render_template("timesheets.html")
 
 # ----------------- run -----------------
 if __name__ == "__main__":

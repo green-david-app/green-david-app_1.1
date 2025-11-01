@@ -1,89 +1,50 @@
 
 {% extends "layout.html" %}
 {% block content %}
-<div class="topbar" style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-  <a href="/" class="btn back-btn" style="text-decoration:none;">← Zpět na hlavní</a>
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+  <a href="/" class="btn ghost" style="text-decoration:none;">← Zpět na hlavní</a>
   <h1 style="margin:0;">Výkazy hodin — týden</h1>
 </div>
 
 <style>
-/* Try to blend with app look: dark cards, soft green bg accents, rounded corners */
-:root{
-  --gd-green:#2e7d32;
-  --gd-bg-soft:#e7f1eb;
-  --gd-border:#3a4345;
-  --gd-card:#232a2f;
-  --gd-card-2:#1f2529;
-  --gd-text:#e7ecea;
-  --gd-muted:#a2b2aa;
-}
-
-body .card{ background:var(--gd-card); border:1px solid var(--gd-border); color:var(--gd-text); }
-body .card-h{ background:var(--gd-card-2); border-bottom:1px solid var(--gd-border); color:var(--gd-text); }
-body .table th, body .table td{ color:var(--gd-text); }
-
-.btn{ padding:8px 12px; border-radius:10px; border:1px solid #3e4c42; background:#2b342f; color:var(--gd-text); cursor:pointer; }
-.btn:hover{ filter:brightness(1.08); }
-.btn.primary{ background:var(--gd-green); border-color:var(--gd-green); color:#fff; }
-.btn.ghost{ background:transparent; }
-.btn.danger{ background:#5a1f1f; border-color:#7d2e2e; color:#ffd6d6; }
-.btn.back-btn{ background:transparent; border-color:#3e4c42; }
-
-input, select, textarea{
-  background:#1a2023; color:var(--gd-text);
-  border:1px solid #3a4345; border-radius:10px; padding:8px 10px;
-}
-
-/* === Horizontal lanes (one per day) === */
+/* Only minimal overrides; inherit fonts/colors from the app */
 .week-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0 14px; flex-wrap:wrap; }
 .week-toolbar .spacer { flex:1; }
-.smallmuted{ font-size:12px; color:var(--gd-muted); }
+.smallmuted{ font-size:12px; opacity:0.75; }
 
 .week-lanes { display:flex; flex-direction:column; gap:14px; }
-.lane { background:var(--gd-card); border:1px solid var(--gd-border); border-radius:14px; overflow:hidden; }
-.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#23302a; }
-.lane-head .title { font-weight:700; color:#fff; }
-.lane-head small { color:var(--gd-muted); font-weight:400; }
+.lane { border:1px solid #e0e6e2; border-radius:14px; background:#f3f7f5; overflow:hidden; }
+.lane-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#e8f2ec; }
+.lane-head .title { font-weight:700; }
+.lane-head small { opacity:0.7; }
 
-.lane-body { padding:12px; display:flex; flex-direction:column; gap:10px; }
+.lane-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
 
-/* Entry pill: full-width horizontal item */
+/* Slim entry: rounded, light green, horizontal; ORDER: name -> place -> hours -> activity */
 .entry-pill{
-  display:flex; align-items:center; gap:12px;
-  background:#1d2427; border:1px solid #344046; border-radius:12px;
-  padding:10px 12px; width:100%;
+  display:flex; align-items:center; gap:10px;
+  background:#eaf4ed; border:1px solid #cfe3d5; border-radius:12px;
+  padding:6px 10px; width:100%;
 }
+.entry-main{ display:flex; flex-direction:row; align-items:center; gap:14px; flex-wrap:wrap; flex:1; min-width:0; }
+.entry-name{ font-weight:700; }
+.entry-place{ opacity:0.8; }
 .entry-hours{
-  min-width:46px; text-align:center; padding:4px 8px; border-radius:999px;
-  background:#1c3c22; border:1px solid #2f5f3a; color:#d7f2e0; font-weight:600;
+  padding:2px 8px; border-radius:999px; border:1px solid #b7d2c0; background:#dff0e6;
+  font-weight:600;
 }
-.entry-main{ display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
-.entry-top{ display:flex; align-items:center; gap:8px; }
-.entry-job{ font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.entry-meta{ font-size:12px; color:var(--gd-muted); display:flex; gap:12px; flex-wrap:wrap; }
-.entry-actions{ display:flex; gap:8px; }
-.add-row{ display:flex; justify-content:flex-end; padding:10px 12px; border-top:1px dashed #344046; }
-.add-pill{ border:1px dashed #4a5c55; border-radius:999px; padding:8px 14px; background:#1b2225; color:#cfe2d6; cursor:pointer; }
-
-/* Modal */
-.modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:1000; }
-.modal{ width:min(560px, 92vw); background:#1c2124; border-radius:14px; border:1px solid #3a4345; overflow:hidden; color:var(--gd-text); }
-.modal-h{ padding:12px 14px; font-weight:600; border-bottom:1px solid #3a4345; background:#21282c; }
-.modal-c{ padding:14px; display:grid; gap:10px; }
-.modal-f{ padding:12px 14px; display:flex; justify-content:flex-end; border-top:1px solid #3a4345; gap:8px; background:#1a2023; }
-.form-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.form-row > label{ display:flex; flex-direction:column; gap:4px; font-size:13px; }
-
-/* date input tweaks for dark */
-input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) hue-rotate(120deg); }
+.entry-activity{ opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:50vw; }
+.entry-actions{ display:flex; gap:6px; }
+.add-row{ display:flex; justify-content:flex-end; padding:8px 10px; border-top:1px dashed #d6e6de; }
+.add-pill{ border:1px dashed #b7c7bd; border-radius:999px; padding:6px 12px; background:#f9fbfa; cursor:pointer; }
 </style>
 
 <div class="card">
   <div class="card-c">
     <div class="week-toolbar">
       <label>Týden od <input id="weekStart" type="date"/></label>
-      <button id="prevWeek" class="btn ghost">← Předchozí</button>
-      <button id="nextWeek" class="btn ghost">Následující →</button>
+      <button id="prevWeek" class="ghost">← Předchozí</button>
+      <button id="nextWeek" class="ghost">Následující →</button>
       <span id="weekLabel" class="smallmuted"></span>
       <div class="spacer"></div>
       <label>Filtrovat zaměstnance
@@ -92,49 +53,48 @@ input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) hue-rota
       <label>Filtrovat zakázku
         <select id="filterJob"><option value="">Vše</option></select>
       </label>
-      <button id="exportCsv" class="btn">Export CSV (týden)</button>
+      <button id="exportCsv">Export CSV (týden)</button>
     </div>
 
     <div id="lanes" class="week-lanes"></div>
-    <div class="smallmuted" style="margin-top:8px;">Každý den je vodorovný pruh; záznamy jsou horizontální buňky pod sebou.</div>
+    <div class="smallmuted" style="margin-top:6px;">Klikni na „Přidat záznam“ v řádku dne nebo uprav existující položku.</div>
   </div>
 </div>
 
-<!-- Modal -->
-<div id="modal" class="modal-backdrop" role="dialog" aria-modal="true">
-  <div class="modal">
-    <div class="modal-h" id="modalTitle">Nový záznam</div>
-    <div class="modal-c">
-      <div class="form-row">
-        <label>Zaměstnanec
+<!-- Modal (inherit app styles) -->
+<div id="modal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000;">
+  <div class="card" style="width:min(560px,92vw); overflow:hidden;">
+    <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
+    <div class="card-c" style="display:grid; gap:10px;">
+      <div class="form-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <label style="display:flex; flex-direction:column; gap:4px;">Zaměstnanec
           <select id="fEmployee"></select>
         </label>
-        <label>Zakázka
+        <label style="display:flex; flex-direction:column; gap:4px;">Zakázka
           <select id="fJob"></select>
         </label>
-        <label>Datum
+        <label style="display:flex; flex-direction:column; gap:4px;">Datum
           <input id="fDate" type="date"/>
         </label>
       </div>
-      <div class="form-row">
-        <label>Hodin
+      <div class="form-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <label style="display:flex; flex-direction:column; gap:4px;">Hodin
           <input id="fHours" type="number" min="0" step="0.25" placeholder="8"/>
         </label>
-        <label>Místo
+        <label style="display:flex; flex-direction:column; gap:4px;">Místo
           <input id="fPlace" type="text" placeholder=""/>
         </label>
       </div>
-      <div class="form-row" style="flex-direction:column; align-items:stretch;">
+      <div class="form-row" style="display:flex; flex-direction:column; gap:4px;">
         <label>Činnost
           <textarea id="fActivity" rows="2" placeholder=""></textarea>
         </label>
       </div>
     </div>
-    <div class="modal-f">
-      <button id="btnDelete" class="btn danger" style="display:none;">Smazat</button>
-      <div style="flex:1"></div>
-      <button id="btnCancel" class="btn ghost">Zrušit</button>
-      <button id="btnSave" class="btn primary">Uložit</button>
+    <div class="card-f" style="display:flex; gap:8px; justify-content:flex-end; padding:12px; border-top:1px solid #e0e6e2;">
+      <button id="btnDelete" class="ghost" style="display:none;">Smazat</button>
+      <button id="btnCancel" class="ghost">Zrušit</button>
+      <button id="btnSave">Uložit</button>
     </div>
   </div>
 </div>
@@ -190,19 +150,14 @@ function renderEntries(){
     const card = document.createElement("div");
     card.className = "entry-pill";
     card.innerHTML = `
-      <div class="entry-hours">${r.hours} h</div>
       <div class="entry-main">
-        <div class="entry-top">
-          <div class="entry-job">${r.job_title || ("Zakázka #"+r.job_id)}</div>
-        </div>
-        <div class="entry-meta">
-          <span>👤 ${r.employee_name || r.employee_id}</span>
-          ${r.place? `<span>📍 ${r.place}</span>`:""}
-        </div>
-        ${r.activity? `<div class="smallmuted">${r.activity}</div>`:""}
+        <div class="entry-name">${r.employee_name || r.employee_id}</div>
+        ${r.place? `<div class="entry-place">📍 ${r.place}</div>`:""}
+        <div class="entry-hours">${r.hours} h</div>
+        ${r.activity? `<div class="entry-activity">${r.activity}</div>`:""}
       </div>
       <div class="entry-actions">
-        <button class="btn ghost" data-edit="${r.id}" title="Upravit">✏️</button>
+        <button class="ghost" data-edit="${r.id}" title="Upravit">✏️</button>
       </div>
     `;
     body.appendChild(card);
@@ -229,10 +184,8 @@ async function loadAll(){
   jobs = (js.jobs||[]).sort((a,b)=>String(a.title).localeCompare(b.title));
   rows = ts.rows || [];
 
-  const filterEmp = $("#filterEmployee");
-  const filterJob = $("#filterJob");
-  filterEmp.innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
-  filterJob.innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
+  $("#filterEmployee").innerHTML = `<option value="">Všichni</option>` + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
+  $("#filterJob").innerHTML = `<option value="">Vše</option>` + jobs.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
 
   fillSelect($("#fEmployee"), employees, "id", "name");
   fillSelect($("#fJob"), jobs, "id", "title");
