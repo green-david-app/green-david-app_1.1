@@ -18,7 +18,7 @@
     .grid-wrap{ padding:6px 10px 20px; }
     .weekday{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding:0 2px 6px; color:#4d635a; font-weight:700; }
     .weekday span{ text-align:center; font-size:12px; }
-    .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; } /* trochu větší gap pro desktop */
+    .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
     .day{ position:relative; background:#1a2a23; border-radius:22px; min-height:84px; padding:10px 8px 8px; color:var(--gd-ink); box-shadow:0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; overflow:hidden; }
     .day.out{ opacity:.35; }
     .num{ font-weight:800; font-size:14px; opacity:.95; }
@@ -41,6 +41,8 @@
     .sheet .actions{ display:flex; justify-content:flex-end; gap:8px; }
     .btn{ border:0; background:#0a6040; color:#fff; padding:10px 14px; border-radius:12px; font-weight:800; }
     .btn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
+    /* Error overlay */
+    #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
     @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
   </style>
 </head>
@@ -96,7 +98,14 @@
     </div>
   </div>
 
+  <div id="err"></div>
+
   <script>
+    // ---- Error surface ----
+    function showErr(e){ var el=document.getElementById('err'); el.textContent = (e && (e.stack||e.message||e)) || 'Neznámá chyba'; el.style.display='block'; console.error(e); }
+    window.addEventListener('error', (e)=> showErr(e.error || e.message || e));
+    window.addEventListener('unhandledrejection', (e)=> showErr(e.reason || e));
+
     // ---- Utils ----
     const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s));
     function fmtMonth(d){ return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
@@ -105,30 +114,30 @@
     function parseISODateLocal(s){
       const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if(!m) return s? new Date(s): null;
-      return new Date(Number(m[1]), Number(m[2])-1, Number(m[3])); // local midnight -> no TZ shift
+      return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
     }
     function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
     function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
     function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
     async function japi(paths,opts={}){
-      // paths = array of candidate URLs; first that returns ok is used
       for (const p of paths){
         try{
           const res = await fetch(p,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts});
           if(res.ok){ try{ return await res.json(); }catch{return{};} }
-        }catch(e){/* try next */}
+        }catch(e){}
       }
       throw new Error('API nedostupné');
     }
 
-    const monthLabel=$('#monthLabel'), cal=$('#cal'), sheet=$('#sheet'), sheetDate=$('#sheetDate');
+    const monthLabel=$('#monthLabel'), cal=$('#cal');
+    const sheetEl=$('#sheet'), sheetDate=$('#sheetDate'); // FIX: single declaration
+
     let state={ d:new Date(), focusDate:null, tab:'job' };
 
     // ---- Events loading with visible-range filter ----
     async function fetchEventsForRange(fromDate, toDate){
       const ym = `${state.d.getFullYear()}-${String(state.d.getMonth()+1).padStart(2,'0')}`;
 
-      // Prefer unified endpoint with month param if present (/gd/api or /api)
       try{
         const j = await japi([`/gd/api/calendar?month=${ym}`, `/api/calendar?month=${ym}`]);
         if (j && j.events){
@@ -140,9 +149,8 @@
             type: e.type||'other'
           }));
         }
-      }catch(e){/* fallback below */}
+      }catch(e){/* fallback */}
 
-      // Fallback: compose from jobs + tasks; use visible grid range and safe date parsing
       const from = new Date(fromDate); const to = new Date(toDate);
       from.setHours(0,0,0,0); to.setHours(23,59,59,999);
       const inRange = (iso)=>{ const d=parseISODateLocal(iso); if(!d) return false; return d>=from && d<=to; };
@@ -156,7 +164,7 @@
             events.push({ id:`job-${j.id}`, title:`${j.title}${j.code? ' ('+j.code+')':''}`, start:date, end:date, type:'job' });
           }
         });
-      }catch(e){/* ignore */}
+      }catch(e){}
 
       try{
         const tt=await japi(['/gd/api/tasks','/api/tasks']);
@@ -166,7 +174,7 @@
             events.push({ id:`task-${t.id}`, title:t.title, start:date, end:date, type:'reminder' });
           }
         });
-      }catch(e){/* ignore */}
+      }catch(e){}
 
       return events;
     }
@@ -184,7 +192,6 @@
       const {from,to} = buildGridRange(d);
       const today = new Date(); today.setHours(0,0,0,0);
 
-      // Index by yyyy-mm-dd
       const byDay={};
       function spread(e){
         const s = parseISODateLocal(e.start); const eEnd = parseISODateLocal(e.end || e.start);
@@ -224,13 +231,12 @@
       render(state.d, evs);
     }
 
-    $('#prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
-    $('#nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
+    document.getElementById('prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
+    document.getElementById('nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
 
     // ---- Bottom sheet (Quick Add) ----
-    const sheet = document.getElementById('sheet'); const sheetDate = document.getElementById('sheetDate');
-    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); sheet.classList.add('open'); sheet.setAttribute('aria-hidden','false'); }
-    function closeSheet(){ sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
+    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
+    function closeSheet(){ sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden','true'); }
     document.getElementById('cancelBtn').addEventListener('click', closeSheet);
     function setTab(k){ state.tab=k; document.getElementById('tabJob').classList.toggle('active',k==='job'); document.getElementById('tabTask').classList.toggle('active',k==='task'); document.getElementById('tabNote').classList.toggle('active',k==='note'); document.getElementById('formJob').style.display=(k==='job'?'':'none'); document.getElementById('formTask').style.display=(k==='task'?'':'none'); document.getElementById('formNote').style.display=(k==='note'?'':'none'); }
     document.getElementById('tabJob').addEventListener('click', ()=>setTab('job')); document.getElementById('tabTask').addEventListener('click', ()=>setTab('task')); document.getElementById('tabNote').addEventListener('click', ()=>setTab('note'));
@@ -239,7 +245,7 @@
     document.getElementById('saveBtn').addEventListener('click', async ()=>{
       try{
         if(!state.focusDate) return;
-        const dateStr = state.focusDate; // already YYYY-MM-DD
+        const dateStr = state.focusDate;
         if(state.tab==='job'){
           const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
           if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
@@ -252,11 +258,9 @@
           const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
           await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
         }
-        // Cleanup + refresh
         ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-        closeSheet();
-        await load();
-      }catch(e){ alert('Uložení se nepovedlo: '+(e.message||e)); }
+        closeSheet(); await load();
+      }catch(e){ showErr(e); }
     });
 
     // Init
