@@ -1,31 +1,25 @@
-Sjednocení designu Výkazů s hlavní aplikací – co udělat po nahrání souborů
-=========================================================================
+\
+Sjednocení s požadovanými kontrasty (tmavé dny, světlé záznamy, tmavý horní blok)
+===============================================================================
 
-1) Šablona:
-   - Tento balíček obsahuje `app/templates/timesheets.html`, která **dědí z `base.html`**
-     (tj. používá `app/static/css/app.css` a topbar/navigaci hlavní aplikace).
+1) Zkopírujte soubory:
+   - app/templates/timesheets.html
+   - app/static/css/timesheets.css
 
-2) Routing ve Flasku (main.py):
-   - Přidej/ujisti se o této route (klidně hned pod dalšími stránkami):
+2) Logo a hlavička:
+   - Šablona dědí z base.html – použije se stejné logo/hlavička jako na hlavní stránce.
 
-       @app.route("/timesheets")
-       def timesheets_page():
-           return render_template("timesheets.html")
+3) Navigační řádek nahoře:
+   - Breadcrumbs + ovládání týdne jsou v tmavém bloku `.gd-dark` (stejná karta/okrajový rádius).
 
-   - Starší route `/timesheets.html` může zůstat jako alias nebo ji přesměruj na `/timesheets`:
+4) Dny týdne:
+   - Každý „lane“ (den) je tmavý (`.lane-dark`).
 
-       @app.route("/timesheets.html")
-       def timesheets_legacy():
-           return redirect(url_for("timesheets_page"), code=302)
+5) Záznam zaměstnance:
+   - Každý záznam je světlý „pill“ (`.entry-light`) kvůli kontrastu.
 
-3) Navigace:
-   - V hlavní navigaci (už je v `base.html`) odkaz `href="/timesheets"` ponech.
+6) Routing:
+   - Route `/timesheets` má vracet `render_template("timesheets.html")`.
+   - Starý `timesheets.html` v kořeni repa smažte/ignorujte.
 
-4) Úklid staré verze:
-   - V repu smaž nebo ignoruj starý tmavý soubor na kořeni `timesheets.html`
-     (verze s inline styly a odkazem na `/style.css`). Nová stránka je v `app/templates/timesheets.html`.
-
-5) Export CSV:
-   - Nová stránka používá existující endpoint `/api/timesheets/export`. Nemusíš nic měnit.
-
-Hotovo. Po nasazení by `https://…/timesheets` mělo mít stejný „světlý“ vzhled jako zbytek aplikace.
+7) Export a API zůstávají bez změny.
