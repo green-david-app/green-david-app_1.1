@@ -2,20 +2,16 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-/* Page-scoped tweaks */
-.page-title{ font-size:20px; line-height:1.2; margin:0; font-weight:800; }
+/* Page-scoped tweaks only */
+.page-title{ font-size:18px; line-height:1.2; margin:0; font-weight:800; }
 .small{ font-size:12px; opacity:.85; }
 
+/* Dark panel (only title + filters + week controls) */
 .panel-dark{ background:#1f2a24; color:#fff; border:1px solid #32433b; border-radius:16px; padding:12px 14px; }
 .panel-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .panel-row .spacer{ flex:1; }
 
-/* Top nav row (inside dark panel) */
-.panel-nav{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
-.panel-nav a{ color:#d9f0e3; text-decoration:none; font-weight:600; }
-.panel-nav a:hover{ text-decoration:underline; }
-
-/* Controls compactness */
+/* Compact controls */
 .panel-dark select, .panel-dark input[type="date"]{ height:30px; }
 .panel-dark button{ height:30px; }
 
@@ -28,7 +24,7 @@
 
 .lane-body{ padding:8px 10px; display:flex; flex-direction:column; gap:6px; }
 
-/* Even more compact entry pill */
+/* Compact entry pill */
 .entry-pill{
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   padding:5px 8px;
@@ -58,17 +54,6 @@
 </style>
 
 <div class="panel-dark">
-  <!-- Replicated top navigation inside dark panel -->
-  <div class="panel-nav">
-    <a href="/">Dashboard</a>
-    <a href="/jobs">Zakázky</a>
-    <a href="/calendar">Kalendář</a>
-    <a href="/timesheets.html">Hodiny</a>
-    <a href="/warehouse">Sklad</a>
-    <a href="/export">Export XLSX</a>
-    <a href="/logout" style="margin-left:auto;">Odhlásit</a>
-  </div>
-
   <div class="panel-row">
     <a href="/dashboard" class="btn ghost">← Zpět na hlavní</a>
     <h1 class="page-title">Výkazy hodin — týden</h1>
