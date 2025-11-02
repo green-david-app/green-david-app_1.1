@@ -1,3 +1,4 @@
+
 import os, re, io, base64, sqlite3, csv
 from datetime import datetime, date, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
@@ -21,7 +22,7 @@ def _normalize_date(v):
     if m:
         y, M, d = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
-    m = _re.match(r"^(\d{1,2})[\\.\s-](\d{1,2})[\\.\s-](\d{4})$", s)
+    m = _re.match(r"^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$", s)
     if m:
         d, M, y = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
@@ -120,8 +121,7 @@ def seed_admin():
     cur = db.execute("SELECT COUNT(*) c FROM users")
     if cur.fetchone()["c"] == 0:
         db.execute("""INSERT INTO users(email,name,role,password_hash,active,created_at)
-                      VALUES (?,?,?,?,1,?)""",
-                   (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
+                      VALUES (?,?,?,?,1,?)""",                   (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
                     os.environ.get("ADMIN_NAME","Admin"),
                     "admin",
                     generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
@@ -158,7 +158,7 @@ def api_me():
     u = current_user()
     return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
 
-# 🔐 AUTH: add missing login/logout so POST /api/login no longer 405
+# auth
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json(force=True, silent=True) or {}
@@ -199,15 +199,64 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# jobs (read only subset + basic CRUD kept minimal for compatibility)
-@app.route("/api/jobs", methods=["GET"])
+# ✅ jobs (restore full CRUD so POST no longer 405)
+@app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
+    if request.method == "GET":
+        db = get_db()
+        rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
+        for _row in rows:
+            if "date" in _row and _row["date"]:
+                _row["date"] = _normalize_date(_row["date"])
+        return jsonify({"ok": True, "jobs": rows})
+
+    # write operations require manager/admin
+    u, err = require_role(write=True)
+    if err: return err
+
     db = get_db()
-    rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
-    for _row in rows:
-        if "date" in _row and _row["date"]:
-            _row["date"] = _normalize_date(_row["date"])
-    return jsonify({"ok": True, "jobs": rows})
+    data = request.get_json(force=True, silent=True) or {}
+
+    if request.method == "POST":
+        req = ["title","city","code","date"]
+        if not all((data.get(k) is not None and str(data.get(k)).strip() != "") for k in req):
+            return jsonify({"ok": False, "error":"missing_fields"}), 400
+        title  = (data.get("title")  or "").strip()
+        client = (data.get("client") or "").strip()
+        status = (data.get("status") or "Plán").strip()
+        city   = (data.get("city")   or "").strip()
+        code   = (data.get("code")   or "").strip()
+        note   = data.get("note") or ""
+        dt     = _normalize_date(data.get("date"))
+        db.execute(
+            "INSERT INTO jobs(title,client,status,city,code,date,note) VALUES (?,?,?,?,?,?,?)",
+            (title, client, status, city, code, dt, note)
+        )
+        db.commit()
+        return jsonify({"ok": True})
+
+    if request.method == "PATCH":
+        jid = data.get("id")
+        if not jid:
+            return jsonify({"ok": False, "error":"missing_id"}), 400
+        fields = ["title","client","status","city","code","date","note"]
+        updates = []; params = []
+        for f in fields:
+            if f in data:
+                v = _normalize_date(data[f]) if f=="date" else data[f]
+                updates.append(f"{f}=?"); params.append(v)
+        if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+        params.append(int(jid))
+        db.execute(f"UPDATE jobs SET {', '.join(updates)} WHERE id=?", params)
+        db.commit()
+        return jsonify({"ok": True})
+
+    # DELETE
+    jid = request.args.get("id", type=int)
+    if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM jobs WHERE id=?", (jid,))
+    db.commit()
+    return jsonify({"ok": True})
 
 # timesheets CRUD + export
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
@@ -302,7 +351,6 @@ def api_timesheets_export():
         conds.append("date(t.date) >= date(?)"); params.append(d_from)
     elif d_to:
         conds.append("date(t.date) <= date(?)"); params.append(d_to)
-    if conds: q += " WHERE " + " AND ".join(conds)
     if conds: q += " WHERE " + " AND ".join(conds)
     q += " ORDER BY t.date ASC, t.id ASC"
     rows = get_db().execute(q, params).fetchall()
