@@ -1,26 +1,44 @@
 {% extends "layout.html" %}
 {% block content %}
-<a href="/" class="btn ghost">← Zpět na hlavní</a>
-<h1>Výkazy hodin — týden</h1>
+<div class="ts-card">
+  <a href="/" class="btn ghost">← Zpět na hlavní</a>
+  <h1 style="margin:10px 0 12px;">Výkazy hodin — týden</h1>
 
-<div class="toolbar">
-  <label>Týden od <input id="weekStart" type="date"/></label>
-  <button id="prevWeek" class="ghost">← Předchozí</button>
-  <button id="nextWeek" class="ghost">Následující →</button>
-  <div class="spacer"></div>
-  <label>Filtrovat zakázku <select id="filterJob"><option value="">Vše</option></select></label>
-  <label>Filtrovat zaměstnance <select id="filterEmployee"><option value="">Všichni</option></select></label>
-  <button id="exportCsv">Export CSV (týden)</button>
+  <div class="toolbar">
+    <label>Týden od <input id="weekStart" type="date"/></label>
+    <button id="prevWeek" class="ghost">← Předchozí</button>
+    <button id="nextWeek" class="ghost">Následující →</button>
+    <div class="spacer"></div>
+    <label>Filtrovat zakázku <select id="filterJob"><option value="">Vše</option></select></label>
+    <label>Filtrovat zaměstnance <select id="filterEmployee"><option value="">Všichni</option></select></label>
+  </div>
+
+  <div class="subbar">
+    <button id="exportCsv">Export CSV (týden)</button>
+    <span id="weekRange" class="muted small"></span>
+  </div>
 </div>
-
-<div id="weekRange" class="muted" style="margin:8px 0 16px;"></div>
 
 <div id="week" class="week"></div>
 
 <style>
-  .btn.ghost{border:1px solid #2f2f2f33;border-radius:10px;padding:8px 12px;text-decoration:none;}
-  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 6px;}
+  /* karta nahoře – světlá, čitelná, v designu app */
+  .ts-card{
+    background:#eef7f0;
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:16px;
+    padding:14px 16px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.3);
+    margin-bottom:16px;
+  }
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .subbar{display:flex;gap:12px;align-items:center;margin-top:10px;}
   .spacer{flex:1;}
+  .btn.ghost{border:1px solid #2f2f2f33;border-radius:10px;padding:8px 12px;text-decoration:none;}
+  select, input[type=date]{padding:6px 8px;border-radius:8px;border:1px solid #2f2f2f33;}
+  #exportCsv{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;}
+
+  /* zbytek zůstává tmavý – kontrastní karty pro jednotlivé dny */
   .week{display:flex;flex-direction:column;gap:14px;}
   .day{background:#0b0b0b; color:#f1f5f1; border-radius:14px; padding:12px 14px;}
   .day-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;opacity:.9}
@@ -29,8 +47,6 @@
   .muted{opacity:.6}
   .small{font-size:12px}
   .day-empty{opacity:.6;font-style:italic}
-  select, input[type=date]{padding:6px 8px;border-radius:8px;border:1px solid #2f2f2f33;}
-  #exportCsv{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;}
 </style>
 
 <script>
@@ -56,7 +72,6 @@
   }
 
   async function loadFilters(){
-    // Jobs (for filter). Employees require auth; may 401 if session missing.
     try{
       const jobs = await fetchJSON('/api/jobs');
       jobs.jobs.forEach(j => {
@@ -86,16 +101,12 @@
 
     const data = await fetchJSON('/api/timesheets?' + q.toString());
     const rows = (data.rows||[]);
-    // group by date
     const byDate = {};
     for(const r of rows){
       const d = (r.date||'').slice(0,10);
       (byDate[d] ||= []).push(r);
     }
-
-    // Clear
     elWeek.innerHTML='';
-
     for(let i=0;i<7;i++){
       const d = addDays(start, i);
       const dstr = fmt(d);
@@ -104,7 +115,6 @@
       head.innerHTML = '<div><strong>'+d.toLocaleDateString('cs-CZ', {weekday:'short'})+'</strong> <span class="muted small">'+d.toLocaleDateString('cs-CZ')+'</span></div>' +
                        '<div class="muted small">'+(byDate[dstr]? byDate[dstr].length : 0)+' záznamů</div>';
       box.appendChild(head);
-
       const list = document.createElement('div');
       const items = (byDate[dstr]||[]);
       if(items.length===0){
@@ -115,8 +125,8 @@
           const it = document.createElement('div'); it.className='entry';
           const hours = document.createElement('span'); hours.className='pill'; hours.textContent = (r.hours||0)+' h';
           it.innerHTML = '<strong>'+ (r.employee_name||('ID '+r.employee_id)) +'</strong>' +
-                         ' <span class="muted">•</span> ' + (r.job_title||('Zakázka '+r.job_id)) +
-                         ' <span class="muted">•</span> ' + (r.place||'') +
+                         ' · ' + (r.job_title||('Zakázka '+r.job_id)) +
+                         (r.place? ' · '+r.place : '') +
                          (r.activity? ' — '+r.activity : '');
           it.appendChild(hours);
           list.appendChild(it);
@@ -127,22 +137,23 @@
     }
   }
 
-  elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
-  elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
-  elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
-  elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('prevWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  document.getElementById('nextWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  document.getElementById('filterJob').addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('filterEmployee').addEventListener('change', ()=>renderWeek().catch(console.error));
   document.getElementById('exportCsv').addEventListener('click', ()=>{
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
     const q = new URLSearchParams();
     q.set('from', fmt(start)); q.set('to', fmt(end));
-    if(elFJob.value) q.set('job_id', elFJob.value);
-    if(elFEmp.value) q.set('employee_id', elFEmp.value);
+    const fj = document.getElementById('filterJob').value;
+    const fe = document.getElementById('filterEmployee').value;
+    if(fj) q.set('job_id', fj);
+    if(fe) q.set('employee_id', fe);
     window.location.href = '/api/timesheets/export?' + q.toString();
   });
 
-  // init
-  const today = new Date(); elWeekStart.value = fmt(monday(today));
+  const today = new Date(); elWeekStart.value = (new Date(today.setDate(today.getDate() - ((today.getDay()+6)%7)))).toISOString().slice(0,10);
   loadFilters().finally(()=>renderWeek().catch(console.error));
 })();
 </script>
