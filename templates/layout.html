@@ -3,17 +3,51 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>green david app</title>
+  <title>{{ title or 'green david app' }}</title>
   <link rel="stylesheet" href="/style.css"/>
+  <link rel="stylesheet" href="/hide-top-nav.css"/>
+  <style>
+    /* Center brand area; keep logout in the top-right */
+    header.header { position: relative; padding: 12px 16px; }
+    .brand-wrap { display:flex; align-items:center; justify-content:center; gap:12px; }
+    .brand-logo { height:36px; width:auto; border-radius:8px; }
+    .brand-title { font-weight:700; }
+    .brand-sub { font-size:12px; opacity:.7; }
+    .logout-abs { position:absolute; right:16px; top:12px; }
+  </style>
 </head>
 <body>
-  <header style="text-align:center; padding:12px 0;">
-    <img src="/logo.jpg" alt="logo" style="height:36px; vertical-align:middle; border-radius:8px;"/>
-    <strong style="margin-left:8px;">green david app</strong><div style="font-size:12px;opacity:.7;">interní systém</div>
+  <header class="header">
+    <div class="brand-wrap">
+      <img class="brand-logo" src="/logo.jpg" alt="green david logo">
+      <div>
+        <div class="brand-title">green david app</div>
+        <div class="brand-sub">interní systém</div>
+      </div>
+    </div>
+    {% if session.get('uid') %}
+      <div class="logout-abs">
+        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
+      </div>
+    {% endif %}
   </header>
-  <main>
+
+  <main class="container">
     {% block content %}{% endblock %}
   </main>
-  <footer style="text-align:center; font-size:12px; opacity:.6; padding:20px 0;">© green david s.r.o.</footer>
+
+  <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
+
+  <script>
+  (function(){
+    var btn = document.getElementById('logoutBtn');
+    if(btn){
+      btn.addEventListener('click', async function(){
+        try{ await fetch('/api/logout', {method:'POST'}); }catch(e){}
+        window.location.href = '/';
+      });
+    }
+  })();
+  </script>
 </body>
 </html>

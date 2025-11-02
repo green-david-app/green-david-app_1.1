@@ -1,10 +1,5 @@
-Hotfix – přidání záložky "Brigádníci" do horní lišty
+RYCHLÝ HOTFIX – sjednocený vzhled Výkazů (bez zásahů do main.py)
 
-1) Nahrajte oba soubory do kořene webu (tam, kde je index.html):
-   - brigadnici-tab.js
-   - index.inject.html
-
-2) Soubor index.inject.html je miniaturní fragment, který pouze vkládá <script src="/brigadnici-tab.js" defer></script>.
-   Pokud máte přístup k index.html, stačí ten řádek přidat těsně před </body> a soubor index.inject.html nepotřebujete.
-
-Tento hotfix pouze doplní odkaz do existující lišty Tabs a je bezpečný i při re-renderu (kontroluje duplicitní vložení).
+1) Nahrajte soubor templates/timesheets.html z tohoto ZIPu.
+2) NIC NEMĚŇTE v main.py, wsgi.py ani gd_calendar_hotfix.py.
+3) V navigaci ponechte odkaz na /timesheets.html (main.py už tuto šablonu rendruje).
