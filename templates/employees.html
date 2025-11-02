@@ -40,7 +40,7 @@
     <div class="card-c">
       <table class="tbl">
         <thead>
-          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+          <tr><th>Č.</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
         </thead>
         <tbody id="listBody"></tbody>
       </table>
@@ -82,15 +82,18 @@
   async function render(){
     listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
     const data = await fetchJSON('/api/employees' + (scope!=='all' ? ('?scope='+encodeURIComponent(scope)) : ''));
-    let rows = data.employees || [];
+    const rows = data.employees || [];
     if(rows.length===0){
       listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
       return;
     }
     listBody.innerHTML = '';
+    let i = 0;
     for(const e of rows){
+      i += 1;
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
+      tr.innerHTML = `<td>${i}</td><td>${e.name}</td><td>${e.role||''}</td>
+                      <td><a class="btn btn-small">Detail</a> <a class="btn btn-small btn-danger">Smazat</a></td>`;
       listBody.appendChild(tr);
     }
   }

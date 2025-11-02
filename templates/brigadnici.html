@@ -26,7 +26,7 @@
     <div class="card-h"><strong>Seznam</strong></div>
     <div class="card-c">
       <table class="tbl">
-        <thead><tr><th>ID</th><th>Jméno</th><th>Role</th></tr></thead>
+        <thead><tr><th>Č.</th><th>Jméno</th><th>Role</th></tr></thead>
         <tbody id="listBody"></tbody>
       </table>
     </div>
@@ -62,9 +62,11 @@
       return;
     }
     listBody.innerHTML = '';
+    let i = 0;
     for(const e of rows){
+      i += 1;
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||'brigádník'}</td>`;
+      tr.innerHTML = `<td>${i}</td><td>${e.name}</td><td>${e.role||'brigádník'}</td>`;
       listBody.appendChild(tr);
     }
   }
