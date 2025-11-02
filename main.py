@@ -172,14 +172,14 @@ def uploaded_file(name):
         abort(404)
     return send_from_directory(UPLOAD_DIR, safe)
 
-# ----- Fallback renderers (work even if templates aren't replaced) -----
-_EMPLOYEES_FALLBACK = f"""<!doctype html>
+# ----- Fallback renderers (plain strings – no f-strings) -----
+_EMPLOYEES_FALLBACK = """<!doctype html>
 <html lang="cs">
 <head>
 <meta charset="utf-8">
 <title>green david app — Zaměstnanci</title>
 <link rel="stylesheet" href="/style.css">
-<meta name="viewport" content="width=device-width, initial-scale=1">{TEMPLATE_MARKER}
+<meta name="viewport" content="width=device-width, initial-scale=1"><!-- GD_V2 -->
 </head>
 <body>
 <div class="page-pad">
@@ -285,13 +285,13 @@ _EMPLOYEES_FALLBACK = f"""<!doctype html>
 </body>
 </html>"""
 
-_BRIGADNICI_FALLBACK = f"""<!doctype html>
+_BRIGADNICI_FALLBACK = """<!doctype html>
 <html lang="cs">
 <head>
 <meta charset="utf-8">
 <title>green david app — Brigádníci</title>
 <link rel="stylesheet" href="/style.css">
-<meta name="viewport" content="width=device-width, initial-scale=1">{TEMPLATE_MARKER}
+<meta name="viewport" content="width=device-width, initial-scale=1"><!-- GD_V2 -->
 </head>
 <body>
 <div class="page-pad">
@@ -427,7 +427,6 @@ def api_employees():
         scope = (request.args.get("scope") or "").lower().strip()
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         items = [dict(r) for r in rows]
-        # 'brig' substring => brigádníci; else employees
         if scope == "brig":
             items = [e for e in items if "brig" in str(e.get("role","")).lower()]
         elif scope == "employees":
@@ -541,7 +540,7 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# timesheets export kept the same as before for brevity
+# timesheets
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -644,13 +643,13 @@ def api_timesheets_export():
     q += " ORDER BY t.date ASC, t.id ASC"
     rows = get_db().execute(q, params).fetchall()
 
-    output = io.StringIO()
-    import csv as _csv
+    import io as _io, csv as _csv
+    output = _io.StringIO()
     writer = _csv.writer(output)
     writer.writerow(["id","date","employee_id","employee_name","job_id","job_title","job_code","hours","place","activity"])
     for r in rows:
         writer.writerow([r["id"], r["date"], r["employee_id"], r["employee_name"] or "", r["job_id"], r["job_title"] or "", r["job_code"] or "", r["hours"], r["place"] or "", r["activity"] or ""])
-    mem = io.BytesIO(output.getvalue().encode("utf-8-sig"))
+    mem = _io.BytesIO(output.getvalue().encode("utf-8-sig"))
     mem.seek(0)
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
