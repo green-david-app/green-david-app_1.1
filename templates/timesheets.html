@@ -1,54 +1,149 @@
 {% extends "layout.html" %}
 {% block content %}
+<a href="/" class="btn ghost">← Zpět na hlavní</a>
+<h1>Výkazy hodin — týden</h1>
 
-<div class="gd-dark cell pad">
-  <div class="breadcrumbs">
-    <a href="/" class="crumb">Dashboard</a>
-    <a href="/jobs" class="crumb">Zakázky</a>
-    <a href="/calendar" class="crumb">Kalendář</a>
-    <span class="crumb active">Výkazy</span>
-    <a href="/warehouse" class="crumb">Sklad</a>
-    <a href="/export" class="crumb">Export XLSX</a>
-    {# Odhlásit je pouze v headeru #}
-  </div>
-  <div class="title-row">
-    <a href="/" class="btn ghost">← Zpět na hlavní</a>
-    <h1>Výkazy hodin — týden</h1>
-  </div>
-
-  <div class="week-toolbar">
-    <label>Týden od <input id="weekStart" type="date"/></label>
-    <button id="prevWeek" class="ghost">← Předchozí</button>
-    <button id="nextWeek" class="ghost">Následující →</button>
-    <span id="weekLabel" class="smallmuted"></span>
-    <div class="spacer"></div>
-    <label>Filtrovat zakázku <select id="filterJob"><option value="">Vše</option></select></label>
-    <label>Filtrovat zaměstnance <select id="filterEmployee"><option value="">Všichni</option></select></label>
-    <button id="exportCsv">Export CSV (týden)</button>
-  </div>
+<div class="toolbar">
+  <label>Týden od <input id="weekStart" type="date"/></label>
+  <button id="prevWeek" class="ghost">← Předchozí</button>
+  <button id="nextWeek" class="ghost">Následující →</button>
+  <div class="spacer"></div>
+  <label>Filtrovat zakázku <select id="filterJob"><option value="">Vše</option></select></label>
+  <label>Filtrovat zaměstnance <select id="filterEmployee"><option value="">Všichni</option></select></label>
+  <button id="exportCsv">Export CSV (týden)</button>
 </div>
 
-<div class="lanes-wrap">
-  <div id="lanes" class="week-lanes"></div>
-</div>
+<div id="weekRange" class="muted" style="margin:8px 0 16px;"></div>
 
-<div id="modal" class="modal-backdrop" style="display:none;">
-  <div class="card modal-card">
-    <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
-    <div class="card-c form-grid">
-      <label>Zaměstnanec <select id="fEmployee"></select></label>
-      <label>Zakázka <select id="fJob"></select></label>
-      <label>Datum <input id="fDate" type="date"/></label>
-      <label>Hodin <input id="fHours" type="number" min="0" step="0.25" placeholder="8"/></label>
-      <label>Místo <input id="fPlace" type="text"/></label>
-      <label class="span2">Činnost <textarea id="fActivity" rows="2"></textarea></label>
-    </div>
-    <div class="card-f actions">
-      <button id="btnDelete" class="ghost" style="display:none;">Smazat</button>
-      <button id="btnCancel" class="ghost">Zrušit</button>
-      <button id="btnSave">Uložit</button>
-    </div>
-  </div>
-</div>
+<div id="week" class="week"></div>
 
+<style>
+  .btn.ghost{border:1px solid #2f2f2f33;border-radius:10px;padding:8px 12px;text-decoration:none;}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 6px;}
+  .spacer{flex:1;}
+  .week{display:flex;flex-direction:column;gap:14px;}
+  .day{background:#0b0b0b; color:#f1f5f1; border-radius:14px; padding:12px 14px;}
+  .day-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;opacity:.9}
+  .entry{background:#e8f3ea;color:#0c2b14;border-radius:12px;padding:10px 12px;margin:8px 0;display:flex;gap:10px;align-items:center;}
+  .pill{display:inline-block;border-radius:999px;padding:3px 8px;background:#cfead5;margin-left:6px;font-size:12px;}
+  .muted{opacity:.6}
+  .small{font-size:12px}
+  .day-empty{opacity:.6;font-style:italic}
+  select, input[type=date]{padding:6px 8px;border-radius:8px;border:1px solid #2f2f2f33;}
+  #exportCsv{background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;}
+</style>
+
+<script>
+(function(){
+  const elWeek = document.getElementById('week');
+  const elWeekStart = document.getElementById('weekStart');
+  const elPrev = document.getElementById('prevWeek');
+  const elNext = document.getElementById('nextWeek');
+  const elRange = document.getElementById('weekRange');
+  const elFJob = document.getElementById('filterJob');
+  const elFEmp = document.getElementById('filterEmployee');
+  const elExport = document.getElementById('exportCsv');
+
+  const fmt = (d)=> d.toISOString().slice(0,10);
+  const parse = (s)=> { const [y,m,dd] = s.split('-').map(x=>parseInt(x,10)); return new Date(y, m-1, dd); };
+  const monday = (d)=>{ const x = new Date(d); const wd = x.getDay(); const diff = (wd===0?6:wd-1); x.setDate(x.getDate()-diff); x.setHours(0,0,0,0); return x; };
+  const addDays = (d,n)=>{ const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+
+  async function fetchJSON(url){
+    const r = await fetch(url, {credentials:'same-origin'});
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  async function loadFilters(){
+    // Jobs (for filter). Employees require auth; may 401 if session missing.
+    try{
+      const jobs = await fetchJSON('/api/jobs');
+      jobs.jobs.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); elFJob.appendChild(opt);
+      });
+    }catch(e){}
+    try{
+      const emps = await fetchJSON('/api/employees');
+      (emps.employees||[]).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.name; elFEmp.appendChild(opt);
+      });
+    }catch(e){}
+  }
+
+  async function renderWeek(){
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    elRange.textContent = '(' + start.toLocaleDateString('cs-CZ') + ' — ' + end.toLocaleDateString('cs-CZ') + ')';
+
+    const q = new URLSearchParams();
+    q.set('from', fmt(start));
+    q.set('to', fmt(end));
+    if(elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp.value) q.set('employee_id', elFEmp.value);
+
+    const data = await fetchJSON('/api/timesheets?' + q.toString());
+    const rows = (data.rows||[]);
+    // group by date
+    const byDate = {};
+    for(const r of rows){
+      const d = (r.date||'').slice(0,10);
+      (byDate[d] ||= []).push(r);
+    }
+
+    // Clear
+    elWeek.innerHTML='';
+
+    for(let i=0;i<7;i++){
+      const d = addDays(start, i);
+      const dstr = fmt(d);
+      const box = document.createElement('div'); box.className='day';
+      const head = document.createElement('div'); head.className='day-h';
+      head.innerHTML = '<div><strong>'+d.toLocaleDateString('cs-CZ', {weekday:'short'})+'</strong> <span class="muted small">'+d.toLocaleDateString('cs-CZ')+'</span></div>' +
+                       '<div class="muted small">'+(byDate[dstr]? byDate[dstr].length : 0)+' záznamů</div>';
+      box.appendChild(head);
+
+      const list = document.createElement('div');
+      const items = (byDate[dstr]||[]);
+      if(items.length===0){
+        const empty = document.createElement('div'); empty.className='day-empty'; empty.textContent='Žádné záznamy';
+        list.appendChild(empty);
+      }else{
+        for(const r of items){
+          const it = document.createElement('div'); it.className='entry';
+          const hours = document.createElement('span'); hours.className='pill'; hours.textContent = (r.hours||0)+' h';
+          it.innerHTML = '<strong>'+ (r.employee_name||('ID '+r.employee_id)) +'</strong>' +
+                         ' <span class="muted">•</span> ' + (r.job_title||('Zakázka '+r.job_id)) +
+                         ' <span class="muted">•</span> ' + (r.place||'') +
+                         (r.activity? ' — '+r.activity : '');
+          it.appendChild(hours);
+          list.appendChild(it);
+        }
+      }
+      box.appendChild(list);
+      elWeek.appendChild(box);
+    }
+  }
+
+  elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
+  elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('exportCsv').addEventListener('click', ()=>{
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    const q = new URLSearchParams();
+    q.set('from', fmt(start)); q.set('to', fmt(end));
+    if(elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp.value) q.set('employee_id', elFEmp.value);
+    window.location.href = '/api/timesheets/export?' + q.toString();
+  });
+
+  // init
+  const today = new Date(); elWeekStart.value = fmt(monday(today));
+  loadFilters().finally(()=>renderWeek().catch(console.error));
+})();
+</script>
 {% endblock %}
