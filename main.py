@@ -11,6 +11,20 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# ---- compatibility shim for older modules (e.g., gd_calendar_hotfix) ----
+from functools import wraps
+def require_role(*roles):
+    """No-op role decorator to keep legacy imports working.
+    Keeps API otevřená (bez přihlášení), ale umožní importy z gd_calendar_hotfix.py.
+    """
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            # TODO: add real checks if/when auth is enabled
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
+
 TEMPLATE_MARKER = "<!-- GD_V2 -->"
 
 def _no_store(resp):
