@@ -1,0 +1,184 @@
+
+{% extends "layout.html" %}
+{% block content %}
+<div class="page-pad">
+  <div class="tabs sticky">
+    <a href="/calendar">Kalendář</a>
+    <a href="/timesheets.html">Výkazy hodin</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/tasks">Úkoly</a>
+    <a href="/employees">Zaměstnanci</a>
+    <a class="active" href="/brigadnici.html">Brigádníci</a>
+    <a href="/stock">Sklad</a>
+    <a href="/users">Uživatelé</a>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Nový brigádník</strong></div>
+    <div class="card-c">
+      <div class="row">
+        <input id="newName" type="text" placeholder="Jméno" class="inp"/>
+        <button id="btnAdd" class="btn btn-primary">Přidat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Seznam</strong></div>
+    <div class="card-c">
+      <table class="tbl">
+        <thead><tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detail -->
+<div id="modal" class="modal-backdrop" style="display:none;">
+  <div class="card modal-card">
+    <div class="card-h"><div class="modal-title">Detail brigádníka</div></div>
+    <div class="card-c form-grid">
+      <input type="hidden" id="mId"/>
+      <label>Jméno <input id="mName" type="text" class="modal-field"/></label>
+      <label>Role 
+        <select id="mRole" class="modal-field">
+          <option value="brigádník">brigádník</option>
+          <option value="zahradník">zahradník</option>
+          <option value="svářeč">svářeč</option>
+          <option value="jiné">jiné</option>
+        </select>
+      </label>
+    </div>
+    <div class="card-f actions">
+      <button id="mDelete" class="ghost danger" style="margin-right:auto;">Smazat</button>
+      <button id="mCancel" class="ghost">Zavřít</button>
+      <button id="mSave">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-pad{padding: 6px 4px;}
+  .tabs{display:flex; gap:8px; margin-bottom:10px; overflow:auto;}
+  .tabs a{background:#2b2f31;color:#e8efe9;padding:8px 12px;border-radius:10px;text-decoration:none;border:1px solid rgba(0,0,0,.4);box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);white-space:nowrap;}
+  .tabs a.active{background:#3a3f42;}
+  .card-dark{background:#2b2f31;color:#e8efe9;border:1px solid rgba(0,0,0,.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); border-radius:14px; margin-bottom:16px;}
+  .card-h{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);}
+  .card-c{padding:12px 14px;}
+  .row{display:flex;gap:10px;align-items:center;}
+  .inp{background:#1f2224;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#e8efe9;padding:8px 10px;flex:1;}
+  .btn{border-radius:10px;padding:8px 12px;border:1px solid transparent;cursor:pointer;}
+  .btn-primary{background:#2e7d32;color:#fff;border-color:#2e7d32;}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0 8px;}
+  .tbl thead th{font-weight:600;color:#cfead5;text-align:left;padding:0 8px;}
+  .tbl tbody td{background:#1f2224;color:#e8efe9;padding:10px 8px;border-top-left-radius:10px;border-bottom-left-radius:10px;}
+  .tbl tbody td+td{border-radius:0;}
+  .tbl tbody td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px;}
+  .pill{display:inline-block;border-radius:999px;padding:3px 8px;background:#cfead5;color:#1b5e20;margin-left:6px;font-size:12px;}
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  .modal-card{background:#fff;color:#111;border-radius:14px;min-width:320px;max-width:560px;width:90%;}
+  .modal-title{color:#2e7d32;font-weight:700;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .form-grid label{color:#446a4a;font-weight:600;}
+  .modal-field{background:#f7f9f8;color:#111;border:1px solid #cfd8d4;border-radius:8px;padding:8px 10px;}
+  .card-f{padding:12px 14px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;}
+  .card-f .ghost{background:#eef0ef;border:1px solid #d4d9d6;color:#111;}
+  .card-f .ghost.danger{ background:#fff; border-color:#b00020; color:#b00020; }
+  #mSave{border:1px solid #2e7d32;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;}
+</style>
+
+<script>
+(async function(){
+  const listBody = document.getElementById('listBody');
+  const newName = document.getElementById('newName');
+  const btnAdd = document.getElementById('btnAdd');
+
+  const modal = document.getElementById('modal');
+  const mId = document.getElementById('mId');
+  const mName = document.getElementById('mName');
+  const mRole = document.getElementById('mRole');
+  const mSave = document.getElementById('mSave');
+  const mCancel = document.getElementById('mCancel');
+  const mDelete = document.getElementById('mDelete');
+
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  function openModal(emp){
+    mId.value = emp.id;
+    mName.value = emp.name || '';
+    mRole.value = (emp.role || 'brigádník').toLowerCase();
+    modal.style.display = 'flex';
+  }
+  function closeModal(){ modal.style.display='none'; }
+  mCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  mSave.addEventListener('click', async ()=>{
+    const payload = { id: Number(mId.value), name: mName.value.trim(), role: mRole.value };
+    try{
+      await apiJSON('/api/employees', { method: 'PATCH', body: JSON.stringify(payload) });
+      closeModal();
+      await render();
+    }catch(e){ alert('Chyba při ukládání: ' + e.message); }
+  });
+
+  mDelete.addEventListener('click', async ()=>{
+    if(!confirm('Opravdu smazat?')) return;
+    try{
+      await fetch('/api/employees?id=' + encodeURIComponent(mId.value), { method:'DELETE' });
+      closeModal();
+      await render();
+    }catch(e){ alert('Chyba při mazání: ' + e.message); }
+  });
+
+  btnAdd.addEventListener('click', async ()=>{
+    const name = newName.value.trim();
+    if(!name) return;
+    try{
+      await apiJSON('/api/employees', { method: 'POST', body: JSON.stringify({ name, role: 'brigádník' }) });
+      newName.value = '';
+      await render();
+    }catch(e){ alert('Chyba při přidání: ' + e.message); }
+  });
+
+  async function render(){
+    listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
+    const data = await fetchJSON('/api/employees');
+    const rows = (data.employees || []).filter(e => String(e.role||'').toLowerCase() == 'brigádník');
+    if(rows.length === 0){
+      listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádní brigádníci</td></tr>';
+      return;
+    }
+    listBody.innerHTML = '';
+    for(const e of rows){
+      const tr = document.createElement('tr');
+      const tdId = document.createElement('td'); tdId.textContent = e.id;
+      const tdName = document.createElement('td'); 
+      const a = document.createElement('a'); a.href='#'; a.textContent = e.name; a.style.color='#a7e3b7'; a.addEventListener('click', (ev)=>{ ev.preventDefault(); openModal(e); });
+      tdName.appendChild(a);
+      const tdRole = document.createElement('td'); tdRole.textContent = e.role || 'brigádník';
+      const tdAct = document.createElement('td'); 
+      const bDetail = document.createElement('button'); bDetail.className='btn btn-primary'; bDetail.textContent='Detail'; bDetail.addEventListener('click', ()=> openModal(e));
+      const bDel = document.createElement('button'); bDel.className='btn ghost'; bDel.textContent='Smazat'; bDel.style.marginLeft='10px';
+      bDel.addEventListener('click', async ()=>{
+        if(!confirm('Opravdu smazat?')) return;
+        await fetch('/api/employees?id='+encodeURIComponent(e.id), {method:'DELETE'});
+        await render();
+      });
+      tdAct.appendChild(bDetail); tdAct.appendChild(bDel);
+      tr.appendChild(tdId); tr.appendChild(tdName); tr.appendChild(tdRole); tr.appendChild(tdAct);
+      listBody.appendChild(tr);
+    }
+  }
+
+  await render();
+})();
+</script>
+{% endblock %}
