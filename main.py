@@ -17,11 +17,11 @@ def _normalize_date(v):
         return v
     s = str(v).strip()
     import re as _re
-    m = _re.match(r"^(\\d{4})-(\\d{1,2})-(\\d{1,2})$", s)
+    m = _re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
     if m:
         y, M, d = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
-    m = _re.match(r"^(\\d{1,2})[\\.\\s-](\\d{1,2})[\\.\\s-](\\d{4})$", s)
+    m = _re.match(r"^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$", s)
     if m:
         d, M, y = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
@@ -64,7 +64,7 @@ def require_role(write=False):
 # ----------------- bootstrap (subset) -----------------
 def ensure_schema():
     db = get_db()
-    db.executescript(\"\"\"
+    db.executescript("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -111,20 +111,23 @@ def ensure_schema():
         note TEXT DEFAULT '',
         color TEXT DEFAULT '#2e7d32'
     );
-    \"\"\")
+    """)
     db.commit()
 
 def seed_admin():
     db = get_db()
     cur = db.execute("SELECT COUNT(*) c FROM users")
     if cur.fetchone()["c"] == 0:
-        db.execute(\"\"\"INSERT INTO users(email,name,role,password_hash,active,created_at)
-                      VALUES (?,?,?,?,1,?)\"\"\",\
-                   (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
-                    os.environ.get("ADMIN_NAME","Admin"),
-                    "admin",
-                    generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
-                    datetime.utcnow().isoformat()))
+        db.execute(
+            "INSERT INTO users(email,name,role,password_hash,active,created_at) VALUES (?,?,?,?,1,?)",
+            (
+                os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
+                os.environ.get("ADMIN_NAME","Admin"),
+                "admin",
+                generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
+                datetime.utcnow().isoformat()
+            )
+        )
         db.commit()
 
 @app.before_request
@@ -156,14 +159,14 @@ def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
     info = _jobs_info()
     cols = []
     vals = []
-    # Always keep both columns in sync if exist
+    # Keep legacy 'name' in sync if present
     if "title" in info:
         cols.append("title"); vals.append(title)
     if "name" in info:
         cols.append("name"); vals.append(title)
     cols += ["client","status","city","code","date","note"]
     vals += [client, status, city, code, dt, note]
-    # --- legacy NOT NULL columns without defaults (created_at / updated_at) ---
+    # legacy NOT NULL columns without defaults
     now = datetime.utcnow().isoformat()
     if "created_at" in info:
         cols.append("created_at"); vals.append(now)
@@ -318,11 +321,11 @@ def api_timesheets():
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
         title_col = _job_title_col()
-        q = f\"\"\"SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
+        q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
                       e.name AS employee_name, j.{title_col} AS job_title, j.code AS job_code
                FROM timesheets t
                LEFT JOIN employees e ON e.id=t.employee_id
-               LEFT JOIN jobs j ON j.id=t.job_id\"\"\"
+               LEFT JOIN jobs j ON j.id=t.job_id"""
         conds=[]; params=[]
         if emp: conds.append("t.employee_id=?"); params.append(emp)
         if jid: conds.append("t.job_id=?"); params.append(jid)
@@ -385,12 +388,12 @@ def api_timesheets_export():
     d_from = _normalize_date(request.args.get("from"))
     d_to   = _normalize_date(request.args.get("to"))
     title_col = _job_title_col()
-    q = f\"\"\"SELECT t.id,t.date,t.hours,t.place,t.activity,
+    q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
                   e.name AS employee_name, e.id AS employee_id,
                   j.{title_col} AS job_title, j.code AS job_code, j.id AS job_id
            FROM timesheets t
            LEFT JOIN employees e ON e.id=t.employee_id
-           LEFT JOIN jobs j ON j.id=t.job_id\"\"\"
+           LEFT JOIN jobs j ON j.id=t.job_id"""
     conds=[]; params=[]
     if emp: conds.append("t.employee_id=?"); params.append(emp)
     if jid: conds.append("t.job_id=?"); params.append(jid)
