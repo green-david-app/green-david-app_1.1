@@ -1,0 +1,250 @@
+
+<!doctype html><html lang="cs"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kalendář – green david app</title>
+<link rel="stylesheet" href="/style.css"/>
+<style>
+.weekbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:8px 0 4px 0;color:#cfd8dc}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%}
+.day{border:1px solid #607d8b55;border-radius:16px;min-height:110px;padding:6px 8px;background:#263238;position:relative}
+.day .d{font-weight:600;color:#b0bec5;margin-bottom:4px}
+.day.out{opacity:.45}
+.pill{border-radius:12px;padding:4px 8px;margin:2px 0;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.pill .ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.day.selected{outline:2px solid var(--accent); outline-offset:2px}
+.day-detail{margin-top:12px;background:#263238;border:1px solid #607d8b55;border-radius:16px;padding:10px}
+.day-detail.hidden{display:none}
+.day-detail-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.day-detail-header .date{font-weight:800;color:#eaf6ef}
+.day-events{list-style:none;margin:8px 0 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.day-event{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1f262b;border:1px solid #607d8b55;border-radius:12px;padding:8px 10px;color:#eaf6ef}
+.day-event .meta{display:flex;align-items:center;gap:8px}
+.badge.task{background:#2d6cdf}
+.badge.job{background:#9b59b6}
+</style>
+</head><body>
+<header class="header">
+  <div class="brand">
+    <img src="/logo.jpg" class="brand-logo" alt="green david"/>
+    <div><div class="brand-title">green david app</div><div class="brand-sub">Kalendář</div></div>
+    <div class="right small"><a class="ghost" href="/">← Zpět do aplikace</a></div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div class="card-h">
+      <div>Kalendář</div>
+      <div class="row-gap">
+        <button id="prev" class="ghost">◀</button>
+        <b id="label">měsíc</b>
+        <button id="next" class="ghost">▶</button>
+        <span class="spacer"></span>
+        <button class="btn" data-type="note">+ Poznámka</button>
+        <button class="btn" data-type="task">+ Úkol</button>
+        <button class="btn" data-type="job">+ Zakázka</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="weekbar"><div>Po</div><div>Út</div><div>St</div><div>Čt</div><div>Pá</div><div>So</div><div>Ne</div></div>
+      <div id="grid" class="daygrid"></div>
+<div id="dayDetail" class="day-detail hidden">
+  <div class="day-detail-header">
+    <div class="date" id="dayDetailDate">—</div>
+    <div class="row-gap">
+      <button class="ghost" id="quickNote">+ Pozn.</button>
+      <button class="ghost" id="quickTask">+ Úkol</button>
+      <button class="ghost" id="quickJob">+ Zak.</button>
+    </div>
+  </div>
+  <ul class="day-events" id="dayEvents"></ul>
+</div>
+    </div>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form class="form-vert" method="dialog" style="min-width:320px">
+    <h3>Přidat záznam</h3>
+    <label>Datum <input type="date" id="fDate" required></label>
+    <label>Nadpis <input type="text" id="fTitle" required placeholder="Název"></label>
+    <label>Podrobnosti <textarea id="fNote" rows="3" placeholder="volitelné"></textarea></label>
+    <label>Barva <input type="color" id="fColor" value="#2e7d32"></label>
+    <input type="hidden" id="fType" value="note"/>
+    <menu>
+      <button class="ghost" value="cancel">Zrušit</button>
+      <button class="btn" id="btnSave" value="default">Uložit</button>
+    </menu>
+    <div id="err" class="small" style="color:#d32f2f;display:none"></div>
+  </form>
+</dialog>
+
+
+<script>
+(function(){
+  const grid = document.getElementById('grid');
+  const label = document.getElementById('label');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const dlg = document.getElementById('dlg');
+  const fDate = document.getElementById('fDate');
+  const fTitle = document.getElementById('fTitle');
+  const fNote = document.getElementById('fNote');
+  const fColor = document.getElementById('fColor');
+  const fType = document.getElementById('fType');
+  const err = document.getElementById('err');
+  const dayDetail = document.getElementById('dayDetail');
+  const dayDetailDate = document.getElementById('dayDetailDate');
+  const dayEvents = document.getElementById('dayEvents');
+
+  let cur = new Date(); cur.setDate(1);
+  let monthItems = [];
+  let selectedDate = null;
+
+  const iso = d => d.toISOString().slice(0,10);
+  const fmtMonth = d => d.toLocaleDateString('cs-CZ', {month:'long',year:'numeric'});
+
+  function renderGrid(){
+    label.textContent = fmtMonth(cur);
+    grid.innerHTML = '';
+    dayDetail.classList.add('hidden');
+    selectedDate = null;
+
+    const first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const startDow = (first.getDay()+6)%7; // Mon=0
+    first.setDate(first.getDate()-startDow);
+    for(let i=0;i<42;i++){
+      const day = new Date(first);
+      day.setDate(first.getDate()+i);
+      const cell = document.createElement('div');
+      cell.className = 'day' + (day.getMonth()===cur.getMonth() ? '' : ' out');
+      cell.setAttribute('data-date', iso(day));
+      cell.innerHTML = `<div class="d">${day.getDate()}.</div>`;
+      cell.onclick = ()=>selectDay(iso(day), cell);
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderPills(items){
+    // clear existing pills
+    grid.querySelectorAll('.day .row-gap').forEach(e=>e.remove());
+    items.forEach(ev=>{
+      const cont = grid.querySelector(`.day[data-date="${ev.date}"]`);
+      if(!cont) return;
+      let wrap = cont.querySelector('.row-gap');
+      if(!wrap){ wrap = document.createElement('div'); wrap.className='row-gap'; cont.appendChild(wrap); }
+      const pill = document.createElement('div');
+      const kind = ev.type || ev.kind || 'note';
+      pill.className = 'pill badge ' + (kind==='task'?'task':(kind==='job'?'job':''));
+      const title = ev.title || ev.name || ev.description || '(bez názvu)';
+      pill.innerHTML = `<span class="ellipsis">${title}</span>`;
+      wrap.appendChild(pill);
+    });
+  }
+
+  function renderDayDetail(ds){
+    const d = new Date(ds+'T00:00:00');
+    dayDetailDate.textContent = d.toLocaleDateString('cs-CZ', {weekday:'long', day:'numeric', month:'long'});
+    const evs = monthItems.filter(x=>x.date===ds);
+    dayEvents.innerHTML='';
+    if(evs.length===0){
+      const li = document.createElement('li'); li.className='day-event';
+      li.innerHTML = '<div class="meta"><span>Žádné události</span></div><div><button class="btn" id="btnQuickAdd">+ Přidat</button></div>';
+      dayEvents.appendChild(li);
+      setTimeout(()=>{
+        const b = document.getElementById('btnQuickAdd');
+        if(b) b.onclick = ()=>openModal(ds, 'note');
+      },0);
+    } else {
+      evs.forEach(ev=>{
+        const li = document.createElement('li'); li.className='day-event';
+        const kind = ev.type || ev.kind || 'note';
+        const title = ev.title || ev.name || '(bez názvu)';
+        li.innerHTML = `<div class="meta"><span class="badge ${kind==='task'?'task':(kind==='job'?'job':'')}">${kind}</span><span class="title">${title}</span></div>
+                        <div class="actions"><button class="ghost">Upravit</button></div>`;
+        li.querySelector('button').onclick = ()=>openModal(ds, kind, ev);
+        dayEvents.appendChild(li);
+      });
+    }
+    dayDetail.classList.remove('hidden');
+    dayDetail.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function selectDay(ds, cell){
+    grid.querySelectorAll('.day.selected').forEach(c=>c.classList.remove('selected'));
+    if(cell) cell.classList.add('selected');
+    selectedDate = ds;
+    renderDayDetail(ds);
+  }
+
+  async function load(){
+    renderGrid();
+    const from = iso(new Date(cur.getFullYear(),cur.getMonth(),1));
+    const to = iso(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
+    const data = await resp.json();
+    monthItems = data.items || [];
+    renderPills(monthItems);
+    // auto select today if in current month
+    const today = new Date();
+    if(today.getFullYear()===cur.getFullYear() && today.getMonth()===cur.getMonth()){
+      const ds = iso(today);
+      const cell = grid.querySelector(\`.day[data-date="\${ds}"]\`);
+      if(cell) selectDay(ds, cell);
+    }
+  }
+
+  // modal helpers
+  function openModal(dateStr, type='note', existing){
+    err.style.display='none'; err.textContent='';
+    fDate.value = dateStr || (selectedDate || iso(new Date()));
+    fType.value = type;
+    fTitle.value = existing?.title || existing?.name || '';
+    fNote.value = existing?.description || '';
+    fColor.value = existing?.color || '#3ea76a';
+    dlg._existing = existing || null;
+    dlg.showModal();
+  }
+  document.getElementById('quickNote').onclick = ()=>openModal(selectedDate||iso(new Date()), 'note');
+  document.getElementById('quickTask').onclick = ()=>openModal(selectedDate||iso(new Date()), 'task');
+  document.getElementById('quickJob').onclick  = ()=>openModal(selectedDate||iso(new Date()), 'job');
+
+  // Save
+  document.getElementById('btnSave').onclick = async (e)=>{
+    e.preventDefault();
+    err.style.display='none'; err.textContent='';
+    const payload = {
+      id: dlg._existing?.id,
+      date: fDate.value,
+      kind: fType.value,
+      title: fTitle.value,
+      description: fNote.value,
+      color: fColor.value
+    };
+    try{
+      const method = payload.id ? 'PATCH' : 'POST';
+      const resp = await fetch('/gd/api/calendar', {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      if(!resp.ok) throw new Error(await resp.text());
+      dlg.close();
+      await load();
+      if(selectedDate) selectDay(selectedDate, grid.querySelector(\`.day[data-date="\${selectedDate}"]\`));
+    }catch(ex){
+      err.style.display='block'; err.textContent = 'Uložení selhalo: ' + ex.message;
+    }
+  };
+
+  prev.onclick = ()=>{ cur.setMonth(cur.getMonth()-1); load(); };
+  next.onclick = ()=>{ cur.setMonth(cur.getMonth()+1); load(); };
+
+  // Add buttons on top
+  document.querySelectorAll('button.btn[data-type]').forEach(b=>{
+    b.addEventListener('click', ()=>openModal(iso(new Date()), b.dataset.type));
+  });
+
+  load();
+})();
+</script>
+
+</body></html>
