@@ -1,76 +1,66 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="ts-card">
-  <a href="/" class="btn ghost ts-ghost">← Zpět na hlavní</a>
-  <h1 class="ts-title">Výkazy hodin — týden</h1>
-
-  <div class="toolbar ts-toolbar">
-    <label>Týden od <input id="weekStart" type="date"/></label>
-    <button id="prevWeek" class="ghost ts-chip">← Předchozí</button>
-    <button id="nextWeek" class="ghost ts-chip">Následující →</button>
-    <div class="spacer"></div>
-    <label>Filtrovat zakázku <select id="filterJob"><option value="">Vše</option></select></label>
-    <label>Filtrovat zaměstnance <select id="filterEmployee"><option value="">Všichni</option></select></label>
+<div class="ts-head">
+  <div class="ts-head-row1">
+    <a href="/" class="ts-back">zpět</a>
+    <div class="ts-title">výkazy hodin - týden</div>
+    <div class="ts-right"></div>
   </div>
+  <div class="ts-head-row2">
+    <label class="ts-inline">týden od <input id="weekStart" type="date"/></label>
+    <button id="prevWeek" class="chip chip-ghost">← předchozí</button>
+    <button id="nextWeek" class="chip chip-ghost">následující →</button>
 
-  <div class="subbar ts-toolbar">
-    <button id="exportCsv" class="ts-primary">Export CSV (týden)</button>
-    <span id="weekRange" class="muted small"></span>
+    <span class="sep"></span>
+
+    <label class="ts-inline">filtrovat zakázku <select id="filterJob"><option value="">vše</option></select></label>
+    <label class="ts-inline">filtrovat zaměstnance <select id="filterEmployee"><option value="">všichni</option></select></label>
+
+    <span class="spacer"></span>
+    <button id="exportCsv" class="chip chip-primary">export csv (týden)</button>
   </div>
 </div>
 
 <div id="week" class="week"></div>
 
 <style>
-  /* === Top card: GRAY like other cards; inverted contrast === */
-  .ts-card{
-    background:#e6e6e6; /* šedá karta */
-    border:1px solid rgba(0,0,0,.08);
+  /* anthracite like main page cards */
+  .ts-head{
+    background:#2b2f31; /* antracit */
+    color:#e8efe9;
     border-radius:16px;
-    padding:14px 16px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.24);
+    padding:12px 14px;
+    border:1px solid rgba(0,0,0,.4);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
     margin-bottom:16px;
-    color:#1b5e20; /* default text v kartě jemně do zelena */
+  }
+  .ts-head-row1{display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap:10px; margin-bottom:6px;}
+  .ts-back{
+    justify-self:start;
+    display:inline-block; padding:6px 10px; border-radius:10px;
+    background:#e6e6e6; color:#1b5e20; text-decoration:none; border:1px solid rgba(0,0,0,.2);
   }
   .ts-title{
-    font-size:16px; /* požadovaných ~16 */
-    line-height:1.25;
-    margin:10px 0 12px;
-    font-weight:800;
-    color:#2e7d32; /* sytější zelená pro titulek */
+    justify-self:center;
+    font-size:16px; line-height:1.2; font-weight:400; text-transform:none;
+    color:#e8efe9;
   }
-  .ts-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-  .spacer{flex:1;}
-  /* invertované "chip" prvky (předchozí/následující, datumy apod.) */
-  .ts-chip{
-    background:#2e7d32; /* zelené pozadí */
-    color:#e6e6e6;      /* šedé/bílé písmo na zeleném */
-    border:none;
-    border-radius:10px;
-    padding:8px 12px;
-    cursor:pointer;
+  .ts-head-row2{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .ts-inline{color:#cfead5;}
+  .ts-inline input[type=date], .ts-inline select{
+    background:#1f2224; color:#e8efe9; border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:6px 8px;
   }
-  /* ghost odkaz v šedé kartě – zelený text, šedé orámování */
-  .ts-ghost{
-    border:1px solid rgba(46,125,50,.35);
-    color:#2e7d32;
-    border-radius:10px;
-    padding:8px 12px;
-    text-decoration:none;
-    background:transparent;
+  .chip{
+    border-radius:10px; padding:8px 12px; cursor:pointer; border:1px solid transparent; text-transform:none;
+    font-weight:500;
   }
-  /* selecty a inputy – neutrální, ať ladí se šedou kartou */
-  .ts-card select, .ts-card input[type=date]{
-    padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.12);
-    background:#f4f4f4;color:#1b5e20;
-  }
-  /* hlavní akční tlačítko – zelené, s bílým textem */
-  .ts-primary{
-    background:#2e7d32;color:#ffffff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;
-  }
-  .small{font-size:12px} .muted{opacity:.65}
+  .chip-ghost{ background:#cfead5; color:#1b5e20; border-color:#83c090; }
+  .chip-primary{ background:#2e7d32; color:#ffffff; border-color:#2e7d32; }
 
-  /* === Týdenní bloky (ponecháno tmavé) === */
+  .spacer{flex:1}
+  .sep{width:10px; height:1px; opacity:0;}
+
+  /* week list - keep existing contrast (dark day blocks) */
   .week{display:flex;flex-direction:column;gap:14px;}
   .day{background:#0b0b0b; color:#f1f5f1; border-radius:14px; padding:12px 14px;}
   .day-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;opacity:.9}
@@ -85,7 +75,6 @@
   const elWeekStart = document.getElementById('weekStart');
   const elPrev = document.getElementById('prevWeek');
   const elNext = document.getElementById('nextWeek');
-  const elRange = document.getElementById('weekRange');
   const elFJob = document.getElementById('filterJob');
   const elFEmp = document.getElementById('filterEmployee');
   const elExport = document.getElementById('exportCsv');
@@ -121,14 +110,11 @@
   async function renderWeek(){
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
-    elRange.textContent = '(' + start.toLocaleDateString('cs-CZ') + ' — ' + end.toLocaleDateString('cs-CZ') + ')';
-
     const q = new URLSearchParams();
     q.set('from', fmt(start));
     q.set('to', fmt(end));
     if(elFJob.value) q.set('job_id', elFJob.value);
     if(elFEmp.value) q.set('employee_id', elFEmp.value);
-
     const data = await fetchJSON('/api/timesheets?' + q.toString());
     const rows = (data.rows||[]);
     const byDate = {};
@@ -167,19 +153,14 @@
     }
   }
 
-  document.getElementById('prevWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
-  document.getElementById('nextWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
-  document.getElementById('filterJob').addEventListener('change', ()=>renderWeek().catch(console.error));
-  document.getElementById('filterEmployee').addEventListener('change', ()=>renderWeek().catch(console.error));
-  document.getElementById('exportCsv').addEventListener('click', ()=>{
-    const start = monday(parse(elWeekStart.value));
-    const end = addDays(start, 6);
-    const q = new URLSearchParams();
-    q.set('from', fmt(start)); q.set('to', fmt(end));
-    const fj = document.getElementById('filterJob').value;
-    const fe = document.getElementById('filterEmployee').value;
-    if(fj) q.set('job_id', fj);
-    if(fe) q.set('employee_id', fe);
+  elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmt(d); renderWeek().catch(console.error); });
+  elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
+  elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
+  elExport.addEventListener('click', ()=>{
+    const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
+    const q = new URLSearchParams(); q.set('from', fmt(d0)); q.set('to', fmt(d6));
+    if(elFJob.value) q.set('job_id', elFJob.value); if(elFEmp.value) q.set('employee_id', elFEmp.value);
     window.location.href = '/api/timesheets/export?' + q.toString();
   });
 
