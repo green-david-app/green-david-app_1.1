@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{{ title or 'green david app' }}</title>
   <link rel="stylesheet" href="/style.css"/>
-  <link rel="stylesheet" href="/hide-top-nav.css"/>
   <style>
-    /* Center brand area; keep logout in the top-right */
     header.header { position: relative; padding: 12px 16px; }
     .brand-wrap { display:flex; align-items:center; justify-content:center; gap:12px; }
     .brand-logo { height:36px; width:auto; border-radius:8px; }
     .brand-title { font-weight:700; }
     .brand-sub { font-size:12px; opacity:.7; }
     .logout-abs { position:absolute; right:16px; top:12px; }
+    .tabs{display:flex; gap:8px; margin-bottom:10px; overflow:auto;}
+    .tabs a{background:#2b2f31;color:#e8efe9;padding:8px 12px;border-radius:10px;text-decoration:none;border:1px solid rgba(0,0,0,.4);box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);white-space:nowrap;}
+    .tabs a.active{background:#3a3f42;}
+    .container{margin-top: 12px;}
   </style>
 </head>
 <body>
@@ -25,11 +27,6 @@
         <div class="brand-sub">interní systém</div>
       </div>
     </div>
-    {% if session.get('uid') %}
-      <div class="logout-abs">
-        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
-      </div>
-    {% endif %}
   </header>
 
   <main class="container">
@@ -37,17 +34,5 @@
   </main>
 
   <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
-
-  <script>
-  (function(){
-    var btn = document.getElementById('logoutBtn');
-    if(btn){
-      btn.addEventListener('click', async function(){
-        try{ await fetch('/api/logout', {method:'POST'}); }catch(e){}
-        window.location.href = '/';
-      });
-    }
-  })();
-  </script>
 </body>
 </html>
