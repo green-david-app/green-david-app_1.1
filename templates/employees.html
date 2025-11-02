@@ -81,13 +81,8 @@
 
   async function render(){
     listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
-    const data = await fetchJSON('/api/employees');
+    const data = await fetchJSON('/api/employees' + (scope!=='all' ? ('?scope='+encodeURIComponent(scope)) : ''));
     let rows = data.employees || [];
-    if(scope==='brig'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
-    }else if(scope==='employees'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
-    }
     if(rows.length===0){
       listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
       return;

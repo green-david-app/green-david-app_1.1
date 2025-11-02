@@ -1,5 +1,5 @@
 import os, re, io, sqlite3
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -79,7 +79,6 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
-    -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
@@ -114,6 +113,22 @@ def ensure_schema():
     """)
     db.commit()
 
+def migrate_legacy_defaults():
+    """One-time, best-effort backfill for legacy columns in jobs table."""
+    db = get_db()
+    info = {r[1]: r for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+    now = datetime.utcnow().isoformat()
+    if "created_at" in info:
+        db.execute("UPDATE jobs SET created_at=? WHERE created_at IS NULL OR created_at=''", (now,))
+    if "updated_at" in info:
+        db.execute("UPDATE jobs SET updated_at=? WHERE updated_at IS NULL OR updated_at=''", (now,))
+    if "owner_id" in info:
+        # backfill to first admin if possible, else 1
+        admin = db.execute("SELECT id FROM users WHERE role='admin' AND active=1 ORDER BY id ASC").fetchone()
+        owner = admin["id"] if admin else 1
+        db.execute("UPDATE jobs SET owner_id=? WHERE owner_id IS NULL OR CAST(owner_id AS TEXT)=''", (owner,))
+    db.commit()
+
 def seed_admin():
     db = get_db()
     cur = db.execute("SELECT COUNT(*) c FROM users")
@@ -134,11 +149,11 @@ def seed_admin():
 def _ensure():
     ensure_schema()
     seed_admin()
+    migrate_legacy_defaults()
 
 # ----------------- helpers for jobs schema compat -----------------
 def _jobs_info():
     rows = get_db().execute("PRAGMA table_info(jobs)").fetchall()
-    # rows: cid, name, type, notnull, dflt_value, pk
     return {r[1]: {"notnull": int(r[3])} for r in rows}
 
 def _job_title_col():
@@ -157,27 +172,24 @@ def _job_select_all():
 
 def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=None):
     info = _jobs_info()
-    cols = []
-    vals = []
-    # Keep legacy 'name' in sync if present
+    cols = []; vals = []
     if "title" in info:
         cols.append("title"); vals.append(title)
     if "name" in info:
         cols.append("name"); vals.append(title)
     cols += ["client","status","city","code","date","note"]
     vals += [client, status, city, code, dt, note]
-    # legacy NOT NULL columns without defaults
     now = datetime.utcnow().isoformat()
     if "created_at" in info:
         cols.append("created_at"); vals.append(now)
     if "updated_at" in info:
         cols.append("updated_at"); vals.append(now)
-    # legacy owner_id
     if "owner_id" in info:
+        cols.append("owner_id")
         if owner_id is None:
             cu = current_user()
             owner_id = cu["id"] if cu else None
-        cols.append("owner_id"); vals.append(int(owner_id) if owner_id is not None else None)
+        vals.append(int(owner_id) if owner_id is not None else None)
     return cols, vals
 
 def _job_title_update_set(params_list, title_value):
@@ -206,13 +218,25 @@ def uploaded_file(name):
 def health():
     return {"status": "ok"}
 
+# ----------------- pages (employees / brigádníci / timesheets) -----------------
+@app.route("/employees")
+def page_employees():
+    return render_template("employees.html")
+
+@app.route("/brigadnici.html")
+def page_brigadnici():
+    return render_template("brigadnici.html")
+
+@app.route("/timesheets.html")
+def page_timesheets():
+    return render_template("timesheets.html")
+
 # ----------------- APIs -----------------
 @app.route("/api/me")
 def api_me():
     u = current_user()
     return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
 
-# auth
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json(force=True, silent=True) or {}
@@ -233,12 +257,20 @@ def api_logout():
 # employees
 @app.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
+    # GET is public to allow lists in UI before login
     db = get_db()
     if request.method == "GET":
+        scope = (request.args.get("scope") or "").lower().strip()
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
-        return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
+        items = [dict(r) for r in rows]
+        if scope == "brig":
+            items = [e for e in items if str(e.get("role","")).lower() == "brigádník"]
+        elif scope == "employees":
+            items = [e for e in items if str(e.get("role","")).lower() != "brigádník"]
+        return jsonify({"ok": True, "employees": items})
+    # write ops
+    u, err = require_role(write=True)
+    if err: return err
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role") or "worker"
@@ -253,7 +285,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# ✅ jobs with legacy schema compatibility
+# jobs (compat with legacy schema)
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
@@ -264,7 +296,6 @@ def api_jobs():
                 r["date"] = _normalize_date(r["date"])
         return jsonify({"ok": True, "jobs": rows})
 
-    # write operations require manager/admin
     u, err = require_role(write=True)
     if err: return err
 
@@ -297,11 +328,9 @@ def api_jobs():
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
                 updates.append(f"{f}=?"); params.append(v)
-        # Touch legacy updated_at if present
         info = _jobs_info()
         if "updated_at" in info:
             updates.append("updated_at=?"); params.append(datetime.utcnow().isoformat())
-        # Optional owner change if present
         if "owner_id" in info and data.get("owner_id") is not None:
             updates.append("owner_id=?"); params.append(int(data.get("owner_id")))
         if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
@@ -426,11 +455,6 @@ def api_timesheets_export():
     mem.seek(0)
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
-
-# ----------------- Template route -----------------
-@app.route("/timesheets.html")
-def page_timesheets():
-    return render_template("timesheets.html")
 
 # ----------------- run -----------------
 if __name__ == "__main__":

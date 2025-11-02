@@ -55,8 +55,8 @@
 
   async function render(){
     listBody.innerHTML = '<tr><td colspan="3" class="muted">Načítám…</td></tr>';
-    const data = await fetchJSON('/api/employees');
-    const rows = (data.employees || []).filter(e => String(e.role||'').toLowerCase()==='brigádník');
+    const data = await fetchJSON('/api/employees?scope=brig');
+    const rows = data.employees || [];
     if(rows.length===0){
       listBody.innerHTML = '<tr><td colspan="3" class="muted">Žádní brigádníci</td></tr>';
       return;
