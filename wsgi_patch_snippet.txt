@@ -1,3 +1,0 @@
-# Do wsgi.py přidej po vytvoření app:
-from gd.api import register_api
-register_api(app)
