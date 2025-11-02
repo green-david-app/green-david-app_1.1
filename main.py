@@ -79,7 +79,7 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
-    -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
+    -- prefer new schema; legacy DBs may still have jobs.name and/or owner_id
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
@@ -151,15 +151,19 @@ def _job_select_all():
         return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
     return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
 
-def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
+def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, user_id):
     info = _jobs_info()
     cols = []
     vals = []
-    # Always keep both columns in sync if exist
+    # title/name sync
     if "title" in info:
         cols.append("title"); vals.append(title)
     if "name" in info:
         cols.append("name"); vals.append(title)
+    # extra NOT NULL owner_id (legacy schema)
+    if "owner_id" in info and info["owner_id"]["notnull"] == 1:
+        cols.append("owner_id"); vals.append(int(user_id or 1))
+    # standard columns
     cols += ["client","status","city","code","date","note"]
     vals += [client, status, city, code, dt, note]
     return cols, vals
@@ -237,7 +241,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# ✅ jobs with legacy schema compatibility
+# ✅ jobs with legacy schema compatibility (title/name + owner_id)
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
@@ -265,7 +269,7 @@ def api_jobs():
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note)
+        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note, (u or {}).get("id"))
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
@@ -281,6 +285,10 @@ def api_jobs():
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
                 updates.append(f"{f}=?"); params.append(v)
+        # optional: owner change
+        info = _jobs_info()
+        if "owner_id" in info and "owner_id" in data:
+            updates.append("owner_id=?"); params.append(int(data["owner_id"]))
         if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
@@ -294,7 +302,7 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# timesheets CRUD + export
+# timesheets CRUD + export (beze změn proti v4)
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
