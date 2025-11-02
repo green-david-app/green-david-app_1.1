@@ -17,11 +17,11 @@ def _normalize_date(v):
         return v
     s = str(v).strip()
     import re as _re
-    m = _re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
+    m = _re.match(r"^(\\d{4})-(\\d{1,2})-(\\d{1,2})$", s)
     if m:
         y, M, d = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
-    m = _re.match(r"^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$", s)
+    m = _re.match(r"^(\\d{1,2})[\\.\\s-](\\d{1,2})[\\.\\s-](\\d{4})$", s)
     if m:
         d, M, y = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
@@ -64,7 +64,7 @@ def require_role(write=False):
 # ----------------- bootstrap (subset) -----------------
 def ensure_schema():
     db = get_db()
-    db.executescript("""
+    db.executescript(\"\"\"
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -79,7 +79,7 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
-    -- prefer new schema; legacy DBs may still have jobs.name and/or owner_id
+    -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
@@ -111,15 +111,16 @@ def ensure_schema():
         note TEXT DEFAULT '',
         color TEXT DEFAULT '#2e7d32'
     );
-    """)
+    \"\"\")
     db.commit()
 
 def seed_admin():
     db = get_db()
     cur = db.execute("SELECT COUNT(*) c FROM users")
     if cur.fetchone()["c"] == 0:
-        db.execute("""INSERT INTO users(email,name,role,password_hash,active,created_at)
-                      VALUES (?,?,?,?,1,?)""",                   (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
+        db.execute(\"\"\"INSERT INTO users(email,name,role,password_hash,active,created_at)
+                      VALUES (?,?,?,?,1,?)\"\"\",\
+                   (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
                     os.environ.get("ADMIN_NAME","Admin"),
                     "admin",
                     generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
@@ -151,21 +152,23 @@ def _job_select_all():
         return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
     return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
 
-def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, user_id):
+def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
     info = _jobs_info()
     cols = []
     vals = []
-    # title/name sync
+    # Always keep both columns in sync if exist
     if "title" in info:
         cols.append("title"); vals.append(title)
     if "name" in info:
         cols.append("name"); vals.append(title)
-    # extra NOT NULL owner_id (legacy schema)
-    if "owner_id" in info and info["owner_id"]["notnull"] == 1:
-        cols.append("owner_id"); vals.append(int(user_id or 1))
-    # standard columns
     cols += ["client","status","city","code","date","note"]
     vals += [client, status, city, code, dt, note]
+    # --- legacy NOT NULL columns without defaults (created_at / updated_at) ---
+    now = datetime.utcnow().isoformat()
+    if "created_at" in info:
+        cols.append("created_at"); vals.append(now)
+    if "updated_at" in info:
+        cols.append("updated_at"); vals.append(now)
     return cols, vals
 
 def _job_title_update_set(params_list, title_value):
@@ -241,7 +244,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# ✅ jobs with legacy schema compatibility (title/name + owner_id)
+# ✅ jobs with legacy schema compatibility
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
@@ -269,7 +272,7 @@ def api_jobs():
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note, (u or {}).get("id"))
+        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note)
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
@@ -285,10 +288,10 @@ def api_jobs():
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
                 updates.append(f"{f}=?"); params.append(v)
-        # optional: owner change
+        # Touch legacy updated_at if present
         info = _jobs_info()
-        if "owner_id" in info and "owner_id" in data:
-            updates.append("owner_id=?"); params.append(int(data["owner_id"]))
+        if "updated_at" in info:
+            updates.append("updated_at=?"); params.append(datetime.utcnow().isoformat())
         if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
@@ -302,7 +305,7 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# timesheets CRUD + export (beze změn proti v4)
+# timesheets CRUD + export
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -315,11 +318,11 @@ def api_timesheets():
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
         title_col = _job_title_col()
-        q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
+        q = f\"\"\"SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
                       e.name AS employee_name, j.{title_col} AS job_title, j.code AS job_code
                FROM timesheets t
                LEFT JOIN employees e ON e.id=t.employee_id
-               LEFT JOIN jobs j ON j.id=t.job_id"""
+               LEFT JOIN jobs j ON j.id=t.job_id\"\"\"
         conds=[]; params=[]
         if emp: conds.append("t.employee_id=?"); params.append(emp)
         if jid: conds.append("t.job_id=?"); params.append(jid)
@@ -382,12 +385,12 @@ def api_timesheets_export():
     d_from = _normalize_date(request.args.get("from"))
     d_to   = _normalize_date(request.args.get("to"))
     title_col = _job_title_col()
-    q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
+    q = f\"\"\"SELECT t.id,t.date,t.hours,t.place,t.activity,
                   e.name AS employee_name, e.id AS employee_id,
                   j.{title_col} AS job_title, j.code AS job_code, j.id AS job_id
            FROM timesheets t
            LEFT JOIN employees e ON e.id=t.employee_id
-           LEFT JOIN jobs j ON j.id=t.job_id"""
+           LEFT JOIN jobs j ON j.id=t.job_id\"\"\"
     conds=[]; params=[]
     if emp: conds.append("t.employee_id=?"); params.append(emp)
     if jid: conds.append("t.job_id=?"); params.append(jid)
