@@ -1,7 +1,6 @@
 import os, re, io, sqlite3
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template, make_response
-from werkzeug.security import generate_password_hash, check_password_hash
 from jinja2 import TemplateNotFound
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -47,38 +46,16 @@ def close_db(error=None):
     if db is not None:
         db.close()
 
-def current_user():
-    uid = session.get("uid")
-    if not uid:
-        return None
-    db = get_db()
-    row = db.execute("SELECT id,email,name,role,active FROM users WHERE id=?", (uid,)).fetchone()
-    return dict(row) if row else None
-
-def require_auth():
-    u = current_user()
-    if not u or not u.get("active"):
-        return None, (jsonify({"ok": False, "error": "unauthorized"}), 401)
-    return u, None
-
-def require_role(write=False):
-    u, err = require_auth()
-    if err:
-        return None, err
-    if write and u["role"] not in ("admin","manager"):
-        return None, (jsonify({"ok": False, "error": "forbidden"}), 403)
-    return u, None
-
 # ----------------- bootstrap (subset) -----------------
 def ensure_schema():
     db = get_db()
     db.executescript("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        role TEXT NOT NULL CHECK(role IN ('admin','manager','worker')),
-        password_hash TEXT NOT NULL,
+        email TEXT UNIQUE,
+        name TEXT,
+        role TEXT DEFAULT 'admin',
+        password_hash TEXT,
         active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -122,10 +99,6 @@ def ensure_schema():
     """ )
     db.commit()
 
-def _jobs_info():
-    rows = get_db().execute("PRAGMA table_info(jobs)").fetchall()
-    return {r[1]: {"notnull": int(r[3])} for r in rows}
-
 def migrate_legacy_defaults():
     """Backfill values if legacy columns exist, to avoid NOT NULL errors."""
     db = get_db()
@@ -136,7 +109,7 @@ def migrate_legacy_defaults():
     if "updated_at" in info:
         db.execute("UPDATE jobs SET updated_at=? WHERE updated_at IS NULL OR updated_at=''", (now,))
     if "owner_id" in info:
-        admin = db.execute("SELECT id FROM users WHERE role='admin' AND active=1 ORDER BY id ASC").fetchone()
+        admin = db.execute("SELECT id FROM users WHERE active=1 ORDER BY id ASC").fetchone()
         owner = admin["id"] if admin else 1
         db.execute("UPDATE jobs SET owner_id=? WHERE owner_id IS NULL OR CAST(owner_id AS TEXT)=''", (owner,))
     db.commit()
@@ -149,20 +122,40 @@ def _ensure():
 # ----------------- static & pages -----------------
 @app.route("/")
 def index():
-    # keep your static landing page
-    return send_from_directory(".", "index.html")
+    # prefer repo's index.html if exists, otherwise ship fallback
+    if os.path.exists("index.html"):
+        return send_from_directory(".", "index.html")
+    html = """<!doctype html><html lang='cs'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>green david app</title>
+<link rel='stylesheet' href='/style.css'>
+</head><body>
+<div class='page-pad'>
+  <div class='tabs sticky'>
+    <a class='active' href='/'>Domů</a>
+    <a href='/calendar'>Kalendář</a>
+    <a href='/timesheets.html'>Výkazy hodin</a>
+    <a href='/jobs'>Zakázky</a>
+    <a href='/employees'>Zaměstnanci</a>
+    <a href='/brigadnici.html'>Brigádníci</a>
+  </div>
+  <div class='card card-dark'><div class='card-h'><strong>green david app</strong></div>
+  <div class='card-c'>Nasazeno. Pokračuj přes navigaci výše.</div></div>
+</div>
+</body></html>"""
+    return _no_store(make_response(html))
 
 @app.route("/calendar")
 def page_calendar():
     if os.path.exists("calendar.html"):
         return send_from_directory(".", "calendar.html")
-    return send_from_directory(".", "index.html")
+    return index()
 
 @app.route("/calendar.html")
 def page_calendar_html():
     if os.path.exists("calendar.html"):
         return send_from_directory(".", "calendar.html")
-    return send_from_directory(".", "index.html")
+    return index()
 
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
@@ -390,36 +383,17 @@ def page_brigadnici():
 
 @app.route("/timesheets.html")
 def page_timesheets():
-    # show index if template missing
     try:
         return render_template("timesheets.html")
     except TemplateNotFound:
-        return send_from_directory(".", "index.html")
+        return index()
 
 # ----------------- APIs -----------------
 @app.route("/api/me")
 def api_me():
-    u = current_user()
-    return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
+    return jsonify({"ok": True, "authenticated": False, "user": None, "tasks_count": 0})
 
-@app.route("/api/login", methods=["POST"])
-def api_login():
-    data = request.get_json(force=True, silent=True) or {}
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-    db = get_db()
-    row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
-    if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
-        return jsonify({"ok": False, "error": "invalid_credentials"}), 401
-    session["uid"] = row["id"]
-    return jsonify({"ok": True})
-
-@app.route("/api/logout", methods=["POST"])
-def api_logout():
-    session.pop("uid", None)
-    return jsonify({"ok": True})
-
-# employees
+# employees (OPEN – no auth to match legacy behavior)
 @app.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():
     db = get_db()
@@ -432,8 +406,6 @@ def api_employees():
         elif scope == "employees":
             items = [e for e in items if "brig" not in str(e.get("role","")).lower()]
         return jsonify({"ok": True, "employees": items})
-    u, err = require_role(write=True)
-    if err: return err
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         name = (data.get("name") or "").strip()
@@ -443,14 +415,14 @@ def api_employees():
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
         db.commit()
         return jsonify({"ok": True})
-    if request.method == "DELETE":
-        eid = request.args.get("id", type=int)
-        if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM employees WHERE id=?", (eid,))
-        db.commit()
-        return jsonify({"ok": True})
+    # DELETE
+    eid = request.args.get("id", type=int)
+    if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM employees WHERE id=?", (eid,))
+    db.commit()
+    return jsonify({"ok": True})
 
-# jobs (legacy-compatible)
+# jobs (OPEN – legacy-compatible + default owner)
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
@@ -480,9 +452,6 @@ def api_jobs():
                 r["date"] = _normalize_date(r["date"])
         return jsonify({"ok": True, "jobs": rows})
 
-    u, err = require_role(write=True)
-    if err: return err
-
     data = request.get_json(force=True, silent=True) or {}
     title = (data.get("title") or "").strip()
     client = (data.get("client") or "").strip()
@@ -505,8 +474,9 @@ def api_jobs():
         now = datetime.utcnow().isoformat()
         if "created_at" in info: cols.append("created_at"); vals.append(now)
         if "updated_at" in info: cols.append("updated_at"); vals.append(now)
-        if "owner_id" in info: 
-            cols.append("owner_id"); vals.append(u["id"])
+        if "owner_id" in info:
+            owner = db.execute("SELECT id FROM users WHERE active=1 ORDER BY id ASC").fetchone()
+            cols.append("owner_id"); vals.append(owner["id"] if owner else 1)
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
@@ -540,11 +510,9 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# timesheets
+# timesheets (OPEN)
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
     db = get_db()
 
     if request.method == "GET":
@@ -552,9 +520,9 @@ def api_timesheets():
         jid = request.args.get("job_id", type=int)
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
-        title_col = "title"
-        info = _jobs_info()
-        if "name" in info and "title" not in info: title_col = "name"
+        # detect title column
+        info = {r[1]: r for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
+        title_col = "title" if "title" in info else ("name" if "name" in info else "title")
         q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
                       e.name AS employee_name, j.{title_col} AS job_title, j.code AS job_code
                FROM timesheets t
@@ -611,48 +579,6 @@ def api_timesheets():
     db.execute("DELETE FROM timesheets WHERE id=?", (tid,))
     db.commit()
     return jsonify({"ok": True})
-
-@app.route("/api/timesheets/export")
-def api_timesheets_export():
-    u, err = require_role(write=False)
-    if err: return err
-    db = get_db()
-    emp = request.args.get("employee_id", type=int)
-    jid = request.args.get("job_id", type=int)
-    d_from = _normalize_date(request.args.get("from"))
-    d_to   = _normalize_date(request.args.get("to"))
-    title_col = "title"
-    info = _jobs_info()
-    if "name" in info and "title" not in info: title_col = "name"
-    q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
-                  e.name AS employee_name, e.id AS employee_id,
-                  j.{title_col} AS job_title, j.code AS job_code, j.id AS job_id
-           FROM timesheets t
-           LEFT JOIN employees e ON e.id=t.employee_id
-           LEFT JOIN jobs j ON j.id=t.job_id"""
-    conds=[]; params=[]
-    if emp: conds.append("t.employee_id=?"); params.append(emp)
-    if jid: conds.append("t.job_id=?"); params.append(jid)
-    if d_from and d_to:
-        conds.append("date(t.date) BETWEEN date(?) AND date(?)"); params.extend([d_from, d_to])
-    elif d_from:
-        conds.append("date(t.date) >= date(?)"); params.append(d_from)
-    elif d_to:
-        conds.append("date(t.date) <= date(?)"); params.append(d_to)
-    if conds: q += " WHERE " + " AND ".join(conds)
-    q += " ORDER BY t.date ASC, t.id ASC"
-    rows = get_db().execute(q, params).fetchall()
-
-    import io as _io, csv as _csv
-    output = _io.StringIO()
-    writer = _csv.writer(output)
-    writer.writerow(["id","date","employee_id","employee_name","job_id","job_title","job_code","hours","place","activity"])
-    for r in rows:
-        writer.writerow([r["id"], r["date"], r["employee_id"], r["employee_name"] or "", r["job_id"], r["job_title"] or "", r["job_code"] or "", r["hours"], r["place"] or "", r["activity"] or ""])
-    mem = _io.BytesIO(output.getvalue().encode("utf-8-sig"))
-    mem.seek(0)
-    fname = "timesheets.csv"
-    return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
 
 # ----------------- run -----------------
 if __name__ == "__main__":
