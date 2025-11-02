@@ -1,4 +1,3 @@
-
 import os, re, io, base64, sqlite3, csv
 from datetime import datetime, date, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
@@ -120,7 +119,6 @@ def seed_admin():
     db = get_db()
     cur = db.execute("SELECT COUNT(*) c FROM users")
     if cur.fetchone()["c"] == 0:
-        from werkzeug.security import generate_password_hash
         db.execute("""INSERT INTO users(email,name,role,password_hash,active,created_at)
                       VALUES (?,?,?,?,1,?)""",
                    (os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
@@ -160,6 +158,24 @@ def api_me():
     u = current_user()
     return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
 
+# 🔐 AUTH: add missing login/logout so POST /api/login no longer 405
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(force=True, silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    db = get_db()
+    row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
+    if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
+        return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    session["uid"] = row["id"]
+    return jsonify({"ok": True})
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.pop("uid", None)
+    return jsonify({"ok": True})
+
 # employees
 @app.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():
@@ -183,7 +199,7 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# jobs (read only subset)
+# jobs (read only subset + basic CRUD kept minimal for compatibility)
 @app.route("/api/jobs", methods=["GET"])
 def api_jobs():
     db = get_db()
@@ -287,11 +303,13 @@ def api_timesheets_export():
     elif d_to:
         conds.append("date(t.date) <= date(?)"); params.append(d_to)
     if conds: q += " WHERE " + " AND ".join(conds)
+    if conds: q += " WHERE " + " AND ".join(conds)
     q += " ORDER BY t.date ASC, t.id ASC"
-    rows = db.execute(q, params).fetchall()
+    rows = get_db().execute(q, params).fetchall()
 
     output = io.StringIO()
-    writer = csv.writer(output)
+    import csv as _csv
+    writer = _csv.writer(output)
     writer.writerow(["id","date","employee_id","employee_name","job_id","job_title","job_code","hours","place","activity"])
     for r in rows:
         writer.writerow([r["id"], r["date"], r["employee_id"], r["employee_name"] or "", r["job_id"], r["job_title"] or "", r["job_code"] or "", r["hours"], r["place"] or "", r["activity"] or ""])
