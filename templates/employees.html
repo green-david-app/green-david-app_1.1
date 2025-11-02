@@ -39,9 +39,7 @@
     </div>
     <div class="card-c">
       <table class="tbl">
-        <thead>
-          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
-        </thead>
+        <thead><tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr></thead>
         <tbody id="listBody"></tbody>
       </table>
     </div>
@@ -55,7 +53,7 @@
     <div class="card-c form-grid">
       <input type="hidden" id="mId"/>
       <label>Jméno <input id="mName" type="text" class="modal-field"/></label>
-      <label>Role
+      <label>Role 
         <select id="mRole" class="modal-field">
           <option value="zahradník">zahradník</option>
           <option value="svářeč">svářeč</option>
@@ -82,7 +80,7 @@
   .card-c{padding:12px 14px;}
   .row{display:flex;gap:10px;align-items:center;}
   .inp{background:#1f2224;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#e8efe9;padding:8px 10px;}
-  .inp.sel{min-width: 220px;}
+  .inp.sel{min-width:220px;}
   .btn{border-radius:10px;padding:8px 12px;border:1px solid transparent;cursor:pointer;}
   .btn-primary{background:#2e7d32;color:#fff;border-color:#2e7d32;}
   .chips{display:flex; gap:8px; flex-wrap:wrap;}
