@@ -1,7 +1,6 @@
 import sqlite3
 from flask import jsonify, request
 
-# Helper to get DB (expects app.config["GD_DB_PATH"] or default app.db in project root)
 def _get_db_path(app):
     return app.config.get("GD_DB_PATH", "app.db")
 
@@ -12,11 +11,7 @@ def _query(conn, sql, params=(), commit=False):
         conn.commit()
     return cur
 
-def _row_to_dict(cursor, row):
-    return {d[0]: row[i] for i, d in enumerate(cursor.description)}
-
 def _ensure_tables(conn):
-    # Minimal safeguard: ensure temps table exists
     _query(conn, """
     CREATE TABLE IF NOT EXISTS temps (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,14 +30,6 @@ def _ensure_tables(conn):
 def register_api(app, bp):
     db_path = _get_db_path(app)
 
-    # --- Zaměstnanci (basic stubs to avoid breaking existing calls) ---
-    @bp.get('/employees')
-    def list_employees():
-        # If you already have an employees table, adapt this to your schema.
-        # Here we return an empty list as a non-breaking stub.
-        return jsonify([])
-
-    # --- Brigádníci ---
     @bp.get('/temps')
     def list_temps():
         conn = sqlite3.connect(db_path)
@@ -97,7 +84,7 @@ def register_api(app, bp):
                 else:
                     params.append(data[f])
         if not sets:
-            return jsonify({'error': 'Nic k aktualizaci'}), 400
+            return jsonify({'error': 'Nic k aktualizaci'}), 400
         params.append(temp_id)
         conn = sqlite3.connect(db_path)
         _ensure_tables(conn)
@@ -115,7 +102,6 @@ def register_api(app, bp):
 
     @bp.get('/temps/export.csv')
     def export_temps_csv():
-        # Simple CSV export
         import csv, io
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
@@ -125,7 +111,7 @@ def register_api(app, bp):
         conn.close()
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow(['ID', 'Jméno', 'Příjmení', 'Telefon', 'E-mail', 'Hodinová sazba', 'Aktivní', 'Poznámka'])
+        writer.writerow(['ID','Jméno','Příjmení','Telefon','E-mail','Hodinová sazba','Aktivní','Poznámka'])
         for r in rows:
             writer.writerow([r['id'], r['first_name'], r['last_name'], r['phone'], r['email'], r['hourly_rate'], 'ano' if r['active'] else 'ne', r['notes']])
         return app.response_class(buf.getvalue(), mimetype='text/csv')

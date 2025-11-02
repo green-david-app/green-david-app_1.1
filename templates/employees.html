@@ -1,44 +1,43 @@
-<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zaměstnanci &middot; Green David</title>
-  <link rel="stylesheet" href="/static/css/green.css">
-  <style>
-    .tabs { display:flex; gap:12px; border-bottom:1px solid #dfe3e6; margin-bottom:16px; }
-    .tab { padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; }
-    .tab.active { border-color:#2e7d32; font-weight:600; }
-    .actions { display:flex; gap:8px; margin-bottom:12px; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:8px 10px; border-bottom:1px solid #eee; text-align:left; }
-    .muted { color:#6b7280; }
-    .btn { padding:8px 12px; border:1px solid #2e7d32; background:#2e7d32; color:#fff; cursor:pointer; border-radius:6px; }
-    .btn.secondary { background:#fff; color:#2e7d32; }
-    .form-row { display:flex; gap:12px; margin-bottom:8px; }
-    .form-row label { width:140px; }
-    .hidden { display:none; }
-  </style>
-</head>
-<body>
-  <main style="max-width:1100px;margin:24px auto;padding:0 16px;">
-    <h1>Zaměstnanci</h1>
+{% extends 'base.html' %}
+{% block body %}
+<div class="card">
+  <h1>Zaměstnanci</h1>
+  <div class="tabs">
+    <div class="tab" data-tab="employees">Zaměstnanci</div>
+    <div class="tab active" data-tab="temps">Brigádníci</div>
+  </div>
 
-    <div class="tabs">
-      <div class="tab" data-tab="employees">Zaměstnanci</div>
-      <div class="tab active" data-tab="temps">Brigádníci</div>
-    </div>
-
-    <section id="tab-employees" class="hidden">
-      <p class="muted">Tato sekce je beze změn. (Pokud máte vlastní UI, zůstává – jen přibyla karta <b>Brigádníci</b>.)</p>
-    </section>
-
-    <section id="tab-temps">
-      <div class="actions">
-        <button class="btn" id="btn-add-temp">Přidat brigádníka</button>
-        <a class="btn secondary" id="btn-export-csv" href="/gd/api/temps/export.csv">Export CSV</a>
+  <section id="tab-employees" class="hidden">
+    <div class="card">
+      <h3>Nový zaměstnanec</h3>
+      <div style="display:flex;gap:12px;">
+        <input placeholder="Jméno" id="emp-name">
+        <select id="emp-role">
+          <option>zahradník</option>
+          <option>svářeč</option>
+          <option>brigádník</option>
+        </select>
+        <button class="btn" id="emp-add">Přidat</button>
       </div>
+    </div>
+    <div class="card">
+      <h3>Seznam</h3>
+      <table>
+        <thead><tr><th>ID</th><th>Jméno</th><th>Role</th><th></th></tr></thead>
+        <tbody id="emp-list"></tbody>
+      </table>
+    </div>
+  </section>
 
+  <section id="tab-temps">
+    <div class="card">
+      <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+        <h3>Brigádníci</h3>
+        <div>
+          <a class="btn secondary" href="/gd/api/temps/export.csv">Export CSV</a>
+          <button class="btn" id="btn-add-temp">Přidat brigádníka</button>
+        </div>
+      </div>
       <table id="temps-table">
         <thead>
           <tr>
@@ -52,47 +51,22 @@
         </thead>
         <tbody></tbody>
       </table>
-    </section>
+    </div>
+  </section>
+</div>
 
-    <!-- Modal -->
-    <dialog id="temp-modal">
-      <form method="dialog" id="temp-form">
-        <h3 id="modal-title">Nový brigádník</h3>
-        <div class="form-row">
-          <label>Jméno</label>
-          <input name="first_name" required>
-        </div>
-        <div class="form-row">
-          <label>Příjmení</label>
-          <input name="last_name" required>
-        </div>
-        <div class="form-row">
-          <label>Telefon</label>
-          <input name="phone">
-        </div>
-        <div class="form-row">
-          <label>E-mail</label>
-          <input name="email">
-        </div>
-        <div class="form-row">
-          <label>Hodinová sazba (Kč)</label>
-          <input name="hourly_rate" type="number" step="0.01" value="0">
-        </div>
-        <div class="form-row">
-          <label>Aktivní</label>
-          <input name="active" type="checkbox" checked>
-        </div>
-        <div class="form-row">
-          <label>Poznámka</label>
-          <input name="notes">
-        </div>
-        <div class="actions">
-          <button class="btn" value="save">Uložit</button>
-          <button class="btn secondary" value="cancel">Zrušit</button>
-        </div>
-      </form>
-    </dialog>
-  </main>
-  <script src="/static/js/employees.js"></script>
-</body>
-</html>
+<dialog id="temp-modal">
+  <form method="dialog" id="temp-form">
+    <h3 id="modal-title">Nový brigádník</h3>
+    <div class="form-row" style="display:flex;gap:12px"><input name="first_name" placeholder="Jméno" required><input name="last_name" placeholder="Příjmení" required></div>
+    <div class="form-row" style="display:flex;gap:12px"><input name="phone" placeholder="Telefon"><input name="email" placeholder="E-mail"></div>
+    <div class="form-row" style="display:flex;gap:12px"><input name="hourly_rate" type="number" step="0.01" value="0"><label><input type="checkbox" name="active" checked> Aktivní</label></div>
+    <input name="notes" placeholder="Poznámka">
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" value="save">Uložit</button><button class="btn secondary" value="cancel">Zrušit</button></div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/employees.js"></script>
+{% endblock %}

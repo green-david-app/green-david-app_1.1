@@ -1,4 +1,3 @@
--- 004_add_temps.sql
 CREATE TABLE IF NOT EXISTS temps (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT NOT NULL,

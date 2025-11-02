@@ -1,4 +1,4 @@
-// Jednoduché přepínání karet
+// Tabs
 const tabs = document.querySelectorAll('.tab');
 const tabEmployees = document.getElementById('tab-employees');
 const tabTemps = document.getElementById('tab-temps');
@@ -10,12 +10,26 @@ tabs.forEach(t => t.addEventListener('click', () => {
   tabTemps.classList.toggle('hidden', name !== 'temps');
 }));
 
+// Dummy employees list
+const empList = document.getElementById('emp-list');
+const empAdd = document.getElementById('emp-add');
+if (empAdd) {
+  let empId = 1;
+  empAdd.addEventListener('click', () => {
+    const name = document.getElementById('emp-name').value.trim();
+    const role = document.getElementById('emp-role').value;
+    if (!name) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empId++}</td><td>${name}</td><td>${role}</td><td style='text-align:right'><button class='btn secondary'>Detail</button> <button class='btn secondary'>Smazat</button></td>`;
+    empList.prepend(tr);
+  });
+}
+
 // BRIGÁDNÍCI
 const tbody = document.querySelector('#temps-table tbody');
 const modal = document.getElementById('temp-modal');
 const form = document.getElementById('temp-form');
 const btnAdd = document.getElementById('btn-add-temp');
-const btnExport = document.getElementById('btn-export-csv');
 
 let editId = null;
 
@@ -57,7 +71,7 @@ function bindRowButtons() {
   document.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', onDelete));
 }
 
-btnAdd.addEventListener('click', () => {
+if (btnAdd) btnAdd.addEventListener('click', () => {
   editId = null;
   form.reset();
   form.querySelector('[name=hourly_rate]').value = 0;
