@@ -4,43 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{{ title or 'green david app' }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <link rel="stylesheet" href="/style.css"/>
+  <!-- added -->
+  <link rel="stylesheet" href="/hide-top-nav.css"/>
 </head>
 <body>
-  <header class="header" style="display:flex;align-items:center;gap:12px;padding:10px 14px;">
-    <div class="brand" style="display:flex;align-items:center;gap:10px;">
-      <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="green david logo" style="height:32px;width:auto;border-radius:6px;">
-      <div>
-        <div class="brand-title" style="font-weight:700;">green david app</div>
-        <div class="brand-sub" style="font-size:12px;opacity:.7">interní systém</div>
-      </div>
-    </div>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
-      {% if session.get('uid') %}
-        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
-      {% else %}
-        <a class="ghost" href="/" style="text-decoration:none;">Přihlásit</a>
-      {% endif %}
-    </div>
-  </header>
-
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
-  <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
-
-  <script>
-  (function(){
-    var btn = document.getElementById('logoutBtn');
-    if(btn){
-      btn.addEventListener('click', async function(){
-        try{
-          await fetch('/api/logout', {method:'POST'});
-        }catch(e){}
-        window.location.href = '/';
-      });
-    }
-  })();
-  </script>
+  {% block body %}{% endblock %}
 </body>
 </html>

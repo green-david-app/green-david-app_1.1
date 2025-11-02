@@ -1,0 +1,18 @@
+/* Hide the legacy green link row under the logo without touching the rest of the UI */
+
+/* 1) Obvious containers if present */
+header .nav,
+.breadcrumbs.ts-top,
+.ts-nav { display: none !important; }
+
+/* 2) Fallback: hide the very first block directly under header
+   that consists primarily of many inline anchors (like Dashboard, Zakázky, ...). 
+   Uses :has(), supported by Safari 17+ and modern browsers. */
+.header + *:has(> a + a + a) { display: none !important; }
+
+/* Keep the single-line back link (← Zpět na hlavní) – typically a single anchor;
+   rule above hides only blocks with 3+ anchors. */
+
+/* Guard: if some pages inject that row inside a wrapper right under header */
+.header + * > .ts-nav,
+.header + * > .top-links { display: none !important; }
