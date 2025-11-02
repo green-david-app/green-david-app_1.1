@@ -1,4 +1,3 @@
-\
 <!doctype html>
 <html lang="cs">
 <head>
@@ -16,15 +15,14 @@
         <div class="brand-sub">interní systém</div>
       </div>
     </div>
-    <nav class="nav">
-      <a href="/">Dashboard</a>
-      <a href="/jobs">Zakázky</a>
-      <a href="/calendar.html">Kalendář</a>
-      <a href="/timesheets.html">Výkazy</a>
-      <a href="/warehouse">Sklad</a>
-      <a href="/export">Export XLSX</a>
-      {% if session.get('uid') %}<a href="/logout">Odhlásit</a>{% else %}<a href="/login">Přihlásit</a>{% endif %}
-    </nav>
+    <!-- user area: keep only one logout link here -->
+    <div class="user-area" style="margin-left:auto">
+      {% if session.get('uid') %}
+        <a class="ghost" href="/logout">Odhlásit</a>
+      {% else %}
+        <a class="ghost" href="/login">Přihlásit</a>
+      {% endif %}
+    </div>
   </header>
 
   <main class="container">
