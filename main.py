@@ -79,7 +79,7 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
-    -- prefer new schema; legacy DBs may still have jobs.name
+    -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
@@ -132,19 +132,46 @@ def _ensure():
     seed_admin()
 
 # ----------------- helpers for jobs schema compat -----------------
+def _jobs_info():
+    rows = get_db().execute("PRAGMA table_info(jobs)").fetchall()
+    # rows: cid, name, type, notnull, dflt_value, pk
+    return {r[1]: {"notnull": int(r[3])} for r in rows}
+
 def _job_title_col():
-    cols = [r[1] for r in get_db().execute("PRAGMA table_info(jobs)").fetchall()]
-    if "title" in cols:
+    info = _jobs_info()
+    if "title" in info:
         return "title"
-    return "name" if "name" in cols else "title"
+    return "name" if "name" in info else "title"
 
 def _job_select_all():
-    cols = [r[1] for r in get_db().execute("PRAGMA table_info(jobs)").fetchall()]
-    if "title" in cols:
+    info = _jobs_info()
+    if "title" in info:
         return "SELECT id, title, client, status, city, code, date, note FROM jobs"
-    if "name" in cols:
+    if "name" in info:
         return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
     return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
+
+def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
+    info = _jobs_info()
+    cols = []
+    vals = []
+    # Always keep both columns in sync if exist
+    if "title" in info:
+        cols.append("title"); vals.append(title)
+    if "name" in info:
+        cols.append("name"); vals.append(title)
+    cols += ["client","status","city","code","date","note"]
+    vals += [client, status, city, code, dt, note]
+    return cols, vals
+
+def _job_title_update_set(params_list, title_value):
+    info = _jobs_info()
+    sets = []
+    if "title" in info:
+        sets.append("title=?"); params_list.append(title_value)
+    if "name" in info:
+        sets.append("name=?"); params_list.append(title_value)
+    return sets
 
 # ----------------- static -----------------
 @app.route("/")
@@ -234,31 +261,29 @@ def api_jobs():
     note   = data.get("note") or ""
     dt     = _normalize_date(data.get("date"))
 
-    title_col = _job_title_col()
-
     if request.method == "POST":
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        sql = f"INSERT INTO jobs({title_col},client,status,city,code,date,note) VALUES (?,?,?,?,?,?,?)"
-        db.execute(sql, (title, client, status, city, code, dt, note))
+        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note)
+        sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
+        db.execute(sql, vals)
         db.commit()
         return jsonify({"ok": True})
 
     if request.method == "PATCH":
         jid = data.get("id")
         if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        fields = ["client","status","city","code","date","note"]
         updates = []; params = []
         if "title" in data and data["title"] is not None:
-            updates.append(f"{title_col}=?"); params.append(title)
-        for f in fields:
+            updates += _job_title_update_set(params, title)
+        for f in ("client","status","city","code","date","note"):
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
                 updates.append(f"{f}=?"); params.append(v)
         if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         params.append(int(jid))
-        db.execute(f"UPDATE jobs SET {', '.join(updates)} WHERE id=?", params)
+        db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
         db.commit()
         return jsonify({"ok": True})
 
@@ -281,8 +306,9 @@ def api_timesheets():
         jid = request.args.get("job_id", type=int)
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
+        title_col = _job_title_col()
         q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
-                      e.name AS employee_name, j.{_job_title_col()} AS job_title, j.code AS job_code
+                      e.name AS employee_name, j.{title_col} AS job_title, j.code AS job_code
                FROM timesheets t
                LEFT JOIN employees e ON e.id=t.employee_id
                LEFT JOIN jobs j ON j.id=t.job_id"""
@@ -347,9 +373,10 @@ def api_timesheets_export():
     jid = request.args.get("job_id", type=int)
     d_from = _normalize_date(request.args.get("from"))
     d_to   = _normalize_date(request.args.get("to"))
+    title_col = _job_title_col()
     q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
                   e.name AS employee_name, e.id AS employee_id,
-                  j.{_job_title_col()} AS job_title, j.code AS job_code, j.id AS job_id
+                  j.{title_col} AS job_title, j.code AS job_code, j.id AS job_id
            FROM timesheets t
            LEFT JOIN employees e ON e.id=t.employee_id
            LEFT JOIN jobs j ON j.id=t.job_id"""
