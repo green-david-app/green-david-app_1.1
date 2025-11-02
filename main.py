@@ -1,7 +1,8 @@
 import os, re, io, sqlite3
 from datetime import datetime
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
+from jinja2 import TemplateNotFound
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
@@ -10,6 +11,13 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+TEMPLATE_MARKER = "<!-- GD_V2 -->"
+
+def _no_store(resp):
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 # ----------------- utils -----------------
 def _normalize_date(v):
@@ -79,7 +87,7 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
-    -- NOTE: jobs schema can be legacy; we don't enforce constraints here
+    -- jobs table may be legacy; do not enforce new columns strictly
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
@@ -111,11 +119,15 @@ def ensure_schema():
         note TEXT DEFAULT '',
         color TEXT DEFAULT '#2e7d32'
     );
-    """)
+    """ )
     db.commit()
 
+def _jobs_info():
+    rows = get_db().execute("PRAGMA table_info(jobs)").fetchall()
+    return {r[1]: {"notnull": int(r[3])} for r in rows}
+
 def migrate_legacy_defaults():
-    """One-time best-effort backfill for legacy columns in 'jobs'."""
+    """Backfill values if legacy columns exist, to avoid NOT NULL errors."""
     db = get_db()
     info = {r[1]: r for r in db.execute("PRAGMA table_info(jobs)").fetchall()}
     now = datetime.utcnow().isoformat()
@@ -134,64 +146,14 @@ def _ensure():
     ensure_schema()
     migrate_legacy_defaults()
 
-# ----------------- helpers for jobs schema compat -----------------
-def _jobs_info():
-    rows = get_db().execute("PRAGMA table_info(jobs)").fetchall()
-    return {r[1]: {"notnull": int(r[3])} for r in rows}
-
-def _job_title_col():
-    info = _jobs_info()
-    if "title" in info:
-        return "title"
-    return "name" if "name" in info else "title"
-
-def _job_select_all():
-    info = _jobs_info()
-    if "title" in info:
-        return "SELECT id, title, client, status, city, code, date, note FROM jobs"
-    if "name" in info:
-        return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
-    return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
-
-def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=None):
-    info = _jobs_info()
-    cols = []; vals = []
-    if "title" in info:
-        cols.append("title"); vals.append(title)
-    if "name" in info:
-        cols.append("name"); vals.append(title)
-    cols += ["client","status","city","code","date","note"]
-    vals += [client, status, city, code, dt, note]
-    now = datetime.utcnow().isoformat()
-    if "created_at" in info:
-        cols.append("created_at"); vals.append(now)
-    if "updated_at" in info:
-        cols.append("updated_at"); vals.append(now)
-    if "owner_id" in info:
-        if owner_id is None:
-            cu = current_user()
-            owner_id = cu["id"] if cu else None
-        cols.append("owner_id"); vals.append(int(owner_id) if owner_id is not None else None)
-    return cols, vals
-
-def _job_title_update_set(params_list, title_value):
-    info = _jobs_info()
-    sets = []
-    if "title" in info:
-        sets.append("title=?"); params_list.append(title_value)
-    if "name" in info:
-        sets.append("name=?"); params_list.append(title_value)
-    return sets
-
 # ----------------- static & pages -----------------
 @app.route("/")
 def index():
+    # keep your static landing page
     return send_from_directory(".", "index.html")
 
 @app.route("/calendar")
 def page_calendar():
-    # for setups where nav points to /calendar
-    # serve static calendar.html if present, else index
     if os.path.exists("calendar.html"):
         return send_from_directory(".", "calendar.html")
     return send_from_directory(".", "index.html")
@@ -210,17 +172,229 @@ def uploaded_file(name):
         abort(404)
     return send_from_directory(UPLOAD_DIR, safe)
 
+# ----- Fallback renderers (work even if templates aren't replaced) -----
+_EMPLOYEES_FALLBACK = f"""<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>green david app — Zaměstnanci</title>
+<link rel="stylesheet" href="/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">{TEMPLATE_MARKER}
+</head>
+<body>
+<div class="page-pad">
+  <div class="tabs sticky">
+    <a href="/calendar">Kalendář</a>
+    <a href="/timesheets.html">Výkazy hodin</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/tasks">Úkoly</a>
+    <a class="active" href="/employees">Zaměstnanci</a>
+    <a href="/brigadnici.html">Brigádníci</a>
+    <a href="/stock">Sklad</a>
+    <a href="/users">Uživatelé</a>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Nový zaměstnanec</strong></div>
+    <div class="card-c">
+      <div class="row">
+        <input id="newName" type="text" placeholder="Jméno" class="inp" />
+        <select id="newRole" class="inp sel">
+          <option value="zahradník">Zahradník</option>
+          <option value="svářeč">Svářeč</option>
+          <option value="brigádník">Brigádník</option>
+          <option value="jiné">Jiné</option>
+        </select>
+        <button id="btnAdd" class="btn btn-primary">Přidat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h">
+      <strong>Seznam</strong>
+      <div class="chips" style="margin-top:8px;">
+        <button data-scope="all" class="chip chip-on">Všichni</button>
+        <button data-scope="employees" class="chip">Zaměstnanci</button>
+        <button data-scope="brig" class="chip">Brigádníci</button>
+      </div>
+    </div>
+    <div class="card-c">
+      <table class="tbl">
+        <thead>
+          <tr><th>Č.</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const listBody = document.getElementById('listBody');
+  const newName = document.getElementById('newName');
+  const newRole = document.getElementById('newRole');
+  const btnAdd = document.getElementById('btnAdd');
+  const chips = Array.from(document.querySelectorAll('.chips .chip'));
+  let scope = 'all';
+
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  btnAdd.addEventListener('click', async ()=>{
+    const name = newName.value.trim();
+    const role = newRole.value;
+    if(!name) return;
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
+    newName.value=''; await render();
+  });
+
+  chips.forEach(chip => chip.addEventListener('click', ()=>{
+    chips.forEach(c=>c.classList.remove('chip-on'));
+    chip.classList.add('chip-on');
+    scope = chip.getAttribute('data-scope');
+    render();
+  }));
+
+  async function render(){
+    listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
+    const data = await fetchJSON('/api/employees' + (scope!=='all' ? ('?scope='+encodeURIComponent(scope)) : ''));
+    const rows = data.employees || [];
+    if(rows.length===0){
+      listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
+      return;
+    }
+    listBody.innerHTML = '';
+    let i = 0;
+    for(const e of rows){
+      i += 1;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i}</td><td>${e.name}</td><td>${e.role||''}</td>
+                      <td><a class="btn btn-small">Detail</a> <a class="btn btn-small btn-danger">Smazat</a></td>`;
+      listBody.appendChild(tr);
+    }
+  }
+  await render();
+})();
+</script>
+</body>
+</html>"""
+
+_BRIGADNICI_FALLBACK = f"""<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>green david app — Brigádníci</title>
+<link rel="stylesheet" href="/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">{TEMPLATE_MARKER}
+</head>
+<body>
+<div class="page-pad">
+  <div class="tabs sticky">
+    <a href="/calendar">Kalendář</a>
+    <a href="/timesheets.html">Výkazy hodin</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/tasks">Úkoly</a>
+    <a href="/employees">Zaměstnanci</a>
+    <a class="active" href="/brigadnici.html">Brigádníci</a>
+    <a href="/stock">Sklad</a>
+    <a href="/users">Uživatelé</a>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Nový brigádník</strong></div>
+    <div class="card-c">
+      <div class="row">
+        <input id="newName" type="text" placeholder="Jméno" class="inp"/>
+        <button id="btnAdd" class="btn btn-primary">Přidat</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Seznam</strong></div>
+    <div class="card-c">
+      <table class="tbl">
+        <thead><tr><th>Č.</th><th>Jméno</th><th>Role</th></tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const listBody = document.getElementById('listBody');
+  const newName = document.getElementById('newName');
+  const btnAdd = document.getElementById('btnAdd');
+
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  btnAdd.addEventListener('click', async ()=>{
+    const name = newName.value.trim();
+    if(!name) return;
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role: 'brigádník' }) });
+    newName.value=''; await render();
+  });
+
+  async function render(){
+    listBody.innerHTML = '<tr><td colspan="3" class="muted">Načítám…</td></tr>';
+    const data = await fetchJSON('/api/employees?scope=brig');
+    const rows = data.employees || [];
+    if(rows.length===0){
+      listBody.innerHTML = '<tr><td colspan="3" class="muted">Žádní brigádníci</td></tr>';
+      return;
+    }
+    listBody.innerHTML = '';
+    let i = 0;
+    for(const e of rows){
+      i += 1;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i}</td><td>${e.name}</td><td>${e.role||'brigádník'}</td>`;
+      listBody.appendChild(tr);
+    }
+  }
+  await render();
+})();
+</script>
+</body>
+</html>"""
+
+def _render_or_fallback(tpl_name, fallback_html):
+    try:
+        html = render_template(tpl_name)
+        if TEMPLATE_MARKER in html:
+            return _no_store(make_response(html))
+        # template rendered but without marker -> it's old; return fallback
+    except TemplateNotFound:
+        pass
+    return _no_store(make_response(fallback_html))
+
 @app.route("/employees")
 def page_employees():
-    return render_template("employees.html")
+    return _render_or_fallback("employees.html", _EMPLOYEES_FALLBACK)
 
 @app.route("/brigadnici.html")
 def page_brigadnici():
-    return render_template("brigadnici.html")
+    return _render_or_fallback("brigadnici.html", _BRIGADNICI_FALLBACK)
 
 @app.route("/timesheets.html")
 def page_timesheets():
-    return render_template("timesheets.html")
+    # show index if template missing
+    try:
+        return render_template("timesheets.html")
+    except TemplateNotFound:
+        return send_from_directory(".", "index.html")
 
 # ----------------- APIs -----------------
 @app.route("/api/me")
@@ -253,7 +427,7 @@ def api_employees():
         scope = (request.args.get("scope") or "").lower().strip()
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         items = [dict(r) for r in rows]
-        # robust substring filter: any role containing "brig" is a brigádník
+        # 'brig' substring => brigádníci; else employees
         if scope == "brig":
             items = [e for e in items if "brig" in str(e.get("role","")).lower()]
         elif scope == "employees":
@@ -277,10 +451,29 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# jobs (compat with legacy schema)
+# jobs (legacy-compatible)
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
     db = get_db()
+
+    def _jobs_info():
+        rows = db.execute("PRAGMA table_info(jobs)").fetchall()
+        return {r[1]: {"notnull": int(r[3])} for r in rows}
+
+    def _job_title_col(info=None):
+        info = info or _jobs_info()
+        if "title" in info:
+            return "title"
+        return "name" if "name" in info else "title"
+
+    def _job_select_all(info=None):
+        info = info or _jobs_info()
+        if "title" in info:
+            return "SELECT id, title, client, status, city, code, date, note FROM jobs"
+        if "name" in info:
+            return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
+        return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
+
     if request.method == "GET":
         rows = [dict(r) for r in db.execute(_job_select_all() + " ORDER BY date(date) DESC, id DESC").fetchall()]
         for r in rows:
@@ -300,11 +493,21 @@ def api_jobs():
     note   = data.get("note") or ""
     dt     = _normalize_date(data.get("date"))
 
+    info = _jobs_info()
+
     if request.method == "POST":
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=u["id"])
+        cols = []; vals = []
+        if "title" in info: cols.append("title"); vals.append(title)
+        if "name" in info:  cols.append("name");  vals.append(title)
+        cols += ["client","status","city","code","date","note"]; vals += [client,status,city,code,dt,note]
+        now = datetime.utcnow().isoformat()
+        if "created_at" in info: cols.append("created_at"); vals.append(now)
+        if "updated_at" in info: cols.append("updated_at"); vals.append(now)
+        if "owner_id" in info: 
+            cols.append("owner_id"); vals.append(u["id"])
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
@@ -315,12 +518,12 @@ def api_jobs():
         if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
         updates = []; params = []
         if "title" in data and data["title"] is not None:
-            updates += _job_title_update_set(params, title)
+            if "title" in info: updates.append("title=?"); params.append(title)
+            if "name" in info:  updates.append("name=?");  params.append(title)
         for f in ("client","status","city","code","date","note"):
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
                 updates.append(f"{f}=?"); params.append(v)
-        info = _jobs_info()
         if "updated_at" in info:
             updates.append("updated_at=?"); params.append(datetime.utcnow().isoformat())
         if "owner_id" in info and data.get("owner_id") is not None:
@@ -338,7 +541,7 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
-# timesheets CRUD + export
+# timesheets export kept the same as before for brevity
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -350,7 +553,9 @@ def api_timesheets():
         jid = request.args.get("job_id", type=int)
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
-        title_col = _job_title_col()
+        title_col = "title"
+        info = _jobs_info()
+        if "name" in info and "title" not in info: title_col = "name"
         q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
                       e.name AS employee_name, j.{title_col} AS job_title, j.code AS job_code
                FROM timesheets t
@@ -417,7 +622,9 @@ def api_timesheets_export():
     jid = request.args.get("job_id", type=int)
     d_from = _normalize_date(request.args.get("from"))
     d_to   = _normalize_date(request.args.get("to"))
-    title_col = _job_title_col()
+    title_col = "title"
+    info = _jobs_info()
+    if "name" in info and "title" not in info: title_col = "name"
     q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
                   e.name AS employee_name, e.id AS employee_id,
                   j.{title_col} AS job_title, j.code AS job_code, j.id AS job_id
