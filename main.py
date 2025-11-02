@@ -158,7 +158,7 @@ def api_me():
     u = current_user()
     return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
 
-# 🔐 AUTH: add missing login/logout so POST /api/login no longer 405
+# 🔐 AUTH: login/logout
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json(force=True, silent=True) or {}
@@ -176,15 +176,17 @@ def api_logout():
     session.pop("uid", None)
     return jsonify({"ok": True})
 
-# employees
-@app.route("/api/employees", methods=["GET","POST","DELETE"])
+# ---------- employees ----------
+@app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
 def api_employees():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
     db = get_db()
+
     if request.method == "GET":
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
+
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role") or "worker"
@@ -192,14 +194,31 @@ def api_employees():
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
         db.commit()
         return jsonify({"ok": True})
-    if request.method == "DELETE":
-        eid = request.args.get("id", type=int)
+
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        eid = data.get("id")
         if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        db.execute("DELETE FROM employees WHERE id=?", (eid,))
+        updates, params = [], []
+        if "name" in data:
+            updates.append("name=?"); params.append(data["name"])
+        if "role" in data:
+            updates.append("role=?"); params.append(data["role"] or "worker")
+        if not updates:
+            return jsonify({"ok": False, "error":"no_fields"}), 400
+        params.append(int(eid))
+        db.execute(f"UPDATE employees SET {', '.join(updates)} WHERE id=?", params)
         db.commit()
         return jsonify({"ok": True})
 
-# jobs (read only subset + basic CRUD kept minimal for compatibility)
+    # DELETE
+    eid = request.args.get("id", type=int)
+    if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM employees WHERE id=?", (eid,))
+    db.commit()
+    return jsonify({"ok": True})
+
+# ---------- jobs (read-only subset kept minimal) ----------
 @app.route("/api/jobs", methods=["GET"])
 def api_jobs():
     db = get_db()
@@ -209,7 +228,7 @@ def api_jobs():
             _row["date"] = _normalize_date(_row["date"])
     return jsonify({"ok": True, "jobs": rows})
 
-# timesheets CRUD + export
+# ---------- timesheets CRUD + export ----------
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -303,7 +322,6 @@ def api_timesheets_export():
     elif d_to:
         conds.append("date(t.date) <= date(?)"); params.append(d_to)
     if conds: q += " WHERE " + " AND ".join(conds)
-    if conds: q += " WHERE " + " AND ".join(conds)
     q += " ORDER BY t.date ASC, t.id ASC"
     rows = get_db().execute(q, params).fetchall()
 
@@ -318,11 +336,19 @@ def api_timesheets_export():
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
 
-# ----------------- Template route -----------------
+# ----------------- Template routes -----------------
 @app.route("/timesheets.html")
 def page_timesheets():
     # Render via Jinja so that {% extends "layout.html" %} works, bringing in app fonts/styles.
     return render_template("timesheets.html")
+
+@app.route("/employees")
+def page_employees():
+    return render_template("employees.html")
+
+@app.route("/brigadnici.html")
+def page_brigadnici():
+    return render_template("brigadnici.html")
 
 # ----------------- run -----------------
 if __name__ == "__main__":
