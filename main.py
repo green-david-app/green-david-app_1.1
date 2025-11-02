@@ -440,6 +440,7 @@ def page_timesheets():
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
+
 # ----------------- Template routes -----------------
 @app.route("/employees")
 def page_employees():
@@ -447,5 +448,4 @@ def page_employees():
 
 @app.route("/brigadnici.html")
 def page_brigadnici():
-    # optional separate page, uses existing template if linked in nav
     return render_template("brigadnici.html")
