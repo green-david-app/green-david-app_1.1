@@ -1,5 +1,4 @@
-
-import os, re, io, base64, sqlite3, csv
+import os, re, io, sqlite3
 from datetime import datetime, date, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,9 +26,6 @@ def _normalize_date(v):
         d, M, y = m.groups()
         return f"{int(y):04d}-{int(M):02d}-{int(d):02d}"
     return s
-
-def monday_of(d: date) -> date:
-    return d - timedelta(days=(d.weekday()))  # Monday=0
 
 def get_db():
     if "db" not in g:
@@ -83,14 +79,16 @@ def ensure_schema():
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker'
     );
+    -- prefer new schema; legacy DBs may still have jobs.name
     CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
+        title TEXT,
+        name TEXT,
         client TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'Plán',
         city TEXT NOT NULL DEFAULT '',
         code TEXT NOT NULL DEFAULT '',
-        date TEXT NOT NULL DEFAULT '',
+        date TEXT,
         note TEXT
     );
     CREATE TABLE IF NOT EXISTS timesheets (
@@ -133,6 +131,21 @@ def _ensure():
     ensure_schema()
     seed_admin()
 
+# ----------------- helpers for jobs schema compat -----------------
+def _job_title_col():
+    cols = [r[1] for r in get_db().execute("PRAGMA table_info(jobs)").fetchall()]
+    if "title" in cols:
+        return "title"
+    return "name" if "name" in cols else "title"
+
+def _job_select_all():
+    cols = [r[1] for r in get_db().execute("PRAGMA table_info(jobs)").fetchall()]
+    if "title" in cols:
+        return "SELECT id, title, client, status, city, code, date, note FROM jobs"
+    if "name" in cols:
+        return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
+    return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
+
 # ----------------- static -----------------
 @app.route("/")
 def index():
@@ -140,12 +153,10 @@ def index():
 
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
-    import re as _re
-    safe = _re.sub(r"[^a-zA-Z0-9._-]", "_", name)
+    safe = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
     path = os.path.join(UPLOAD_DIR, safe)
-    if not os.path.isfile(path): 
-        from flask import abort as _abort
-        _abort(404)
+    if not os.path.isfile(path):
+        abort(404)
     return send_from_directory(UPLOAD_DIR, safe)
 
 @app.route("/health")
@@ -199,48 +210,48 @@ def api_employees():
         db.commit()
         return jsonify({"ok": True})
 
-# ✅ jobs (restore full CRUD so POST no longer 405)
+# ✅ jobs with legacy schema compatibility
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
 def api_jobs():
+    db = get_db()
     if request.method == "GET":
-        db = get_db()
-        rows = [dict(r) for r in db.execute("SELECT * FROM jobs ORDER BY date(date) DESC, id DESC").fetchall()]
-        for _row in rows:
-            if "date" in _row and _row["date"]:
-                _row["date"] = _normalize_date(_row["date"])
+        rows = [dict(r) for r in db.execute(_job_select_all() + " ORDER BY date(date) DESC, id DESC").fetchall()]
+        for r in rows:
+            if "date" in r and r["date"]:
+                r["date"] = _normalize_date(r["date"])
         return jsonify({"ok": True, "jobs": rows})
 
     # write operations require manager/admin
     u, err = require_role(write=True)
     if err: return err
 
-    db = get_db()
     data = request.get_json(force=True, silent=True) or {}
+    title = (data.get("title") or "").strip()
+    client = (data.get("client") or "").strip()
+    status = (data.get("status") or "Plán").strip()
+    city   = (data.get("city")   or "").strip()
+    code   = (data.get("code")   or "").strip()
+    note   = data.get("note") or ""
+    dt     = _normalize_date(data.get("date"))
+
+    title_col = _job_title_col()
 
     if request.method == "POST":
-        req = ["title","city","code","date"]
-        if not all((data.get(k) is not None and str(data.get(k)).strip() != "") for k in req):
+        req = [title, city, code, dt]
+        if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        title  = (data.get("title")  or "").strip()
-        client = (data.get("client") or "").strip()
-        status = (data.get("status") or "Plán").strip()
-        city   = (data.get("city")   or "").strip()
-        code   = (data.get("code")   or "").strip()
-        note   = data.get("note") or ""
-        dt     = _normalize_date(data.get("date"))
-        db.execute(
-            "INSERT INTO jobs(title,client,status,city,code,date,note) VALUES (?,?,?,?,?,?,?)",
-            (title, client, status, city, code, dt, note)
-        )
+        sql = f"INSERT INTO jobs({title_col},client,status,city,code,date,note) VALUES (?,?,?,?,?,?,?)"
+        db.execute(sql, (title, client, status, city, code, dt, note))
         db.commit()
         return jsonify({"ok": True})
 
     if request.method == "PATCH":
         jid = data.get("id")
-        if not jid:
-            return jsonify({"ok": False, "error":"missing_id"}), 400
-        fields = ["title","client","status","city","code","date","note"]
+        if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        fields = ["client","status","city","code","date","note"]
         updates = []; params = []
+        if "title" in data and data["title"] is not None:
+            updates.append(f"{title_col}=?"); params.append(title)
         for f in fields:
             if f in data:
                 v = _normalize_date(data[f]) if f=="date" else data[f]
@@ -270,8 +281,8 @@ def api_timesheets():
         jid = request.args.get("job_id", type=int)
         d_from = _normalize_date(request.args.get("from"))
         d_to   = _normalize_date(request.args.get("to"))
-        q = """SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
-                      e.name AS employee_name, j.title AS job_title, j.code AS job_code
+        q = f"""SELECT t.id,t.employee_id,t.job_id,t.date,t.hours,t.place,t.activity,
+                      e.name AS employee_name, j.{_job_title_col()} AS job_title, j.code AS job_code
                FROM timesheets t
                LEFT JOIN employees e ON e.id=t.employee_id
                LEFT JOIN jobs j ON j.id=t.job_id"""
@@ -336,9 +347,9 @@ def api_timesheets_export():
     jid = request.args.get("job_id", type=int)
     d_from = _normalize_date(request.args.get("from"))
     d_to   = _normalize_date(request.args.get("to"))
-    q = """SELECT t.id,t.date,t.hours,t.place,t.activity,
+    q = f"""SELECT t.id,t.date,t.hours,t.place,t.activity,
                   e.name AS employee_name, e.id AS employee_id,
-                  j.title AS job_title, j.code AS job_code, j.id AS job_id
+                  j.{_job_title_col()} AS job_title, j.code AS job_code, j.id AS job_id
            FROM timesheets t
            LEFT JOIN employees e ON e.id=t.employee_id
            LEFT JOIN jobs j ON j.id=t.job_id"""
@@ -369,7 +380,6 @@ def api_timesheets_export():
 # ----------------- Template route -----------------
 @app.route("/timesheets.html")
 def page_timesheets():
-    # Render via Jinja so that {% extends "layout.html" %} works, bringing in app fonts/styles.
     return render_template("timesheets.html")
 
 # ----------------- run -----------------
