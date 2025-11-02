@@ -7,32 +7,40 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 </head>
 <body>
-  <header class="header">
-    <div class="brand">
-      <img class="brand-logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="green david logo" style="height:36px;width:auto;border-radius:6px;">
+  <header class="header" style="display:flex;align-items:center;gap:12px;padding:10px 14px;">
+    <div class="brand" style="display:flex;align-items:center;gap:10px;">
+      <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="green david logo" style="height:32px;width:auto;border-radius:6px;">
       <div>
-        <div class="brand-title">green david app</div>
-        <div class="brand-sub">interní systém</div>
+        <div class="brand-title" style="font-weight:700;">green david app</div>
+        <div class="brand-sub" style="font-size:12px;opacity:.7">interní systém</div>
       </div>
     </div>
-    <!-- user area: keep only one logout link here -->
-    <div class="user-area" style="margin-left:auto">
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
       {% if session.get('uid') %}
-        <a class="ghost" href="/logout">Odhlásit</a>
+        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
       {% else %}
-        <a class="ghost" href="/login">Přihlásit</a>
+        <a class="ghost" href="/" style="text-decoration:none;">Přihlásit</a>
       {% endif %}
     </div>
   </header>
 
   <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div id="toasts">{% for c,m in messages %}<div class="toast {{c}}">{{ m }}</div>{% endfor %}</div>
-      {% endif %}
-    {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <footer class="footer">© green david s.r.o.</footer>
+  <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
+
+  <script>
+  (function(){
+    var btn = document.getElementById('logoutBtn');
+    if(btn){
+      btn.addEventListener('click', async function(){
+        try{
+          await fetch('/api/logout', {method:'POST'});
+        }catch(e){}
+        window.location.href = '/';
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
