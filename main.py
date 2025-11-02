@@ -155,7 +155,7 @@ def _job_select_all():
         return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
     return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
 
-def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
+def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=None):
     info = _jobs_info()
     cols = []
     vals = []
@@ -172,6 +172,12 @@ def _job_insert_cols_and_vals(title, client, status, city, code, dt, note):
         cols.append("created_at"); vals.append(now)
     if "updated_at" in info:
         cols.append("updated_at"); vals.append(now)
+    # legacy owner_id
+    if "owner_id" in info:
+        if owner_id is None:
+            cu = current_user()
+            owner_id = cu["id"] if cu else None
+        cols.append("owner_id"); vals.append(int(owner_id) if owner_id is not None else None)
     return cols, vals
 
 def _job_title_update_set(params_list, title_value):
@@ -275,7 +281,7 @@ def api_jobs():
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
             return jsonify({"ok": False, "error":"missing_fields"}), 400
-        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note)
+        cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=u["id"])
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
@@ -295,6 +301,9 @@ def api_jobs():
         info = _jobs_info()
         if "updated_at" in info:
             updates.append("updated_at=?"); params.append(datetime.utcnow().isoformat())
+        # Optional owner change if present
+        if "owner_id" in info and data.get("owner_id") is not None:
+            updates.append("owner_id=?"); params.append(int(data.get("owner_id")))
         if not updates: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
