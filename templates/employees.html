@@ -48,40 +48,6 @@
   </div>
 </div>
 
-<!-- Modal detail -->
-<div id="modal" class="modal-backdrop" style="display:none;">
-  <div class="card modal-card">
-    <div class="card-h"><div class="modal-title">Detail</div></div>
-    <div class="card-c form-grid">
-      <input type="hidden" id="mId"/>
-      <label>Jméno <input id="mName" type="text" class="modal-field"/></label>
-      <label>Role
-        <select id="mRole" class="modal-field">
-          <option value="zahradník">zahradník</option>
-          <option value="svářeč">svářeč</option>
-          <option value="brigádník">brigádník</option>
-          <option value="jiné">jiné</option>
-        </select>
-      </label>
-    </div>
-    <div class="card-f actions">
-      <button id="mDelete" class="ghost danger" style="margin-right:auto;">Smazat</button>
-      <button id="mCancel" class="ghost">Zavřít</button>
-      <button id="mSave">Uložit</button>
-    </div>
-  </div>
-</div>
-
-<style>
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .form-grid label{color:#446a4a;font-weight:600;}
-  .modal-field{background:#f7f9f8;color:#111;border:1px solid #cfd8d4;border-radius:8px;padding:8px 10px;}
-  .card-f{padding:12px 14px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;}
-  .card-f .ghost{background:#eef0ef;border:1px solid #d4d9d6;color:#111;}
-  .card-f .ghost.danger{ background:#fff; border-color:#b00020; color:#b00020; }
-  #mSave{border:1px solid #2e7d32;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;}
-</style>
-
 <script>
 (async function(){
   const listBody = document.getElementById('listBody');
@@ -89,7 +55,7 @@
   const newRole = document.getElementById('newRole');
   const btnAdd = document.getElementById('btnAdd');
   const chips = Array.from(document.querySelectorAll('.chips .chip'));
-  let scope = 'all'; // all | employees | brig
+  let scope = 'all';
 
   async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
   async function apiJSON(url, options){
@@ -98,53 +64,14 @@
     return r.json();
   }
 
-  // Modal
-  const modal = document.getElementById('modal');
-  const mId = document.getElementById('mId');
-  const mName = document.getElementById('mName');
-  const mRole = document.getElementById('mRole');
-  const mSave = document.getElementById('mSave');
-  const mCancel = document.getElementById('mCancel');
-  const mDelete = document.getElementById('mDelete');
-  function openModal(emp){
-    mId.value = emp.id;
-    mName.value = emp.name || '';
-    mRole.value = (emp.role || '').toLowerCase() || 'zahradník';
-    modal.style.display='flex';
-  }
-  function closeModal(){ modal.style.display='none'; }
-  mCancel.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
-
-  mSave.addEventListener('click', async ()=>{
-    const payload = { id: Number(mId.value), name: mName.value.trim(), role: mRole.value };
-    if(!payload.name){ alert('Zadej jméno'); return; }
-    try{
-      await apiJSON('/api/employees', { method:'PATCH', body: JSON.stringify(payload)});
-      closeModal(); await render();
-    }catch(e){ alert('Chyba při ukládání: '+e.message); }
-  });
-
-  mDelete.addEventListener('click', async ()=>{
-    if(!confirm('Opravdu smazat?')) return;
-    try{
-      await fetch('/api/employees?id='+encodeURIComponent(mId.value), {method:'DELETE'});
-      closeModal(); await render();
-    }catch(e){ alert('Chyba při mazání: '+e.message); }
-  });
-
-  // Add
   btnAdd.addEventListener('click', async ()=>{
     const name = newName.value.trim();
     const role = newRole.value;
     if(!name) return;
-    try{
-      await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
-      newName.value=''; await render();
-    }catch(e){ alert('Chyba při přidání: '+e.message); }
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
+    newName.value=''; await render();
   });
 
-  // Chips switching
   chips.forEach(chip => chip.addEventListener('click', ()=>{
     chips.forEach(c=>c.classList.remove('chip-on'));
     chip.classList.add('chip-on');
@@ -168,26 +95,10 @@
     listBody.innerHTML = '';
     for(const e of rows){
       const tr = document.createElement('tr');
-      const tdId = document.createElement('td'); tdId.textContent = e.id;
-      const tdName = document.createElement('td');
-      const a = document.createElement('a'); a.href='#'; a.textContent = e.name; a.style.color='#a7e3b7';
-      a.addEventListener('click',(ev)=>{ev.preventDefault(); openModal(e);});
-      tdName.appendChild(a);
-      const tdRole = document.createElement('td'); tdRole.textContent = e.role || '';
-      const tdAct = document.createElement('td');
-      const bDetail = document.createElement('button'); bDetail.className='btn btn-primary'; bDetail.textContent='Detail'; bDetail.addEventListener('click', ()=>openModal(e));
-      const bDel = document.createElement('button'); bDel.className='btn ghost'; bDel.textContent='Smazat'; bDel.style.marginLeft='10px';
-      bDel.addEventListener('click', async ()=>{
-        if(!confirm('Opravdu smazat?')) return;
-        await fetch('/api/employees?id='+encodeURIComponent(e.id), {method:'DELETE'});
-        await render();
-      });
-      tdAct.appendChild(bDetail); tdAct.appendChild(bDel);
-      tr.appendChild(tdId); tr.appendChild(tdName); tr.appendChild(tdRole); tr.appendChild(tdAct);
+      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
       listBody.appendChild(tr);
     }
   }
-
   await render();
 })();
 </script>
