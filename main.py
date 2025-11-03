@@ -237,11 +237,7 @@ def api_employees():
     if err: return err
     db = get_db()
     if request.method == "GET":
-        role = request.args.get("role")
-        if role:
-            rows = db.execute("SELECT * FROM employees WHERE role=? ORDER BY id DESC", (role,)).fetchall()
-        else:
-            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
+        rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
@@ -437,11 +433,8 @@ def page_timesheets():
     return render_template("timesheets.html")
 
 # ----------------- run -----------------
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
-
-# ----------------- Template routes -----------------
+# ----------------- Template routes (Employees & Brigádníci) -----------------
 @app.route("/employees")
 def page_employees():
     return render_template("employees.html")
@@ -449,3 +442,5 @@ def page_employees():
 @app.route("/brigadnici.html")
 def page_brigadnici():
     return render_template("brigadnici.html")
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
