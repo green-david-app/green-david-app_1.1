@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block body %}
-
+<!-- GDA-BRIG-TABS v1 (final) -->
 <div class="card">
   <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
     <h2 style="margin:0">Nový</h2>
@@ -10,7 +10,7 @@
     </div>
   </div>
 
-  <!-- Form zaměstnanec -->
+  <!-- Form: zaměstnanec -->
   <form id="form-staff" onsubmit="return false" style="display:block; margin-top:8px;">
     <div style="display:flex; gap:12px; align-items:center;">
       <input id="emp-name" name="name" placeholder="Jméno" required>
@@ -19,7 +19,7 @@
     </div>
   </form>
 
-  <!-- Form brigádník -->
+  <!-- Form: brigádník -->
   <form id="form-temp" onsubmit="return false" style="display:none; margin-top:8px;">
     <div style="display:flex; gap:12px; align-items:center;">
       <input id="temp-name" placeholder="Jméno" required>
@@ -53,7 +53,7 @@
 </div>
 
 <script>
-// --- Přepínání v hlavičce (obě karty používají stejné hodnoty 'staff'/'temp')
+// --- Přepínač v hlavičkách karet ---
 function setMiniTab(tab){
   document.querySelectorAll('.mini-tab').forEach(b=>{
     const on = b.dataset.tab===tab;
@@ -74,6 +74,7 @@ document.addEventListener('click', (e)=>{
 });
 setMiniTab(localStorage.getItem('emp_hdr_tab') || 'staff');
 
+// --- Data helpers
 function fillTable(tbody, rows){
   tbody.innerHTML = '';
   if(!rows.length){
@@ -107,6 +108,7 @@ async function loadAll(){
   fillTable(document.getElementById('tbody-temp'), brig);
 }
 
+// --- Přidávání
 document.getElementById('btn-add-staff').addEventListener('click', async ()=>{
   const name = document.getElementById('emp-name').value.trim();
   const role = document.getElementById('emp-role').value.trim() || 'zahradník';
@@ -132,5 +134,4 @@ document.getElementById('btn-add-temp').addEventListener('click', async ()=>{
 // init
 loadAll();
 </script>
-
 {% endblock %}
