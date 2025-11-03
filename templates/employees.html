@@ -1,83 +1,105 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page-pad">
+  <div class="tabs sticky">
+    <a href="/calendar">Kalendář</a>
+    <a href="/timesheets.html">Výkazy hodin</a>
+    <a href="/jobs">Zakázky</a>
+    <a href="/tasks">Úkoly</a>
+    <a class="active" href="/employees">Zaměstnanci</a>
+    <a href="/brigadnici.html">Brigádníci</a>
+    <a href="/stock">Sklad</a>
+    <a href="/users">Uživatelé</a>
+  </div>
 
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zaměstnanci — green david app</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <style>
-    body { background:#eaf4ee; }
-    .gd-card { background:#1f2a27; color:#e9f6ef; border-radius:10px; border:none; }
-    .nav-tabs .nav-link { color:#e9f6ef; }
-    .nav-tabs .nav-link.active { background:#2f3c37; color:#e9f6ef; }
-  </style>
-</head>
-<body>
-  <div class="container my-4">
-    <div class="card gd-card">
-      <div class="card-body">
-        <ul class="nav nav-tabs" role="tablist">
-          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab1" type="button">Zaměstnanci</button></li>
-          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab2" type="button">Brigádníci</button></li>
-        </ul>
-        <div class="tab-content pt-3">
-          <div class="tab-pane fade show active" id="tab1">
-            <!-- Sem patří TVŮJ původní obsah Zaměstnanců (už ho v projektu máš) -->
-            {{ super() if false }}
-          </div>
-          <div class="tab-pane fade" id="tab2">
-            <div class="card gd-card mb-3">
-              <div class="card-header bg-transparent border-0"><strong>Nový brigádník</strong></div>
-              <div class="card-body">
-                <form class="row g-2 align-items-center" onsubmit="return false;">
-                  <div class="col-md"><input id="brig-name" class="form-control" placeholder="Jméno"></div>
-                  <div class="col-md"><input id="brig-role" class="form-control" value="Brigádník" placeholder="Role"></div>
-                  <div class="col-auto"><button id="brigAddBtn" class="btn btn-success">Přidat</button></div>
-                </form>
-              </div>
-            </div>
-            <div class="card gd-card">
-              <div class="card-header bg-transparent border-0"><strong>Seznam</strong></div>
-              <div class="table-responsive">
-                <table class="table table-dark table-striped table-hover m-0" id="brigTable">
-                  <thead><tr><th style="width:60px">ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="card card-dark">
+    <div class="card-h"><strong>Nový zaměstnanec</strong></div>
+    <div class="card-c">
+      <div class="row">
+        <input id="newName" type="text" placeholder="Jméno" class="inp" />
+        <select id="newRole" class="inp sel">
+          <option value="zahradník">Zahradník</option>
+          <option value="svářeč">Svářeč</option>
+          <option value="brigádník">Brigádník</option>
+          <option value="jiné">Jiné</option>
+        </select>
+        <button id="btnAdd" class="btn btn-primary">Přidat</button>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-  (function(){
-    async function load(){
-      const r = await fetch('/gd/api/brigadnici'); const d = await r.json();
-      const tb = document.querySelector('#brigTable tbody'); if(!tb) return; tb.innerHTML='';
-      for(const row of d){
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td>'+row.id+'</td><td>'+row.name+'</td><td>'+row.role+'</td>'
-                     + '<td class="text-end"><button class="btn btn-sm btn-outline-danger" data-id="'+row.id+'">Smazat</button></td>';
-        tb.appendChild(tr);
-      }
+  <div class="card card-dark">
+    <div class="card-h">
+      <strong>Seznam</strong>
+      <div class="chips" style="margin-top:8px;">
+        <button data-scope="all" class="chip chip-on">Všichni</button>
+        <button data-scope="employees" class="chip">Zaměstnanci</button>
+        <button data-scope="brig" class="chip">Brigádníci</button>
+      </div>
+    </div>
+    <div class="card-c">
+      <table class="tbl">
+        <thead>
+          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const listBody = document.getElementById('listBody');
+  const newName = document.getElementById('newName');
+  const newRole = document.getElementById('newRole');
+  const btnAdd = document.getElementById('btnAdd');
+  const chips = Array.from(document.querySelectorAll('.chips .chip'));
+  let scope = 'all';
+
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  btnAdd.addEventListener('click', async ()=>{
+    const name = newName.value.trim();
+    const role = newRole.value;
+    if(!name) return;
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
+    newName.value=''; await render();
+  });
+
+  chips.forEach(chip => chip.addEventListener('click', ()=>{
+    chips.forEach(c=>c.classList.remove('chip-on'));
+    chip.classList.add('chip-on');
+    scope = chip.getAttribute('data-scope');
+    render();
+  }));
+
+  async function render(){
+    listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
+    const data = await fetchJSON('/api/employees');
+    let rows = data.employees || [];
+    if(scope==='brig'){
+      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
+    }else if(scope==='employees'){
+      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
     }
-    async function add(){
-      const n = document.getElementById('brig-name').value.trim();
-      const role = (document.getElementById('brig-role').value.trim()||'Brigádník');
-      if(!n) return;
-      await fetch('/gd/api/brigadnici',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,role})});
-      document.getElementById('brig-name').value='';
-      await load();
+    if(rows.length===0){
+      listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
+      return;
     }
-    async function del(id){ await fetch('/gd/api/brigadnici/'+id,{method:'DELETE'}); await load(); }
-    document.addEventListener('click',e=>{ const b=e.target.closest('#brigTable button[data-id]'); if(b) del(b.dataset.id); });
-    document.getElementById('brigAddBtn')?.addEventListener('click', add);
-    document.querySelector('[data-bs-target="#tab2"]').addEventListener('shown.bs.tab', load);
-  })();
-  </script>
-</body>
-</html>
+    listBody.innerHTML = '';
+    for(const e of rows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
+      listBody.appendChild(tr);
+    }
+  }
+  await render();
+})();
+</script>
+{% endblock %}
