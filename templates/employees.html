@@ -1,4 +1,21 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+
+<div class="card" style="background:#1f2a27;color:#e9f6ef;border:none;border-radius:10px;margin-bottom:1rem">
+  <div class="card-body">
+    <ul class="nav nav-tabs" role="tablist" id="employeesTabs">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-zamestnanci" data-bs-toggle="tab" data-bs-target="#pane-zamestnanci" type="button" role="tab" aria-controls="pane-zamestnanci" aria-selected="true">Zaměstnanci</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-brigadnici" data-bs-toggle="tab" data-bs-target="#pane-brigadnici" type="button" role="tab" aria-controls="pane-brigadnici" aria-selected="false">Brigádníci</button>
+      </li>
+    </ul>
+    <div class="tab-content pt-3">
+      <div class="tab-pane fade show active" id="pane-zamestnanci" role="tabpanel" aria-labelledby="tab-zamestnanci">
+        {% extends "base.html" %}
 {% block body %}
 <!-- GDA-BRIG-TABS v1 (final) -->
 <div class="card">
@@ -136,4 +153,108 @@ loadAll();
 </script>
 {% endblock %}
 
-<script src="/static/js/employees-tabs-inject.js"></script>
+      </div>
+      <div class="tab-pane fade" id="pane-brigadnici" role="tabpanel" aria-labelledby="tab-brigadnici">
+        
+<div class="mt-2">
+  <div class="card" style="background:#1f2a27;color:#e9f6ef;border:none;border-radius:10px;margin-bottom:1rem">
+    <div class="card-header bg-transparent border-0"><strong>Nový brigádník</strong></div>
+    <div class="card-body">
+      <form id="brigForm" class="row g-2 align-items-center" onsubmit="return false;">
+        <div class="col-md">
+          <input id="brig-name" type="text" class="form-control" placeholder="Jméno">
+        </div>
+        <div class="col-md">
+          <input id="brig-role" type="text" class="form-control" value="Brigádník" placeholder="Role">
+        </div>
+        <div class="col-auto">
+          <button id="brigAddBtn" class="btn btn-success">Přidat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="card" style="background:#1f2a27;color:#e9f6ef;border:none;border-radius:10px;">
+    <div class="card-header bg-transparent border-0"><strong>Seznam</strong></div>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped table-hover m-0" id="brigTable">
+        <thead>
+          <tr>
+            <th style="width:60px">ID</th>
+            <th>Jméno</th>
+            <th>Role</th>
+            <th style="width:220px"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+(function() {
+  async function loadBrigadnici() {
+    try {
+      const res = await fetch('/gd/api/brigadnici');
+      const data = await res.json();
+      const tbody = document.querySelector('#brigTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      for (const row of data) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.id}</td>
+          <td>${row.name}</td>
+          <td>${row.role}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-danger" data-id="${row.id}">Smazat</button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function addBrigadnik(name, role) {
+    await fetch('/gd/api/brigadnici', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, role})
+    });
+    await loadBrigadnici();
+  }
+
+  async function deleteBrigadnik(id) {
+    await fetch('/gd/api/brigadnici/' + id, { method: 'DELETE' });
+    await loadBrigadnici();
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#brigTable button[data-id]');
+    if (btn) deleteBrigadnik(btn.dataset.id);
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const addBtn = document.getElementById('brigAddBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', async () => {
+        const name = document.getElementById('brig-name').value.trim();
+        const role = document.getElementById('brig-role').value.trim() || 'Brigádník';
+        if (!name) return;
+        await addBrigadnik(name, role);
+        document.getElementById('brig-name').value = '';
+      });
+    }
+    const tabBtn = document.getElementById('tab-brigadnici');
+    if (tabBtn) tabBtn.addEventListener('shown.bs.tab', loadBrigadnici);
+  });
+})();
+</script>
+</body>
+</html>
