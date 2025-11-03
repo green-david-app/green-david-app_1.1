@@ -486,3 +486,14 @@ def page_brigadnici():
     return render_template("brigadnici.html")
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
+
+@app.route('/zamestnanci')
+def zamestnanci_alias():
+    # Alias, aby klik v menu (Zaměstnanci) šel na stejnou stránku
+    return render_template('employees.html')
+
+@app.route('/staff')
+def staff_alias():
+    return render_template('employees.html')
+
