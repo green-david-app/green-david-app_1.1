@@ -439,6 +439,12 @@ def api_timesheets_export():
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
 
+
+# ----------------- Brigadnici page -----------------
+@app.route("/brigadnici.html")
+def page_brigadnici():
+    return render_template("brigadnici.html")
+
 # ----------------- Template route -----------------
 @app.route("/timesheets.html")
 def page_timesheets():
