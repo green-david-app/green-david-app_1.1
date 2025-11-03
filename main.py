@@ -1,6 +1,6 @@
 import os, re, io, sqlite3
 from datetime import datetime, date, timedelta
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
+from flask import abort, Blueprint, Flask, g, jsonify, render_template, request, send_file, send_from_directory, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Blueprint, jsonify, request, render_template
 import sqlite3, os
@@ -49,6 +49,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
+app.register_blueprint(api_bp)
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
