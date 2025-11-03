@@ -115,14 +115,44 @@
       const newId = parseInt(ask,10);
       if(!newId || newId<=0){ alert("Neplatné číslo."); return; }
       const res = await fetch('/api/employees/reassign_id', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ old_id: oldId, new_id: newId }) });
-      if(res.ok){ await render(); }
-      else {
-        const t = await res.text();
-        alert("Nelze změnit ID: "+t);
-      }
-    });
+      if(res.ok){ 
+  await render();
+
+  // Delegated actions: edit / delete / reassign id
+  listBody.addEventListener('click', async (ev)=>{
+    const b = ev.target.closest('button[data-act]');
+    if(!b) return;
+    const tr = b.closest('tr');
+    const oldId = parseInt(tr.children[0].textContent,10);
+    const name = tr.children[1].textContent;
+    const role = tr.children[2].textContent;
+    const act = b.getAttribute('data-act');
+    if(act === 'del'){
+      if(!confirm('Opravdu smazat zaměstnance #'+oldId+'?')) return;
+      const res = await fetch('/api/employees?id='+oldId, { method:'DELETE' });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    } else if(act === 'edit'){
+      const newName = prompt('Upravit jméno:', name) ?? name;
+      const newRole = prompt('Upravit roli:', role) ?? role;
+      const body = {};
+      if(newName && newName !== name) body.name = newName.trim();
+      if(newRole && newRole !== role) body.role = newRole.trim();
+      if(Object.keys(body).length === 0) return;
+      body.id = oldId;
+      const res = await fetch('/api/employees', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    } else if(act === 'reid'){
+      const ask = prompt("Zadejte nové ID číslo pro zaměstnance "+oldId+":");
+      if(!ask) return;
+      const newId = parseInt(ask,10);
+      if(!newId || newId<=0){ alert("Neplatné číslo."); return; }
+      const res = await fetch('/api/employees/reassign_id', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ old_id: oldId, new_id: newId }) });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    }
+  });
 
 })();
+;
 </script>
 {% endblock %}
 
