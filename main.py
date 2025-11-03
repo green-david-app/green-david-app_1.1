@@ -8,6 +8,18 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
+
+# --- Employees/Zamestnanci aliases (to avoid 404) ---
+from flask import render_template
+
+@app.route("/employees")
+@app.route("/employees/")
+@app.route("/zamestnanci")
+@app.route("/zamestnanci/")
+def employees_alias():
+    return render_template("employees.html")
+# --- end aliases ---
+
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -435,34 +447,3 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
-
-
-# --- auto-inject brigádníci tabs JS on employees page ---
-@app.after_request
-def _gd_inject_brigadnici_embed(response):
-    try:
-        # Only HTML responses
-        ctype = (response.headers.get('Content-Type') or 'text/html').split(';',1)[0].strip().lower()
-        if ctype != 'text/html':
-            return response
-        # Only for employees pages
-        path = getattr(request, 'path', '') or ''
-        if path not in ('/employees', '/employees/', '/zamestnanci', '/zamestnanci/'):
-            return response
-        # Only if body has </body> and script not already present
-        body = response.get_data(as_text=True)
-        if '</body>' not in body.lower() or 'static/js/brigadnici-embed.js' in body:
-            return response
-        script_tag = '\n<script src="/static/js/brigadnici-embed.js"></script>\n'
-        # insert before closing body
-        idx = body.lower().rfind('</body>')
-        body = body[:idx] + script_tag + body[idx:]
-        response.set_data(body)
-        # ensure content length is corrected
-        if 'Content-Length' in response.headers:
-            response.headers['Content-Length'] = len(response.get_data())
-    except Exception:
-        # fail-safe: never block the response
-        pass
-    return response
-# --- /injector ---

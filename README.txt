@@ -1,1 +1,1 @@
-Nahrajte oba soubory: main.py (přepíše starý) + static/js/brigadnici-embed.js
+Nahraj tyto 3 soubory: main.py, templates/employees.html, static/js/brigadnici-embed.js
