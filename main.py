@@ -242,6 +242,41 @@ def api_logout():
     session.pop("uid", None)
     return jsonify({"ok": True})
 
+
+# change employee id (also updates related records)
+@app.route("/api/employees/reassign_id", methods=["POST"])
+def api_employees_reassign_id():
+    u, err = require_role(write=True)
+    if err: return err
+    data = request.get_json(force=True) or {}
+    old_id = data.get("old_id")
+    new_id = data.get("new_id")
+    if not isinstance(old_id, int) or not isinstance(new_id, int) or new_id <= 0:
+        return jsonify({"ok": False, "error":"invalid_input"}), 400
+    db = get_db()
+    # conflict?
+    row = db.execute("SELECT id FROM employees WHERE id=?", (new_id,)).fetchone()
+    if row: return jsonify({"ok": False, "error":"id_exists"}), 409
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        # update timesheets first (no FKs present, but safe)
+        db.execute("UPDATE timesheets SET employee_id=? WHERE employee_id=?", (new_id, old_id))
+        # update employee id itself
+        cur = db.execute("UPDATE employees SET id=? WHERE id=?", (new_id, old_id))
+        if cur.rowcount == 0:
+            db.execute("ROLLBACK")
+            return jsonify({"ok": False, "error":"not_found"}), 404
+        # adjust sqlite_sequence so next insert continues from max(id)
+        try:
+            db.execute("UPDATE sqlite_sequence SET seq=(SELECT IFNULL(MAX(id),0) FROM employees) WHERE name='employees'")
+        except Exception:
+            pass
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        try: db.rollback()
+        except Exception: pass
+        return jsonify({"ok": False, "error": str(e)}), 500
 # employees
 @app.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():

@@ -95,11 +95,29 @@
     listBody.innerHTML = '';
     for(const e of rows){
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
+      tr.innerHTML = `\x3ctd\x3e${e.id}\x3c/td\x3e\x3ctd\x3e${e.name}\x3c/td\x3e\x3ctd\x3e${e.role||""}\x3c/td\x3e\x3ctd\x3e\x3cbutton class="ghost small" data-act="reid"\x3eZměnit ID\x3c/button\x3e\x3c/td\x3e`;
       listBody.appendChild(tr);
     }
   }
   await render();
+
+    listBody.addEventListener('click', async (ev)=>{
+      const btn = ev.target.closest('button[data-act="reid"]');
+      if(!btn) return;
+      const tr = btn.closest('tr');
+      const oldId = parseInt(tr.children[0].textContent,10);
+      const ask = prompt("Zadejte nové ID číslo pro zaměstnance "+oldId+":");
+      if(!ask) return;
+      const newId = parseInt(ask,10);
+      if(!newId || newId<=0){ alert("Neplatné číslo."); return; }
+      const res = await fetch('/api/employees/reassign_id', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ old_id: oldId, new_id: newId }) });
+      if(res.ok){ await render(); }
+      else {
+        const t = await res.text();
+        alert("Nelze změnit ID: "+t);
+      }
+    });
+
 })();
 </script>
 {% endblock %}
