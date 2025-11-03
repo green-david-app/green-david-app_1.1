@@ -488,12 +488,18 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
 
-@app.route('/zamestnanci')
-def zamestnanci_alias():
-    # Alias, aby klik v menu (Zaměstnanci) šel na stejnou stránku
-    return render_template('employees.html')
+# --- Robust aliases for Employees page (navbar safety) ---
+from flask import render_template
 
-@app.route('/staff')
-def staff_alias():
-    return render_template('employees.html')
+EMPLOYEES_ALIASES = [
+    '/zamestnanci', '/zamestnanci/',
+    '/employees', '/employees/',
+    '/employee', '/employee/',
+    '/staff', '/staff/',
+    '/people', '/people/'
+]
+
+for _alias in EMPLOYEES_ALIASES:
+    app.add_url_rule(_alias, endpoint=f'alias_emps_{_alias.replace("/","_")}', view_func=lambda: render_template('employees.html'))
+# --- end aliases ---
 
