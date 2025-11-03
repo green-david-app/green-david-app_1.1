@@ -1,105 +1,133 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="page-pad">
-  <div class="tabs sticky">
-    <a href="/calendar">Kalendář</a>
-    <a href="/timesheets.html">Výkazy hodin</a>
-    <a href="/jobs">Zakázky</a>
-    <a href="/tasks">Úkoly</a>
-    <a class="active" href="/employees">Zaměstnanci</a>
-    <a href="/brigadnici.html">Brigádníci</a>
-    <a href="/stock">Sklad</a>
-    <a href="/users">Uživatelé</a>
+{% extends "base.html" %}
+{% block body %}
+
+<div class="card">
+  <h2>Nový zaměstnanec</h2>
+  <form id="emp-form" style="display:flex; gap:12px; align-items:center;">
+    <input id="emp-name" name="name" placeholder="Jméno" required>
+    <input id="emp-role" name="role" placeholder="Zahradník" value="zahradník">
+    <button type="submit" class="btn">Přidat</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="margin-bottom:10px">Seznam</h2>
+
+  <!-- přepínač sekcí -->
+  <div style="display:flex; gap:16px; border-bottom:1px solid #3a3f46; margin-bottom:12px;">
+    <button class="tab-btn active" data-target="tab-staff" style="border:none;background:none;padding:8px 0; border-bottom:3px solid #2e7d32; color:#e5e7eb; cursor:pointer;">Zaměstnanci</button>
+    <button class="tab-btn" data-target="tab-temps" style="border:none;background:none;padding:8px 0; color:#e5e7eb; cursor:pointer;">Brigádníci</button>
   </div>
 
-  <div class="card card-dark">
-    <div class="card-h"><strong>Nový zaměstnanec</strong></div>
-    <div class="card-c">
-      <div class="row">
-        <input id="newName" type="text" placeholder="Jméno" class="inp" />
-        <select id="newRole" class="inp sel">
-          <option value="zahradník">Zahradník</option>
-          <option value="svářeč">Svářeč</option>
-          <option value="brigádník">Brigádník</option>
-          <option value="jiné">Jiné</option>
-        </select>
-        <button id="btnAdd" class="btn btn-primary">Přidat</button>
-      </div>
-    </div>
+  <!-- tab: zaměstnanci -->
+  <div id="tab-staff" class="tab-pane">
+    <table class="table" id="tbl-staff">
+      <thead>
+        <tr>
+          <th style="width:80px">ID</th>
+          <th>Jméno</th>
+          <th style="width:180px">Role</th>
+          <th style="width:220px"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <div class="card card-dark">
-    <div class="card-h">
-      <strong>Seznam</strong>
-      <div class="chips" style="margin-top:8px;">
-        <button data-scope="all" class="chip chip-on">Všichni</button>
-        <button data-scope="employees" class="chip">Zaměstnanci</button>
-        <button data-scope="brig" class="chip">Brigádníci</button>
-      </div>
-    </div>
-    <div class="card-c">
-      <table class="tbl">
-        <thead>
-          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
-        </thead>
-        <tbody id="listBody"></tbody>
-      </table>
-    </div>
+  <!-- tab: brigádníci -->
+  <div id="tab-temps" class="tab-pane" style="display:none">
+    <table class="table" id="tbl-temps">
+      <thead>
+        <tr>
+          <th style="width:80px">ID</th>
+          <th>Jméno</th>
+          <th style="width:180px">Role</th>
+          <th style="width:220px"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-(async function(){
-  const listBody = document.getElementById('listBody');
-  const newName = document.getElementById('newName');
-  const newRole = document.getElementById('newRole');
-  const btnAdd = document.getElementById('btnAdd');
-  const chips = Array.from(document.querySelectorAll('.chips .chip'));
-  let scope = 'all';
-
-  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-  async function apiJSON(url, options){
-    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
-    if(!r.ok) throw new Error(await r.text());
-    return r.json();
+// ---- helpers ----
+function el(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild}
+function fillTable(tbody, rows){
+  tbody.innerHTML='';
+  for(const r of rows){
+    const tr = el(`<tr>
+      <td>${r.id}</td>
+      <td>${r.name}</td>
+      <td>${r.role}</td>
+      <td style="text-align:right;">
+        <a class="btn btn-small" href="/employees/${r.id}">Detail</a>
+        <button class="btn btn-small btn-outline" data-del="${r.id}">Smazat</button>
+      </td>
+    </tr>`);
+    tbody.appendChild(tr);
   }
-
-  btnAdd.addEventListener('click', async ()=>{
-    const name = newName.value.trim();
-    const role = newRole.value;
-    if(!name) return;
-    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
-    newName.value=''; await render();
+  // mazání
+  tbody.querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!confirm('Smazat?')) return;
+      const id = b.getAttribute('data-del');
+      const res = await fetch('/api/employees/'+id, {method:'DELETE'});
+      if(res.ok) loadData();
+    });
   });
+}
 
-  chips.forEach(chip => chip.addEventListener('click', ()=>{
-    chips.forEach(c=>c.classList.remove('chip-on'));
-    chip.classList.add('chip-on');
-    scope = chip.getAttribute('data-scope');
-    render();
-  }));
+// ---- tabs ----
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>{
+      b.classList.remove('active');
+      b.style.borderBottom = 'none';
+    });
+    document.querySelectorAll('.tab-pane').forEach(p=>p.style.display='none');
+    btn.classList.add('active');
+    btn.style.borderBottom='3px solid #2e7d32';
+    const target = document.getElementById(btn.dataset.target);
+    target.style.display = '';
+  });
+});
 
-  async function render(){
-    listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
-    const data = await fetchJSON('/api/employees');
-    let rows = data.employees || [];
-    if(scope==='brig'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
-    }else if(scope==='employees'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
-    }
-    if(rows.length===0){
-      listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
-      return;
-    }
-    listBody.innerHTML = '';
-    for(const e of rows){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
-      listBody.appendChild(tr);
-    }
+// ---- data load ----
+async function loadData(){
+  const res = await fetch('/api/employees');
+  const payload = await res.json();
+  const items = payload.employees || payload || [];
+
+  const brig = items.filter(x => (x.role || '').toLowerCase() === 'brigádník');
+  const staff = items.filter(x => (x.role || '').toLowerCase() !== 'brigádník');
+
+  fillTable(document.querySelector('#tbl-staff tbody'), staff);
+  fillTable(document.querySelector('#tbl-temps tbody'), brig);
+}
+
+// ---- add form ----
+document.getElementById('emp-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('emp-name').value.trim();
+  const role = document.getElementById('emp-role').value.trim() || 'zahradník';
+  if(!name) return;
+
+  const res = await fetch('/api/employees', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name, role})
+  });
+  if(res.ok){
+    document.getElementById('emp-name').value='';
+    await loadData();
   }
-  await render();
-})();
+});
+
+// start
+loadData();
 </script>
 {% endblock %}
