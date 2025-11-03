@@ -1,17 +1,14 @@
 
-from flask import Flask, Blueprint, jsonify, request, render_template, session, abort, redirect
+from flask import Flask, Blueprint, jsonify, request, render_template, session, abort
 from jinja2 import TemplateNotFound
 import sqlite3, os, datetime
 
 app = Flask(__name__)
 
-# --- Compatibility helpers expected by wsgi/gd_calendar_hotfix ---
+# --- Compatibility helpers ---
 def require_role(*expected_roles):
     def decorator(f):
         def wrapped(*args, **kwargs):
-            # role = session.get('role')  # pokud budeš chtít zpřísnit, odkomentuj a doplň klíč
-            # if expected_roles and role not in expected_roles:
-            #     return abort(403)
             return f(*args, **kwargs)
         wrapped.__name__ = f.__name__
         return wrapped
@@ -73,7 +70,7 @@ def brigadnik_delete(bid):
 app.register_blueprint(api_bp)
 # --------- /Brigádníci API ---------
 
-# --------- Employees page aliases (navbar-safe) ---------
+# --------- Employees aliases ---------
 @app.route('/zamestnanci')
 @app.route('/zamestnanci/')
 @app.route('/employees')
@@ -84,12 +81,11 @@ def employees_page():
     return render_template('employees.html')
 # --------- /Employees aliases ---------
 
-# --------- Root '/' handler (fix 404) ---------
+# --------- Root '/' handler (no 404, no /calendar redirect) ---------
 @app.route('/')
 def root():
-    # Preferuj index.html, jinak přesměruj na kalendář
     try:
         return render_template('index.html')
     except TemplateNotFound:
-        return redirect('/calendar')
+        return render_template('employees.html')
 # --------- /root ---------
