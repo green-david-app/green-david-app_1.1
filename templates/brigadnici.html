@@ -49,7 +49,8 @@
   btnAdd.addEventListener('click', async ()=>{
     const name = newName.value.trim();
     if(!name) return;
-    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role: 'brigádník' }) });
+    const role = (document.getElementById('new-role')?.value || 'brigádník').trim() || 'brigádník';
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
     newName.value=''; await render();
   });
 

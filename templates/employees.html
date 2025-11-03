@@ -17,12 +17,16 @@
     <div class="card-c">
       <div class="row">
         <input id="newName" type="text" placeholder="Jméno" class="inp" />
-        <select id="newRole" class="inp sel">
-          <option value="zahradník">Zahradník</option>
-          <option value="svářeč">Svářeč</option>
-          <option value="brigádník">Brigádník</option>
-          <option value="jiné">Jiné</option>
-        </select>
+        <input id="newRole" type="text" class="inp" placeholder="Role (např. zahradník, vedoucí zahradník, …)" list="roleList"/>
+<datalist id="roleList">
+  <option value="zahradník"></option>
+  <option value="vedoucí zahradník"></option>
+  <option value="závlahář"></option>
+  <option value="svářeč"></option>
+  <option value="brigádník"></option>
+  <option value="administrativa"></option>
+  <option value="jiné"></option>
+</datalist>
         <button id="btnAdd" class="btn btn-primary">Přidat</button>
       </div>
     </div>
