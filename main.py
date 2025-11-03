@@ -278,7 +278,7 @@ def api_employees_reassign_id():
         except Exception: pass
         return jsonify({"ok": False, "error": str(e)}), 500
 # employees
-@app.route("/api/employees", methods=["GET","POST","DELETE"])
+@app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
 def api_employees():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -291,6 +291,20 @@ def api_employees():
         name = data.get("name"); role = data.get("role") or "worker"
         if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
+        db.commit()
+        return jsonify({"ok": True})
+    if request.method == "PATCH":
+        data = request.get_json(force=True) or {}
+        eid = data.get("id")
+        name = (data.get("name") or "").strip()
+        role = (data.get("role") or "").strip()
+        if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        if not name and not role: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+        sets=[]; params=[]
+        if name: sets.append("name=?"); params.append(name)
+        if role: sets.append("role=?"); params.append(role)
+        params.append(eid)
+        db.execute(f"UPDATE employees SET {', '.join(sets)} WHERE id=?", params)
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":

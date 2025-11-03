@@ -44,7 +44,7 @@
     <div class="card-c">
       <table class="tbl">
         <thead>
-          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+          <tr><th style="width:70px">ID</th><th>Jméno</th><th>Role</th><th style="width:260px"></th></tr>
         </thead>
         <tbody id="listBody"></tbody>
       </table>
@@ -99,7 +99,7 @@
     listBody.innerHTML = '';
     for(const e of rows){
       const tr = document.createElement('tr');
-      tr.innerHTML = `\x3ctd\x3e${e.id}\x3c/td\x3e\x3ctd\x3e${e.name}\x3c/td\x3e\x3ctd\x3e${e.role||""}\x3c/td\x3e\x3ctd\x3e\x3cbutton class="ghost small" data-act="reid"\x3eZměnit ID\x3c/button\x3e\x3c/td\x3e`;
+      tr.innerHTML = `\x3ctd\x3e${e.id}\x3c/td\x3e\x3ctd\x3e${e.name}\x3c/td\x3e\x3ctd\x3e${e.role||""}\x3c/td\x3e\x3ctd\x3e\x3cbutton class="ghost small" data-act="edit"\x3eUpravit\x3c/button\x3e\x20\x3cbutton class="ghost small" data-act="reid"\x3eZměnit ID\x3c/button\x3e\x20\x3cbutton class="ghost small" data-act="del"\x3eSmazat\x3c/button\x3e\x3c/td\x3e`;
       listBody.appendChild(tr);
     }
   }
