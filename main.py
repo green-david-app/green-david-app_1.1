@@ -1,25 +1,13 @@
-import sqlite3
 import os, re, io, sqlite3
 from datetime import datetime, date, timedelta
-from flask import Blueprint, Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
+from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__, static_folde
-
-# --- Employees aliases ---
-@app.route('/zamestnanci')
-@app.route('/zamestnanci/')
-@app.route('/employees')
-@app.route('/employees/')
-def _gd_alias_employees():
-    return render_template('employees.html')
-
-app.register_blueprint(gd_brig_api)
-r=".", static_url_path="")
+app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -447,40 +435,3 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
-
-
-# --- Brigádníci API ---
-gd_brig_api = Blueprint('gd_brig_api', __name__)
-
-def _gd_get_db():
-    DB_PATH = os.environ.get('GD_DB_PATH', 'app.db')
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    return con
-
-@gd_brig_api.route('/gd/api/brigadnici', methods=['GET','POST'])
-def _gd_brig_collection():
-    con = _gd_get_db()
-    cur = con.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS brigadnici (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, role TEXT)')
-    con.commit()
-    if request.method == 'POST':
-        data = request.get_json(force=True) or {}
-        name = (data.get('name') or '').strip()
-        role = (data.get('role') or 'Brigádník').strip()
-        if not name:
-            return jsonify({'error':'name required'}), 400
-        cur.execute('INSERT INTO brigadnici (name, role) VALUES (?, ?)',
-                    (name, role))
-        con.commit()
-        return jsonify({'ok':True}), 201
-    rows = cur.execute('SELECT id, name, role FROM brigadnici ORDER BY id DESC').fetchall()
-    return jsonify([dict(r) for r in rows])
-
-@gd_brig_api.route('/gd/api/brigadnici/<int:bid>', methods=['DELETE'])
-def _gd_brig_delete(bid):
-    con = _gd_get_db()
-    cur = con.cursor()
-    cur.execute('DELETE FROM brigadnici WHERE id=?', (bid,))
-    con.commit()
-    return jsonify({'ok':True})
