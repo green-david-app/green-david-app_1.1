@@ -1,4 +1,3 @@
-
 {% extends "layout.html" %}
 {% block content %}
 <div class="page-pad">
@@ -8,60 +7,60 @@
     <a href="/jobs">Zakázky</a>
     <a href="/tasks">Úkoly</a>
     <a class="active" href="/employees">Zaměstnanci</a>
-    <a href="/brigadnici.html">Brigádníci</a>
     <a href="/stock">Sklad</a>
     <a href="/users">Uživatelé</a>
   </div>
 
+  <!-- Karta: Nový (s HLAVIČKOVOU lištou rozdělenou na Zaměstnanec / Brigádník) -->
   <div class="card card-dark">
-    <div class="card-h"><strong>Nový</strong></div>
-    <div class="card-c">
-      <div class="subtabs" style="display:flex; gap:16px; border-bottom:1px solid #3a3f46; margin-bottom:12px;">
-        <button class="subtab-btn active" data-tab="staff" style="border:none;background:none;padding:8px 0;cursor:pointer;color:#e5e7eb">Zaměstnanci</button>
-        <button class="subtab-btn" data-tab="temps" style="border:none;background:none;padding:8px 0;cursor:pointer;color:#e5e7eb">Brigádníci</button>
+    <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <strong>Nový</strong>
+      <div class="mini-tabs" role="tablist" aria-label="Typ osoby" style="display:flex;gap:8px;">
+        <button class="mini-tab active" data-tab="staff" aria-selected="true" style="border-radius:16px;padding:6px 12px;border:1px solid #4b5563;background:#2b3036;color:#e5e7eb;cursor:pointer;">Zaměstnanec</button>
+        <button class="mini-tab" data-tab="temp" aria-selected="false" style="border-radius:16px;padding:6px 12px;border:1px solid #4b5563;background:#1f2328;color:#cbd5e1;cursor:pointer;">Brigádník</button>
       </div>
-
-      <!-- STAFF FORM -->
-      <form id="form-staff" class="pane pane-staff" onsubmit="return false" style="display:block">
-        <div class="form-row" style="display:flex; gap:12px; align-items:center;">
-          <input id="staff-name" placeholder="Jméno" required>
-          <input id="staff-role" placeholder="Role" value="zahradník">
-          <button id="btn-add-staff" class="btn">Přidat zaměstnance</button>
+    </div>
+    <div class="card-c">
+      <!-- Form: zaměstnanec -->
+      <form id="form-staff" onsubmit="return false" style="display:block">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <input id="emp-name" placeholder="Jméno" required>
+          <input id="emp-role" placeholder="Role" value="zahradník">
+          <button id="btn-add-staff" class="btn">Přidat</button>
         </div>
       </form>
 
-      <!-- TEMPS FORM -->
-      <form id="form-temps" class="pane pane-temps" onsubmit="return false" style="display:none">
-        <div class="form-row" style="display:flex; gap:12px; align-items:center;">
+      <!-- Form: brigádník -->
+      <form id="form-temp" onsubmit="return false" style="display:none">
+        <div style="display:flex; gap:12px; align-items:center;">
           <input id="temp-name" placeholder="Jméno" required>
           <input id="temp-role" placeholder="Role" value="brigádník">
-          <button id="btn-add-temp" class="btn">Přidat brigádníka</button>
+          <button id="btn-add-temp" class="btn">Přidat</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Karta: Seznam (také s HLAVIČKOVOU lištou) -->
   <div class="card card-dark">
-    <div class="card-h"><strong>Seznam</strong></div>
-    <div class="card-c">
-      <div class="subtabs" style="display:flex; gap:16px; border-bottom:1px solid #3a3f46; margin-bottom:12px;">
-        <button class="subtab-btn active" data-tab="staff" style="border:none;background:none;padding:8px 0;cursor:pointer;color:#e5e7eb">Zaměstnanci</button>
-        <button class="subtab-btn" data-tab="temps" style="border:none;background:none;padding:8px 0;cursor:pointer;color:#e5e7eb">Brigádníci</button>
+    <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <strong>Seznam</strong>
+      <div class="mini-tabs" role="tablist" aria-label="Seznam filtrace" style="display:flex;gap:8px;">
+        <button class="mini-tab active" data-tab="staff" aria-selected="true" style="border-radius:16px;padding:6px 12px;border:1px solid #4b5563;background:#2b3036;color:#e5e7eb;cursor:pointer;">Zaměstnanci</button>
+        <button class="mini-tab" data-tab="temp" aria-selected="false" style="border-radius:16px;padding:6px 12px;border:1px solid #4b5563;background:#1f2328;color:#cbd5e1;cursor:pointer;">Brigádníci</button>
       </div>
-
-      <!-- STAFF LIST -->
-      <div class="pane pane-staff" style="display:block">
-        <table class="tbl">
-          <thead><tr><th style="width:80px">ID</th><th>Jméno</th><th style="width:220px">Role</th><th style="width:160px"></th></tr></thead>
-          <tbody id="body-staff"></tbody>
+    </div>
+    <div class="card-c">
+      <div id="list-staff" style="display:block">
+        <table class="table">
+          <thead><tr><th style="width:80px">ID</th><th>Jméno</th><th style="width:200px">Role</th><th style="width:200px"></th></tr></thead>
+          <tbody id="tbody-staff"></tbody>
         </table>
       </div>
-
-      <!-- TEMPS LIST -->
-      <div class="pane pane-temps" style="display:none">
-        <table class="tbl">
-          <thead><tr><th style="width:80px">ID</th><th>Jméno</th><th style="width:220px">Role</th><th style="width:160px"></th></tr></thead>
-          <tbody id="body-temps"></tbody>
+      <div id="list-temp" style="display:none">
+        <table class="table">
+          <thead><tr><th style="width:80px">ID</th><th>Jméno</th><th style="width:200px">Role</th><th style="width:200px"></th></tr></thead>
+          <tbody id="tbody-temp"></tbody>
         </table>
       </div>
     </div>
@@ -69,105 +68,82 @@
 </div>
 
 <script>
-(function(){
-  // simple subtab toggling
-  function setTab(tab){
-    document.querySelectorAll('.subtab-btn').forEach(btn=>{
-      const active = btn.dataset.tab === tab;
-      btn.classList.toggle('active', active);
-    });
-    document.querySelectorAll('.pane-staff').forEach(el=> el.style.display = (tab==='staff')?'block':'none');
-    document.querySelectorAll('.pane-temps').forEach(el=> el.style.display = (tab==='temps')?'block':'none');
-    localStorage.setItem('emp_subtab', tab);
-  }
-  document.querySelectorAll('.subtab-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> setTab(btn.dataset.tab));
+// --- Přepínání mini-tabů v HLAVIČCE karet ---
+function setMiniTab(tab){
+  // hlavičky
+  document.querySelectorAll('.mini-tab').forEach(b=>{
+    const is = b.dataset.tab === tab;
+    b.classList.toggle('active', is);
+    b.setAttribute('aria-selected', is ? 'true' : 'false');
+    // vizuální malá změna pozadí
+    b.style.background = is ? '#2b3036' : '#1f2328';
+    b.style.color = is ? '#e5e7eb' : '#cbd5e1';
   });
-  setTab(localStorage.getItem('emp_subtab') || 'staff');
+  // formuláře
+  document.getElementById('form-staff').style.display = (tab === 'staff') ? 'block' : 'none';
+  document.getElementById('form-temp').style.display  = (tab === 'temp')  ? 'block' : 'none';
+  // seznamy
+  document.getElementById('list-staff').style.display = (tab === 'staff') ? 'block' : 'none';
+  document.getElementById('list-temp').style.display  = (tab === 'temp')  ? 'block' : 'none';
+  localStorage.setItem('emp_hdr_tab', tab);
+}
+document.querySelectorAll('.card-h .mini-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=> setMiniTab(btn.dataset.tab));
+});
+setMiniTab(localStorage.getItem('emp_hdr_tab') || 'staff');
 
-  // --- API helpers
-  async function api(path, opts={}){
-    const res = await fetch(path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
-    if(!res.ok){
-      const t = await res.text();
-      throw new Error('API chyba: ' + t);
-    }
-    return res.json();
+// --- Data
+async function loadAll(){
+  const res = await fetch('/api/employees');
+  const data = await res.json();
+  const items = data.employees || data || [];
+  const brig = items.filter(x => (x.role||'').toLowerCase() === 'brigádník');
+  const staff = items.filter(x => (x.role||'').toLowerCase() !== 'brigádník');
+  renderRows(document.getElementById('tbody-staff'), staff);
+  renderRows(document.getElementById('tbody-temp'), brig);
+}
+
+function renderRows(tbody, rows){
+  tbody.innerHTML='';
+  if(!rows.length){
+    const tr=document.createElement('tr'); const td=document.createElement('td');
+    td.colSpan=4; td.className='muted'; td.textContent='Žádné záznamy'; tr.appendChild(td); tbody.appendChild(tr);
+    return;
   }
-
-  // --- renderers
-  async function loadStaff(){
-    const data = await api('/gd/api/staff');
-    const tbody = document.getElementById('body-staff');
-    tbody.innerHTML = '';
-    if (!data.rows || !data.rows.length){
-      tbody.innerHTML = '<tr><td colspan="4" class="muted">Žádní zaměstnanci</td></tr>';
-      return;
-    }
-    for(const r of data.rows){
-      const tr = document.createElement('tr');
-      tr.innerHTML = \`<td>\${r.id}</td><td>\${r.name}</td><td>\${r.role||''}</td>
-        <td style="text-align:right">
-          <button class="btn ghost" data-del="\${r.id}">Smazat</button>
-        </td>\`;
-      tbody.appendChild(tr);
-    }
-    tbody.querySelectorAll('button[data-del]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        if(!confirm('Smazat tohoto zaměstnance?')) return;
-        await api('/gd/api/staff/' + b.dataset.del, {method:'DELETE'});
-        await loadStaff();
-      });
-    });
-  }
-
-  async function loadTemps(){
-    const data = await api('/gd/api/temps');
-    const tbody = document.getElementById('body-temps');
-    tbody.innerHTML = '';
-    if (!data.rows || !data.rows.length){
-      tbody.innerHTML = '<tr><td colspan="4" class="muted">Žádní brigádníci</td></tr>';
-      return;
-    }
-    for(const r of data.rows){
-      const tr = document.createElement('tr');
-      tr.innerHTML = \`<td>\${r.id}</td><td>\${r.name}</td><td>\${r.role||'brigádník'}</td>
-        <td style="text-align:right">
-          <button class="btn ghost" data-del="\${r.id}">Smazat</button>
-        </td>\`;
-      tbody.appendChild(tr);
-    }
-    tbody.querySelectorAll('button[data-del]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        if(!confirm('Smazat tohoto brigádníka?')) return;
-        await api('/gd/api/temps/' + b.dataset.del, {method:'DELETE'});
-        await loadTemps();
-      });
-    });
-  }
-
-  // --- add handlers
-  document.getElementById('btn-add-staff').addEventListener('click', async ()=>{
-    const name = document.getElementById('staff-name').value.trim();
-    const role = document.getElementById('staff-role').value.trim();
-    if(!name) return;
-    await api('/gd/api/staff', {method:'POST', body: JSON.stringify({name, role})});
-    document.getElementById('staff-name').value = '';
-    await loadStaff();
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = '<td>'+r.id+'</td><td>'+ (r.name||'') +'</td><td>'+ (r.role||'') +'</td>' +
+      '<td style="text-align:right">' +
+        '<button class="btn ghost" data-del="'+r.id+'">Smazat</button>' +
+      '</td>';
+    tbody.appendChild(tr);
   });
-
-  document.getElementById('btn-add-temp').addEventListener('click', async ()=>{
-    const name = document.getElementById('temp-name').value.trim();
-    const role = document.getElementById('temp-role').value.trim();
-    if(!name) return;
-    await api('/gd/api/temps', {method:'POST', body: JSON.stringify({name, role})});
-    document.getElementById('temp-name').value = '';
-    await loadTemps();
+  tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('Smazat záznam?')) return;
+      const id = btn.getAttribute('data-del');
+      const res = await fetch('/api/employees?id='+encodeURIComponent(id), {method:'DELETE'});
+      if(res.ok) loadAll();
+    });
   });
+}
 
-  // initial
-  loadStaff();
-  loadTemps();
-})();
+// --- Přidávání (do stejné tabulky)
+document.getElementById('btn-add-staff').addEventListener('click', async ()=>{
+  const name = document.getElementById('emp-name').value.trim();
+  const role = document.getElementById('emp-role').value.trim() || 'zahradník';
+  if(!name) return;
+  const r = await fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,role})});
+  if(r.ok){ document.getElementById('emp-name').value=''; loadAll(); }
+});
+document.getElementById('btn-add-temp').addEventListener('click', async ()=>{
+  const name = document.getElementById('temp-name').value.trim();
+  const role = document.getElementById('temp-role').value.trim() || 'brigádník';
+  if(!name) return;
+  const r = await fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,role})});
+  if(r.ok){ document.getElementById('temp-name').value=''; loadAll(); }
+});
+
+loadAll();
 </script>
 {% endblock %}
