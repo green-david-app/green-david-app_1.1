@@ -1,17 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head></head>
-<body>
-
-<div class="card gd-card">
-  <div class="card-body">
-    <ul class="nav nav-tabs" role="tablist">
-      <li class="nav-item"><button class="nav-link active" id="tab-zam" data-bs-toggle="tab" data-bs-target="#pane-zam" type="button">Zaměstnanci</button></li>
-      <li class="nav-item"><button class="nav-link" id="tab-brig" data-bs-toggle="tab" data-bs-target="#pane-brig" type="button">Brigádníci</button></li>
-    </ul>
-    <div class="tab-content pt-3">
-      <div class="tab-pane fade show active" id="pane-zam">
-        {% extends "layout.html" %}
+{% extends "layout.html" %}
 {% block content %}
 <div class="page-pad">
   <div class="tabs sticky">
@@ -116,62 +103,3 @@
 })();
 </script>
 {% endblock %}
-
-      </div>
-      <div class="tab-pane fade" id="pane-brig">
-        <div class="card gd-card mb-3">
-          <div class="card-header bg-transparent border-0"><strong>Nový brigádník</strong></div>
-          <div class="card-body">
-            <form class="row g-2 align-items-center" onsubmit="return false;">
-              <div class="col-md"><input id="brig-name" class="form-control" placeholder="Jméno"></div>
-              <div class="col-md"><input id="brig-role" class="form-control" value="Brigádník" placeholder="Role"></div>
-              <div class="col-auto"><button id="brigAddBtn" class="btn btn-success">Přidat</button></div>
-            </form>
-          </div>
-        </div>
-        <div class="card gd-card">
-          <div class="card-header bg-transparent border-0"><strong>Seznam</strong></div>
-          <div class="table-responsive">
-            <table class="table table-dark table-striped table-hover m-0" id="brigTable">
-              <thead><tr><th style="width:60px">ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-
-<script>
-(function(){
-  async function load(){
-    const r = await fetch('/gd/api/brigadnici'); const d = await r.json();
-    const tb = document.querySelector('#brigTable tbody'); if(!tb) return; tb.innerHTML='';
-    for(const row of d){
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>'+row.id+'</td><td>'+row.name+'</td><td>'+row.role+'</td>'
-                   + '<td class="text-end"><button class="btn btn-sm btn-outline-danger" data-id="'+row.id+'">Smazat</button></td>';
-      tb.appendChild(tr);
-    }
-  }
-  async function add(){
-    const n = document.getElementById('brig-name').value.trim();
-    const role = (document.getElementById('brig-role').value.trim()||'Brigádník');
-    if(!n) return;
-    await fetch('/gd/api/brigadnici',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,role})});
-    document.getElementById('brig-name').value='';
-    await load();
-  }
-  async function del(id){ await fetch('/gd/api/brigadnici/'+id,{method:'DELETE'}); await load(); }
-  document.addEventListener('click',e=>{ const b=e.target.closest('#brigTable button[data-id]'); if(b) del(b.dataset.id); });
-  document.getElementById('brigAddBtn')?.addEventListener('click', add);
-  document.getElementById('tab-brig')?.addEventListener('shown.bs.tab', load);
-})();
-</script>
-
-</body>
-</html>
