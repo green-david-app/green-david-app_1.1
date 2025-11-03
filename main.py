@@ -437,7 +437,7 @@ def page_timesheets():
 # ----------------- Template routes (Employees & Brigádníci) -----------------
 @app.route("/employees")
 def page_employees():
-    return render_template("employees.html")
+    return render_template('employees_tabs.html')
 
 @app.route("/brigadnici.html")
 def page_brigadnici():
