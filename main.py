@@ -103,6 +103,36 @@ def ensure_schema():
         date TEXT,
         note TEXT
     );
+    
+    CREATE TABLE IF NOT EXISTS job_assignments (
+        job_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        PRIMARY KEY (job_id, employee_id)
+    );
+    CREATE TABLE IF NOT EXISTS job_materials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        qty REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL DEFAULT 'ks'
+    );
+    
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER,
+        employee_id INTEGER,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        due_date TEXT
+    );
+    CREATE TABLE IF NOT EXISTS job_tools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        qty REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL DEFAULT 'ks'
+    );
     CREATE TABLE IF NOT EXISTS timesheets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         employee_id INTEGER NOT NULL,
@@ -378,6 +408,141 @@ def api_jobs():
     db.commit()
     return jsonify({"ok": True})
 
+
+# -------- Job detail & materials/tools/assignments --------
+@app.route("/api/jobs/<int:job_id>", methods=["GET"])
+def api_job_detail(job_id):
+    u, err = require_role(write=False)
+    if err: return err
+    db = get_db()
+    title_col = _job_title_col()
+    job = db.execute(f"SELECT id, {title_col} AS title, client, status, city, code, date, note FROM jobs WHERE id=?", (job_id,)).fetchone()
+    if not job: return jsonify({"ok": False, "error": "not_found"}), 404
+    job = dict(job)
+    if job.get("date"): job["date"] = _normalize_date(job["date"])
+    mats = [dict(r) for r in db.execute("SELECT id, name, qty, unit FROM job_materials WHERE job_id=? ORDER BY id ASC", (job_id,)).fetchall()]
+    tools = [dict(r) for r in db.execute("SELECT id, name, qty, unit FROM job_tools WHERE job_id=? ORDER BY id ASC", (job_id,)).fetchall()]
+    assigns = [r["employee_id"] for r in db.execute("SELECT employee_id FROM job_assignments WHERE job_id=? ORDER BY employee_id ASC", (job_id,)).fetchall()]
+    return jsonify({"ok": True, "job": job, "materials": mats, "tools": tools, "assignments": assigns})
+
+@app.route("/api/jobs/<int:job_id>/materials", methods=["POST","DELETE"])
+def api_job_materials(job_id):
+    u, err = require_role(write=True)
+    if err: return err
+    db = get_db()
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        name = (data.get("name") or "").strip()
+        qty  = float(data.get("qty") or 0)
+        unit = (data.get("unit") or "ks").strip()
+        if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
+        db.execute("INSERT INTO job_materials(job_id,name,qty,unit) VALUES (?,?,?,?)", (job_id, name, qty, unit))
+        db.commit()
+        return jsonify({"ok": True})
+    # DELETE
+    mid = request.args.get("id", type=int)
+    if not mid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM job_materials WHERE id=? AND job_id=?", (mid, job_id))
+    db.commit()
+    return jsonify({"ok": True})
+
+@app.route("/api/jobs/<int:job_id>/tools", methods=["POST","DELETE"])
+def api_job_tools(job_id):
+    u, err = require_role(write=True)
+    if err: return err
+    db = get_db()
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        name = (data.get("name") or "").strip()
+        qty  = float(data.get("qty") or 0)
+        unit = (data.get("unit") or "ks").strip()
+        if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
+        db.execute("INSERT INTO job_tools(job_id,name,qty,unit) VALUES (?,?,?,?)", (job_id, name, qty, unit))
+        db.commit()
+        return jsonify({"ok": True})
+    # DELETE
+    tid = request.args.get("id", type=int)
+    if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM job_tools WHERE id=? AND job_id=?", (tid, job_id))
+    db.commit()
+    return jsonify({"ok": True})
+
+@app.route("/api/jobs/<int:job_id>/assignments", methods=["POST"])
+def api_job_assignments(job_id):
+    u, err = require_role(write=True)
+    if err: return err
+    db = get_db()
+    data = request.get_json(force=True, silent=True) or {}
+    ids = data.get("employee_ids") or []
+    # Replace all assignments atomically
+    db.execute("DELETE FROM job_assignments WHERE job_id=?", (job_id,))
+    for eid in ids:
+        try:
+            db.execute("INSERT OR IGNORE INTO job_assignments(job_id, employee_id) VALUES (?,?)", (job_id, int(eid)))
+        except Exception:
+            continue
+    db.commit()
+    return jsonify({"ok": True})
+
+# ----------------- Tasks CRUD -----------------
+@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
+def api_tasks():
+    u, err = require_role(write=(request.method!="GET"))
+    if err: return err
+    db = get_db()
+
+    if request.method == "GET":
+        jid = request.args.get("job_id", type=int)
+        q = """SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
+                      e.name AS employee_name
+               FROM tasks t
+               LEFT JOIN employees e ON e.id=t.employee_id"""
+        conds=[]; params=[]
+        if jid: conds.append("t.job_id=?"); params.append(jid)
+        if conds: q += " WHERE " + " AND ".join(conds)
+        q += " ORDER BY COALESCE(t.due_date,''), t.id ASC"
+        rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        return jsonify({"ok": True, "tasks": rows})
+
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        title = (data.get("title") or "").strip()
+        if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
+                      VALUES (?,?,?,?,?,?)""",
+                   (int(data.get("job_id")) if data.get("job_id") else None,
+                    int(data.get("employee_id")) if data.get("employee_id") else None,
+                    title,
+                    (data.get("description") or "").strip(),
+                    (data.get("status") or "open"),
+                    _normalize_date(data.get("due_date")) if data.get("due_date") else None))
+        db.commit()
+        return jsonify({"ok": True})
+
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        tid = data.get("id")
+        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        allowed = ["title","description","status","due_date","employee_id","job_id"]
+        sets=[]; vals=[]
+        for k in allowed:
+            if k in data:
+                v = _normalize_date(data[k]) if k=="due_date" else data[k]
+                if k in ("employee_id","job_id") and v is not None:
+                    v = int(v)
+                sets.append(f"{k}=?"); vals.append(v)
+        if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+        vals.append(int(tid))
+        db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
+        db.commit()
+        return jsonify({"ok": True})
+
+    # DELETE
+    tid = request.args.get("id", type=int)
+    if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM tasks WHERE id=?", (tid,))
+    db.commit()
+    return jsonify({"ok": True})
 # timesheets CRUD + export
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
