@@ -152,3 +152,42 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   .brand-title{font-size:18px}
   .brand-logo{height:32px}
 }
+
+
+/* ===== Mobile polish for Employees table (stacked cards, tidy labels) ===== */
+@media (max-width: 768px){
+  /* turn rows into simple blocks (override any grid settings) */
+  .tbl, .table{display:block; width:100%; overflow:visible}
+  .tbl thead, .table thead{display:none}
+  .tbl tr, .table tr{display:block; padding:14px 12px; border-bottom:1px solid var(--line);}
+
+  /* each cell on its own line with a small label above */
+  .tbl td, .table td{
+    display:block;
+    padding:6px 0 !important;
+    white-space:normal;
+    word-break:break-word;
+  }
+  .tbl td::before{
+    display:block;
+    font-weight:700;
+    opacity:.7;
+    font-size:14px;
+    margin-bottom:4px;
+  }
+  .tbl td:nth-child(1)::before{content:"ID"}
+  .tbl td:nth-child(2)::before{content:"Jméno"}
+  .tbl td:nth-child(3)::before{content:"Role"}
+  .tbl td:nth-child(4)::before{content:"Akce"}
+
+  /* actions wrap nicely and don't overflow */
+  .tbl td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px !important}
+  .tbl td:last-child .ghost.small{font-size:13px; padding:8px 10px; margin-right:0}
+
+  /* badges/tags don't overflow */
+  .tag{max-width:100%; white-space:normal; padding:6px 10px; font-size:12px}
+  .tag-role, .tag-name{display:inline-block}
+
+  /* compact spacing within cards */
+  .row.h{display:none} /* případná desktop hlavička řádku v kartě pryč */
+}
