@@ -74,12 +74,11 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 
 
 /* === Pills for name/role & spacing tuning === */
-.tag{display:inline-block;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-inv);
-  padding:6px 10px;border-radius:999px;font-weight:600;white-space:nowrap}
+.tag{display:inline-block;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-inv);padding:4px 8px;border-radius:999px;font-weight:600;white-space:nowrap;font-size:13px}
 .tag-role{background:rgba(62,167,106,.12);border-color:var(--accent-2)}
 .tag-name{background:rgba(68,80,88,.35)}
-.tbl th, .tbl td{padding:12px 18px}
-.tbl td:nth-child(2){padding-left:34px} /* extra odsazení mezi ID a Jméno */
+.tbl th, .tbl td{padding:10px 14px}
+ /* extra odsazení mezi ID a Jméno */
 .tbl td:nth-child(1){width:70px}
 
 
@@ -91,3 +90,6 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .chip:hover{filter:brightness(1.05)}
 .chip-on{background:var(--accent);color:#fff;border-color:var(--accent)}
 
+
+/* extra gap between Name and Role */
+.tbl td:nth-child(3){padding-left:36px}
