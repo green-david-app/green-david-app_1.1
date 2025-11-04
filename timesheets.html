@@ -277,8 +277,6 @@
     const v = {date:fDate.value, emp:fEmp.value, job:fJob.value, hours:fHours.value, note:fNote.value};
     localStorage.setItem(LAST_KEY, JSON.stringify(v));
   }
-
-  // When opening modal, prefill from last used
   if(btnAdd){
     btnAdd.addEventListener('click', function(){
       const v = loadLast();
@@ -289,7 +287,6 @@
       if(v.note)  fNote.value  = v.note;
     });
   }
-
   if(btnDup){
     btnDup.addEventListener('click', function(){
       const v = loadLast();
@@ -300,8 +297,6 @@
       if(v.note)  fNote.value  = v.note;
     });
   }
-
-  // On save, remember as last used
   if(btnSave){
     btnSave.addEventListener('click', function(){ setTimeout(saveLast, 50); });
   }

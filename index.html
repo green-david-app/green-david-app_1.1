@@ -507,9 +507,12 @@
 
       // Employees root (needs after App def)
       function Employees(){
-        const [q,setQ]=useState("");
         const [list,setList]=useState([]);
         const [form,setForm]=useState({name:"",role:"Zahradník"});
+        const [editId,setEditId]=useState(null);
+        const [edit,setEdit]=useState({name:"",role:""});
+        const [changeIdFor,setChangeIdFor]=useState(null);
+        const [newId,setNewId]=useState("");
         const [open,setOpen]=useState(null);
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
