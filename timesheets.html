@@ -255,53 +255,5 @@
 
   loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
   </script>
-
-<script>
-(function(){
-  const modal = document.getElementById('modal');
-  const fDate = document.getElementById('fDate');
-  const fEmp  = document.getElementById('fEmp');
-  const fJob  = document.getElementById('fJob');
-  const fHours= document.getElementById('fHours');
-  const fNote = document.getElementById('fNote');
-  const btnAdd= document.getElementById('btnAdd');
-  const btnSave= document.getElementById('btnSave');
-  const btnDup= document.getElementById('btnDup');
-
-  // load last used from localStorage
-  const LAST_KEY = 'gd_last_timesheet';
-  function loadLast(){
-    try{ const v = JSON.parse(localStorage.getItem(LAST_KEY)||'null'); return v||{}; }catch(e){ return {}; }
-  }
-  function saveLast(){
-    const v = {date:fDate.value, emp:fEmp.value, job:fJob.value, hours:fHours.value, note:fNote.value};
-    localStorage.setItem(LAST_KEY, JSON.stringify(v));
-  }
-  if(btnAdd){
-    btnAdd.addEventListener('click', function(){
-      const v = loadLast();
-      if(v.date)  fDate.value  = v.date;
-      if(v.emp)   fEmp.value   = v.emp;
-      if(v.job)   fJob.value   = v.job;
-      if(v.hours) fHours.value = v.hours;
-      if(v.note)  fNote.value  = v.note;
-    });
-  }
-  if(btnDup){
-    btnDup.addEventListener('click', function(){
-      const v = loadLast();
-      if(v.date)  fDate.value  = v.date;
-      if(v.emp)   fEmp.value   = v.emp;
-      if(v.job)   fJob.value   = v.job;
-      if(v.hours) fHours.value = v.hours;
-      if(v.note)  fNote.value  = v.note;
-    });
-  }
-  if(btnSave){
-    btnSave.addEventListener('click', function(){ setTimeout(saveLast, 50); });
-  }
-})();
-</script>
-
 </body>
 </html>
