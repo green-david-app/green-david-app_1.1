@@ -502,19 +502,3 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
-
-
-
-@app.route("/api/jobs/<int:jid>", methods=["GET"])
-def api_job_one(jid):
-    db = get_db()
-    row = db.execute(_job_select_all() + " WHERE id=?", (jid,)).fetchone()
-    if not row: return jsonify({"ok": False, "error":"not_found"}), 404
-    r = dict(row)
-    if "date" in r and r["date"]:
-        r["date"] = _normalize_date(r["date"])
-    return jsonify({"ok": True, "job": r})
-
-@app.route("/jobs/<int:jid>")
-def page_job_detail(jid):
-    return render_template("job_detail.html", job_id=jid)

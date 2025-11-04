@@ -221,7 +221,7 @@
                 ) : null}
 
                 <div style={{marginTop:12, display:"flex", gap:8}}>
-                  <a className="ghost" href={"/jobs/"+z.id}>Otevřít detail</a>
+                  <button onClick={()=> onOpen(z.id)}>Otevřít detail</button>
                   {/* NEW EDIT BUTTON next to Delete */}
                   {editId === z.id ? (
                     <button className="ghost" onClick={cancelEdit}>Zrušit úpravy</button>
