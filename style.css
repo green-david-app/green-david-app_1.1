@@ -108,3 +108,17 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   .brand-logo{height:32px}
   .tabs .tab{flex:1 1 auto; text-align:center}
 }
+
+
+@media (max-width:768px){
+  .table input[type="text"], .tbl input[type="text"],
+  .table input[type="number"], .tbl input[type="number"],
+  .table select, .tbl select{
+    width:100% !important; max-width:100% !important;
+  }
+}
+
+@media (max-width:768px){
+  /* Change ID mobile */
+  .table td input[type="number"]{width:100% !important; max-width:100%}
+}

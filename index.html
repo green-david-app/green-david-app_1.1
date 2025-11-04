@@ -508,13 +508,33 @@
       function Employees(){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({name:"",role:"Zahradník"});
+        const [editId,setEditId]=useState(null);
+        const [edit,setEdit]=useState({name:"",role:""});
+        const [changeIdFor,setChangeIdFor]=useState(null);
+        const [newId,setNewId]=useState("");
         const [open,setOpen]=useState(null);
         const [err,setErr]=useState("");
         async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
         async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
         async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
-        if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
+        
+        async function startEdit(e){ setEditId(e.id); setEdit({name:e.name, role:e.role}); }
+        async function cancelEdit(){ setEditId(null); setEdit({name:"",role:""}); }
+        async function saveEdit(e){
+          await api("/api/employees",{method:"PATCH", body: JSON.stringify({id:e.id, name:edit.name, role:edit.role})});
+          setEditId(null); setEdit({name:"",role:""}); load();
+        }
+
+        async function startChangeId(e){ setChangeIdFor(e.id); setNewId(String(e.id)); }
+        async function cancelChangeId(){ setChangeIdFor(null); setNewId(""); }
+        async function saveChangeId(e){
+          const nid = parseInt(newId, 10);
+          if(!nid || nid<=0){ alert("Zadej platné číslo ID"); return; }
+          await api("/api/employees/reassign_id",{method:"POST", body: JSON.stringify({old_id:e.id,new_id:nid})});
+          setChangeIdFor(null); setNewId(""); load();
+        }
+if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
         return (
           <div className="grid" style={{gridTemplateColumns:"1fr"}}>
             <div className="card">
@@ -538,10 +558,29 @@
                   <tbody>
                     {list.map(e=>(
                       <tr key={e.id}>
-                        <td>{e.id}</td><td><span className="linklike" onClick={()=>setOpen(e.id)}>{e.name}</span></td><td>{e.role}</td>
+                        <td>{e.id}</td>
+                        <td>{editId===e.id ? (<input value={edit.name} onChange={ev=>setEdit({...edit,name:ev.target.value})} placeholder="Jméno"/>) : (<span className="link" onClick={()=>setOpen(e.id)}>{e.name}</span>)}</td>
+                        <td>{editId===e.id ? (<input value={edit.role} onChange={ev=>setEdit({...edit,role:ev.target.value})} placeholder="Role"/>) : e.role}</td>
                         <td>
-                          <button onClick={()=>setOpen(e.id)}>Detail</button>
-                          <button className="ghost" onClick={()=>del(e.id)} style={{marginLeft:6}}>Smazat</button>
+                          {editId===e.id ? (
+                            <>
+                              <button onClick={()=>saveEdit(e)}>Uložit</button>
+                              <button className="ghost" onClick={cancelEdit} style={{marginLeft:6}}>Zrušit</button>
+                            </>
+                          ) : changeIdFor===e.id ? (
+                            <>
+                              <input type="number" value={newId} onChange={ev=>setNewId(ev.target.value)} placeholder="Nové ID" style={{width:100}}/>
+                              <button onClick={()=>saveChangeId(e)} style={{marginLeft:6}}>Uložit ID</button>
+                              <button className="ghost" onClick={cancelChangeId} style={{marginLeft:6}}>Zrušit</button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={()=>setOpen(e.id)}>Detail</button>
+                              <button className="ghost" onClick={()=>startEdit(e)} style={{marginLeft:6}}>Upravit</button>
+                              <button className="ghost" onClick={()=>startChangeId(e)} style={{marginLeft:6}}>Změnit ID</button>
+                              <button className="ghost" onClick={()=>del(e.id)} style={{marginLeft:6}}>Smazat</button>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}
