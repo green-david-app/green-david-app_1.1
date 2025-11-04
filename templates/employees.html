@@ -81,21 +81,25 @@
     await render();
   });
 
-  chips.forEach(chip => chip.addEventListener('click', ()=>{
+  const chipsBox = document.querySelector('.chips');
+  function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+  chipsBox.addEventListener('click', (ev)=>{
+    const chip = ev.target.closest('.chip');
+    if(!chip) return;
     chips.forEach(c=>c.classList.remove('chip-on'));
     chip.classList.add('chip-on');
     scope = chip.getAttribute('data-scope');
     render();
-  }));
+  });
 
   async function render(){
     listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
     const data = await fetchJSON('/api/employees');
     let rows = data.employees || [];
     if(scope==='brig'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
-    }else if(scope==='employees'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
+      rows = rows.filter(e => norm(e.role).includes('brig'));
+    } else if(scope==='employees'){
+      rows = rows.filter(e => !norm(e.role).includes('brig'));
     }
     if(rows.length===0){
       listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
