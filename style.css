@@ -92,4 +92,4 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 
 
 /* extra gap between Name and Role */
-.tbl td:nth-child(3){padding-left:36px}
+.tbl td:nth-child(3){padding-left:20px}
