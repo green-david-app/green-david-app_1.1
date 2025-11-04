@@ -13,3 +13,21 @@ html,body{margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-app
 .toast.success{background:#065f46}.toast.error{background:#7f1d1d}
 .table{width:100%;border-collapse:collapse;margin-top:12px}.table th,.table td{border:1px solid #dfe7e2;padding:8px;text-align:left}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.muted{color:#566}
+
+/* SAFE Responsive Enhancements */
+@media (max-width:768px){
+  .container{padding:12px}
+  .tabs{flex-wrap:wrap; gap:6px}
+  .grid{grid-template-columns:1fr !important}
+  .card-h{padding:12px 14px}
+  .card-c{padding:12px 14px}
+  .tbl, .table{display:block; width:100%; overflow:visible}
+  .tbl thead, .table thead{display:none}
+  .tbl tr, .table tr{display:block; padding:12px 10px; border-bottom:1px solid var(--line, #3a4448)}
+  .tbl td, .table td{display:block; padding:6px 0; white-space:normal; word-break:break-word}
+  .tbl td:last-child, .table td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px}
+  .ghost.small{padding:8px 10px; font-size:13px}
+}
+@media (max-width:420px){
+  .brand-title{font-size:18px}
+}

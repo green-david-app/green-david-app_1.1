@@ -105,6 +105,7 @@
       </div>
       <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
         <button id="btnCancel" style="background:transparent;border:1px solid #556165;color:#111;border-radius:10px;padding:8px 12px;cursor:pointer">Zrušit</button>
+        <button id="btnDup"   style="background:transparent;border:1px solid #ccc;border-radius:10px;padding:8px 12px;cursor:pointer">Duplikovat poslední</button>
         <button id="btnSave"   style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">Uložit</button>
       </div>
       <div id="formMsg" style="margin-top:8px;color:#b00020"></div>
@@ -255,5 +256,26 @@
 
   loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
   </script>
+
+<script>
+(function(){
+  const fDate = document.getElementById('fDate');
+  const fEmp  = document.getElementById('fEmp');
+  const fJob  = document.getElementById('fJob');
+  const fHours= document.getElementById('fHours');
+  const fNote = document.getElementById('fNote');
+  const btnAdd= document.getElementById('btnAdd');
+  const btnSave= document.getElementById('btnSave');
+  const btnDup= document.getElementById('btnDup');
+  const LAST_KEY='gd_last_timesheet';
+  function read(){ try{return JSON.parse(localStorage.getItem(LAST_KEY)||'null')||{};}catch(e){return{};} }
+  function write(){ const v={date:fDate?.value,emp:fEmp?.value,job:fJob?.value,hours:fHours?.value,note:fNote?.value}; localStorage.setItem(LAST_KEY, JSON.stringify(v)); }
+  function fill(v){ if(!v)return; if(fDate&&v.date)fDate.value=v.date; if(fEmp&&v.emp)fEmp.value=v.emp; if(fJob&&v.job)fJob.value=v.job; if(fHours&&v.hours)fHours.value=v.hours; if(fNote&&v.note)fNote.value=v.note; }
+  if(btnAdd){ btnAdd.addEventListener('click',()=>fill(read())); }
+  if(btnDup){ btnDup.addEventListener('click',()=>fill(read())); }
+  if(btnSave){ btnSave.addEventListener('click',()=>setTimeout(write,50)); }
+})();
+</script>
+
 </body>
 </html>

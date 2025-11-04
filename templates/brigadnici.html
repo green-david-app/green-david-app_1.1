@@ -2,14 +2,14 @@
 {% block content %}
 <div class="page-pad">
   <div class="tabs sticky">
-    <a href="/calendar">Kalendář</a>
-    <a href="/timesheets.html">Výkazy hodin</a>
-    <a href="/jobs">Zakázky</a>
-    <a href="/tasks">Úkoly</a>
-    <a href="/employees">Zaměstnanci</a>
-    <a class="active" href="/brigadnici.html">Brigádníci</a>
-    <a href="/stock">Sklad</a>
-    <a href="/users">Uživatelé</a>
+    <a class="tab" href="/calendar.html">Kalendář</a>
+    <a class="tab" href="/timesheets.html">Výkazy hodin</a>
+    <a class="tab" href="/?tab=jobs">Zakázky</a>
+    <a class="tab" href="/?tab=tasks">Úkoly</a>
+    <a class="tab" href="/zamestnanci">Zaměstnanci</a>
+    <a class="tab active" href="/brigadnici.html">Brigádníci</a>
+    <a class="tab" href="/?tab=warehouse">Sklad</a>
+    <a class="tab" href="/?tab=users">Uživatelé</a>
   </div>
 
   <div class="card card-dark">
@@ -26,7 +26,7 @@
     <div class="card-h"><strong>Seznam</strong></div>
     <div class="card-c">
       <table class="tbl">
-        <thead><tr><th>ID</th><th>Jméno</th><th>Role</th></tr></thead>
+        <thead><tr><th style="width:70px">ID</th><th>Jméno</th><th>Role</th><th style="width:260px"></th></tr></thead>
         <tbody id="listBody"></tbody>
       </table>
     </div>
@@ -49,8 +49,42 @@
   btnAdd.addEventListener('click', async ()=>{
     const name = newName.value.trim();
     if(!name) return;
-    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role: 'brigádník' }) });
+    const role = (document.getElementById('new-role')?.value || 'brigádník').trim() || 'brigádník';
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
     newName.value=''; await render();
+  });
+
+
+  listBody.addEventListener('click', async (ev)=>{
+    const b = ev.target.closest('button[data-act]');
+    if(!b) return;
+    const tr = b.closest('tr');
+    const oldId = parseInt(tr.children[0].textContent,10);
+    const name = tr.children[1].textContent;
+    const role = tr.children[2].textContent;
+    const act = b.getAttribute('data-act');
+    if(act === 'del'){
+      if(!confirm('Opravdu smazat brigádníka #'+oldId+'?')) return;
+      const res = await fetch('/api/employees?id='+oldId, { method:'DELETE' });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    } else if(act === 'edit'){
+      const newName = prompt('Upravit jméno:', name) ?? name;
+      const newRole = prompt('Upravit roli:', role || 'brigádník') ?? role;
+      const body = {};
+      if(newName && newName !== name) body.name = newName.trim();
+      if(newRole && newRole !== role) body.role = newRole.trim();
+      if(Object.keys(body).length === 0) return;
+      body.id = oldId;
+      const res = await fetch('/api/employees', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    } else if(act === 'reid'){
+      const ask = prompt("Zadejte nové ID číslo pro brigádníka "+oldId+":");
+      if(!ask) return;
+      const newId = parseInt(ask,10);
+      if(!newId || newId<=0){ alert("Neplatné číslo."); return; }
+      const res = await fetch('/api/employees/reassign_id', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ old_id: oldId, new_id: newId }) });
+      if(res.ok){ await render(); } else { alert(await res.text()); }
+    }
   });
 
   async function render(){
