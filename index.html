@@ -20,7 +20,7 @@
 
     <div class="container" style="margin-top:.5rem">
       <div class="row-gap" style="justify-content:flex-start">
-
+        
       </div>
     </div>
 
@@ -36,11 +36,13 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
-
+      
       function toISODateFlex(v){
         if(!v) return v;
+        // Remove everything except digits
         const d = String(v).replace(/\D+/g, '');
-        if(d.length !== 8) return v;
+        if(d.length !== 8) return v; // keep original if not 8 digits
+        // Decide if it's YYYYMMDD or DDMMYYYY
         const yFirst = parseInt(d.slice(0,4),10);
         let y,m,day;
         if(yFirst >= 1900 && yFirst <= 2100){
@@ -62,12 +64,13 @@
 
       function normalizeDate(v){
         if(!v) return v;
+        // Accept 15.09.2025 or 15. 09. 2025 etc.
         var m=v.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
         if(m){
           var d=m[1].padStart(2,'0'); var M=m[2].padStart(2,'0'); var y=m[3];
           return y+"-"+M+"-"+d;
         }
-        return v;
+        return v; // already YYYY-MM-DD
       }
       function showJSError(msg){
         var el = document.getElementById('js-error');
@@ -110,63 +113,31 @@
       }
 
       function Tabs({value,onChange,canAdmin,taskCount}){
-        const items = [
-          {key:"calendar",label:"Kalendář",href:"/calendar.html"},
-          {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
-          {key:"jobs",label:"Zakázky",href:"/?tab=jobs"},
-          {key:"tasks",label:"Úkoly",href:"/?tab=tasks"},
-          {key:"employees",label:"Zaměstnanci",href:"/zamestnanci"},
-          {key:"warehouse",label:"Sklad",href:"/?tab=warehouse"},
-          ...(canAdmin ? [{key:"users",label:"Uživatelé",href:"/?tab=users"}] : [])
-        ];
-        return <div className="tabs">
-          {items.map(it => (
-            it.href
-              ? <a key={it.key} className={"tab"+(value===it.key?" active":"")} href={it.href}>{it.label}</a>
-              : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
-          ))}
-        </div>;
-      }
-
-      function JobsList({onOpen}){
+  const items = [
+    {key:"calendar",label:"Kalendář",href:"/calendar.html"},
+    {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
+    {key:"jobs",label:"Zakázky"},
+    {key:"tasks",label:"Úkoly"},
+    {key:"employees",label:"Zaměstnanci"},
+    {key:"warehouse",label:"Sklad"},
+    ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
+  ];
+  return <div className="tabs">
+    {items.map(it => (
+      it.href
+        ? <a key={it.key} className={"tab"+(value===it.key?" active":"")} href={it.href}>{it.label}</a>
+        : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
+    ))}
+  </div>;
+}
+function JobsList({onOpen}){
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
-
-        // NEW: edit mode state
-        const [editId, setEditId] = useState(null);
-        const [edit, setEdit] = useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
-
         async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
-
         async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
         async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
-
-        // NEW: start/cancel/save edit
-        function startEdit(z){
-          setEditId(z.id);
-          setEdit({
-            title: z.title || "",
-            client: z.client || "",
-            status: z.status || "Plán",
-            city: z.city || "",
-            code: z.code || "",
-            date: toCZ(z.date || ""),
-            note: z.note || ""
-          });
-        }
-        function cancelEdit(){ setEditId(null); }
-        async function saveEdit(e){
-          e.preventDefault();
-          try{
-            const payload = { id: editId, ...edit, date: toISODateFlex(edit.date) };
-            await api("/api/jobs", { method:"PATCH", body: JSON.stringify(payload) });
-            setEditId(null);
-            load();
-          }catch(e){ setErr(e.message || String(e)); }
-        }
-
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
           <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
             <form onSubmit={add}><div className="form-row">
@@ -181,59 +152,9 @@
               <input placeholder="Poznámka" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:1}}/>
               <button type="submit">Přidat</button>
             </div></form>{err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}</div></div>
-
-          {list.map(z=> (
-            <div className="card" key={z.id}>
-              <div className="card-h">
-                <div>
-                  <div style={{fontWeight:700}}><span className="linklike" onClick={()=> onOpen(z.id)}>{z.title}</span></div>
-                  <div className="small">{z.client} • {z.city} • {z.code}</div>
-                </div>
-                <span className="badge">{z.status}</span>
-              </div>
-
-              <div className="card-c">
-                <div className="kv small"><span>📅</span> <span>{toCZ(z.date)}</span></div>
-
-                {/* EDIT MODE UI */}
-                {editId === z.id ? (
-                  <form onSubmit={saveEdit} className="small" style={{marginTop:12}}>
-                    <div className="form-row">
-                      <input placeholder="Název" value={edit.title} onChange={e=>setEdit({...edit,title:e.target.value})} style={{flex:2}} required/>
-                      <input placeholder="Zákazník" value={edit.client} onChange={e=>setEdit({...edit,client:e.target.value})} style={{flex:2}} required/>
-                      <select value={edit.status} onChange={e=>setEdit({...edit,status:e.target.value})}>
-                        <option>Plán</option><option>Probíhá</option><option>Dokončeno</option>
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <input placeholder="Město" value={edit.city} onChange={e=>setEdit({...edit,city:e.target.value})} required/>
-                      <input placeholder="Kód (např. 2025-091)" value={edit.code} onChange={e=>setEdit({...edit,code:e.target.value})} required/>
-                      <input type="text" placeholder="DD.MM.RRRR" value={edit.date} onChange={e=>setEdit({...edit,date:e.target.value})} required/>
-                    </div>
-                    <div className="form-row">
-                      <input placeholder="Poznámka" value={edit.note} onChange={e=>setEdit({...edit,note:e.target.value})} style={{flex:1}}/>
-                      <div>
-                        <button type="submit">Uložit</button>
-                        <button type="button" className="ghost" onClick={cancelEdit} style={{marginLeft:6}}>Zrušit</button>
-                      </div>
-                    </div>
-                  </form>
-                ) : null}
-
-                <div style={{marginTop:12, display:"flex", gap:8}}>
-                  <button onClick={()=> onOpen(z.id)}>Otevřít detail</button>
-                  {/* NEW EDIT BUTTON next to Delete */}
-                  {editId === z.id ? (
-                    <button className="ghost" onClick={cancelEdit}>Zrušit úpravy</button>
-                  ) : (
-                    <button className="ghost" onClick={()=> startEdit(z)}>Upravit</button>
-                  )}
-                  <button className="ghost" onClick={()=> del(z.id)}>Smazat</button>
-                </div>
-              </div>
-            </div>
-          ))}
-
+          {list.map(z=> (<div className="card" key={z.id}><div className="card-h"><div><div style={{fontWeight:700}}><span className="linklike" onClick={()=> onOpen(z.id)}>{z.title}</span></div><div className="small">{z.client} • {z.city} • {z.code}</div></div><span className="badge">{z.status}</span></div>
+            <div className="card-c"><div className="kv small"><span>📅</span> <span>{toCZ(z.date)}</span></div><div style={{marginTop:12, display:"flex", gap:8}}>
+              <button onClick={()=> onOpen(z.id)}>Otevřít detail</button><button className="ghost" onClick={()=> del(z.id)}>Smazat</button></div></div></div>))}
           {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše.</div></div>}
         </div>);
       }
@@ -489,7 +410,7 @@
       }
 
       function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState((() => { try { const u=new URL(window.location); return (u.searchParams.get("tab") || (u.hash?u.hash.replace("#",""):"") || "jobs"); } catch(e){ return "jobs"; } })()); const [jobOpen,setJobOpen]=useState(null);
+        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
         useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
         if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
