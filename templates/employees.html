@@ -108,7 +108,7 @@
     listBody.innerHTML = '';
     for(const e of rows){
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td>
+      tr.innerHTML = `<td>${e.id}</td><td><span class="tag tag-name">${e.name}</span></td><td><span class="tag tag-role">${e.role||''}</span></td>
         <td>
           <button class="ghost small" data-act="edit">Upravit</button>
           <button class="ghost small" data-act="reid">Změnit ID</button>
