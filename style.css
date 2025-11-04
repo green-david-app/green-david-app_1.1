@@ -93,3 +93,12 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 
 /* extra gap between Name and Role */
 .tbl td:nth-child(3){padding-left:20px}
+
+
+/* === Compact employees table layout === */
+.tbl th, .tbl td{padding:8px 12px}                  /* kompaktnější řádky */
+.tbl td:nth-child(3){padding-left:18px}             /* menší mezera Jméno ↔ Role tak, aby se vešly akce */
+.tbl td:last-child{white-space:nowrap}              /* akce vždy na 1 řádek */
+.tbl td:last-child .ghost.small{font-size:12px;padding:6px 10px;margin-right:8px}
+.tbl td:last-child .ghost.small:last-child{margin-right:0}
+
