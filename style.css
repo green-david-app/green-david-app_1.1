@@ -73,50 +73,52 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 }
 
 
-/* === Pills for name/role & spacing tuning === */
-.tag{display:inline-block;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-inv);padding:4px 8px;border-radius:999px;font-weight:600;white-space:nowrap;font-size:13px}
-.tag-role{background:rgba(62,167,106,.12);border-color:var(--accent-2)}
-.tag-name{background:rgba(68,80,88,.35)}
-.tbl th, .tbl td{padding:10px 14px}
- /* extra odsazení mezi ID a Jméno */
-.tbl td:nth-child(1){width:70px}
-
-
-
-/* === Filter chips as pill buttons === */
-.chips{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
-.chip{display:inline-block;border:1px solid var(--accent-2);background:rgba(62,167,106,.10);color:var(--txt-inv);
-  padding:6px 12px;border-radius:999px;font-weight:700;cursor:pointer;user-select:none;transition:all .12s ease-in-out}
-.chip:hover{filter:brightness(1.05)}
-.chip-on{background:var(--accent);color:#fff;border-color:var(--accent)}
-
-
-/* extra gap between Name and Role */
-.tbl td:nth-child(3){padding-left:20px}
-
-
-/* === Compact employees table layout === */
-.tbl th, .tbl td{padding:8px 12px}                  /* kompaktnější řádky */
-.tbl td:nth-child(3){padding-left:18px}             /* menší mezera Jméno ↔ Role tak, aby se vešly akce */
-.tbl td:last-child{white-space:nowrap}              /* akce vždy na 1 řádek */
-.tbl td:last-child .ghost.small{font-size:12px;padding:6px 10px;margin-right:8px}
-.tbl td:last-child .ghost.small:last-child{margin-right:0}
-
-
-/* SAFE Responsive Enhancements */
-@media (max-width:768px){
-  .container{padding:12px}
-  .tabs{flex-wrap:wrap; gap:6px}
+/* ========= Global Responsive Enhancements ========= */
+@media (max-width: 992px){
+  .container{max-width: 920px; padding: 16px}
+  .tabs{gap:8px; flex-wrap:wrap}
+  .tabs .tab{padding:10px 14px; font-size:14px}
+  .grid{grid-gap:12px}
+}
+@media (max-width: 768px){
+  .container{max-width:none; padding: 12px}
+  .brand{flex-direction:column; gap:8px; padding:12px 16px}
+  .right{position:static; margin-top:6px}
+  .tabs{flex-wrap:wrap; gap:6px; justify-content:center}
+  .tabs .tab{flex:0 1 auto; padding:10px 12px; font-size:14px}
   .grid{grid-template-columns:1fr !important}
+  .card{padding:0}
   .card-h{padding:12px 14px}
   .card-c{padding:12px 14px}
-  .tbl, .table{display:block; width:100%; overflow:visible}
-  .tbl thead, .table thead{display:none}
-  .tbl tr, .table tr{display:block; padding:12px 10px; border-bottom:1px solid var(--line, #3a4448)}
-  .tbl td, .table td{display:block; padding:6px 0; white-space:normal; word-break:break-word}
-  .tbl td:last-child, .table td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px}
-  .ghost.small{padding:8px 10px; font-size:13px}
+  .form-row{flex-direction:column; gap:8px}
+  .form-row > *{width:100% !important}
+  button, .ghost{padding:10px 12px; font-size:14px}
+  input[type="text"],input[type="search"],input[type="number"],input[type="email"],input[type="password"],select,textarea{font-size:16px}
+  .table, .tbl{display:block; width:100%; overflow:visible}
+  .table thead, .tbl thead{display:none}
+  .table tr, .tbl tr{display:block; padding:14px 12px; border-bottom:1px solid var(--line);}
+  .table td, .tbl td{display:block; padding:6px 0 !important; white-space:normal; word-break:break-word}
+  .table td:last-child, .tbl td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px !important}
+  .table td:last-child .ghost.small, .tbl td:last-child .ghost.small{font-size:13px; padding:8px 10px}
+  .tag{max-width:100%; white-space:normal; padding:6px 10px; font-size:12px}
+  .tag-role, .tag-name{display:inline-block}
 }
-@media (max-width:420px){
+@media (max-width: 420px){
   .brand-title{font-size:18px}
+  .brand-logo{height:32px}
+  .tabs .tab{flex:1 1 auto; text-align:center}
+}
+
+
+@media (max-width:768px){
+  .table input[type="text"], .tbl input[type="text"],
+  .table input[type="number"], .tbl input[type="number"],
+  .table select, .tbl select{
+    width:100% !important; max-width:100% !important;
+  }
+}
+
+@media (max-width:768px){
+  /* Change ID mobile */
+  .table td input[type="number"]{width:100% !important; max-width:100%}
 }
