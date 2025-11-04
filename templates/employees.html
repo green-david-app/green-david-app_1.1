@@ -16,18 +16,18 @@
     <div class="card-h"><strong>Nový zaměstnanec</strong></div>
     <div class="card-c">
       <div class="row">
-        <input id="newName" type="text" placeholder="Jméno" class="inp" />
-        <input id="newRole" type="text" class="inp" placeholder="Role (např. zahradník, vedoucí zahradník, …)" list="roleList"/>
-<datalist id="roleList">
-  <option value="zahradník"></option>
-  <option value="vedoucí zahradník"></option>
-  <option value="závlahář"></option>
-  <option value="svářeč"></option>
-  <option value="brigádník"></option>
-  <option value="administrativa"></option>
-  <option value="jiné"></option>
-</datalist>
-        <button id="btnAdd" class="btn btn-primary">Přidat</button>
+        <input id="newName" type="text" class="inp" placeholder="Jméno" style="flex:1"/>
+        <input id="newRole" type="text" class="inp" placeholder="Role (např. zahradník, vedoucí zahradník, …)" list="roleList" style="flex:1"/>
+        <datalist id="roleList">
+          <option value="zahradník"></option>
+          <option value="vedoucí zahradník"></option>
+          <option value="závlahář"></option>
+          <option value="svářeč"></option>
+          <option value="brigádník"></option>
+          <option value="administrativa"></option>
+          <option value="jiné"></option>
+        </datalist>
+        <button id="btnAdd" class="btn">Přidat</button>
       </div>
     </div>
   </div>
@@ -36,9 +36,9 @@
     <div class="card-h">
       <strong>Seznam</strong>
       <div class="chips" style="margin-top:8px;">
-        <button data-scope="all" class="chip chip-on">Všichni</button>
-        <button data-scope="employees" class="chip">Zaměstnanci</button>
-        <button data-scope="brig" class="chip">Brigádníci</button>
+        <span class="chip chip-on" data-scope="all">Všichni</span>
+        <span class="chip" data-scope="employees">Zaměstnanci</span>
+        <span class="chip" data-scope="brig">Brigádníci</span>
       </div>
     </div>
     <div class="card-c">
@@ -61,19 +61,24 @@
   const chips = Array.from(document.querySelectorAll('.chips .chip'));
   let scope = 'all';
 
-  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function fetchJSON(url){
+    const r = await fetch(url);
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
   async function apiJSON(url, options){
     const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
     if(!r.ok) throw new Error(await r.text());
     return r.json();
   }
 
-  btnAdd.addEventListener('click', async ()=>{
-    const name = newName.value.trim();
-    const role = newRole.value;
+  btnAdd.addEventListener('click', async () => {
+    const name = (newName.value || '').trim();
+    const role = (newRole.value || '').trim();
     if(!name) return;
     await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
-    newName.value=''; await render();
+    newName.value=''; newRole.value='';
+    await render();
   });
 
   chips.forEach(chip => chip.addEventListener('click', ()=>{
@@ -99,23 +104,15 @@
     listBody.innerHTML = '';
     for(const e of rows){
       const tr = document.createElement('tr');
-      tr.innerHTML = `\x3ctd\x3e${e.id}\x3c/td\x3e\x3ctd\x3e${e.name}\x3c/td\x3e\x3ctd\x3e${e.role||""}\x3c/td\x3e\x3ctd\x3e\x3cbutton class="ghost small" data-act="edit"\x3eUpravit\x3c/button\x3e\x20\x3cbutton class="ghost small" data-act="reid"\x3eZměnit ID\x3c/button\x3e\x20\x3cbutton class="ghost small" data-act="del"\x3eSmazat\x3c/button\x3e\x3c/td\x3e`;
+      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td>
+        <td>
+          <button class="ghost small" data-act="edit">Upravit</button>
+          <button class="ghost small" data-act="reid">Změnit ID</button>
+          <button class="ghost small" data-act="del">Smazat</button>
+        </td>`;
       listBody.appendChild(tr);
     }
   }
-  await render();
-
-    listBody.addEventListener('click', async (ev)=>{
-      const btn = ev.target.closest('button[data-act="reid"]');
-      if(!btn) return;
-      const tr = btn.closest('tr');
-      const oldId = parseInt(tr.children[0].textContent,10);
-      const ask = prompt("Zadejte nové ID číslo pro zaměstnance "+oldId+":");
-      if(!ask) return;
-      const newId = parseInt(ask,10);
-      if(!newId || newId<=0){ alert("Neplatné číslo."); return; }
-      const res = await fetch('/api/employees/reassign_id', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ old_id: oldId, new_id: newId }) });
-      if(res.ok){ 
   await render();
 
   // Delegated actions: edit / delete / reassign id
@@ -152,7 +149,5 @@
   });
 
 })();
-;
 </script>
 {% endblock %}
-
