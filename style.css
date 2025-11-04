@@ -73,121 +73,38 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 }
 
 
-/* === Pills for name/role & spacing tuning === */
-.tag{display:inline-block;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-inv);padding:4px 8px;border-radius:999px;font-weight:600;white-space:nowrap;font-size:13px}
-.tag-role{background:rgba(62,167,106,.12);border-color:var(--accent-2)}
-.tag-name{background:rgba(68,80,88,.35)}
-.tbl th, .tbl td{padding:10px 14px}
- /* extra odsazení mezi ID a Jméno */
-.tbl td:nth-child(1){width:70px}
-
-
-
-/* === Filter chips as pill buttons === */
-.chips{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
-.chip{display:inline-block;border:1px solid var(--accent-2);background:rgba(62,167,106,.10);color:var(--txt-inv);
-  padding:6px 12px;border-radius:999px;font-weight:700;cursor:pointer;user-select:none;transition:all .12s ease-in-out}
-.chip:hover{filter:brightness(1.05)}
-.chip-on{background:var(--accent);color:#fff;border-color:var(--accent)}
-
-
-/* extra gap between Name and Role */
-.tbl td:nth-child(3){padding-left:20px}
-
-
-/* === Compact employees table layout === */
-.tbl th, .tbl td{padding:8px 12px}                  /* kompaktnější řádky */
-.tbl td:nth-child(3){padding-left:18px}             /* menší mezera Jméno ↔ Role tak, aby se vešly akce */
-.tbl td:last-child{white-space:nowrap}              /* akce vždy na 1 řádek */
-.tbl td:last-child .ghost.small{font-size:12px;padding:6px 10px;margin-right:8px}
-.tbl td:last-child .ghost.small:last-child{margin-right:0}
-
-
-
-/* ===== Responsive employees page & tables ===== */
+/* ========= Global Responsive Enhancements ========= */
+@media (max-width: 992px){
+  .container{max-width: 920px; padding: 16px}
+  .tabs{gap:8px; flex-wrap:wrap}
+  .tabs .tab{padding:10px 14px; font-size:14px}
+  .grid{grid-gap:12px}
+}
 @media (max-width: 768px){
-  .container{padding:12px}
-  .tabs{flex-wrap:wrap; gap:6px}
-  .tabs .tab{padding:10px 12px; font-size:14px}
-
-  /* Cards full width */
+  .container{max-width:none; padding: 12px}
+  .brand{flex-direction:column; gap:8px; padding:12px 16px}
+  .right{position:static; margin-top:6px}
+  .tabs{flex-wrap:wrap; gap:6px; justify-content:center}
+  .tabs .tab{flex:0 1 auto; padding:10px 12px; font-size:14px}
   .grid{grid-template-columns:1fr !important}
-
-  /* Tables: allow wrapping and prevent horizontal scroll */
-  .table, .tbl{display:block; width:100%; overflow-x:auto}
-  .table table, .tbl table{width:100%}
-  .table thead, .tbl thead{display:none} /* stack rows as blocks */
-
-  .table tr, .tbl tr{
-    display:grid;
-    grid-template-columns: 80px 1fr;   /* label + value */
-    padding:10px 12px;
-    border-bottom:1px solid var(--line);
-  }
-  .table td, .tbl td{
-    padding:6px 8px !important;
-    word-break:break-word;
-    white-space:normal;
-  }
-  /* ID + Jméno + Role + Akce zobrazit nad sebou */
-  .tbl td:nth-child(1)::before{content:"ID"; font-weight:600; opacity:.7}
-  .tbl td:nth-child(2)::before{content:"Jméno"; font-weight:600; opacity:.7}
-  .tbl td:nth-child(3)::before{content:"Role"; font-weight:600; opacity:.7}
-  .tbl td:nth-child(4)::before{content:"Akce"; font-weight:600; opacity:.7}
-  .tbl td:nth-child(4){display:flex; gap:8px; flex-wrap:wrap}
-  .ghost.small{padding:8px 10px; font-size:13px}
-
-  /* Tagy (jména/role) a badge zmenšit, aby se vešly */
-  .tag{font-size:12px; padding:6px 10px}
-  .tag-role{display:inline-flex; align-items:center; max-width:100%}
-
-  /* Formuláře – plná šířka */
+  .card{padding:0}
+  .card-h{padding:12px 14px}
+  .card-c{padding:12px 14px}
   .form-row{flex-direction:column; gap:8px}
   .form-row > *{width:100% !important}
-}
-
-/* Extra-narrow phones */
-@media (max-width: 420px){
-  .tabs .tab{flex:1 1 auto; text-align:center}
-  .brand-title{font-size:18px}
-  .brand-logo{height:32px}
-}
-
-
-/* ===== Mobile polish for Employees table (stacked cards, tidy labels) ===== */
-@media (max-width: 768px){
-  /* turn rows into simple blocks (override any grid settings) */
-  .tbl, .table{display:block; width:100%; overflow:visible}
-  .tbl thead, .table thead{display:none}
-  .tbl tr, .table tr{display:block; padding:14px 12px; border-bottom:1px solid var(--line);}
-
-  /* each cell on its own line with a small label above */
-  .tbl td, .table td{
-    display:block;
-    padding:6px 0 !important;
-    white-space:normal;
-    word-break:break-word;
-  }
-  .tbl td::before{
-    display:block;
-    font-weight:700;
-    opacity:.7;
-    font-size:14px;
-    margin-bottom:4px;
-  }
-  .tbl td:nth-child(1)::before{content:"ID"}
-  .tbl td:nth-child(2)::before{content:"Jméno"}
-  .tbl td:nth-child(3)::before{content:"Role"}
-  .tbl td:nth-child(4)::before{content:"Akce"}
-
-  /* actions wrap nicely and don't overflow */
-  .tbl td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px !important}
-  .tbl td:last-child .ghost.small{font-size:13px; padding:8px 10px; margin-right:0}
-
-  /* badges/tags don't overflow */
+  button, .ghost{padding:10px 12px; font-size:14px}
+  input[type="text"],input[type="search"],input[type="number"],input[type="email"],input[type="password"],select,textarea{font-size:16px}
+  .table, .tbl{display:block; width:100%; overflow:visible}
+  .table thead, .tbl thead{display:none}
+  .table tr, .tbl tr{display:block; padding:14px 12px; border-bottom:1px solid var(--line);}
+  .table td, .tbl td{display:block; padding:6px 0 !important; white-space:normal; word-break:break-word}
+  .table td:last-child, .tbl td:last-child{display:flex; flex-wrap:wrap; gap:8px; padding-top:8px !important}
+  .table td:last-child .ghost.small, .tbl td:last-child .ghost.small{font-size:13px; padding:8px 10px}
   .tag{max-width:100%; white-space:normal; padding:6px 10px; font-size:12px}
   .tag-role, .tag-name{display:inline-block}
-
-  /* compact spacing within cards */
-  .row.h{display:none} /* případná desktop hlavička řádku v kartě pryč */
+}
+@media (max-width: 420px){
+  .brand-title{font-size:18px}
+  .brand-logo{height:32px}
+  .tabs .tab{flex:1 1 auto; text-align:center}
 }

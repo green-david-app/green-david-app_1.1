@@ -116,7 +116,13 @@ def ensure_schema():
         qty REAL NOT NULL DEFAULT 0,
         unit TEXT NOT NULL DEFAULT 'ks'
     );
-    
+    CREATE TABLE IF NOT EXISTS job_tools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        qty REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL DEFAULT 'ks'
+    );
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         job_id INTEGER,
@@ -125,13 +131,6 @@ def ensure_schema():
         description TEXT DEFAULT '',
         status TEXT NOT NULL DEFAULT 'open',
         due_date TEXT
-    );
-    CREATE TABLE IF NOT EXISTS job_tools (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        job_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        qty REAL NOT NULL DEFAULT 0,
-        unit TEXT NOT NULL DEFAULT 'ks'
     );
     CREATE TABLE IF NOT EXISTS timesheets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -272,43 +271,8 @@ def api_logout():
     session.pop("uid", None)
     return jsonify({"ok": True})
 
-
-# change employee id (also updates related records)
-@app.route("/api/employees/reassign_id", methods=["POST"])
-def api_employees_reassign_id():
-    u, err = require_role(write=True)
-    if err: return err
-    data = request.get_json(force=True) or {}
-    old_id = data.get("old_id")
-    new_id = data.get("new_id")
-    if not isinstance(old_id, int) or not isinstance(new_id, int) or new_id <= 0:
-        return jsonify({"ok": False, "error":"invalid_input"}), 400
-    db = get_db()
-    # conflict?
-    row = db.execute("SELECT id FROM employees WHERE id=?", (new_id,)).fetchone()
-    if row: return jsonify({"ok": False, "error":"id_exists"}), 409
-    try:
-        db.execute("BEGIN IMMEDIATE")
-        # update timesheets first (no FKs present, but safe)
-        db.execute("UPDATE timesheets SET employee_id=? WHERE employee_id=?", (new_id, old_id))
-        # update employee id itself
-        cur = db.execute("UPDATE employees SET id=? WHERE id=?", (new_id, old_id))
-        if cur.rowcount == 0:
-            db.execute("ROLLBACK")
-            return jsonify({"ok": False, "error":"not_found"}), 404
-        # adjust sqlite_sequence so next insert continues from max(id)
-        try:
-            db.execute("UPDATE sqlite_sequence SET seq=(SELECT IFNULL(MAX(id),0) FROM employees) WHERE name='employees'")
-        except Exception:
-            pass
-        db.commit()
-        return jsonify({"ok": True})
-    except Exception as e:
-        try: db.rollback()
-        except Exception: pass
-        return jsonify({"ok": False, "error": str(e)}), 500
 # employees
-@app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
+@app.route("/api/employees", methods=["GET","POST","DELETE"])
 def api_employees():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -321,20 +285,6 @@ def api_employees():
         name = data.get("name"); role = data.get("role") or "worker"
         if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
-        db.commit()
-        return jsonify({"ok": True})
-    if request.method == "PATCH":
-        data = request.get_json(force=True) or {}
-        eid = data.get("id")
-        name = (data.get("name") or "").strip()
-        role = (data.get("role") or "").strip()
-        if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        if not name and not role: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
-        sets=[]; params=[]
-        if name: sets.append("name=?"); params.append(name)
-        if role: sets.append("role=?"); params.append(role)
-        params.append(eid)
-        db.execute(f"UPDATE employees SET {', '.join(sets)} WHERE id=?", params)
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":
@@ -439,7 +389,6 @@ def api_job_materials(job_id):
         db.execute("INSERT INTO job_materials(job_id,name,qty,unit) VALUES (?,?,?,?)", (job_id, name, qty, unit))
         db.commit()
         return jsonify({"ok": True})
-    # DELETE
     mid = request.args.get("id", type=int)
     if not mid: return jsonify({"ok": False, "error":"missing_id"}), 400
     db.execute("DELETE FROM job_materials WHERE id=? AND job_id=?", (mid, job_id))
@@ -460,7 +409,6 @@ def api_job_tools(job_id):
         db.execute("INSERT INTO job_tools(job_id,name,qty,unit) VALUES (?,?,?,?)", (job_id, name, qty, unit))
         db.commit()
         return jsonify({"ok": True})
-    # DELETE
     tid = request.args.get("id", type=int)
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     db.execute("DELETE FROM job_tools WHERE id=? AND job_id=?", (tid, job_id))
@@ -474,13 +422,12 @@ def api_job_assignments(job_id):
     db = get_db()
     data = request.get_json(force=True, silent=True) or {}
     ids = data.get("employee_ids") or []
-    # Replace all assignments atomically
     db.execute("DELETE FROM job_assignments WHERE job_id=?", (job_id,))
     for eid in ids:
         try:
             db.execute("INSERT OR IGNORE INTO job_assignments(job_id, employee_id) VALUES (?,?)", (job_id, int(eid)))
         except Exception:
-            continue
+            pass
     db.commit()
     return jsonify({"ok": True})
 
@@ -537,7 +484,6 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
 
-    # DELETE
     tid = request.args.get("id", type=int)
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     db.execute("DELETE FROM tasks WHERE id=?", (tid,))
@@ -652,12 +598,6 @@ def api_timesheets_export():
     mem.seek(0)
     fname = "timesheets.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=fname)
-
-
-# ----------------- Brigadnici page -----------------
-@app.route("/brigadnici.html")
-def page_brigadnici():
-    return render_template("brigadnici.html")
 
 # ----------------- Template route -----------------
 @app.route("/timesheets.html")

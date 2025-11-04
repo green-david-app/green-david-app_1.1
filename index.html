@@ -113,11 +113,11 @@
         const items = [
           {key:"calendar",label:"Kalendář",href:"/calendar.html"},
           {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
-          {key:"jobs",label:"Zakázky",href:"/?tab=jobs"},
-          {key:"tasks",label:"Úkoly",href:"/?tab=tasks"},
-          {key:"employees",label:"Zaměstnanci",href:"/zamestnanci"},
-          {key:"warehouse",label:"Sklad",href:"/?tab=warehouse"},
-          ...(canAdmin ? [{key:"users",label:"Uživatelé",href:"/?tab=users"}] : [])
+          {key:"jobs",label:"Zakázky"},
+          {key:"tasks",label:"Úkoly"},
+          {key:"employees",label:"Zaměstnanci"},
+          {key:"warehouse",label:"Sklad"},
+          ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
         ];
         return <div className="tabs">
           {items.map(it => (
@@ -489,7 +489,7 @@
       }
 
       function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState((() => { try { const u=new URL(window.location); return (u.searchParams.get("tab") || (u.hash?u.hash.replace("#",""):"") || "jobs"); } catch(e){ return "jobs"; } })()); const [jobOpen,setJobOpen]=useState(null);
+        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
         useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
         if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
