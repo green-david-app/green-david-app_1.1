@@ -1,3 +1,4 @@
+
 {% set title = title or 'green david app' %}
 <!DOCTYPE html>
 <html lang="cs">
@@ -7,9 +8,6 @@
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
-  <!-- global search (bez zásahu do hlavičky / tabs) -->
-  <link rel="stylesheet" href="/static/css/gd_enhancements.css"/>
-  <link rel="stylesheet" href="/static/css/gd_global_search_card.css"/>
 </head>
 <body>
   <div class="app-header">
@@ -24,12 +22,37 @@
     </div>
   </div>
 
-  <!-- žádné auto-záložky, ponechán jen obsah stránky -->
+  <div class="tabs" id="main-tabs">
+    <!-- původní odkazy (Zakázky, Úkoly, …) se načtou ze stávajícího layoutu -->
+  </div>
+
   <div class="container" style="margin-top: 12px;">
     {% block content %}{% endblock %}
   </div>
 
-  <!-- jen globální vyhledávání -->
-  <script src="/static/js/gd_global_search_card.js" defer></script>
+  <script>
+  (function(){
+    function insertTabs(){
+      var tabs = document.querySelector('.tabs') || document.getElementById('main-tabs');
+      if(!tabs) return;
+      var first = tabs.querySelector('a') || null;
+      function mk(href, label){
+        var a = document.createElement('a');
+        a.href = href;
+        a.textContent = label;
+        a.className = (first && first.className) ? first.className : 'tab';
+        return a;
+      }
+      if(!tabs.querySelector('a[href="/calendar-page"]') && !tabs.querySelector('a[href="/calendar"]')){
+        tabs.insertBefore(mk('/calendar-page','Kalendář'), first);
+      }
+      if(!tabs.querySelector('a[href="/timesheets-page"]') && !tabs.querySelector('a[href="/timesheets"]')){
+        tabs.insertBefore(mk('/timesheets-page','Výkazy'), first);
+      }
+    }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', insertTabs); }
+    else { insertTabs(); }
+  })();
+  </script>
 </body>
 </html>

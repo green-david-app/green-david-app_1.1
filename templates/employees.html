@@ -10,42 +10,7 @@
     <a href="/brigadnici.html">Brigádníci</a>
     <a href="/stock">Sklad</a>
     <a href="/users">Uživatelé</a>
-  
-<!-- GLOBAL SEARCH (tables/lists) -->
-<div class="card card-dark" style="margin-bottom:10px">
-  <div class="card-c">
-    <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…">
   </div>
-</div>
-<script>
-(function(){
-  const input=document.getElementById('__globalSearch');
-  if(!input) return;
-  function getSets(){
-    const sets=[];
-    document.querySelectorAll('table').forEach(t=>{
-      const b=t.tBodies&&t.tBodies[0]||t.querySelector('tbody');
-      if(b){ const rows=Array.from(b.querySelectorAll('tr')); if(rows.length) sets.push(rows); }
-    });
-    document.querySelectorAll('.card-list,.jobs-list,.employees-list').forEach(list=>{
-      sets.push(Array.from(list.children));
-    });
-    return sets;
-  }
-  function apply(){
-    const q=(input.value||'').toLowerCase().trim();
-    const sets=getSets();
-    sets.forEach(rows=>rows.forEach(row=>{
-      const text=(row.getAttribute('data-search')||row.innerText||'').toLowerCase();
-      row.style.display=!q||text.includes(q)?'':'none';
-    }));
-  }
-  ['input','keyup','search','change'].forEach(ev=>input.addEventListener(ev,apply));
-  new MutationObserver(apply).observe(document.body,{childList:true,subtree:true});
-  apply();
-})();
-</script>
-<!-- /GLOBAL SEARCH (tables/lists) -->
 
   <div class="card card-dark">
     <div class="card-h"><strong>Nový zaměstnanec</strong></div>
