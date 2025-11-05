@@ -1,12 +1,5 @@
 {% extends "layout.html" %}
 {% block content %}
-
-<div class="card card-dark gd-global-search" style="margin-bottom:10px">
-  <div class="card-c">
-    <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…" style="width:100%">
-  </div>
-</div>
-
 <div class="ts-head">
   <div class="ts-head-row1">
     <a href="/" class="ts-back">zpět</a>
@@ -287,43 +280,54 @@
 })();
 </script>
 {% endblock %}
-<script>/*ts filter*/
+<script>
+/*ts filter v3*/
 (function(){
   const input = document.getElementById('__globalSearch');
   if(!input) return;
-  function entries(){
-    const items=[];
-    // table rows if any
+
+  function entries() {
+    const items = [];
+    // 1) rows in tables
     document.querySelectorAll('table').forEach(t=>{
       const b=t.tBodies&&t.tBodies[0]||t.querySelector('tbody');
       if(b) items.push(...b.querySelectorAll('tr'));
     });
-    // bubbles inside cards (contain " h")
+    // 2) direct children inside day cards
     document.querySelectorAll('.card').forEach(card=>{
-      if (card.querySelector('#__globalSearch')) return;
-      card.querySelectorAll('.card-c > *').forEach(el=>{
-        const txt=(el.innerText||'').trim();
-        if (txt && /\b\d+[\.,]?\d*\s*h\b/i.test(txt)) items.push(el);
-      });
+      if (card.querySelector('#__globalSearch')) return; // skip the search card
+      const cc = card.querySelector('.card-c');
+      const hasHeader = !!card.querySelector('.card-h');
+      if(!cc || !hasHeader) return;
+      // All direct children of card-c are treated as entries
+      items.push(...Array.from(cc.children));
     });
     return items;
   }
+
   function apply(){
-    const q=(input.value||'').toLowerCase().trim();
-    const items=entries();
-    items.forEach(el=>{
-      const t=(el.getAttribute('data-search')||el.innerText||'').toLowerCase();
-      el.style.display=!q||t.includes(q)?'':'none';
+    const q = (input.value||'').toLowerCase().trim();
+    const all = entries();
+    all.forEach(el=>{
+      const text = (el.getAttribute('data-search') || el.innerText || '').toLowerCase();
+      // don't hide the container wrappers with 0 text
+      const meaningful = text.replace(/\s+/g,'').length > 0;
+      el.style.display = !q || !meaningful || text.includes(q) ? '' : 'none';
     });
-    // hide content of day cards if empty
+
+    // collapse empty day contents
     document.querySelectorAll('.card').forEach(card=>{
       if (card.querySelector('#__globalSearch')) return;
-      const content = card.querySelector('.card-c');
-      if(!content) return;
-      const hasVisible = Array.from(content.children).some(ch => ch.style.display !== 'none' && /\b\d+[\.,]?\d*\s*h\b/i.test((ch.innerText||'')));
-      content.style.display = hasVisible || !q ? '' : 'none';
+      const cc = card.querySelector('.card-c'); if(!cc) return;
+      const visible = Array.from(cc.children).some(ch => ch.style.display !== 'none' && (ch.innerText||'').trim().length>0);
+      cc.style.display = visible || !q ? '' : 'none';
     });
   }
-  input.addEventListener('input', apply); apply();
+
+  ['input','keyup','search','change'].forEach(ev => input.addEventListener(ev, apply));
+  // re-apply when DOM changes (entries added/removed)
+  const mo = new MutationObserver(apply);
+  mo.observe(document.body, {subtree:true, childList:true});
+  apply();
 })();
 </script>
