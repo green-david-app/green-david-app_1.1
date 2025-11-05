@@ -7,17 +7,30 @@
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
-  <!-- global search styling -->
+  <!-- global search styles (non-intrusive) -->
   <link rel="stylesheet" href="/static/css/gd_enhancements.css"/>
   <link rel="stylesheet" href="/static/css/gd_global_search_card.css"/>
 </head>
 <body>
-  <!-- ponechává existující hlavičku/navigaci tak, jak ji má aplikace -->
+  <!-- PŮVODNÍ HLAVIČKA - zachována beze změn -->
+  <div class="app-header">
+    <div class="brand">
+      <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
+      <div class="brand-text">green david app</div>
+      <div class="brand-sub">interní systém</div>
+    </div>
+    <div class="user-area">
+      {% if me %}Přihlášen: {{ me.name }}{% endif %}
+      <a class="btn ghost" href="/logout">Odhlásit</a>
+    </div>
+  </div>
+
+  <!-- ŽÁDNÉ DODATEČNÉ ZÁLOŽKY ANI INJEKTOR -->
   <div class="container" style="margin-top: 12px;">
     {% block content %}{% endblock %}
   </div>
 
-  <!-- jen globální vyhledávání; žádné vkládání záložek ani přepis hlavičky -->
+  <!-- Jen globální vyhledávání (nevkládá nic do hlavičky ani tabs) -->
   <script src="/static/js/gd_global_search_card.js" defer></script>
 </body>
 </html>
