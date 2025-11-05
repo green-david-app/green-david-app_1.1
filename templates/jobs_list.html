@@ -1,4 +1,5 @@
-{% extends "layout.html" %}{% block content %}<h1>Zakázky</h1><div class="card"><div class="card-c"><input id="jobsSearch" class="inp" type="search" placeholder="Hledat název, klienta, město…" style="width:100%"></div></div><form action="/jobs/new" method="get" style="margin-bottom:12px"><button class="btn">Nová zakázka</button></form><table class="table"><tr><th>ID</th><th>Název</th><th>Klient</th><th>Stav</th><th>Vlastník</th><th></th></tr>{% for j in rows %}<tr><td>{{j.id}}</td><td>{{j.name}}</td><td>{{j.client or ""}}</td><td>{{j.status}}</td><td>{{j.owner_email}}</td><td><a class="btn ghost" href="/jobs/{{j.id}}/edit">Upravit</a><form method="post" action="/jobs/{{j.id}}/delete" style="display:inline" onsubmit="return confirm('Smazat?')"><button class="btn">Smazat</button></form></td></tr>{% endfor %}</table>{% endblock %}
+{% extends "layout.html" %}{% block content %}<h1>Zakázky</h1>
+<div class="card"><div class="card-c"><input id="jobsSearch" class="inp" type="search" placeholder="Hledat název, klienta, město…" style="width:100%"></div></div><form action="/jobs/new" method="get" style="margin-bottom:12px"><button class="btn">Nová zakázka</button></form><table class="table"><tr><th>ID</th><th>Název</th><th>Klient</th><th>Stav</th><th>Vlastník</th><th></th></tr>{% for j in rows %}<tr><td>{{j.id}}</td><td>{{j.name}}</td><td>{{j.client or ""}}</td><td>{{j.status}}</td><td>{{j.owner_email}}</td><td><a class="btn ghost" href="/jobs/{{j.id}}/edit">Upravit</a><form method="post" action="/jobs/{{j.id}}/delete" style="display:inline" onsubmit="return confirm('Smazat?')"><button class="btn">Smazat</button></form></td></tr>{% endfor %}</table>{% endblock %}
 <script>
 (function(){
   const q = document.getElementById('jobsSearch');
@@ -6,12 +7,12 @@
   const body = table ? (table.tBodies[0] || table.querySelector('tbody')) : null;
   function apply(){
     if(!body) return;
-    const s = (q.value||'').toLowerCase().trim();
+    const s = (q && q.value || '').toLowerCase().trim();
     Array.from(body.querySelectorAll('tr')).forEach(tr=>{
       const t = tr.innerText.toLowerCase();
       tr.style.display = !s || t.includes(s) ? '' : 'none';
     });
   }
-  if(q){ q.addEventListener('input', apply); apply(); }
+  if (q) { q.addEventListener('input', apply); apply(); }
 })();
 </script>
