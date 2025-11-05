@@ -1,5 +1,12 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<div class="card card-dark gd-global-search" style="margin-bottom:10px">
+  <div class="card-c">
+    <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…" style="width:100%">
+  </div>
+</div>
+
 <div class="ts-head">
   <div class="ts-head-row1">
     <a href="/" class="ts-back">zpět</a>
@@ -280,56 +287,43 @@
 })();
 </script>
 {% endblock %}
-<script>
-/*__TS_FILTER__*/
+<script>/*ts filter*/
 (function(){
   const input = document.getElementById('__globalSearch');
   if(!input) return;
-
-  function entryCandidates(root){
-    const items = [];
-    // 1) rows in tables (if any)
+  function entries(){
+    const items=[];
+    // table rows if any
     document.querySelectorAll('table').forEach(t=>{
-      const b = t.tBodies && t.tBodies[0] || t.querySelector('tbody');
+      const b=t.tBodies&&t.tBodies[0]||t.querySelector('tbody');
       if(b) items.push(...b.querySelectorAll('tr'));
     });
-    // 2) common "chip/row" divs inside cards that look like timesheet entries (contain " h")
+    // bubbles inside cards (contain " h")
     document.querySelectorAll('.card').forEach(card=>{
-      // skip the search bar card itself
       if (card.querySelector('#__globalSearch')) return;
       card.querySelectorAll('.card-c > *').forEach(el=>{
-        const txt = (el.innerText || '').trim();
-        if (txt && /\b\d+[\.,]?\d*\s*h\b/i.test(txt)) { items.push(el); }
+        const txt=(el.innerText||'').trim();
+        if (txt && /\b\d+[\.,]?\d*\s*h\b/i.test(txt)) items.push(el);
       });
     });
     return items;
   }
-
   function apply(){
-    const q = (input.value || '').toLowerCase().trim();
-    const items = entryCandidates(document);
+    const q=(input.value||'').toLowerCase().trim();
+    const items=entries();
     items.forEach(el=>{
-      const t = (el.getAttribute('data-search') || el.innerText || '').toLowerCase();
-      el.style.display = !q || t.includes(q) ? '' : 'none';
+      const t=(el.getAttribute('data-search')||el.innerText||'').toLowerCase();
+      el.style.display=!q||t.includes(q)?'':'none';
     });
-    // hide empty day cards (no visible entries left)
+    // hide content of day cards if empty
     document.querySelectorAll('.card').forEach(card=>{
       if (card.querySelector('#__globalSearch')) return;
-      const visibleEntry = Array.from(card.querySelectorAll('.card-c > *')).some(el => el.style.display !== 'none' && /\b\d+[\.,]?\d*\s*h\b/i.test((el.innerText||'')));
-      const hasHeader = !!card.querySelector('.card-h');
-      if (hasHeader && !visibleEntry) {
-        // keep header spacing but shrink content
-        card.style.display = '';
-        const content = card.querySelector('.card-c');
-        if(content) content.style.display = 'none';
-      } else {
-        const content = card.querySelector('.card-c');
-        if(content) content.style.display = '';
-      }
+      const content = card.querySelector('.card-c');
+      if(!content) return;
+      const hasVisible = Array.from(content.children).some(ch => ch.style.display !== 'none' && /\b\d+[\.,]?\d*\s*h\b/i.test((ch.innerText||'')));
+      content.style.display = hasVisible || !q ? '' : 'none';
     });
   }
-
-  input.addEventListener('input', apply);
-  apply();
+  input.addEventListener('input', apply); apply();
 })();
 </script>

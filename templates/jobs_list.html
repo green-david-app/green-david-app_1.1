@@ -1,1 +1,34 @@
-{% extends "layout.html" %}{% block content %}<h1>Zakázky</h1><form action="/jobs/new" method="get" style="margin-bottom:12px"><button class="btn">Nová zakázka</button></form><table class="table"><tr><th>ID</th><th>Název</th><th>Klient</th><th>Stav</th><th>Vlastník</th><th></th></tr>{% for j in rows %}<tr><td>{{j.id}}</td><td>{{j.name}}</td><td>{{j.client or ""}}</td><td>{{j.status}}</td><td>{{j.owner_email}}</td><td><a class="btn ghost" href="/jobs/{{j.id}}/edit">Upravit</a><form method="post" action="/jobs/{{j.id}}/delete" style="display:inline" onsubmit="return confirm('Smazat?')"><button class="btn">Smazat</button></form></td></tr>{% endfor %}</table>{% endblock %}
+{% extends "layout.html" %}{% block content %}<h1>Zakázky</h1>
+
+<div class="card card-dark gd-global-search" style="margin-bottom:10px">
+  <div class="card-c">
+    <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…" style="width:100%">
+  </div>
+</div>
+<form action="/jobs/new" method="get" style="margin-bottom:12px"><button class="btn">Nová zakázka</button></form><table class="table"><tr><th>ID</th><th>Název</th><th>Klient</th><th>Stav</th><th>Vlastník</th><th></th></tr>{% for j in rows %}<tr><td>{{j.id}}</td><td>{{j.name}}</td><td>{{j.client or ""}}</td><td>{{j.status}}</td><td>{{j.owner_email}}</td><td><a class="btn ghost" href="/jobs/{{j.id}}/edit">Upravit</a><form method="post" action="/jobs/{{j.id}}/delete" style="display:inline" onsubmit="return confirm('Smazat?')"><button class="btn">Smazat</button></form></td></tr>{% endfor %}</table>{% endblock %}
+<script>/*common filter*/
+(function(){
+  const input = document.getElementById('__globalSearch');
+  if(!input) return;
+  function getSets(){
+    const sets = [];
+    document.querySelectorAll('table').forEach(t=>{
+      const b = t.tBodies && t.tBodies[0] || t.querySelector('tbody');
+      if(b){ const rows = Array.from(b.querySelectorAll('tr')); if(rows.length) sets.push(rows); }
+    });
+    document.querySelectorAll('.card-list,.jobs-list,.employees-list').forEach(list=>{
+      sets.push(Array.from(list.children));
+    });
+    return sets;
+  }
+  function apply(){
+    const q = (input.value||'').toLowerCase().trim();
+    const sets = getSets();
+    sets.forEach(rows=>rows.forEach(tr=>{
+      const text = (tr.getAttribute('data-search') || tr.innerText || '').toLowerCase();
+      tr.style.display = !q || text.includes(q) ? '' : 'none';
+    }));
+  }
+  input.addEventListener('input', apply); apply();
+})();
+</script>
