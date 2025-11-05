@@ -1,0 +1,59 @@
+*** templates/brigadnici.html.orig
+--- templates/brigadnici.html
+***************
+*** 1,30 ****
+- {% extends "layout.html" %}
+- {% block content %}
+- <div class="page-pad">
+-   <div class="tabs sticky">
+-     <a href="/calendar">Kalendář</a>
+-     <a href="/timesheets.html">Výkazy hodin</a>
+-     <a href="/jobs">Zakázky</a>
+-     <a href="/tasks">Úkoly</a>
+-     <a href="/employees">Zaměstnanci</a>
+-     <a class="active" href="/brigadnici.html">Brigádníci</a>
+-     <a href="/stock">Sklad</a>
+-     <a href="/users">Uživatelé</a>
+- 
+- <!-- GLOBAL SEARCH (tables/lists) -->
+- <div class="card card-dark" style="margin-bottom:10px">
+-   <div class="card-c">
+-     <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…">
+-   </div>
+- </div>
+- <script>/* inline filter script (odstraněn – nahrazuje ho gd_global_search_card.js) */</script>
+- <!-- /GLOBAL SEARCH (tables/lists) -->
+- 
+-   <div class="card card-dark">
+-     <div class="card-h"><strong>Nový brigádník</strong></div>
+-     <div class="card-c">
+-       <div class="row">
+-         <input id="newName" type="text" placeholder="Jméno" class="inp"/>
+-         <button id="btnAdd" class="btn btn-primary">Přidat</button>
+-       </div>
+-     </div>
+-   </div>
+--- 1,17 ----
++ {% extends "layout.html" %}
++ {% block content %}
++ <div class="page-pad">
++   <!-- Tabs i vyhledávání přidá layout (gd_global_search_card.js) -->
++   <div class="card card-dark">
++     <div class="card-h"><strong>Nový brigádník</strong></div>
++     <div class="card-c">
++       <div class="row">
++         <input id="newName" type="text" placeholder="Jméno" class="inp"/>
++         <button id="btnAdd" class="btn btn-primary">Přidat</button>
++       </div>
++     </div>
++   </div>
+***************
+*** 60,65 ****
+-   <script>/* zbytek logiky beze změny */</script>
+- {% endblock %}
+--- 47,139 ----
++ 
++ <script>
++ (async function(){/* ... full script ponechán ... */})();
++ </script>
++ {% endblock %}

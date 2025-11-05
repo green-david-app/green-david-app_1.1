@@ -1,52 +1,63 @@
-<!doctype html>
+{% set title = title or 'green david app' %}
+<!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ title or 'green david app' }}</title>
+  <title>{{ title }}</title>
+  <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
-  <link rel="stylesheet" href="/hide-top-nav.css"/>
-  <style>
-    /* Center brand area; keep logout in the top-right */
-    header.header { position: relative; padding: 12px 16px; }
-    .brand-wrap { display:flex; align-items:center; justify-content:center; gap:12px; }
-    .brand-logo { height:36px; width:auto; border-radius:8px; }
-    .brand-title { font-weight:700; }
-    .brand-sub { font-size:12px; opacity:.7; }
-    .logout-abs { position:absolute; right:16px; top:12px; }
-  </style>
+  <!-- gd enhancements (global search styling) -->
+  <link rel="stylesheet" href="/static/css/gd_enhancements.css"/>
+  <link rel="stylesheet" href="/static/css/gd_global_search_card.css"/>
 </head>
 <body>
-  <header class="header">
-    <div class="brand-wrap">
-      <img class="brand-logo" src="/logo.jpg" alt="green david logo">
-      <div>
-        <div class="brand-title">green david app</div>
-        <div class="brand-sub">interní systém</div>
-      </div>
+  <div class="app-header">
+    <div class="brand">
+      <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
+      <div class="brand-text">green david app</div>
+      <div class="brand-sub">interní systém</div>
     </div>
-    {% if session.get('uid') %}
-      <div class="logout-abs">
-        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
-      </div>
-    {% endif %}
-  </header>
+    <div class="user-area">
+      {% if me %}Přihlášen: {{ me.name }}{% endif %}
+      <a class="btn ghost" href="/logout">Odhlásit</a>
+    </div>
+  </div>
 
-  <main class="container">
+  <div class="tabs" id="main-tabs">
+    <!-- Tabs will be normalized/augmented by the script below -->
+  </div>
+
+  <div class="container" style="margin-top: 12px;">
     {% block content %}{% endblock %}
-  </main>
+  </div>
 
-  <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
+  <!-- Global search card (injects a card with Hledat… and filters tables/lists) -->
+  <script src="/static/js/gd_global_search_card.js" defer></script>
 
+  <!-- Tabs injector: ensures 'Kalendář' and 'Výkazy' appear in every page's tab strip -->
   <script>
   (function(){
-    var btn = document.getElementById('logoutBtn');
-    if(btn){
-      btn.addEventListener('click', async function(){
-        try{ await fetch('/api/logout', {method:'POST'}); }catch(e){}
-        window.location.href = '/';
-      });
+    function insertTabs(){
+      var tabs = document.querySelector('.tabs') || document.getElementById('main-tabs');
+      if(!tabs) return;
+      var first = tabs.querySelector('a') || null;
+      function mk(href, label){
+        var a = document.createElement('a');
+        a.href = href;
+        a.textContent = label;
+        a.className = (first && first.className) ? first.className : 'tab';
+        return a;
+      }
+      if(!tabs.querySelector('a[href="/calendar-page"]') && !tabs.querySelector('a[href="/calendar"]')){
+        tabs.insertBefore(mk('/calendar','Kalendář'), first);
+      }
+      if(!tabs.querySelector('a[href="/timesheets"]') && !tabs.querySelector('a[href="/timesheets.html"]')){
+        tabs.insertBefore(mk('/timesheets.html','Výkazy hodin'), first);
+      }
     }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', insertTabs); }
+    else { insertTabs(); }
   })();
   </script>
 </body>
