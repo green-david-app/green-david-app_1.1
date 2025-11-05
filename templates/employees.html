@@ -53,11 +53,9 @@
   const listBody = document.getElementById('listBody');
   const newName = document.getElementById('newName');
   const newRole = document.getElementById('newRole');
-  const empSearch = document.getElementById('empSearch');
   const btnAdd = document.getElementById('btnAdd');
   const chips = Array.from(document.querySelectorAll('.chips .chip'));
   let scope = 'all';
-  if (empSearch) empSearch.addEventListener('input', ()=>render(employeeList));
 
   async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
   async function apiJSON(url, options){
