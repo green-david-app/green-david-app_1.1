@@ -11,6 +11,12 @@
     <a href="/stock">Sklad</a>
     <a href="/users">Uživatelé</a>
   </div>
+  
+<div class="card card-dark">
+  <div class="card-c">
+    <input id="__globalSearch" class="inp" type="search" placeholder="Hledat…" style="width:100%">
+  </div>
+</div>
 
   <div class="card card-dark">
     <div class="card-h"><strong>Nový zaměstnanec</strong></div>
@@ -105,3 +111,29 @@
 {% endblock %}
 
 <script src="/static/js/brigadnici-embed.js"></script>
+
+<script>
+(function(){
+  const input = document.getElementById('__globalSearch');
+  function getSets(){
+    const sets = [];
+    document.querySelectorAll('table').forEach(t=>{
+      const b = t.tBodies && t.tBodies[0] || t.querySelector('tbody');
+      if(b){ const rows = Array.from(b.querySelectorAll('tr')); if(rows.length) sets.push(rows); }
+    });
+    document.querySelectorAll('.card-list,.jobs-list,.employees-list').forEach(list=>{
+      sets.push(Array.from(list.children));
+    });
+    return sets;
+  }
+  function apply(){
+    const q = (input && input.value || '').toLowerCase().trim();
+    const sets = getSets();
+    sets.forEach(rows=>rows.forEach(tr=>{
+      const text = (tr.getAttribute('data-search') || tr.innerText || '').toLowerCase();
+      tr.style.display = !q || text.includes(q) ? '' : 'none';
+    }));
+  }
+  if(input){ input.addEventListener('input', apply); apply(); }
+})();
+</script>
