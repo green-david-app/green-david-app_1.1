@@ -1,10 +1,82 @@
 
 (function(){
-  function el(t,a,...k){const n=document.createElement(t);if(a){for(const[i,v]of Object.entries(a)){i==='class'?n.className=v:n.setAttribute(i,v)}}k.forEach(x=>x!=null&&n.append(x));return n}
-  function findCard(){const cs=[...document.querySelectorAll('.card')];for(const c of cs){const h=c.querySelector('.card-h');if(h&&/Seznam/i.test(h.textContent))return c}return cs[1]||cs[0]||null}
-  function createCard(){const h=el('div',{class:'card card-dark gd-search-card'});const c=el('div',{class:'card-c'});const i=el('input',{type:'search',placeholder:'Hledat…',class:'inp',id:'_gd_search'});c.append(i);h.append(c);return{h,i}}
-  function sets(){const s=[];document.querySelectorAll('table').forEach(t=>{const b=t.tBodies&&t.tBodies[0]||t.querySelector('tbody');if(b){const r=[...b.querySelectorAll('tr')];if(r.length)s.push(r)}});const list=document.querySelector('.card-list,.jobs-list,.employees-list');if(list)s.push([...list.children]);return s}
-  function attach(){const where=findCard()||document.querySelector('.card');const {h,i}=createCard();if(where&&where.parentElement){where.parentElement.insertBefore(h,where)}else{document.body.insertBefore(h,document.body.firstChild)}const S=sets();function apply(){const q=(i.value||'').toLowerCase().trim();S.forEach(rs=>rs.forEach(tr=>{const t=(tr.getAttribute('data-search')||tr.innerText||'').toLowerCase();tr.style.display=!q||t.includes(q)?'':''}))}i.addEventListener('input',apply);apply()}
-  function ok(){const txt=(location.pathname+' '+document.body.innerText).toLowerCase();return /zam[eě]stnanci|zak[aá]zky|úkoly|ukoly|sklad|uživatel[eů]|uzivatele/.test(txt)}
-  function init(){if(!ok())return;attach()}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
+  const STATE = { inserted:false };
+
+  function el(tag, attrs, ...kids){
+    const n = document.createElement(tag);
+    if(attrs){ for(const [k,v] of Object.entries(attrs)){ if(k==='class'){ n.className=v; } else { n.setAttribute(k,v); } } }
+    for(const k of kids){ if(k!=null) n.append(k); }
+    return n;
+  }
+
+  function pickAnchor(){
+    // Prefer card whose header contains Seznam / Přehled / List
+    const cards = Array.from(document.querySelectorAll('.card'));
+    for(const c of cards){
+      const h = c.querySelector('.card-h');
+      if(h && /(Seznam|Přehled|Zakázky|Zaměstnanci|Sklad|Úkoly|Uživatelé|Users|List)/i.test(h.textContent||"")){
+        return c;
+      }
+    }
+    return cards[1] || cards[0] || null;
+  }
+
+  function buildCard(){
+    const card = el('div', {class:'card card-dark gd-search-card'});
+    const cc = el('div', {class:'card-c'});
+    const input = el('input', {id:'_gd_global_search', class:'inp', type:'search', placeholder:'Hledat…'});
+    cc.append(input);
+    card.append(cc);
+    return {card, input};
+  }
+
+  function gatherTargets(){
+    const sets = [];
+    // Tables
+    document.querySelectorAll('table').forEach(t=>{
+      const b = t.tBodies && t.tBodies[0] || t.querySelector('tbody');
+      if(b){
+        const rows = Array.from(b.querySelectorAll('tr'));
+        if(rows.length) sets.push(rows);
+      }
+    });
+    // Lists of cards (fallback)
+    const lists = document.querySelectorAll('.card-list, .jobs-list, .employees-list');
+    lists.forEach(list=>sets.push(Array.from(list.children)));
+    return sets;
+  }
+
+  function insertIfNeeded(){
+    if(STATE.inserted) return;
+    const anchor = pickAnchor() || document.querySelector('.card');
+    const host = anchor && anchor.parentElement || document.body;
+    const {card, input} = buildCard();
+    host.insertBefore(card, anchor || host.firstChild);
+    function apply(){
+      const q = (input.value||'').toLowerCase().trim();
+      const sets = gatherTargets();
+      sets.forEach(rows => rows.forEach(row => {
+        const text = (row.getAttribute('data-search') || row.innerText || '').toLowerCase();
+        row.style.display = !q || text.includes(q) ? '' : 'none';
+      }));
+    }
+    input.addEventListener('input', apply);
+    // initial
+    apply();
+    STATE.inserted = true;
+  }
+
+  function init(){
+    // Try now
+    insertIfNeeded();
+    // And watch for dynamic content
+    const obs = new MutationObserver(()=>insertIfNeeded());
+    obs.observe(document.documentElement, {childList:true, subtree:true});
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
 })();
