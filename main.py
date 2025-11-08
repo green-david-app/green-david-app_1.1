@@ -456,6 +456,17 @@ def api_tasks():
     data = _camel_to_snake_dict(request.get_json(force=True) or {})
 
     if method == 'POST':
+        # NOTE compatibility: if FE posílá poznámku přes /tasks, vytvoř ji jako /notes
+        if _is_note_payload(data):
+            body = _extract_description(data)
+            title = (data.get('title') or '').strip() or body[:60] or 'Poznámka'
+            job_id = int(data.get('job_id')) if data.get('job_id') not in (None, '') else None
+            conn = _get_db()
+            cur = conn.execute("INSERT INTO notes(job_id,title,body,pinned) VALUES (?,?,?,0)",
+                               (job_id, title, body))
+            conn.commit()
+            return jsonify({"id": cur.lastrowid, "as": "note"}), 201
+
         conn = _get_db()
         desc = _extract_description(data)
         cur = conn.execute(
@@ -472,6 +483,7 @@ def api_tasks():
         )
         conn.commit()
         return jsonify({"id": cur.lastrowid}), 201
+
 
     if method == 'PATCH':
         if not data.get("id"):
@@ -499,9 +511,13 @@ def api_tasks():
         if not tid:
             return jsonify({"error":"invalid_id"}), 400
         conn = _get_db()
-        conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
+        cur = conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
+        if cur.rowcount == 0:
+            # not a task? try notes with same id
+            conn.execute("DELETE FROM notes WHERE id = ?", (int(tid),))
         conn.commit()
         return jsonify({"ok": True})
+
 
     return jsonify({"error":"method_not_allowed"}), 405
 
@@ -780,3 +796,18 @@ def _extract_description(data):
             if val:
                 return val
     return ''
+
+
+def _is_note_payload(data):
+    """Heuristika: FE posílá poznámku jako 'Úkol' s titulkem 'Poznámka' nebo příznakem note/noteType."""
+    t = (str(data.get('title') or '')).strip().lower()
+    if t == 'poznámka':
+        return True
+    if str(data.get('type') or '').lower() in ('note','poznámka'):
+        return True
+    if data.get('note') in (True, 'true', '1', 1):
+        return True
+    # Když nemáme title ale máme jen text, ber to jako poznámku
+    if not t and _extract_description(data):
+        return True
+    return False
