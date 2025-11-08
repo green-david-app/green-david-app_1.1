@@ -1,15 +1,9 @@
-
-/* calendar-notes-patch.js
-   Non-invasive wiring for "Poznámka" tab to /gd/api/notes.
-   Include AFTER your existing calendar JS:
-   <script src="calendar-notes-patch.js"></script>
-*/
+/* calendar-notes-patch.js (enhanced) */
 (function(){
   const form = document.querySelector('#noteForm');
   const titleEl = document.querySelector('#noteTitle');
   const bodyEl = document.querySelector('#noteBody');
   const list = document.querySelector('#notesList');
-  // currentJobId must exist in your page context (same as for tasks)
   if (!form || !list) return;
 
   async function loadNotes() {
@@ -18,10 +12,12 @@
     if (!res.ok) return;
     const data = await res.json();
     list.innerHTML = data.map(n => `
-      <li class="note-item">
+      <li class="note-item" data-id="${n.id}">
         <div class="note-head">
           <strong>${n.title || 'Bez titulku'}</strong>
-          <span style="float:right">
+          <span style="float:right; gap:.5rem">
+            <a href="#" data-id="${n.id}" class="edit-note">Upravit</a>
+            &nbsp;|&nbsp;
             <a href="#" data-id="${n.id}" data-pinned="${n.pinned}" class="pin-note">
               ${n.pinned ? 'Odepnout' : 'Připnout'}
             </a>
@@ -37,16 +33,18 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (typeof currentJobId === 'undefined' || !currentJobId) return;
+    const payload = {
+      jobId: currentJobId,
+      title: (titleEl?.value || '').trim(),
+      body: (bodyEl?.value || '').trim()
+    };
     await fetch('/gd/api/notes', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        jobId: currentJobId,
-        title: titleEl.value.trim(),
-        body: bodyEl.value.trim()
-      })
+      body: JSON.stringify(payload)
     });
-    titleEl.value=''; bodyEl.value='';
+    if (titleEl) titleEl.value='';
+    if (bodyEl) bodyEl.value='';
     loadNotes();
   });
 
@@ -56,6 +54,7 @@
     e.preventDefault();
     const id = +a.dataset.id;
     if (a.classList.contains('del-note')) {
+      if (!confirm('Smazat poznámku?')) return;
       await fetch(`/gd/api/notes?id=${id}`, { method:'DELETE' });
     } else if (a.classList.contains('pin-note')) {
       const pinned = a.dataset.pinned === 'true';
@@ -64,12 +63,23 @@
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id, pinned: !pinned })
       });
+    } else if (a.classList.contains('edit-note')) {
+      const li = a.closest('li');
+      const oldTitle = li?.querySelector('.note-head strong')?.textContent || '';
+      const oldBody = li?.querySelector('.note-body')?.textContent || '';
+      const newTitle = prompt('Titulek poznámky:', oldTitle);
+      if (newTitle === null) return;
+      const newBody = prompt('Text poznámky:', oldBody);
+      if (newBody === null) return;
+      await fetch('/gd/api/notes', {
+        method:'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, title: newTitle.trim(), body: newBody.trim() })
+      });
     }
     loadNotes();
   });
 
-  // Expose reload if your code wants to call it
   window.reloadNotes = loadNotes;
-  // Initial load (in case currentJobId already set)
   setTimeout(loadNotes, 0);
 })();
