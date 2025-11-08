@@ -1,33 +1,28 @@
-/* calendar-tasks-patch.js: non-invasive helpers for editing/deleting tasks if #tasksList is present.
-   Expected markup: <ul id="tasksList"><li class="task-item" data-id="..."><span class="task-title">...</span></li></ul>
-   This script only activates if the container exists; otherwise it does nothing.
-*/
-(function(){
-  const list = document.querySelector('#tasksList');
-  if (!list) return;
 
-  list.addEventListener('click', async (e) => {
-    const a = e.target.closest('a');
-    if (!a) return;
-    e.preventDefault();
-    const li = e.target.closest('.task-item');
-    if (!li) return;
-    const id = +li.dataset.id;
-    if (a.classList.contains('task-del')) {
-      if (!confirm('Smazat úkol?')) return;
-      await fetch(`/gd/api/tasks?id=${id}`, { method:'DELETE' });
-      li.remove();
-    } else if (a.classList.contains('task-edit')) {
-      const titleEl = li.querySelector('.task-title');
-      const oldTitle = titleEl ? titleEl.textContent : '';
-      const newTitle = prompt('Název úkolu:', oldTitle);
-      if (newTitle === null) return;
-      await fetch('/gd/api/tasks', {
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ id, title: newTitle.trim() })
-      });
-      if (titleEl) titleEl.textContent = newTitle.trim();
-    }
-  });
+/* calendar-tasks-patch.js
+ * Ensures tasks created from the Notes tab send proper title derived from text.
+ * If your page already sends 'title: "Poznámka"', this script intercepts fetch()
+ * to /gd/api/tasks and replaces the body with a better title + description.
+ */
+
+(function(){
+  const origFetch = window.fetch;
+  window.fetch = function(input, init){
+    try {
+      const url = (typeof input === "string") ? input : (input?.url || "");
+      if (url.includes("/gd/api/tasks") && init && typeof init.body === "string") {
+        try {
+          const body = JSON.parse(init.body);
+          if (!body.description && body.text) body.description = body.text;
+          if (!body.description && body.body) body.description = body.body;
+          if (!body.title || (body.title||"").toLowerCase() === "poznámka") {
+            const t = (body.description||"").trim().substring(0,40) || "Poznámka";
+            body.title = t;
+          }
+          init.body = JSON.stringify(body);
+        } catch(e){}
+      }
+    } catch(e){}
+    return origFetch.apply(this, arguments);
+  };
 })();
