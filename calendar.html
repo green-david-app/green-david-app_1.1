@@ -54,6 +54,19 @@
     #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
     @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
   </style>
+
+    <style>
+      .row-actions{ margin-left:auto; display:flex; gap:6px; }
+      .tact{ border:0; background:#0a6040; color:#fff; padding:6px 10px; border-radius:10px; font-weight:700; cursor:pointer; }
+      .tact.open{ background:#0a6040; }
+      .tact.edit{ background:#22577a; }
+      .tact.del{ background:#b3002d; }
+      @media (max-width:640px){
+        .tact{ padding:6px 8px; font-size:12px; }
+        .trow-title{ flex:1; }
+      }
+    </style>
+    
 </head>
 <body>
   <div class="header-hero">
@@ -258,13 +271,39 @@
         return;
       }
       dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
+      
+      dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
       dayEventsBox.innerHTML = list.map(e => {
         const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
-        return `<div class="row">
+        return `<div class="row" data-ev-id="${e.id||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}">
           <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-          <div class="trow-title">${e.title}</div>
+          <div class="trow-title" data-title>${e.title}</div>
+          <div class="row-actions">
+            <button class="tact open" data-act="open">Otevřít</button>
+            <button class="tact edit" data-act="edit">Upravit</button>
+            <button class="tact del" data-act="del">Smazat</button>
+          </div>
         </div>`;
       }).join('');
+      // wire actions
+      dayEventsBox.querySelectorAll('.row [data-act]').forEach(btn=>{
+        btn.addEventListener('click', async (ev)=>{
+          ev.stopPropagation();
+          const row = btn.closest('.row');
+          const id = row.getAttribute('data-ev-id');
+          const type = row.getAttribute('data-ev-type') || 'other';
+          const date = row.getAttribute('data-ev-date') || state.focusDate;
+          if(btn.dataset.act==='del'){
+            if(!id){ alert('Tuto položku nelze smazat (chybí ID)'); return; }
+            if(confirm('Opravdu smazat?')){
+              const res = await fetch(`/gd/api/calendar/${id}`, {method:'DELETE'});
+              if(res.ok){ openSheet(state.focusDate); load(); } else { alert('Smazání selhalo'); }
+            }
+          } else if(btn.dataset.act==='open' || btn.dataset.act==='edit'){
+            openQuickEditor({ id, type, date, title: row.querySelector('[data-title]').textContent.trim() });
+          }
+        });
+      });
     }
 
     function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
@@ -316,5 +355,65 @@
 
 <script src="calendar-notes-wireup.js"></script>
   <script src="/calendar-notes-fix.js"></script>
+
+<dialog id="quickEditor" style="border:0; border-radius:16px; padding:14px 16px; width:min(520px,90vw)">
+  <form method="dialog" id="qeForm">
+    <h3 style="margin:0 0 10px; font-weight:800">Položka</h3>
+    <div style="display:flex; gap:8px; margin:8px 0">
+      <input id="qeDate" type="date" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd">
+      <select id="qeType" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd">
+        <option value="note">Poznámka</option>
+        <option value="reminder">Úkol</option>
+        <option value="job">Zakázka</option>
+      </select>
+    </div>
+    <div class="row"><input id="qeTitle" placeholder="Název" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid #ccd"></div>
+    <div class="row"><textarea id="qeDetails" rows="3" placeholder="Detaily" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid #ccd"></textarea></div>
+    <div class="sheet actions" style="margin-top:8px">
+      <button type="button" id="qeCancel" class="btn" value="cancel">Zavřít</button>
+      <button type="submit" id="qeSave" class="btn">Uložit</button>
+    </div>
+  </form>
+</dialog>
+
+
+    <script>
+    let __qeEditingId = null;
+    function openQuickEditor(ev){
+      const dlg = document.getElementById('quickEditor');
+      __qeEditingId = ev.id || null;
+      document.getElementById('qeDate').value = (ev.date||state.focusDate||'').slice(0,10);
+      document.getElementById('qeType').value = ev.type||'note';
+      document.getElementById('qeTitle').value = ev.title||'';
+      document.getElementById('qeDetails').value = ev.details||'';
+      if(typeof dlg.showModal==='function'){ dlg.showModal(); } else { dlg.setAttribute('open',''); }
+      document.getElementById('qeCancel').onclick = ()=>{ dlg.close(); };
+      document.getElementById('qeForm').onsubmit = async (e)=>{
+        e.preventDefault();
+        const payload = {
+          date: document.getElementById('qeDate').value,
+          type: (document.getElementById('qeType').value==='reminder'?'task':document.getElementById('qeType').value),
+          title: document.getElementById('qeTitle').value.trim(),
+          details: document.getElementById('qeDetails').value.trim()
+        };
+        let url = '/gd/api/calendar';
+        let method = 'POST';
+        if(__qeEditingId){
+          url = `/gd/api/calendar/${__qeEditingId}`;
+          method = 'PUT';
+        }
+        const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        if(res.ok){
+          dlg.close();
+          openSheet(state.focusDate);
+          load();
+        }else{
+          const t = await res.text();
+          alert('Uložení selhalo: '+t);
+        }
+      };
+    }
+    </script>
+    
 </body>
 </html>
