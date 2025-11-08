@@ -11,118 +11,207 @@
   const evDetails = document.getElementById("evDetails");
   const evColor = document.getElementById("evColor");
   const evType = document.getElementById("evType");
+  const saveBtn = document.getElementById("saveEvent");
+
+  const API_BASE = "/gd/api/calendar";
 
   let current = new Date();
   current.setDate(1);
+  let editingId = null;
 
-  function fmtMonth(d){
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function fmtMonthLabel(d){
+    const fmt = new Intl.DateTimeFormat('cs-CZ', {month:'long', year:'numeric'});
+    return fmt.format(d);
   }
-  function fmtDate(d){
-    return d.toISOString().slice(0,10);
+
+  function isoDate(d){
+    const z = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+  }
+
+  function startOfMonth(d){
+    const x = new Date(d);
+    x.setDate(1);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+  function endOfMonth(d){
+    const x = new Date(d);
+    x.setMonth(x.getMonth()+1);
+    x.setDate(0);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+
+  function daysGridForMonth(d){
+    const first = startOfMonth(d);
+    const last = endOfMonth(d);
+    const start = new Date(first);
+    start.setDate(first.getDate() - ((first.getDay()+6)%7)); // Monday=0
+    const end = new Date(last);
+    end.setDate(last.getDate() + (6 - ((last.getDay()+6)%7)));
+    const days = [];
+    const cur = new Date(start);
+    while(cur <= end){
+      days.push(new Date(cur));
+      cur.setDate(cur.getDate()+1);
+    }
+    return days;
   }
 
   async function load(){
-    const ym = fmtMonth(current);
-    monthLabel.textContent = new Intl.DateTimeFormat('cs-CZ', {month:'long', year:'numeric'}).format(current);
-    const res = await fetch(`/gd/api/calendar?month=${ym}`);
-    const data = await res.json();
-    renderMonth(current, data.events || []);
-  }
-
-  function renderMonth(firstDay, events){
+    monthLabel.textContent = fmtMonthLabel(current);
     grid.innerHTML = "";
-    const year = firstDay.getFullYear();
-    const month = firstDay.getMonth();
-    const firstWeekday = new Date(year, month, 1).getDay(); // 0=Sun
-    const offset = (firstWeekday + 6) % 7; // make Monday first
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
-
-    const dates = [];
-    for(let i=offset-1;i>=0;i--){
-      dates.push({date:new Date(year, month-1, prevMonthDays - i), other:true});
+    const from = isoDate(startOfMonth(current));
+    const to = isoDate(endOfMonth(current));
+    const res = await fetch(`${API_BASE}?from=${from}&to=${to}`);
+    if(!res.ok){
+      const t = await res.text();
+      alert('Chyba při načítání: ' + t);
+      return;
     }
-    for(let d=1; d<=daysInMonth; d++){
-      dates.push({date:new Date(year, month, d), other:false});
-    }
-    const total = Math.ceil(dates.length/7)*7;
-    for(let i=dates.length;i<total;i++){
-      dates.push({date:new Date(year, month+1, i - dates.length + 1), other:true});
-    }
-
-    const byDay = {};
+    const data = await res.json();
+    const events = (data.events || data.items || []).map(e => ({
+      id: e.id,
+      date: e.date,
+      title: e.title,
+      type: e.type || "note",
+      color: e.color || "#2e7d32",
+      details: e.details || ""
+    }));
+    const days = daysGridForMonth(current);
+    const byDate = {};
     for(const e of events){
-      (byDay[e.date] ||= []).push(e);
+      byDate[e.date] = byDate[e.date] || [];
+      byDate[e.date].push(e);
     }
+    const curMonth = current.getMonth();
 
-    dates.forEach(({date, other}) => {
+    for(const day of days){
       const cell = document.createElement('div');
-      cell.className = 'day-cell ' + (other ? 'day-other' : '');
+      cell.className = 'day-cell' + (day.getMonth() === curMonth ? '' : ' day-other');
+      const key = isoDate(day);
+      cell.dataset.date = key;
+
       const head = document.createElement('div');
       head.className = 'date';
-      head.textContent = date.getDate() + '.';
+      head.textContent = day.getDate();
       cell.appendChild(head);
 
       const list = document.createElement('div');
-      (byDay[fmtDate(date)] || []).forEach(ev => {
-        const item = document.createElement('div');
-        item.className = 'event';
-        item.style.background = ev.color || '#2e7d32';
-        const span = document.createElement('span');
+      list.className = 'events';
+      (byDate[key] || []).forEach(ev => {
+        const row = document.createElement('div');
+        row.className = 'event';
+        row.style.background = ev.color;
+        row.title = ev.details || '';
+
+        const span = document.createElement('div');
         span.className = 'title';
         span.textContent = ev.title;
-        const del = document.createElement('button');
-        del.className = 'del';
-        del.textContent = '×';
-        del.title = 'Smazat';
-        del.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          if(confirm('Opravdu smazat záznam?')){
-            await fetch(`/gd/api/calendar/${ev.id}`, {method:'DELETE'});
-            load();
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'del'; // reuse minimal style
+        editBtn.textContent = '✎';
+        editBtn.title = 'Upravit';
+        editBtn.addEventListener('click', (eClick) => {
+          eClick.stopPropagation();
+          openEdit(ev);
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del';
+        delBtn.textContent = '×';
+        delBtn.title = 'Smazat';
+        delBtn.addEventListener('click', async (eClick) => {
+          eClick.stopPropagation();
+          if(confirm('Opravdu smazat položku?')){
+            const res = await fetch(`${API_BASE}/${ev.id}`, {method:'DELETE'});
+            if(res.ok){ load(); } else { alert('Smazání selhalo'); }
           }
         });
-        item.appendChild(span);
-        item.appendChild(del);
-        list.appendChild(item);
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(span);
+        row.appendChild(actions);
+
+        list.appendChild(row);
       });
+
       cell.appendChild(list);
 
-      cell.addEventListener('dblclick', ()=> openModal(fmtDate(date), 'note'));
+      cell.addEventListener('click', () => {
+        editingId = null;
+        evDate.value = key;
+        evTitle.value = '';
+        evDetails.value = '';
+        evColor.value = '#2e7d32';
+        evType.value = 'note';
+        modal.showModal();
+      });
+
       grid.appendChild(cell);
-    });
+    }
   }
 
-  prevBtn.addEventListener('click', ()=>{ current.setMonth(current.getMonth()-1); load(); });
-  nextBtn.addEventListener('click', ()=>{ current.setMonth(current.getMonth()+1); load(); });
-  addButtons.forEach(b=>{
-    b.addEventListener('click', ()=>{
-      openModal(new Date().toISOString().slice(0,10), b.dataset.type);
-    })
-  });
-
-  function openModal(dateStr, type){
-    evDate.value = dateStr;
-    evType.value = type;
-    // default colors per type
-    evColor.value = type==='note' ? '#1976d2' : (type==='job' ? '#ef6c00' : '#2e7d32');
-    evTitle.value = '';
-    evDetails.value = '';
+  function openEdit(ev){
+    editingId = ev.id;
+    evDate.value = ev.date;
+    evTitle.value = ev.title;
+    evDetails.value = ev.details || '';
+    evColor.value = ev.color || '#2e7d32';
+    evType.value = ev.type || 'note';
     modal.showModal();
   }
 
-  document.getElementById('saveEvent').addEventListener('click', async (e)=>{
+  prevBtn.addEventListener('click', () => {
+    current.setMonth(current.getMonth()-1);
+    load();
+  });
+  nextBtn.addEventListener('click', () => {
+    current.setMonth(current.getMonth()+1);
+    load();
+  });
+
+  addButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingId = null;
+      evType.value = btn.dataset.type || 'note';
+      const today = new Date();
+      evDate.value = isoDate(today);
+      evTitle.value = '';
+      evDetails.value = '';
+      evColor.value = evType.value === 'task' ? '#2e7d32' : (evType.value === 'job' ? '#ef6c00' : '#1976d2');
+      modal.showModal();
+    });
+  });
+
+  saveBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     const payload = {
       date: evDate.value,
-      title: evTitle.value,
-      details: evDetails.value,
+      title: evTitle.value.trim(),
+      type: evType.value,
       color: evColor.value,
-      type: evType.value
+      details: evDetails.value.trim()
     };
-    const res = await fetch('/gd/api/calendar', {
-      method: 'POST',
+    if(!payload.title){
+      alert("Zadejte název.");
+      return;
+    }
+    let url = API_BASE;
+    let method = 'POST';
+    if(editingId){
+      url = `${API_BASE}/${editingId}`;
+      method = 'PUT';
+    }
+    const res = await fetch(url, {
+      method,
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
