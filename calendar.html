@@ -299,7 +299,14 @@
           if(btn.dataset.act==='del'){
             if(!id){ alert('Tuto položku nelze smazat (chybí ID)'); return; }
             if(confirm('Opravdu smazat?')){
-              const res = await fetch(`/gd/api/calendar/${apiId}`, {method:'DELETE'});
+              // delete with routing by type
+            /* delete router by type */
+            async function __tryDel(u){ try{ const r=await fetch(u,{method:'DELETE'}); return r; }catch(e){ return {ok:false}; } }
+            let res = {ok:false};
+            if(type==='job'){ res = await __tryDel(`/gd/api/jobs/${apiId}`); }
+            if(!res.ok && (type==='task' || type==='reminder')){ res = await __tryDel(`/gd/api/tasks/${apiId}`); }
+            if(!res.ok && (type==='note' || type==='other')){ res = await __tryDel(`/gd/api/notes/${apiId}`); }
+            if(!res.ok){ res = await __tryDel(`/gd/api/calendar/${apiId}`); }
               if(res.ok){ openSheet(state.focusDate); load(); } else { alert('Smazání selhalo'); }
             }
           } else if(btn.dataset.act==='open' || btn.dataset.act==='edit'){
