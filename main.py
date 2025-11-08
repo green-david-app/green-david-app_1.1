@@ -445,47 +445,48 @@ def api_job_assignments(job_id):
 @app.route('/api/tasks', methods=['GET','POST','PATCH','DELETE'])
 def api_tasks():
     _ensure_tasks_columns()
+    from flask import request, jsonify
+    method = request.method
 
-    if request.method == 'GET':
+    if method == 'GET':
         conn = _get_db()
         rows = conn.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
         return jsonify([dict(r) for r in rows])
 
     data = _camel_to_snake_dict(request.get_json(force=True) or {})
 
-    if request.method == 'POST':
-    conn = _get_db()
-    desc = _extract_description(data)
-    cur = conn.execute(
-        "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
-        (
-            int(data.get("job_id")) if data.get("job_id") is not None else None,
-            int(data.get("employee_id")) if data.get("employee_id") is not None else None,
-            (data.get("title") or "").strip(),
-            desc,
-            (data.get("status") or "open"),
-            data.get("due_date")
+    if method == 'POST':
+        conn = _get_db()
+        desc = _extract_description(data)
+        cur = conn.execute(
+            "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+            (
+                int(data.get("job_id")) if data.get("job_id") is not None else None,
+                int(data.get("employee_id")) if data.get("employee_id") is not None else None,
+                (data.get("title") or "").strip(),
+                desc,
+                (data.get("status") or "open"),
+                data.get("due_date")
+            )
         )
-    )
-    conn.commit()
-    return jsonify({"id": cur.lastrowid}), 201
+        conn.commit()
+        return jsonify({"id": cur.lastrowid}), 201
 
-
-    if request.method == 'PATCH':
+    if method == 'PATCH':
         if not data.get("id"):
             return jsonify({"error":"invalid_id"}), 400
         sets, params = [], []
+        # Known direct fields
         for k in ("job_id","employee_id","title","description","status","due_date"):
-    if k in data and data[k] is not None:
-        sets.append(f"{k}=?")
-        params.append(data[k])
-# alias -> description
-alias_desc = _extract_description(data)
-if alias_desc and 'description' not in (k for k,_ in []):  # ensure not duplicated
-    sets.append("description=?")
-    params.append(alias_desc)
-
+            if k in data and data[k] is not None:
+                sets.append(f"{k}=?")
+                params.append(data[k])
+        # Alias for description
+        alias_desc = _extract_description(data)
+        if alias_desc and "description" not in [s.split('=')[0] for s in sets]:
+            sets.append("description=?")
+            params.append(alias_desc)
         if sets:
             params.append(int(data["id"]))
             conn = _get_db()
@@ -493,7 +494,7 @@ if alias_desc and 'description' not in (k for k,_ in []):  # ensure not duplicat
             conn.commit()
         return jsonify({"ok": True})
 
-    if request.method == 'DELETE':
+    if method == 'DELETE':
         tid = request.args.get('id', type=int) or data.get('id')
         if not tid:
             return jsonify({"error":"invalid_id"}), 400
