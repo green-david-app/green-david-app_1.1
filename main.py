@@ -454,30 +454,38 @@ def api_tasks():
     data = _camel_to_snake_dict(request.get_json(force=True) or {})
 
     if request.method == 'POST':
-        conn = _get_db()
-        cur = conn.execute(
-            "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
-            (
-                int(data.get("job_id")) if data.get("job_id") is not None else None,
-                int(data.get("employee_id")) if data.get("employee_id") is not None else None,
-                (data.get("title") or "").strip(),
-                (data.get("description") or "").strip(),
-                (data.get("status") or "open"),
-                data.get("due_date")
-            )
+    conn = _get_db()
+    desc = _extract_description(data)
+    cur = conn.execute(
+        "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+        (
+            int(data.get("job_id")) if data.get("job_id") is not None else None,
+            int(data.get("employee_id")) if data.get("employee_id") is not None else None,
+            (data.get("title") or "").strip(),
+            desc,
+            (data.get("status") or "open"),
+            data.get("due_date")
         )
-        conn.commit()
-        return jsonify({"id": cur.lastrowid}), 201
+    )
+    conn.commit()
+    return jsonify({"id": cur.lastrowid}), 201
+
 
     if request.method == 'PATCH':
         if not data.get("id"):
             return jsonify({"error":"invalid_id"}), 400
         sets, params = [], []
         for k in ("job_id","employee_id","title","description","status","due_date"):
-            if k in data and data[k] is not None:
-                sets.append(f"{k}=?")
-                params.append(data[k])
+    if k in data and data[k] is not None:
+        sets.append(f"{k}=?")
+        params.append(data[k])
+# alias -> description
+alias_desc = _extract_description(data)
+if alias_desc and 'description' not in (k for k,_ in []):  # ensure not duplicated
+    sets.append("description=?")
+    params.append(alias_desc)
+
         if sets:
             params.append(int(data["id"]))
             conn = _get_db()
@@ -759,3 +767,15 @@ def _ensure_tasks_columns():
         conn.commit()
     except Exception as _e:
         print("ensure_tasks_columns skipped:", _e)
+
+
+def _extract_description(data):
+    """Return task description from many possible aliases used by FE."""
+    if not isinstance(data, dict):
+        return None
+    for key in ('description','text','body','note','note_text','noteText','task_text','taskText','content','message'):
+        if key in data and data[key] is not None:
+            val = str(data[key]).strip()
+            if val:
+                return val
+    return ''
