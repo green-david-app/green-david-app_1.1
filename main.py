@@ -1,4 +1,14 @@
 import os, re, io, sqlite3
+
+def _camel_to_snake_dict(d):
+    """
+    Convert dict keys from camelCase to snake_case (shallow).
+    """
+    def camel_to_snake(name):
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    return {camel_to_snake(k): v for k, v in d.items()} if isinstance(d, dict) else d
+
 from datetime import datetime, date, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -607,3 +617,99 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
+
+# --- Notes endpoints (SQLite/raw) ---
+def _get_db():
+    try:
+        return get_db()  # if the project defines it
+    except Exception:
+        import sqlite3, os
+        db_path = os.environ.get("DB_PATH", "app.db")
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+def _ensure_notes_table():
+    conn = _get_db()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS notes (\n"
+        "  id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "  job_id INTEGER NOT NULL,\n"
+        "  title TEXT DEFAULT '',\n"
+        "  body TEXT DEFAULT '',\n"
+        "  pinned INTEGER DEFAULT 0,\n"
+        "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n"
+        "  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n"
+        ")"
+    )
+    conn.commit()
+
+_ensure_notes_table()
+
+@app.route('/api/notes', methods=['GET'])
+def list_notes():
+    _ensure_notes_table()
+    job_id = request.args.get('job_id', type=int)
+    conn = _get_db()
+    if job_id is not None:
+        rows = conn.execute(
+            "SELECT * FROM notes WHERE job_id = ? ORDER BY pinned DESC, created_at DESC",
+            (job_id,)
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM notes ORDER BY pinned DESC, created_at DESC").fetchall()
+    items = [dict(r) for r in rows]
+    for it in items:
+        it["pinned"] = bool(it.get("pinned", 0))
+    return jsonify(items)
+
+@app.route('/api/notes', methods=['POST'])
+def create_note():
+    _ensure_notes_table()
+    data = _camel_to_snake_dict(request.get_json(force=True) or {})
+    job_id = int(data.get("job_id"))
+    title = (data.get("title") or "").strip()
+    body = (data.get("body") or "").strip()
+    pinned = 1 if data.get("pinned") else 0
+    conn = _get_db()
+    cur = conn.execute(
+        "INSERT INTO notes (job_id, title, body, pinned) VALUES (?, ?, ?, ?)",
+        (job_id, title, body, pinned)
+    )
+    conn.commit()
+    return jsonify({"id": cur.lastrowid}), 201
+
+@app.route('/api/notes', methods=['PATCH'])
+def patch_note():
+    _ensure_notes_table()
+    data = _camel_to_snake_dict(request.get_json(force=True) or {})
+    note_id = int(data.get("id") or 0)
+    if not note_id:
+        return jsonify({"error": "invalid_id"}), 400
+    fields = []
+    params = []
+    for k in ("title","body","pinned","job_id"):
+        if k in data and data[k] is not None:
+            fields.append(f"{k}=?")
+            val = int(data[k]) if k in ("job_id","pinned") else data[k]
+            params.append(val if k!="pinned" else (1 if data[k] else 0))
+    if not fields:
+        return jsonify({"ok": True})
+    params.append(note_id)
+    conn = _get_db()
+    conn.execute(f"UPDATE notes SET {', '.join(fields)}, updated_at=CURRENT_TIMESTAMP WHERE id = ?", params)
+    conn.commit()
+    return jsonify({"ok": True})
+
+@app.route('/api/notes', methods=['DELETE'])
+def delete_note():
+    _ensure_notes_table()
+    note_id = request.args.get('id', type=int)
+    if not note_id:
+        return jsonify({"error":"invalid_id"}), 400
+    conn = _get_db()
+    conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+    conn.commit()
+    return jsonify({"ok": True})
+
