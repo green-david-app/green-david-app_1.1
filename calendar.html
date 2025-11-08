@@ -290,17 +290,20 @@
         btn.addEventListener('click', async (ev)=>{
           ev.stopPropagation();
           const row = btn.closest('.row');
-          const id = row.getAttribute('data-ev-id');
+          let id = row.getAttribute('data-ev-id');
           const type = row.getAttribute('data-ev-type') || 'other';
           const date = row.getAttribute('data-ev-date') || state.focusDate;
+          // normalize IDs like 'task-14' -> '14'
+          const match = String(id||'').match(/\d+$/);
+          const apiId = match ? match[0] : null;
           if(btn.dataset.act==='del'){
             if(!id){ alert('Tuto položku nelze smazat (chybí ID)'); return; }
             if(confirm('Opravdu smazat?')){
-              const res = await fetch(`/gd/api/calendar/${id}`, {method:'DELETE'});
+              const res = await fetch(`/gd/api/calendar/${apiId}`, {method:'DELETE'});
               if(res.ok){ openSheet(state.focusDate); load(); } else { alert('Smazání selhalo'); }
             }
           } else if(btn.dataset.act==='open' || btn.dataset.act==='edit'){
-            openQuickEditor({ id, type, date, title: row.querySelector('[data-title]').textContent.trim() });
+            openQuickEditor({ id: apiId || id, type, date, title: row.querySelector('[data-title]').textContent.trim() });
           }
         });
       });
@@ -358,7 +361,7 @@
 
 <dialog id="quickEditor" style="border:0; border-radius:16px; padding:14px 16px; width:min(520px,90vw)">
   <form method="dialog" id="qeForm">
-    <h3 style="margin:0 0 10px; font-weight:800">Položka</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;"><h3 style="margin:0;font-weight:800">Položka</h3><button type="button" id="qeCloseX" style="border:0;background:#eee;padding:6px 10px;border-radius:8px;font-weight:800">×</button></div>
     <div style="display:flex; gap:8px; margin:8px 0">
       <input id="qeDate" type="date" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd">
       <select id="qeType" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd">
@@ -388,6 +391,8 @@
       document.getElementById('qeDetails').value = ev.details||'';
       if(typeof dlg.showModal==='function'){ dlg.showModal(); } else { dlg.setAttribute('open',''); }
       document.getElementById('qeCancel').onclick = ()=>{ dlg.close(); };
+const closeX = document.getElementById('qeCloseX'); if(closeX){ closeX.onclick = ()=>{ dlg.close(); }; }
+dlg.addEventListener('click', (e)=>{ if(e.target === dlg) dlg.close(); });
       document.getElementById('qeForm').onsubmit = async (e)=>{
         e.preventDefault();
         const payload = {
@@ -399,7 +404,8 @@
         let url = '/gd/api/calendar';
         let method = 'POST';
         if(__qeEditingId){
-          url = `/gd/api/calendar/${__qeEditingId}`;
+          const _id = String(__qeEditingId).match(/\d+$/)?.[0];
+          url = `/gd/api/calendar/${_id}`;
           method = 'PUT';
         }
         const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
