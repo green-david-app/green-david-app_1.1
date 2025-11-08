@@ -11,6 +11,27 @@ def _camel_to_snake_dict(d):
 
 from datetime import datetime, date, timedelta
 from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
+
+
+def _table_columns(table):
+    conn = _get_db()
+    cols = [r['name'] for r in conn.execute(f"PRAGMA table_info({table})")]
+    return set(cols)
+
+def _supports(table, *cols):
+    tcols = _table_columns(table)
+    return all(c in tcols for c in cols)
+
+def _extract_description(data):
+    if not isinstance(data, dict):
+        return ''
+    for k in ('description','text','body','note','note_text','noteText','task_text','taskText','content','message'):
+        if k in data and data[k] is not None:
+            v = str(data[k]).strip()
+            if v:
+                return v
+    return ''
+
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -444,7 +465,6 @@ def api_job_assignments(job_id):
 # ----------------- Tasks CRUD -----------------
 @app.route('/api/tasks', methods=['GET','POST','PATCH','DELETE'])
 def api_tasks():
-    _ensure_tasks_columns()
     from flask import request, jsonify
     method = request.method
 
@@ -456,54 +476,53 @@ def api_tasks():
     data = _camel_to_snake_dict(request.get_json(force=True) or {})
 
     if method == 'POST':
-        # NOTE compatibility: if FE posílá poznámku přes /tasks, vytvoř ji jako /notes
-        if _is_note_payload(data):
-            body = _extract_description(data)
-            title = (data.get('title') or '').strip() or body[:60] or 'Poznámka'
-            job_id = int(data.get('job_id')) if data.get('job_id') not in (None, '') else None
-            conn = _get_db()
-            cur = conn.execute("INSERT INTO notes(job_id,title,body,pinned) VALUES (?,?,?,0)",
-                               (job_id, title, body))
-            conn.commit()
-            return jsonify({"id": cur.lastrowid, "as": "note"}), 201
-
         conn = _get_db()
-        desc = _extract_description(data)
-        cur = conn.execute(
-            "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
-            (
-                int(data.get("job_id")) if data.get("job_id") is not None else None,
-                int(data.get("employee_id")) if data.get("employee_id") is not None else None,
-                (data.get("title") or "").strip(),
-                desc,
-                (data.get("status") or "open"),
-                data.get("due_date")
-            )
-        )
+        tcols = _table_columns('tasks')
+        # Build payload
+        payload = {
+            'job_id': int(data.get('job_id')) if data.get('job_id') not in (None,'') else None if 'job_id' in tcols else None,
+            'employee_id': int(data.get('employee_id')) if data.get('employee_id') not in (None,'') else None if 'employee_id' in tcols else None,
+            'title': (data.get('title') or '').strip(),
+            'description': _extract_description(data),
+            'status': (data.get('status') or 'open'),
+            'due_date': data.get('due_date')
+        }
+        cols = [c for c in ('job_id','employee_id','title','description','status','due_date') if c in tcols]
+        vals = [payload[c] for c in cols]
+        # time columns if exist
+        time_sql = ""
+        if 'created_at' in tcols and 'updated_at' in tcols:
+            cols += ['created_at','updated_at']
+            time_sql = ", datetime('now'), datetime('now')"
+        elif 'created_at' in tcols:
+            cols += ['created_at']
+            time_sql = ", datetime('now')"
+        placeholders = ",".join(["?"]*len([c for c in cols if c not in ('created_at','updated_at')]))
+        sql = f"INSERT INTO tasks ({','.join(cols)}) VALUES ({placeholders}{time_sql})"
+        cur = conn.execute(sql, tuple([payload[c] for c in cols if c not in ('created_at','updated_at')]))
         conn.commit()
         return jsonify({"id": cur.lastrowid}), 201
-
 
     if method == 'PATCH':
         if not data.get("id"):
             return jsonify({"error":"invalid_id"}), 400
+        tcols = _table_columns('tasks')
         sets, params = [], []
-        # Known direct fields
-        for k in ("job_id","employee_id","title","description","status","due_date"):
-            if k in data and data[k] is not None:
-                sets.append(f"{k}=?")
-                params.append(data[k])
-        # Alias for description
-        alias_desc = _extract_description(data)
-        if alias_desc and "description" not in [s.split('=')[0] for s in sets]:
-            sets.append("description=?")
-            params.append(alias_desc)
-        if sets:
-            params.append(int(data["id"]))
-            conn = _get_db()
-            conn.execute(f"UPDATE tasks SET {', '.join(sets)}, updated_at = datetime('now') WHERE id = ?", params)
-            conn.commit()
+        for k in ('job_id','employee_id','title','description','status','due_date'):
+            if k in data and k in tcols and data[k] is not None:
+                sets.append(f"{k}=?"); params.append(data[k])
+        # description aliases
+        d_alias = _extract_description(data)
+        if d_alias and 'description' in tcols and 'description' not in [s.split('=')[0] for s in sets]:
+            sets.append("description=?"); params.append(d_alias)
+        if 'updated_at' in tcols:
+            sets.append("updated_at = datetime('now')")
+        if not sets:
+            return jsonify({"ok": True})
+        params.append(int(data['id']))
+        conn = _get_db()
+        conn.execute(f"UPDATE tasks SET {', '.join(sets)} WHERE id = ?", params)
+        conn.commit()
         return jsonify({"ok": True})
 
     if method == 'DELETE':
@@ -511,13 +530,9 @@ def api_tasks():
         if not tid:
             return jsonify({"error":"invalid_id"}), 400
         conn = _get_db()
-        cur = conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
-        if cur.rowcount == 0:
-            # not a task? try notes with same id
-            conn.execute("DELETE FROM notes WHERE id = ?", (int(tid),))
+        conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
         conn.commit()
         return jsonify({"ok": True})
-
 
     return jsonify({"error":"method_not_allowed"}), 405
 
