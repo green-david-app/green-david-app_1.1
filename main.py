@@ -446,6 +446,8 @@ def api_job_assignments(job_id):
 def api_tasks():
     _ensure_tasks_columns()
 
+    _ensure_tasks_columns()
+
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
     db = get_db()
@@ -464,11 +466,11 @@ def api_tasks():
         return jsonify({"ok": True, "tasks": rows})
 
     if request.method == "POST":
-        data = request.get_json(force=True, silent=True) or {}
+        data = _camel_to_snake_dict(request.get_json(force=True)) or {}
         title = (data.get("title") or "").strip()
         if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
         db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at, updated_at)
-                      VALUES (?,?,?,?,?,?, datetime('now'), datetime('now'))""",
+                      VALUES (?,?,?,?,?,?, datetime('now', datetime('now'), datetime('now')), datetime('now'))""",
                    (int(data.get("job_id")) if data.get("job_id") else None,
                     int(data.get("employee_id")) if data.get("employee_id") else None,
                     title,
@@ -479,7 +481,7 @@ def api_tasks():
         return jsonify({"ok": True})
 
     if request.method == "PATCH":
-        data = request.get_json(force=True, silent=True) or {}
+        data = _camel_to_snake_dict(request.get_json(force=True)) or {}
         tid = data.get("id")
         if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]

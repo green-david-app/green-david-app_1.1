@@ -299,5 +299,17 @@
     // Init
     load();
   </script>
+
+<!-- Poznámka panel (neinvazivní, drží se stávajícího designu) -->
+<div id="notePanel" style="display:none">
+  <form id="noteForm" class="note-form">
+    <input id="noteTitle" placeholder="Titulek (volitelné)" />
+    <textarea id="noteBody" rows="3" placeholder="Obsah poznámky"></textarea>
+    <button type="submit">Uložit poznámku</button>
+  </form>
+  <ul id="notesList" class="notes-list"></ul>
+</div>
+
+<script src="calendar-notes-patch.js"></script>
 </body>
 </html>
