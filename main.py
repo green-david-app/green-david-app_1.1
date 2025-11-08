@@ -444,6 +444,8 @@ def api_job_assignments(job_id):
 # ----------------- Tasks CRUD -----------------
 @app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def api_tasks():
+    _ensure_tasks_columns()
+
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
     db = get_db()
@@ -730,4 +732,31 @@ def gd_api_notes():
     if request.method == 'DELETE':
         return delete_note()
     return jsonify({"error":"method_not_allowed"}), 405
+
+
+# --- ensure tasks table has created_at/updated_at columns (auto-migrate on boot/call) ---
+def _ensure_tasks_columns():
+    try:
+        import sqlite3
+        conn = _get_db() if ' _get_db' in globals() else None
+        if conn is None:
+            # try to find a connection named db or get_db
+            try:
+                conn = get_db()
+            except Exception:
+                return  # unknown connection
+        cur = conn.execute("PRAGMA table_info(tasks)")
+        cols = [row[1].lower() for row in cur.fetchall()]
+        altered = False
+        if 'created_at' not in cols:
+            conn.execute("ALTER TABLE tasks ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL")
+            altered = True
+        if 'updated_at' not in cols:
+            conn.execute("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL")
+            altered = True
+        if altered:
+            conn.commit()
+    except Exception as _e:
+        # if anything goes wrong, continue without blocking request
+        print("ensure_tasks_columns skipped:", _e)
 
