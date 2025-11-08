@@ -442,60 +442,59 @@ def api_job_assignments(job_id):
     return jsonify({"ok": True})
 
 # ----------------- Tasks CRUD -----------------
-@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
+@app.route('/api/tasks', methods=['GET','POST','PATCH','DELETE'])
 def api_tasks():
+    _ensure_tasks_columns()
 
-_ensure_tasks_columns()
-
-if request.method == 'GET':
-    conn = _get_db()
-    rows = conn.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
-    return jsonify([dict(r) for r in rows])
-
-data = _camel_to_snake_dict(request.get_json(force=True) or {})
-
-if request.method == 'POST':
-    conn = _get_db()
-    cur = conn.execute(
-        "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
-        (
-            int(data.get("job_id")) if data.get("job_id") is not None else None,
-            int(data.get("employee_id")) if data.get("employee_id") is not None else None,
-            (data.get("title") or "").strip(),
-            (data.get("description") or "").strip(),
-            (data.get("status") or "open"),
-            data.get("due_date")
-        )
-    )
-    conn.commit()
-    return jsonify({"id": cur.lastrowid}), 201
-
-if request.method == 'PATCH':
-    if not data.get("id"):
-        return jsonify({"error":"invalid_id"}), 400
-    sets, params = [], []
-    for k in ("job_id","employee_id","title","description","status","due_date"):
-        if k in data and data[k] is not None:
-            sets.append(f"{k}=?")
-            params.append(data[k])
-    if sets:
-        params.append(int(data["id"]))
+    if request.method == 'GET':
         conn = _get_db()
-        conn.execute(f"UPDATE tasks SET {', '.join(sets)}, updated_at = datetime('now') WHERE id = ?", params)
+        rows = conn.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
+
+    data = _camel_to_snake_dict(request.get_json(force=True) or {})
+
+    if request.method == 'POST':
+        conn = _get_db()
+        cur = conn.execute(
+            "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+            (
+                int(data.get("job_id")) if data.get("job_id") is not None else None,
+                int(data.get("employee_id")) if data.get("employee_id") is not None else None,
+                (data.get("title") or "").strip(),
+                (data.get("description") or "").strip(),
+                (data.get("status") or "open"),
+                data.get("due_date")
+            )
+        )
         conn.commit()
-    return jsonify({"ok": True})
+        return jsonify({"id": cur.lastrowid}), 201
 
-if request.method == 'DELETE':
-    tid = request.args.get('id', type=int) or data.get('id')
-    if not tid:
-        return jsonify({"error":"invalid_id"}), 400
-    conn = _get_db()
-    conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
-    conn.commit()
-    return jsonify({"ok": True})
+    if request.method == 'PATCH':
+        if not data.get("id"):
+            return jsonify({"error":"invalid_id"}), 400
+        sets, params = [], []
+        for k in ("job_id","employee_id","title","description","status","due_date"):
+            if k in data and data[k] is not None:
+                sets.append(f"{k}=?")
+                params.append(data[k])
+        if sets:
+            params.append(int(data["id"]))
+            conn = _get_db()
+            conn.execute(f"UPDATE tasks SET {', '.join(sets)}, updated_at = datetime('now') WHERE id = ?", params)
+            conn.commit()
+        return jsonify({"ok": True})
 
-return jsonify({"error":"method_not_allowed"}), 405
+    if request.method == 'DELETE':
+        tid = request.args.get('id', type=int) or data.get('id')
+        if not tid:
+            return jsonify({"error":"invalid_id"}), 400
+        conn = _get_db()
+        conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
+        conn.commit()
+        return jsonify({"ok": True})
+
+    return jsonify({"error":"method_not_allowed"}), 405
 
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
