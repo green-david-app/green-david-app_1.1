@@ -465,8 +465,8 @@ def api_tasks():
         data = request.get_json(force=True, silent=True) or {}
         title = (data.get("title") or "").strip()
         if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
-                      VALUES (?,?,?,?,?,?)""",
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at, updated_at)
+                      VALUES (?,?,?,?,?,?, datetime('now'), datetime('now'))""",
                    (int(data.get("job_id")) if data.get("job_id") else None,
                     int(data.get("employee_id")) if data.get("employee_id") else None,
                     title,
@@ -490,7 +490,7 @@ def api_tasks():
                 sets.append(f"{k}=?"); vals.append(v)
         if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         vals.append(int(tid))
-        db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
+        db.execute("UPDATE tasks SET " + ", ".join(sets) + ", updated_at = datetime('now') WHERE id=?", vals)
         db.commit()
         return jsonify({"ok": True})
 
@@ -712,4 +712,22 @@ def delete_note():
     conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
     conn.commit()
     return jsonify({"ok": True})
+
+
+# ---- Aliases for /gd/api/* (calendar uses these paths) ----
+@app.route('/gd/api/tasks', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_tasks():
+    return api_tasks()
+
+@app.route('/gd/api/notes', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_notes():
+    if request.method == 'GET':
+        return list_notes()
+    if request.method == 'POST':
+        return create_note()
+    if request.method == 'PATCH':
+        return patch_note()
+    if request.method == 'DELETE':
+        return delete_note()
+    return jsonify({"error":"method_not_allowed"}), 405
 
