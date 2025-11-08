@@ -444,66 +444,59 @@ def api_job_assignments(job_id):
 # ----------------- Tasks CRUD -----------------
 @app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def api_tasks():
-    _ensure_tasks_columns()
 
-    _ensure_tasks_columns()
+_ensure_tasks_columns()
 
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
-    db = get_db()
+if request.method == 'GET':
+    conn = _get_db()
+    rows = conn.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
+    return jsonify([dict(r) for r in rows])
 
-    if request.method == "GET":
-        jid = request.args.get("job_id", type=int)
-        q = """SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
-                      e.name AS employee_name
-               FROM tasks t
-               LEFT JOIN employees e ON e.id=t.employee_id"""
-        conds=[]; params=[]
-        if jid: conds.append("t.job_id=?"); params.append(jid)
-        if conds: q += " WHERE " + " AND ".join(conds)
-        q += " ORDER BY COALESCE(t.due_date,''), t.id ASC"
-        rows = [dict(r) for r in db.execute(q, params).fetchall()]
-        return jsonify({"ok": True, "tasks": rows})
+data = _camel_to_snake_dict(request.get_json(force=True) or {})
 
-    if request.method == "POST":
-        data = _camel_to_snake_dict(request.get_json(force=True)) or {}
-        title = (data.get("title") or "").strip()
-        if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at, updated_at)
-                      VALUES (?,?,?,?,?,?, datetime('now', datetime('now'), datetime('now')), datetime('now'))""",
-                   (int(data.get("job_id")) if data.get("job_id") else None,
-                    int(data.get("employee_id")) if data.get("employee_id") else None,
-                    title,
-                    (data.get("description") or "").strip(),
-                    (data.get("status") or "open"),
-                    _normalize_date(data.get("due_date")) if data.get("due_date") else None))
-        db.commit()
-        return jsonify({"ok": True})
+if request.method == 'POST':
+    conn = _get_db()
+    cur = conn.execute(
+        "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+        (
+            int(data.get("job_id")) if data.get("job_id") is not None else None,
+            int(data.get("employee_id")) if data.get("employee_id") is not None else None,
+            (data.get("title") or "").strip(),
+            (data.get("description") or "").strip(),
+            (data.get("status") or "open"),
+            data.get("due_date")
+        )
+    )
+    conn.commit()
+    return jsonify({"id": cur.lastrowid}), 201
 
-    if request.method == "PATCH":
-        data = _camel_to_snake_dict(request.get_json(force=True)) or {}
-        tid = data.get("id")
-        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-        allowed = ["title","description","status","due_date","employee_id","job_id"]
-        sets=[]; vals=[]
-        for k in allowed:
-            if k in data:
-                v = _normalize_date(data[k]) if k=="due_date" else data[k]
-                if k in ("employee_id","job_id") and v is not None:
-                    v = int(v)
-                sets.append(f"{k}=?"); vals.append(v)
-        if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
-        vals.append(int(tid))
-        db.execute("UPDATE tasks SET " + ", ".join(sets) + ", updated_at = datetime('now') WHERE id=?", vals)
-        db.commit()
-        return jsonify({"ok": True})
-
-    tid = request.args.get("id", type=int)
-    if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
-    db.execute("DELETE FROM tasks WHERE id=?", (tid,))
-    db.commit()
+if request.method == 'PATCH':
+    if not data.get("id"):
+        return jsonify({"error":"invalid_id"}), 400
+    sets, params = [], []
+    for k in ("job_id","employee_id","title","description","status","due_date"):
+        if k in data and data[k] is not None:
+            sets.append(f"{k}=?")
+            params.append(data[k])
+    if sets:
+        params.append(int(data["id"]))
+        conn = _get_db()
+        conn.execute(f"UPDATE tasks SET {', '.join(sets)}, updated_at = datetime('now') WHERE id = ?", params)
+        conn.commit()
     return jsonify({"ok": True})
-# timesheets CRUD + export
+
+if request.method == 'DELETE':
+    tid = request.args.get('id', type=int) or data.get('id')
+    if not tid:
+        return jsonify({"error":"invalid_id"}), 400
+    conn = _get_db()
+    conn.execute("DELETE FROM tasks WHERE id = ?", (int(tid),))
+    conn.commit()
+    return jsonify({"ok": True})
+
+return jsonify({"error":"method_not_allowed"}), 405
+
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -737,28 +730,33 @@ def gd_api_notes():
 
 
 # --- ensure tasks table has created_at/updated_at columns (auto-migrate on boot/call) ---
-def _ensure_tasks_columns():
-    try:
-        import sqlite3
-        conn = _get_db() if ' _get_db' in globals() else None
-        if conn is None:
-            # try to find a connection named db or get_db
-            try:
-                conn = get_db()
-            except Exception:
-                return  # unknown connection
-        cur = conn.execute("PRAGMA table_info(tasks)")
-        cols = [row[1].lower() for row in cur.fetchall()]
-        altered = False
-        if 'created_at' not in cols:
-            conn.execute("ALTER TABLE tasks ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL")
-            altered = True
-        if 'updated_at' not in cols:
-            conn.execute("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL")
-            altered = True
-        if altered:
-            conn.commit()
-    except Exception as _e:
-        # if anything goes wrong, continue without blocking request
-        print("ensure_tasks_columns skipped:", _e)
 
+
+def _ensure_tasks_columns():
+    """Ensure tasks table exists and has created_at/updated_at (no DEFAULT in ALTER)."""
+    try:
+        conn = _get_db()
+        # create tasks table if not exists with a minimal schema
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS tasks ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "job_id INTEGER,"
+            "employee_id INTEGER,"
+            "title TEXT,"
+            "description TEXT,"
+            "status TEXT,"
+            "due_date TEXT"
+            ")"
+        )
+        # check columns
+        cols = [r[1].lower() for r in conn.execute("PRAGMA table_info(tasks)").fetchall()]
+        if 'created_at' not in cols:
+            conn.execute("ALTER TABLE tasks ADD COLUMN created_at DATETIME")
+        if 'updated_at' not in cols:
+            conn.execute("ALTER TABLE tasks ADD COLUMN updated_at DATETIME")
+        # backfill
+        conn.execute("UPDATE tasks SET created_at = COALESCE(created_at, datetime('now'))")
+        conn.execute("UPDATE tasks SET updated_at = COALESCE(updated_at, datetime('now'))")
+        conn.commit()
+    except Exception as _e:
+        print("ensure_tasks_columns skipped:", _e)
