@@ -272,22 +272,14 @@ dayEventsBox.innerHTML = list.map(e => {
   const id  = e.id || e.job_id || e.task_id;
   const title = e.title || e.name || '(bez názvu)';
   const dataAttrs = `data-id="${id||''}" data-type="${tag}"`;
-  return `<div class="row" ${dataAttrs}>
-    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-    <div class="trow-title">${title}</div>
-    <div class="row-actions">
-      <button class="act btn-detail" aria-label="Detail">Detail</button>
-      <button class="act btn-edit" aria-label="Upravit">Upravit</button>
-      <button class="act btn-delete" aria-label="Smazat">Smazat</button>
-    </div>
-  </div>`;
+  return `<div class="row" data-id="${(tag!=='job' && String(id).match(/\d+/)) ? String(id).match(/\d+/)[0] : String(id||'')}" data-type="${tag}">\n    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>\n    <div class="trow-title">${title}</div>\n    <div class="row-actions">\n      <button class="act btn-detail" aria-label="Detail">Detail</button>\n      <button class="act btn-edit" aria-label="Upravit">Upravit</button>\n      <button class="act btn-delete" aria-label="Smazat">Smazat</button>\n    </div>\n  </div>`;
 }).join('');
 
     }
 
     function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
     function closeSheet(){ sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden','true'); }
-    document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+    document.getElementById('cancelBtn').addEventListener('click', ()=>{ state.editing=null; closeSheet(); });
     function setTab(k){ state.tab=k; document.getElementById('tabJob').classList.toggle('active',k==='job'); document.getElementById('tabTask').classList.toggle('active',k==='task'); document.getElementById('tabNote').classList.toggle('active',k==='note'); document.getElementById('formJob').style.display=(k==='job'?'':'none'); document.getElementById('formTask').style.display=(k==='task'?'':'none'); document.getElementById('formNote').style.display=(k==='note'?'':'none'); }
     document.getElementById('tabJob').addEventListener('click', ()=>setTab('job')); document.getElementById('tabTask').addEventListener('click', ()=>setTab('task')); document.getElementById('tabNote').addEventListener('click', ()=>setTab('note'));
 
@@ -332,7 +324,7 @@ dayEventsBox.innerHTML = list.map(e => {
           return {type:'job', data:d.job};
         } else {
           // task or other -> tasks API (fallback to list entry if needed)
-          const resp = await japi(['/gd/api/tasks','/api/tasks']);
+          const resp = await fetchJSON('/api/tasks');
           const row = (resp.rows||[]).find(r => String(r.id)===String(itemId));
           return {type:'task', data:row||{id:itemId}};
         }
@@ -391,7 +383,7 @@ dayEventsBox.innerHTML = list.map(e => {
           if(itemType==='job'){
             await fetchJSON(`/api/jobs?id=${itemId}`, {method:'DELETE'});
           }else{ // tasks/notes
-            await japi(['/gd/api/tasks','/api/tasks?id='+itemId], {method:'DELETE'});
+            await fetchJSON('/api/tasks?id='+encodeURIComponent(itemId), {method:'DELETE'});
           }
           await load();
           renderDayList(dateStr);
@@ -424,7 +416,7 @@ dayEventsBox.innerHTML = list.map(e => {
               description: document.getElementById('tDesc').value.trim(),
               due_date: document.getElementById('tDue').value || dateStr
             };
-            await japi(['/gd/api/tasks','/api/tasks'], {method:'PATCH', body:JSON.stringify(payload)});
+            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
           }
           state.editing = null;
           closeSheet();
