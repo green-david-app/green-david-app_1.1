@@ -1,3 +1,4 @@
+<!-- patched by ChatGPT on 2025-11-09T21:46:56 -->
 <!doctype html>
 <html lang="cs">
 <head>
@@ -99,6 +100,7 @@
       <div class="row"><input id="jNote" placeholder="Poznámka"></div>
     </div>
     <div id="formTask" style="display:none">
+      <div class="row"><input id="tDue" placeholder="Termín (YYYY-MM-DD)"></div>
       <div class="row"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
       <div class="row"><input id="tDesc" placeholder="Popis"></div>
     </div>
@@ -139,7 +141,7 @@
           if(res.ok){ try{ return await res.json(); }catch{return{};} }
         }catch(e){}
       }
-      throw new Error('API nedostupné');
+      throw new Error('API nedostupné (nepodařilo se: ' + (paths||[]).join(', ') + ')');
     }
 
     const monthLabel=$('#monthLabel'), cal=$('#cal');
@@ -306,16 +308,25 @@
 
     
 // ---- Row action functions (global, simple and robust) ----
+
 async function fetchDetailBy(type, id){
   if(type==='job'){
     const d = await fetchJSON(`/api/jobs/${id}`);
     return {type:'job', data:(d && d.job)||{}};
   }else{
-    const list = await fetchJSON('/api/tasks');
-    const rows = list.rows || list || [];
-    const found = rows.find(r => String(r.id)===String(id));
-    return {type:'task', data:found||{id}};
+    // Try direct endpoint first; fall back to list
+    try{
+      const d = await fetchJSON(`/api/tasks/${id}`);
+      const row = (d && (d.task || d.data || d)) || {};
+      return {type:'task', data: row};
+    }catch(e){
+      const list = await fetchJSON('/api/tasks');
+      const rows = list.rows || list.tasks || list || [];
+      const found = rows.find(r => String(r.id)===String(id));
+      return {type:'task', data:found||{id}};
+    }
   }
+}
 }
 
 async function onRowDetail(type, id){
@@ -361,10 +372,17 @@ async function onRowEdit(type, id){
   }catch(e){ showErr(e); }
 }
 
+
 async function onRowDelete(type, id){
   try{
     if(!confirm('Opravdu smazat?')) return;
     if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    const dateStr = state.focusDate || (new Date().toISOString().slice(0,10));
+    await load();
+    renderDayList(dateStr);
+  }catch(e){ showErr(e); }
+}
     else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
     const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
     await load(); renderDayList(dateStr);
@@ -389,7 +407,7 @@ async function onRowDelete(type, id){
               code:(byId('jCode')?.value||'').trim(),
               note:(byId('jNote')?.value||'').trim(), date:dateStr
             };
-            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+            await fetchJSON('/api/jobs', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
           }else{
             const payload = {
               id:Number(state.editing.id),
@@ -397,7 +415,7 @@ async function onRowDelete(type, id){
               description:(byId('tDesc')?.value||'').trim(),
               due_date:(byId('tDue')?.value||dateStr)
             };
-            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
+            await fetchJSON('/api/tasks', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
           }
           state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
         }
