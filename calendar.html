@@ -488,3 +488,38 @@ async function onRowDelete(type, id){
 
 </body>
 </html>
+
+<script>
+
+window.onRowDelete = async function(type, id){
+  try{
+    if(!confirm('Opravdu smazat?')) return;
+    const tryDelete = async (urls)=>{
+      for(const u of urls){
+        try{
+          const res = await fetch(u, {method:'DELETE'});
+          if(res.ok) return true;
+        }catch(_){/* continue */}
+      }
+      return false;
+    };
+    let ok=false;
+    if(type==='job'){
+      ok = await tryDelete([`/gd/api/jobs?id=${encodeURIComponent(id)}`, `/api/jobs?id=${encodeURIComponent(id)}`]);
+    }else{
+      ok = await tryDelete([`/gd/api/tasks?id=${encodeURIComponent(id)}`, `/api/tasks?id=${encodeURIComponent(id)}`]);
+    }
+    // Optimistický update UI: skryj řádek hned
+    const row = document.querySelector(`.row[data-id="${id}"]`);
+    if(row) row.remove();
+    // Tvrdý reload dat (den i měsíc), ať je jistota
+    if(typeof load==='function') await load();
+    if(typeof renderDayList==='function'){
+      const dateStr = (window.state && state.focusDate) || (state?.d?.toISOString?.().slice(0,10)) || '';
+      renderDayList(dateStr);
+    }
+    if(!ok){ throw new Error('Mazání neproběhlo na žádném endpointu'); }
+  }catch(e){ console.error(e); if(typeof showErr==='function') showErr(e); }
+};
+
+</script>
