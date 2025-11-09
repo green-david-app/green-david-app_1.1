@@ -1,4 +1,0 @@
-
-.gd-search{padding:10px 0 6px}
-.gd-search input[type="search"]{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:transparent;color:inherit}
-@media (max-width:768px){.gd-search{position:sticky;top:0;z-index:5;background:rgba(0,0,0,.03);backdrop-filter:saturate(180%) blur(2px)}}

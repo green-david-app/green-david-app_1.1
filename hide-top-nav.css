@@ -1,5 +1,0 @@
-/* Hide only the legacy green link rows; do NOT touch generic containers */
-header .nav { display: none !important; }
-.breadcrumbs { display: none !important; }
-.ts-nav { display: none !important; }
-.top-links, .gd-top-links { display: none !important; }

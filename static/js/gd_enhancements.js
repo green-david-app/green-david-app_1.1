@@ -1,9 +1,0 @@
-
-(function(){
-  function el(tag, attrs, ...kids){const e=document.createElement(tag);if(attrs)for(const[k,v]of Object.entries(attrs)){k==='class'?e.className=v:e.setAttribute(k,v)};kids.forEach(k=>k!=null&&e.append(k));return e}
-  function placeSearch(container,getItems){if(!container||container.querySelector('.gd-search'))return;const box=el('div',{class:'gd-search'});const input=el('input',{type:'search',placeholder:'Hledat…'});box.append(input);container.insertBefore(box,container.firstChild);const apply=()=>{const q=(input.value||'').toLowerCase().trim();getItems().forEach(n=>{const t=(n.getAttribute('data-search')||n.textContent||'').toLowerCase();n.style.display=!q||t.includes(q)?'':''})};input.addEventListener('input',apply);apply()}
-  function onEmployees(){if(!/zam[eě]stnanci|employees/i.test(location.pathname+document.body.innerText))return;const table=document.querySelector('table,.tbl,.table');const body=table&&(table.tBodies&&table.tBodies[0]||table.querySelector&&table.querySelector('tbody'));if(body){placeSearch(table.parentElement||table,()=>Array.from(body.querySelectorAll('tr')));return}const list=document.querySelector('.employees-list,.card-list,.cards');if(list){placeSearch(list.parentElement||list,()=>Array.from(list.children));return}}
-  function onJobs(){if(!/zak[aá]zky|jobs/i.test(location.pathname+document.body.innerText))return;const list=document.querySelector('.jobs-list,.card-list,.cards');if(list){placeSearch(list.parentElement||list,()=>Array.from(list.children));return}const table=document.querySelector('table,.tbl,.table');const body=table&&(table.tBodies&&table.tBodies[0]||table.querySelector&&table.querySelector('tbody'));if(body){placeSearch(table.parentElement||table,()=>Array.from(body.querySelectorAll('tr')));return}}
-  function init(){onEmployees();onJobs()}
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
-})();

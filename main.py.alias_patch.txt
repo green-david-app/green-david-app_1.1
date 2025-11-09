@@ -1,4 +1,0 @@
-# Vlož do main.py (kdekoliv pod importy):
-@app.route('/gd/api/jobs', methods=['GET','POST','PATCH','DELETE'])
-def gd_api_jobs():
-    return api_jobs()
