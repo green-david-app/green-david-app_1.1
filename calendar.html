@@ -53,7 +53,15 @@
     /* Error overlay */
     #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
     @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
+  
+  <style>
+    .row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .row .trow-title { flex:1; padding:6px 0; }
+    .row-actions { display:flex; gap:6px; }
+    .row-actions .act { border:1px solid #0a6040; background:#fff; color:#0a6040; padding:6px 8px; border-radius:10px; font-weight:600; }
+    .row-actions .act:hover { background:#0a6040; color:#fff; }
   </style>
+</style>
 </head>
 <body>
   <div class="header-hero">
@@ -258,13 +266,23 @@
         return;
       }
       dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
-      dayEventsBox.innerHTML = list.map(e => {
-        const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
-        return `<div class="row">
-          <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-          <div class="trow-title">${e.title}</div>
-        </div>`;
-      }).join('');
+      
+dayEventsBox.innerHTML = list.map(e => {
+  const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
+  const id  = e.id || e.job_id || e.task_id;
+  const title = e.title || e.name || '(bez názvu)';
+  const dataAttrs = `data-id="${id||''}" data-type="${tag}"`;
+  return `<div class="row" ${dataAttrs}>
+    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
+    <div class="trow-title">${title}</div>
+    <div class="row-actions">
+      <button class="act btn-detail" aria-label="Detail">Detail</button>
+      <button class="act btn-edit" aria-label="Upravit">Upravit</button>
+      <button class="act btn-delete" aria-label="Smazat">Smazat</button>
+    </div>
+  </div>`;
+}).join('');
+
     }
 
     function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
@@ -295,6 +313,133 @@
         renderDayList(dateStr); // refresh list in sheet too
       }catch(e){ showErr(e); }
     });
+
+    
+    // ---- Row action handlers (Detail / Edit / Delete) ----
+    dayEventsBox.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('.act');
+      if(!btn) return;
+      const row = ev.target.closest('.row');
+      if(!row) return;
+      const itemId = row.getAttribute('data-id');
+      const itemType = row.getAttribute('data-type'); // 'job' | 'task' | 'other'
+      const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+
+      // Helper to fetch details
+      async function fetchDetail(){
+        if(itemType==='job'){
+          const d = await fetchJSON(`/api/jobs/${itemId}`);
+          return {type:'job', data:d.job};
+        } else {
+          // task or other -> tasks API (fallback to list entry if needed)
+          const resp = await japi(['/gd/api/tasks','/api/tasks']);
+          const row = (resp.rows||[]).find(r => String(r.id)===String(itemId));
+          return {type:'task', data:row||{id:itemId}};
+        }
+      }
+
+      // DETAIL
+      if(btn.classList.contains('btn-detail')){
+        try{
+          const det = await fetchDetail();
+          // Open sheet in correct tab and render read-only summary in note area
+          openSheet(dateStr);
+          if(det.type==='job'){
+            setTab('job');
+            document.getElementById('jTitle').value = det.data.title || '';
+            document.getElementById('jClient').value = det.data.client || '';
+            document.getElementById('jCity').value = det.data.city || '';
+            document.getElementById('jCode').value = det.data.code || '';
+            document.getElementById('jNote').value = det.data.note || '';
+          }else{
+            setTab('task');
+            document.getElementById('tTitle').value = det.data.title || '';
+            document.getElementById('tDesc').value = det.data.description || '';
+            document.getElementById('tDue').value = det.data.due_date || dateStr;
+          }
+        }catch(e){ showErr(e); }
+        return;
+      }
+
+      // EDIT
+      if(btn.classList.contains('btn-edit')){
+        try{
+          const det = await fetchDetail();
+          openSheet(dateStr);
+          state.editing = { id: itemId, type: det.type };
+          if(det.type==='job'){
+            setTab('job');
+            document.getElementById('jTitle').value = det.data.title || '';
+            document.getElementById('jClient').value = det.data.client || '';
+            document.getElementById('jCity').value = det.data.city || '';
+            document.getElementById('jCode').value = det.data.code || '';
+            document.getElementById('jNote').value = det.data.note || '';
+          }else{
+            setTab('task');
+            document.getElementById('tTitle').value = det.data.title || '';
+            document.getElementById('tDesc').value = det.data.description || '';
+            document.getElementById('tDue').value = det.data.due_date || dateStr;
+          }
+        }catch(e){ showErr(e); }
+        return;
+      }
+
+      // DELETE
+      if(btn.classList.contains('btn-delete')){
+        if(!confirm('Opravdu smazat?')) return;
+        try{
+          if(itemType==='job'){
+            await fetchJSON(`/api/jobs?id=${itemId}`, {method:'DELETE'});
+          }else{ // tasks/notes
+            await japi(['/gd/api/tasks','/api/tasks?id='+itemId], {method:'DELETE'});
+          }
+          await load();
+          renderDayList(dateStr);
+        }catch(e){ showErr(e); }
+        return;
+      }
+    });
+
+    // Intercept SAVE to handle edit vs create
+    const originalSaveHandler = document.getElementById('saveBtn').onclick;
+    document.getElementById('saveBtn').onclick = async () => {
+      try{
+        const dateStr = state.focusDate;
+        if(state.editing){
+          if(state.editing.type==='job'){
+            const payload = {
+              id: Number(state.editing.id),
+              title: document.getElementById('jTitle').value.trim(),
+              client: document.getElementById('jClient').value.trim(),
+              city: document.getElementById('jCity').value.trim(),
+              code: document.getElementById('jCode').value.trim(),
+              note: document.getElementById('jNote').value.trim(),
+              date: dateStr
+            };
+            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+          }else{
+            const payload = {
+              id: Number(state.editing.id),
+              title: document.getElementById('tTitle').value.trim(),
+              description: document.getElementById('tDesc').value.trim(),
+              due_date: document.getElementById('tDue').value || dateStr
+            };
+            await japi(['/gd/api/tasks','/api/tasks'], {method:'PATCH', body:JSON.stringify(payload)});
+          }
+          state.editing = null;
+          closeSheet();
+          await load();
+          renderDayList(dateStr);
+          return;
+        }
+      }catch(e){ showErr(e); return; }
+
+      // Fallback to original create handler
+      if(typeof originalSaveHandler === 'function'){
+        return originalSaveHandler();
+      }
+    };
+
 
     // Init
     load();
