@@ -1,4 +1,3 @@
-<!-- patched by ChatGPT on 2025-11-09T21:46:56 -->
 <!doctype html>
 <html lang="cs">
 <head>
@@ -8,532 +7,256 @@
   <link rel="icon" href="/logo.svg">
   <link rel="stylesheet" href="/style.css">
   <style>
-    :root{ --gd-bg:#eaf4ef; --gd-ink:#dfe9e4; --gd-accent:#6bd08c; --gd-blue:#7cc5ff; --gd-purple:#b78bf6; --gd-orange:#ffb86b; --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom); }
-    body{ margin:0; background:var(--gd-bg); color:#111; -webkit-font-smoothing:antialiased; font-family:system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; }
-    .header-hero{ position:sticky; top:0; background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0)); backdrop-filter:saturate(140%) blur(10px); padding:calc(10px + var(--safe-top)) 16px 12px; z-index:10; }
-    .back{ color:#0a6040; text-decoration:none; font-weight:600; }
-    .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
-    .toolbar .month{ font-size:clamp(22px,5.5vw,28px); font-weight:800; letter-spacing:-.3px; }
-    .navbtn{ border:0; background:#0a6040; color:white; padding:10px 12px; border-radius:14px; font-weight:700; }
-    .navbtn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
-    .grid-wrap{ padding:6px 10px 20px; }
-    .weekday{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding:0 2px 6px; color:#4d635a; font-weight:700; }
-    .weekday span{ text-align:center; font-size:12px; }
-    .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
-    .day{ position:relative; background:#1a2a23; border-radius:22px; min-height:84px; padding:10px 8px 8px; color:var(--gd-ink); box-shadow:0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; overflow:hidden; }
-    .day.out{ opacity:.35; }
-    .num{ font-weight:800; font-size:14px; opacity:.95; }
-    .events{ margin-top:6px; display:flex; flex-direction:column; gap:4px; }
-    .chip{ display:inline-flex; align-items:center; max-width:100%; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; background:#24362f; color:var(--gd-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid rgba(255,255,255,.08); }
-    .chip.green{ border-color:#4ed296; } .chip.purple{ border-color:var(--gd-purple); } .chip.blue{ border-color:var(--gd-blue); } .chip.orange{ border-color:var(--gd-orange); }
-    .today{ outline:2px solid var(--gd-accent); outline-offset:-2px; }
-    .legend{ display:flex; gap:10px; align-items:center; padding:8px 10px; color:#4d635a; }
-    .legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; }
-    .badge-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
-    /* Sheet */
-    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow:0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition:bottom .25s ease; }
+    :root{ --bg:#eaf4ef; --ink:#0b2b20; --accent:#0a6040; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; }
+    .header{ position:sticky; top:0; z-index:5; padding:14px 16px; background:linear-gradient(#ffffffcc,#ffffffaa 40%,#ffffff00); backdrop-filter:saturate(130%) blur(8px); }
+    .back{ color:var(--accent); text-decoration:none; font-weight:700; }
+    h1{ margin:8px 0 0; font-size:24px; }
+    .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; padding:16px; }
+    .cell{ border-radius:14px; padding:8px; min-height:90px; background:#0f3225; color:#fff; position:relative; }
+    .cell.dim{ background:#dfe9e4; color:#334; }
+    .cell .label{ position:absolute; top:8px; left:10px; font-weight:800; opacity:.8; font-size:12px; }
+    .dot{ display:inline-block; padding:2px 8px; margin:4px 4px 0 0; border-radius:999px; font-size:11px; border:1px solid #fff3; }
+    .dot.job{ background:#e8fff2; color:#007e3a; border-color:#b3f4cd; }
+    .dot.task{ background:#f4ebff; color:#6a2df5; border-color:#dcc7ff; }
+    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#fff; border-radius:16px 16px 0 0; box-shadow:0 -16px 40px #0002; transition:bottom .25s ease; padding:10px 12px 16px; z-index:10; }
     .sheet.open{ bottom:0; }
-    .sheet .handle{ width:42px; height:5px; background:#ccd; border-radius:999px; margin:6px auto 10px; }
-    .daylist{ margin:2px 0 10px; max-height: 40vh; overflow:auto; border:1px solid #e9eef0; border-radius:12px; padding:6px 8px; }
-    .daylist .row{ display:flex; align-items:center; gap:8px; padding:8px 6px; border-bottom:1px dotted #e7ecee; }
-    .daylist .row:last-child{ border-bottom:0; }
+    .row{ display:flex; align-items:center; gap:8px; padding:8px 6px; border-bottom:1px dotted #e7ecee; }
+    .row:last-child{ border-bottom:0; }
     .tag{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
     .tag.job{ background:#e8fff2; color:#007e3a; border:1px solid #b3f4cd; }
     .tag.task{ background:#f4ebff; color:#6a2df5; border:1px solid #dcc7ff; }
-    .tag.other{ background:#e8f4ff; color:#005da3; border:1px solid #c5e4ff; }
-    .trow-title{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .smallmuted{ color:#778; font-size:12px; }
-    .tabs{ display:flex; gap:6px; margin:10px 0; }
-    .tabs .t{ flex:1; text-align:center; border:1px solid #0a6040; padding:8px 10px; border-radius:12px; font-weight:700; color:#0a6040; }
-    .tabs .t.active{ background:#0a6040; color:#fff; }
-    .row{ display:flex; gap:8px; margin:8px 0; }
-    .row input, .row select{ flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd; font-size:16px; }
-    .sheet .actions{ display:flex; justify-content:flex-end; gap:8px; }
-    .btn{ border:0; background:#0a6040; color:#fff; padding:10px 14px; border-radius:12px; font-weight:800; }
-    .btn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
-    /* Error overlay */
-    #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
-    @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
+    .btn{ appearance:none; border:0; border-radius:10px; padding:6px 10px; font-weight:700; cursor:pointer; }
+    .btn.small{ font-size:12px; padding:4px 8px; }
+    .btn.primary{ background:var(--accent); color:#fff; }
+    .btn.gray{ background:#eef3f2; }
+    .tabs{ display:flex; gap:12px; margin:10px 0; }
+    .tabs button{ flex:1; }
+    .field{ display:flex; gap:8px; margin:6px 0; }
+    .field input, .field textarea{ width:100%; padding:8px 10px; border:1px solid #e3eaeb; border-radius:12px; }
   </style>
 </head>
 <body>
-  <div class="header-hero">
-    <a class="back" href="/">&larr; Zpět do aplikace</a>
-    <div class="toolbar">
-      <button class="navbtn ghost" id="prevBtn">&#x25C0;</button>
-      <div class="month" id="monthLabel">Měsíc</div>
-      <button class="navbtn" id="nextBtn">&#x25B6;</button>
-    </div>
+  <div class="header">
+    <a class="back" href="/">← Zpět do aplikace</a>
+    <h1 id="monthTitle">Kalendář</h1>
   </div>
 
-  <div class="grid-wrap">
-    <div class="weekday"><span>P</span><span>Ú</span><span>S</span><span>Č</span><span>P</span><span>S</span><span>N</span></div>
-    <div id="cal" class="cal" aria-live="polite"></div>
-    <div class="legend">
-      <div class="item"><span class="badge-dot" style="background:#4ed296"></span> zakázky</div>
-      <div class="item"><span class="badge-dot" style="background:#b78bf6"></span> úkoly / připomínky</div>
-      <div class="item"><span class="badge-dot" style="background:#7cc5ff"></span> ostatní</div>
-    </div>
+  <div id="weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;padding:0 16px 8px;">
+    <div>P</div><div>Ú</div><div>S</div><div>Č</div><div>P</div><div>S</div><div>N</div>
   </div>
+  <div id="grid" class="grid"></div>
 
-  <!-- Bottom sheet for quick view + add -->
   <div id="sheet" class="sheet" aria-hidden="true">
-    <div class="handle"></div>
-    <div style="text-align:center; font-weight:800;">Den: <span id="sheetDate"></span></div>
-
-    <div id="dayEvents" class="daylist" style="display:none;"></div>
-    <div class="smallmuted" id="dayEventsEmpty" style="display:none; text-align:center; margin-top:6px;">V tento den zatím nic není.</div>
-
+    <div style="width:42px;height:5px;background:#ccd;border-radius:999px;margin:6px auto 10px;"></div>
+    <div id="sheetDate" style="text-align:center;font-weight:800;margin-bottom:8px;"></div>
     <div class="tabs">
-      <div id="tabJob" class="t active">Zakázka</div>
-      <div id="tabTask" class="t">Úkol</div>
-      <div id="tabNote" class="t">Poznámka</div>
+      <button id="tabJobs" class="btn gray">Zakázka</button>
+      <button id="tabTasks" class="btn gray">Úkol</button>
+      <button id="tabNotes" class="btn gray">Poznámka</button>
     </div>
-    <div id="formJob">
-      <div class="row"><input id="jTitle" placeholder="Název zakázky*" required></div>
-      <div class="row"><input id="jClient" placeholder="Zákazník*" required></div>
-      <div class="row">
-        <select id="jStatus"><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
-        <input id="jCity" placeholder="Město">
-      </div>
-      <div class="row"><input id="jCode" placeholder="Kód (např. 2025-091)"></div>
-      <div class="row"><input id="jNote" placeholder="Poznámka"></div>
+    <div id="dayList"></div>
+
+    <!-- Forms -->
+    <div id="formJob" style="display:none">
+      <div class="field"><input id="jTitle" placeholder="Název"></div>
+      <div class="field"><input id="jClient" placeholder="Klient"></div>
+      <div class="field"><input id="jCity" placeholder="Město"></div>
+      <div class="field"><input id="jCode" placeholder="Kód"></div>
+      <div class="field"><textarea id="jNote" placeholder="Poznámka"></textarea></div>
     </div>
+
     <div id="formTask" style="display:none">
-      <div class="row"><input id="tDue" placeholder="Termín (YYYY-MM-DD)"></div>
-      <div class="row"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
-      <div class="row"><input id="tDesc" placeholder="Popis"></div>
+      <div class="field"><input id="tTitle" placeholder="Název úkolu"></div>
+      <div class="field"><input id="tDue" placeholder="Termín (YYYY-MM-DD)"></div>
+      <div class="field"><textarea id="tDesc" placeholder="Popis"></textarea></div>
     </div>
-    <div id="formNote" style="display:none">
-      <div class="row"><input id="nText" placeholder="Text poznámky*"></div>
-    </div>
-    <div class="actions">
-      <button class="btn ghost" id="cancelBtn">Zrušit</button>
-      <button class="btn" id="saveBtn">Uložit</button>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="saveBtn" class="btn primary">Uložit</button>
+      <button id="cancelBtn" class="btn gray">Zavřít</button>
     </div>
   </div>
-
-  <div id="err"></div>
 
   <script>
-    // ---- Error surface ----
-    function showErr(e){ var el=document.getElementById('err'); el.textContent = (e && (e.stack||e.message||e)) || 'Neznámá chyba'; el.style.display='block'; console.error(e); }
-    window.addEventListener('error', (e)=> showErr(e.error || e.message || e));
-    window.addEventListener('unhandledrejection', (e)=> showErr(e.reason || e));
+  const byId = (id)=>document.getElementById(id);
+  const $ = (sel,root=document)=>root.querySelector(sel);
+  const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
 
-    // ---- Utils ----
-    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s)); const byId=id=>document.getElementById(id);
-    function fmtMonth(d){ return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
-    function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-    function ymdToCZ(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
-    function parseISODateLocal(s){
-      const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(!m) return s? new Date(s): null;
-      return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  const state = { d:new Date(), month:'', data:null, focusDate:null, editing:null };
+
+  function fmtDate(d){ return d.toISOString().slice(0,10); }
+  function openSheet(dateStr){ state.focusDate=dateStr; byId('sheet').classList.add('open'); byId('sheet').setAttribute('aria-hidden','false'); byId('sheetDate').textContent = 'Den: '+dateStr; }
+  function closeSheet(){ byId('sheet').classList.remove('open'); byId('sheet').setAttribute('aria-hidden','true'); state.editing=null; }
+
+  async function fetchJSON(url, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({'Accept':'application/json'}, opts.headers||{});
+    if(opts.body && typeof opts.body === 'object' && !(opts.body instanceof FormData)){
+      opts.headers['Content-Type']='application/json';
+      opts.body = JSON.stringify(opts.body);
     }
-    function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
-    function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-    function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-    async function japi(paths,opts={}){
-      for (const p of paths){
-        try{
-          const res = await fetch(p,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts});
-          if(res.ok){ try{ return await res.json(); }catch{return{};} }
-        }catch(e){}
-      }
-      throw new Error('API nedostupné (nepodařilo se: ' + (paths||[]).join(', ') + ')');
-    }
+    const res = await fetch(url, opts);
+    const ct = res.headers.get('content-type')||'';
+    const data = ct.includes('application/json') ? await res.json() : await res.text();
+    if(!res.ok){ throw new Error((data && data.error) || res.statusText || 'HTTP error'); }
+    return data;
+  }
 
-    const monthLabel=$('#monthLabel'), cal=$('#cal');
-    const sheetEl=$('#sheet'), sheetDate=$('#sheetDate');
-    const dayEventsBox = $('#dayEvents'); const dayEventsEmpty = $('#dayEventsEmpty');
+  function monthKey(d){ return d.toISOString().slice(0,7); }
 
-    let state={ d:new Date(), focusDate:null, tab:'job', cache:{} };
+  async function load(){
+    const key = monthKey(state.d);
+    state.month = key;
+    byId('monthTitle').textContent = new Date(key+'-01').toLocaleDateString('cs-CZ',{month:'long', year:'numeric'});
+    const data = await fetchJSON(`/gd/api/calendar?month=${key}`);
+    state.data = data;
+    renderGrid();
+  }
 
-    // ---- Events loading with visible-range filter ----
-    async function fetchEventsForRange(fromDate, toDate){
-      const ym = `${state.d.getFullYear()}-${String(state.d.getMonth()+1).padStart(2,'0')}`;
-
-      try{
-        const j = await japi([`/gd/api/calendar?month=${ym}`, `/api/calendar?month=${ym}`]);
-        if (j && j.events){
-          return (j.events||[]).map(e => ({
-            id: e.id,
-            title: (e.title||e.name||'bez názvu'),
-            start: e.start||e.date_start||e.date||e.when,
-            end: e.end||e.date_end||e.until||e.start,
-            type: e.type||'other'
-          }));
-        }
-      }catch(e){/* fallback */}
-
-      const from = new Date(fromDate); const to = new Date(toDate);
-      from.setHours(0,0,0,0); to.setHours(23,59,59,999);
-      const inRange = (iso)=>{ const d=parseISODateLocal(iso); if(!d) return false; return d>=from && d<=to; };
-      const events=[];
-
-      try{
-        const jj=await japi(['/api/jobs','/api/jobs']);
-        (jj.jobs||[]).forEach(j=>{
-          const date = j.date || j.when || j.start_date || j.start;
-          if(inRange(date)){
-            events.push({ id:`job-${j.id}`, title:`${j.title}${j.code? ' ('+j.code+')':''}`, start:date, end:date, type:'job' });
-          }
-        });
-      }catch(e){}
-
-      try{
-        const tt=await japi(['/api/tasks','/api/tasks']);
-        (tt.tasks||[]).forEach(t=>{
-          const date = t.due_date || t.date || t.when || t.start;
-          if(inRange(date)){
-            events.push({ id:`task-${t.id}`, title:t.title, start:date, end:date, type:'reminder' });
-          }
-        });
-      }catch(e){}
-
-      return events;
-    }
-
-    function buildGridRange(d){
-      const start = monthStart(d), end = monthEnd(d);
-      const from = mondayOfWeek(start);
-      const to = new Date(mondayOfWeek(new Date(end.getFullYear(), end.getMonth(), end.getDate()+6)));
-      return {from, to};
-    }
-
-    function render(d, events){
-      monthLabel.textContent = fmtMonth(d);
-      cal.innerHTML='';
-      const {from,to} = buildGridRange(d);
-      const today = new Date(); today.setHours(0,0,0,0);
-
-      const byDay={};
-      function spread(e){
-        const s = parseISODateLocal(e.start); const eEnd = parseISODateLocal(e.end || e.start);
-        if(!s || !eEnd) return;
-        s.setHours(0,0,0,0); eEnd.setHours(0,0,0,0);
-        for(let t=new Date(s); t<=eEnd; t.setDate(t.getDate()+1)){
-          const key = ymd(t);
-          (byDay[key]=byDay[key]||[]).push(e);
-        }
-      }
-      (events||[]).forEach(spread);
-      state.cache = byDay; // store for quick open
-
-      for(let dt=new Date(from); dt<=to; dt.setDate(dt.getDate()+1)){
-        const key=ymd(dt);
-        const div=document.createElement('div');
-        div.className='day'+(dt.getMonth()!==d.getMonth()?' out':'');
-        if(+dt===+today) div.classList.add('today');
-        div.setAttribute('data-date',key);
-
-        const num=document.createElement('div'); num.className='num'; num.textContent=dt.getDate(); div.appendChild(num);
-        const evs=(byDay[key]||[]);
-        if(evs.length){
-          const wrap=document.createElement('div'); wrap.className='events';
-          evs.slice(0,3).forEach(e=>{ const chip=document.createElement('div'); chip.className='chip '+(e.type==='job'?'green':e.type==='reminder'?'purple':'blue'); chip.title=e.title; chip.innerHTML=`<span class="t">${e.title}</span>`; wrap.appendChild(chip); });
-          if(evs.length>3){ const more=document.createElement('div'); more.className='chip orange'; more.textContent=`+${evs.length-3} další`; wrap.appendChild(more); }
-          div.appendChild(wrap);
-        }
-
-        div.addEventListener('click',()=> openSheet(key));
-        cal.appendChild(div);
-      }
-    }
-
-    async function load(){
-      const {from,to} = buildGridRange(state.d);
-      const evs = await fetchEventsForRange(from, to);
-      render(state.d, evs);
-    }
-
-    document.getElementById('prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
-    document.getElementById('nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
-
-    // ---- Bottom sheet (Quick View + Add) ----
-    function renderDayList(dateStr){
-      const list = state.cache[dateStr] || [];
-      if(list.length===0){
-        dayEventsBox.style.display='none'; dayEventsEmpty.style.display='block';
-        dayEventsBox.innerHTML='';
-        return;
-      }
-      dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
-      dayEventsBox.innerHTML = list.map(e => {
-  const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
-  const rawId = String(e.id || e.job_id || e.task_id || e.key || '');
-  const id = (tag==='job') ? rawId : (rawId.match(/\d+/) ? rawId.match(/\d+/)[0] : rawId);
-  const title = e.title || e.name || '(bez názvu)';
-  return `<div class="row" data-id="${id}" data-type="${tag}">
-    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-    <div class="trow-title">${title}</div>
-    <div class="row-actions">
-      <button class="act" onclick="onRowDetail('${tag}','${id}')">Detail</button>
-      <button class="act" onclick="onRowEdit('${tag}','${id}')">Upravit</button>
-      <button class="act" onclick="onRowDelete('${tag}','${id}')">Smazat</button>
-    </div>
-  </div>`;
-}).join('');
-    }
-
-    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
-    function closeSheet(){ sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden','true'); }
-    document.getElementById('cancelBtn').addEventListener('click', closeSheet);
-    function setTab(k){ state.tab=k; document.getElementById('tabJob').classList.toggle('active',k==='job'); document.getElementById('tabTask').classList.toggle('active',k==='task'); document.getElementById('tabNote').classList.toggle('active',k==='note'); document.getElementById('formJob').style.display=(k==='job'?'':'none'); document.getElementById('formTask').style.display=(k==='task'?'':'none'); document.getElementById('formNote').style.display=(k==='note'?'':'none'); }
-    document.getElementById('tabJob').addEventListener('click', ()=>setTab('job')); document.getElementById('tabTask').addEventListener('click', ()=>setTab('task')); document.getElementById('tabNote').addEventListener('click', ()=>setTab('note'));
-
-    // Save handler
-    document.getElementById('saveBtn').addEventListener('click', async ()=>{
-      try{
-        if(!state.focusDate) return;
-        const dateStr = state.focusDate;
-        if(state.tab==='job'){
-          const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
-          if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
-          await japi(['/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)});
-        }else if(state.tab==='task'){
-          const payload={ title:document.getElementById('tTitle').value.trim(), description:document.getElementById('tDesc').value.trim(), due_date:dateStr };
-          if(!payload.title){ alert('Vyplň název úkolu.'); return; }
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
-        }else{
-          const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
-        }
-        ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-        await load();
-        renderDayList(dateStr); // refresh list in sheet too
-      }catch(e){ showErr(e); }
-    });
-
-    
-// ---- Row action functions (global, simple and robust) ----
-
-async function fetchDetailBy(type, id){
-  if(type==='job'){
-    const d = await fetchJSON(`/api/jobs/${id}`);
-    return {type:'job', data:(d && d.job)||{}};
-  }else{
-    // Try direct endpoint first; fall back to list
-    try{
-      const d = await fetchJSON(`/api/tasks/${id}`);
-      const row = (d && (d.task || d.data || d)) || {};
-      return {type:'task', data: row};
-    }catch(e){
-      const list = await fetchJSON('/api/tasks');
-      const rows = list.rows || list.tasks || list || [];
-      const found = rows.find(r => String(r.id)===String(id));
-      return {type:'task', data:found||{id}};
+  function renderGrid(){
+    const root = byId('grid'); root.innerHTML='';
+    const d = new Date(state.month+'-01');
+    const startDay = (new Date(d.getFullYear(), d.getMonth(), 1).getDay()+6)%7; // Mon=0
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    // previous month trailing cells
+    for(let i=0;i<startDay;i++){ const c = document.createElement('div'); c.className='cell dim'; root.appendChild(c); }
+    for(let day=1; day<=daysInMonth; day++){
+      const c = document.createElement('div'); c.className='cell'; const dateStr = `${state.month}-${String(day).padStart(2,'0')}`;
+      const lbl = document.createElement('div'); lbl.className='label'; lbl.textContent=day; c.appendChild(lbl);
+      const dayData = (state.data && state.data[dateStr]) || [];
+      dayData.slice(0,3).forEach(item=>{
+        const b = document.createElement('div'); b.className='dot '+(item.type||'other'); b.textContent=(item.title||item.name||''); c.appendChild(b);
+      });
+      c.addEventListener('click', async ()=>{ await renderDayList(dateStr); openSheet(dateStr); });
+      root.appendChild(c);
     }
   }
-}
-}
 
-async function onRowDetail(type, id){
-  try{
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    const det = await fetchDetailBy(type, id);
-    openSheet(dateStr);
-    if(det.type==='job'){
-      setTab('job');
-      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
-      byId('jClient') && (byId('jClient').value = det.data.client || '');
-      byId('jCity') && (byId('jCity').value = det.data.city || '');
-      byId('jCode') && (byId('jCode').value = det.data.code || '');
-      byId('jNote') && (byId('jNote').value = det.data.note || '');
+  async function renderDayList(dateStr){
+    const wrap = byId('dayList'); wrap.innerHTML='';
+    const list = (state.data && state.data[dateStr]) || [];
+    if(!list.length){ wrap.innerHTML='<div style="opacity:.7;padding:6px 4px;">Žádné položky pro tento den.</div>'; }
+    list.forEach(row=>{
+      const el = document.createElement('div'); el.className='row';
+      const tag = document.createElement('span'); tag.className='tag '+(row.type||'other'); tag.textContent=(row.type||''); el.appendChild(tag);
+      const title = document.createElement('div'); title.style.flex='1'; title.textContent = row.title || row.name || '(bez názvu)'; el.appendChild(title);
+
+      const btnDetail = document.createElement('button'); btnDetail.className='btn small gray'; btnDetail.textContent='Detail';
+      btnDetail.onclick = ()=> onRowDetail(row.type, row.id);
+      const btnEdit = document.createElement('button'); btnEdit.className='btn small gray'; btnEdit.textContent='Upravit';
+      btnEdit.onclick = ()=> onRowEdit(row.type, row.id);
+      const btnDel = document.createElement('button'); btnDel.className='btn small gray'; btnDel.textContent='Smazat';
+      btnDel.onclick = ()=> onRowDelete(row.type, row.id);
+      el.append(btnDetail, btnEdit, btnDel);
+      wrap.appendChild(el);
+    });
+    return list;
+  }
+
+  async function fetchDetailBy(type, id){
+    if(type==='job'){
+      const d = await fetchJSON(`/api/jobs/${id}`);
+      return {type:'job', data:(d && d.job)||{}};
     }else{
-      setTab('task');
-      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
-      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
-      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+      try{
+        const d = await fetchJSON(`/api/tasks/${id}`);
+        const row = (d && (d.task || d.data || d)) || {};
+        return {type:'task', data: row};
+      }catch(e){
+        const list = await fetchJSON('/api/tasks');
+        const rows = list.rows || list.tasks || list || [];
+        const found = rows.find(r => String(r.id)===String(id));
+        return {type:'task', data:found||{id}};
+      }
     }
-  }catch(e){ showErr(e); }
-}
+  }
 
-async function onRowEdit(type, id){
-  try{
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    const det = await fetchDetailBy(type, id);
-    state.editing = { id, type: det.type };
-    openSheet(dateStr);
-    if(det.type==='job'){
-      setTab('job');
-      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
-      byId('jClient') && (byId('jClient').value = det.data.client || '');
-      byId('jCity') && (byId('jCity').value = det.data.city || '');
-      byId('jCode') && (byId('jCode').value = det.data.code || '');
-      byId('jNote') && (byId('jNote').value = det.data.note || '');
+  async function onRowDetail(type, id){
+    const {data} = await fetchDetailBy(type, id);
+    alert(JSON.stringify(data, null, 2));
+  }
+
+  async function onRowEdit(type, id){
+    const {data} = await fetchDetailBy(type, id);
+    state.editing = {type, id};
+    if(type==='job'){
+      byId('formJob').style.display='block'; byId('formTask').style.display='none';
+      byId('jTitle').value = data.title || '';
+      byId('jClient').value = data.client || '';
+      byId('jCity').value = data.city || '';
+      byId('jCode').value = data.code || '';
+      byId('jNote').value = data.note || '';
     }else{
-      setTab('task');
-      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
-      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
-      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+      byId('formJob').style.display='none'; byId('formTask').style.display='block';
+      byId('tTitle').value = data.title || '';
+      byId('tDue').value = (data.due_date || state.focusDate || '');
+      byId('tDesc').value = data.description || '';
     }
-  }catch(e){ showErr(e); }
-}
+  }
 
-
-async function onRowDelete(type, id){
-  try{
+  async function onRowDelete(type, id){
     if(!confirm('Opravdu smazat?')) return;
     if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    const dateStr = state.focusDate || (new Date().toISOString().slice(0,10));
-    await load();
-    renderDayList(dateStr);
-  }catch(e){ showErr(e); }
-}
-    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    await load(); renderDayList(dateStr);
-  }catch(e){ showErr(e); }
-}
-
-// Intercept save for PATCH when editing
-(function(){
-  const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
-  if(saveBtn){
-    const orig = saveBtn.onclick;
-    saveBtn.onclick = async () => {
-      try{
-        const dateStr = state.focusDate;
-        if(state.editing){
-          if(state.editing.type==='job'){
-            const payload = {
-              id:Number(state.editing.id),
-              title:(byId('jTitle')?.value||'').trim(),
-              client:(byId('jClient')?.value||'').trim(),
-              city:(byId('jCity')?.value||'').trim(),
-              code:(byId('jCode')?.value||'').trim(),
-              note:(byId('jNote')?.value||'').trim(), date:dateStr
-            };
-            await fetchJSON('/api/jobs', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-          }else{
-            const payload = {
-              id:Number(state.editing.id),
-              title:(byId('tTitle')?.value||'').trim(),
-              description:(byId('tDesc')?.value||'').trim(),
-              due_date:(byId('tDue')?.value||dateStr)
-            };
-            await fetchJSON('/api/tasks', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-          }
-          state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
-        }
-      }catch(e){ showErr(e); return; }
-      if(typeof orig==='function'){ return orig(); }
-    };
+    else{ await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    await load(); await renderDayList(state.focusDate);
   }
-  if(cancelBtn){ cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); }); }
-})();
 
-    // Init
-    load();
-  </script>
-
-<!-- hotfix: ensure task creation sends created_at and correct endpoint/headers -->
-<script id="fix-2025-11-09">
-(function(){
-  if (window.__gd_fix_tasks__) return; // avoid double-injection
-  window.__gd_fix_tasks__ = true;
-  const isoDate = () => new Date().toISOString();
-  const isJSON = (h) => (''+(h||'')).toLowerCase().includes('application/json');
-  const origFetch = window.fetch.bind(window);
-  window.fetch = async function(input, init){
-    try{
-      let url = (typeof input === 'string') ? input : (input && input.url) || '';
-      if(!init) init = {};
-      const method = (init.method || 'GET').toUpperCase();
-
-      // Normalize /gd/api/tasks -> /api/tasks for POSTs (server only exposes /api/tasks)
-      if(method === 'POST' && url.includes('/api/tasks')){
-        url = url.replace('/api/tasks','/api/tasks');
-        input = url;
+  // Save handler (PATCH for edits only)
+  (function(){
+    const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
+    saveBtn.addEventListener('click', async ()=>{
+      if(!state.editing){ alert('Nic k uložení.'); return; }
+      const dateStr = state.focusDate;
+      if(state.editing.type==='job'){
+        const payload = {
+          id:Number(state.editing.id),
+          title: (byId('jTitle').value||'').trim(),
+          client:(byId('jClient').value||'').trim(),
+          city:(byId('jCity').value||'').trim(),
+          code:(byId('jCode').value||'').trim(),
+          note:(byId('jNote').value||'').trim(), date:dateStr
+        };
+        await fetchJSON('/api/jobs', {method:'PATCH', body:payload});
+      }else{
+        const payload = {
+          id:Number(state.editing.id),
+          title:(byId('tTitle').value||'').trim(),
+          description:(byId('tDesc').value||'').trim(),
+          status:'open',
+          due_date:(byId('tDue').value||dateStr)
+        };
+        await fetchJSON('/api/tasks', {method:'PATCH', body:payload});
       }
+      state.editing=null; closeSheet(); await load(); await renderDayList(dateStr);
+    });
+    cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); });
+  })();
 
-      if(method === 'POST' && url.includes('/api/tasks')){
-        let data = {};
-        if(init.body){
-          if(typeof init.body === 'string'){
-            try{ data = JSON.parse(init.body || '{}'); }catch(e){ data = {}; }
-          }else if(init.body instanceof FormData){
-            for(const [k,v] of init.body.entries()){ data[k]=v; }
+  // Intercept generic POST to /api/tasks to ensure created_at exists
+  (function(){
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async (input, init={})=>{
+      let url = (typeof input==='string') ? input : (input && input.url) || '';
+      const method = ((init && init.method) || 'GET').toUpperCase();
+      if(method==='POST' && url.includes('/api/tasks')){
+        let body = init.body;
+        if(body && typeof body === 'object'){
+          if(!('created_at' in body)){
+            body.created_at = new Date().toISOString();
           }
+          init.body = JSON.stringify(body);
+          init.headers = Object.assign({'Content-Type':'application/json','Accept':'application/json'}, init.headers||{});
+        }else if(typeof body === 'string' && body.trim().starts_with('{')){
+          try{ const obj = JSON.parse(body); if(!('created_at' in obj)){ obj.created_at = new Date().toISOString(); } init.body = JSON.stringify(obj); }catch(e){}
         }
-        // fill required fields
-        if(!data.created_at) data.created_at = isoDate();
-        if(!data.status) data.status = 'open';
-        // Keep due_date as-is (backend normalizes). If missing and we have selected day on page, try to infer:
-        try{
-          if(!data.due_date){
-            const sel = document.querySelector('[data-selected-date]');
-            if(sel && sel.getAttribute('data-selected-date')){
-              data.due_date = sel.getAttribute('data-selected-date'); // expected YYYY-MM-DD
-            }
-          }
-        }catch(e){}
-
-        init.body = JSON.stringify(data);
-        const headers = new Headers(init.headers || {});
-        if(!isJSON(headers.get('Content-Type'))){
-          headers.set('Content-Type','application/json');
-        }
-        init.headers = headers;
       }
-
-      const res = await origFetch(input, init);
-      // After successful create, gently reload lists
-      try{
-        if(method === 'POST' && (typeof res.status === 'number') && res.status < 400 && ((typeof input === 'string') ? input : (input && input.url) || '').includes('/api/tasks')){
-          if(typeof window.load === 'function'){ window.load(); }
-          if(typeof window.renderDayList === 'function' && window.state && state.currentDate){ renderDayList(state.currentDate); }
-        }
-      }catch(e){}
-      return res;
-    }catch(err){
       return origFetch(input, init);
-    }
-  };
+    };
+  })();
 
-  // Defensive override for explicit saveTask hooks if present
-  try{
-    const prevSave = window.saveTask;
-    window.saveTask = async function(payload){
-      try{
-        payload = payload || {};
-        if(!payload.created_at) payload.created_at = isoDate();
-        if(!payload.status) payload.status = 'open';
-      }catch(e){}
-      if(typeof prevSave === 'function'){
-        return prevSave.apply(this, [payload]);
-      }
-      // Fallback direct POST
-      try{
-        const res = await fetch('/api/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-        if(res.ok){
-          if(typeof window.load === 'function'){ window.load(); }
-          return true;
-        }
-      }catch(e){}
-      return false;
-    }
-  }catch(e){}
-})();
-</script>
-
-    <script>
-    async function fetchJSON(url, options={}){
-      const opts = Object.assign({headers: {'Content-Type':'application/json'}}, options);
-      const res = await fetch(url, opts);
-      const ct = res.headers.get('content-type') || '';
-      let data = null;
-      try { data = ct.includes('application/json') ? await res.json() : await res.text(); } catch(e){ data = null; }
-      if(!res.ok){
-        const msg = (data && data.error) ? data.error : (typeof data === 'string' ? data : res.statusText);
-        throw new Error(`HTTP ${res.status} ${msg}`);
-      }
-      return data;
-    }
-    </script>
-    
+  load();
+  </script>
 </body>
 </html>
