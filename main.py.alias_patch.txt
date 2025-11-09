@@ -1,5 +1,4 @@
-# REPLACEMENT SNIPPET for main.py – add this block anywhere below imports
-# ---- Aliases for /gd/api/* (calendar uses these paths) ----
+# Vlož do main.py (kdekoliv pod importy):
 @app.route('/gd/api/jobs', methods=['GET','POST','PATCH','DELETE'])
 def gd_api_jobs():
     return api_jobs()

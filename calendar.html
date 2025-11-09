@@ -1,76 +1,22 @@
-<!-- REPLACEMENT calendar.html: day list with actions + wiring -->
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Kalendář</title>
-<link rel="stylesheet" href="style.css" />
-<style>
-.row-actions{ margin-left:auto; display:flex; gap:8px; }
-.tact{ border:0; padding:6px 10px; border-radius:10px; font-weight:700; cursor:pointer; }
-.tact.open{ background:#0a6040; color:#fff;}
-.tact.edit{ background:#22577a; color:#fff;}
-.tact.del{ background:#b3002d; color:#fff;}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Kalendář</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<div id="dayEventsBox"></div>
+  <a href="/" style="display:inline-block;margin:12px 16px;">← Zpět do aplikace</a>
+  <h1 style="text-align:center;">Kalendář</h1>
+  <!-- Kořenové prvky; samotné vykreslení dělají skripty -->
+  <div id="calendarRoot"></div>
+  <div id="dayEventsBox"></div>
 
-<script>
-// render function (example; keep your existing render and only ensure attributes & call __wireDayList())
-function renderDayList(items){
-  var html = items.map(function(e){
-    return `
-<div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||''}">
-  <div class="trow-title" data-title>${e.title||''}</div>
-  <div class="row-actions">
-    <button class="tact open" data-act="open">Otevřít</button>
-    <button class="tact edit" data-act="edit">Upravit</button>
-    <button class="tact del" data-act="del">Smazat</button>
-  </div>
-</div>`;
-  }).join('');
-  var box = document.getElementById('dayEventsBox');
-  box.innerHTML = html;
-  if(window.__wireDayList){ window.__wireDayList(); }
-}
-// wiring
-(function(){
-  function normId(id){ var m=(String(id||'').match(/\d+$/)||[])[0]; return m||''; }
-  function delByType(type, id){
-    var url = (type==='job') ? '/gd/api/jobs?id='+id
-            : (type==='task'||type==='reminder') ? '/gd/api/tasks?id='+id
-            : '/gd/api/notes?id='+id;
-    return fetch(url, {method:'DELETE'});
-  }
-  window.__wireDayList = function(){
-    var box = document.getElementById('dayEventsBox') || document;
-    var btns = box.querySelectorAll('.row [data-act]');
-    btns.forEach(function(btn){
-      btn.onclick = function(ev){
-        ev.stopPropagation();
-        var row  = btn.closest('.row');
-        var id   = normId(row && row.getAttribute('data-ev-id'));
-        var type = (row && row.getAttribute('data-ev-type')) || 'other';
-        if(btn.dataset.act==='del'){
-          if(!id){ alert('Chybí ID položky'); return; }
-          delByType(type, id).then(function(r){
-            if(r && r.ok){ openSheet(state.focusDate); load(); }
-            else { alert('Smazání selhalo'); }
-          }, function(){ alert('Smazání selhalo'); });
-          return;
-        }
-        openQuickEditor({
-          id: id,
-          type: type,
-          date: (row && row.getAttribute('data-ev-date')) || state.focusDate,
-          title: (row && row.querySelector('[data-title]')) ? row.querySelector('[data-title]').textContent.trim() : ''
-        });
-      };
-    });
-  };
-})();
-</script>
+  <!-- Původní skripty (podle logů) -->
+  <script src="calendar-notes-fix.js"></script>
+  <script src="calendar-notes-wireup.js"></script>
+  <script src="calendar-notes-patch.js"></script>
+  <script src="calendar-tasks-patch.js"></script>
 </body>
 </html>
