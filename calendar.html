@@ -289,14 +289,14 @@
         if(state.tab==='job'){
           const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
           if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
-          await japi(['/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)});
+          await japi(['/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)}); showToast('Zakázka uložena');
         }else if(state.tab==='task'){
           const payload={ title:document.getElementById('tTitle').value.trim(), description:document.getElementById('tDesc').value.trim(), due_date:dateStr };
           if(!payload.title){ alert('Vyplň název úkolu.'); return; }
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
+          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo');
         }else{
           const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
+          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo');
         }
         ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
         await load();
@@ -304,7 +304,26 @@
       }catch(e){ showErr(e); }
     });
 
-    
+
+// --- Tiny helpers (non-invasive) ---
+function showToast(msg){
+  var t=document.getElementById('toastMsg'); if(!t) return;
+  t.textContent = msg; t.style.display='block';
+  clearTimeout(window.__toastTmr); window.__toastTmr = setTimeout(()=>{ t.style.display='none'; }, 1800);
+}
+// Submit on Enter in inputs
+['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(function(id){
+  var el = document.getElementById(id);
+  if(el){
+    el.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){
+        e.preventDefault();
+        var btn = document.getElementById('saveBtn'); if(btn) btn.click();
+      }
+    });
+  }
+});
+
 // ---- Row action functions (global, simple and robust) ----
 async function fetchDetailBy(type, id){
   if(type==='job'){
@@ -364,8 +383,8 @@ async function onRowEdit(type, id){
 async function onRowDelete(type, id){
   try{
     if(!confirm('Opravdu smazat?')) return;
-    if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); showToast('Smazáno'); }
+    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); showToast('Smazáno'); }
     const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
     await load(); renderDayList(dateStr);
   }catch(e){ showErr(e); }
@@ -389,7 +408,7 @@ async function onRowDelete(type, id){
               code:(byId('jCode')?.value||'').trim(),
               note:(byId('jNote')?.value||'').trim(), date:dateStr
             };
-            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)}); showToast('Upraveno');
           }else{
             const payload = {
               id:Number(state.editing.id),
@@ -397,7 +416,7 @@ async function onRowDelete(type, id){
               description:(byId('tDesc')?.value||'').trim(),
               due_date:(byId('tDue')?.value||dateStr)
             };
-            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
+            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)}); showToast('Upraveno');
           }
           state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
         }
@@ -517,5 +536,8 @@ async function onRowDelete(type, id){
     }
     </script>
     
-</body>
+
+    <div id="toastMsg" style="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0a6040;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 6px 20px #0002;display:none;z-index:999;font-weight:700"></div>
+    </body>
+    
 </html>
