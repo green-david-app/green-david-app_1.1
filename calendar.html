@@ -53,13 +53,7 @@
     /* Error overlay */
     #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
     @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
-  
-  .row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .row .trow-title { flex:1; padding:6px 0; }
-  .row-actions { display:flex; gap:6px; }
-  .row-actions .act { border:1px solid #0a6040; background:#fff; color:#0a6040; padding:6px 8px; border-radius:10px; font-weight:600; }
-  .row-actions .act:hover { background:#0a6040; color:#fff; }
-</style>
+  </style>
 </head>
 <body>
   <div class="header-hero">
@@ -273,9 +267,9 @@
     <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
     <div class="trow-title">${title}</div>
     <div class="row-actions">
-      <button class="act btn-detail" aria-label="Detail">Detail</button>
-      <button class="act btn-edit" aria-label="Upravit">Upravit</button>
-      <button class="act btn-delete" aria-label="Smazat">Smazat</button>
+      <button class="act" onclick="onRowDetail('${tag}','${id}')">Detail</button>
+      <button class="act" onclick="onRowEdit('${tag}','${id}')">Upravit</button>
+      <button class="act" onclick="onRowDelete('${tag}','${id}')">Smazat</button>
     </div>
   </div>`;
 }).join('');
@@ -311,119 +305,107 @@
     });
 
     
-// ---- Explicit element binding (no implicit globals) ----
-function bindFormEls(){
-  return {
-    jTitle: byId('jTitle'), jClient: byId('jClient'), jCity: byId('jCity'), jCode: byId('jCode'), jNote: byId('jNote'),
-    tTitle: byId('tTitle'), tDesc: byId('tDesc'), tDue: byId('tDue'),
-    saveBtn: byId('saveBtn'), cancelBtn: byId('cancelBtn')
-  };
+// ---- Row action functions (global, simple and robust) ----
+async function fetchDetailBy(type, id){
+  if(type==='job'){
+    const d = await fetchJSON(`/api/jobs/${id}`);
+    return {type:'job', data:(d && d.job)||{}};
+  }else{
+    const list = await fetchJSON('/api/tasks');
+    const rows = list.rows || list || [];
+    const found = rows.find(r => String(r.id)===String(id));
+    return {type:'task', data:found||{id}};
+  }
 }
-/* defer bindFormEls until first use to avoid early ReferenceErrors */
 
-// ---- Row action handlers (global delegation) ----
-document.addEventListener('click', async (ev) => {
-  const btn = ev.target.closest('.row-actions .act');
-  if(!btn) return;
-  const row = ev.target.closest('.row');
-  if(!row) return;
-  const id = row.getAttribute('data-id');
-  const typ = row.getAttribute('data-type'); // 'job' | 'task' | 'other'
-  const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-
-  async function fetchDetail(){
-    if(typ==='job'){
-      const d = await fetchJSON(`/api/jobs/${id}`);
-      return {type:'job', data:(d && d.job)||{}};
+async function onRowDetail(type, id){
+  try{
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    const det = await fetchDetailBy(type, id);
+    openSheet(dateStr);
+    if(det.type==='job'){
+      setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
     }else{
-      const list = await fetchJSON('/api/tasks');
-      const rows = list.rows || list || [];
-      const found = rows.find(r => String(r.id)===String(id));
-      return {type:'task', data:found||{id}};
+      setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
     }
-  }
+  }catch(e){ showErr(e); }
+}
 
-  // DETAIL or EDIT
-  if(btn.classList.contains('btn-detail') || btn.classList.contains('btn-edit')){
-    try{
-      const det = await fetchDetail();
-      openSheet(dateStr);
-      state.editing = btn.classList.contains('btn-edit') ? { id, type: det.type } : null;
-      const els = bindFormEls();
-      if(det.type==='job'){
-        setTab('job');
-        if(els.jTitle){ els.jTitle.value = det.data.title || ''; }
-        if(els.jClient){ els.jClient.value = det.data.client || ''; }
-        if(els.jCity){ els.jCity.value = det.data.city || ''; }
-        if(els.jCode){ els.jCode.value = det.data.code || ''; }
-        if(els.jNote){ els.jNote.value = det.data.note || ''; }
-      }else{
-        setTab('task');
-        if(els.tTitle){ els.tTitle.value = det.data.title || ''; }
-        if(els.tDesc){ els.tDesc.value = det.data.description || ''; }
-        if(els.tDue){ els.tDue.value = det.data.due_date || dateStr; }
-      }
-    }catch(e){ showErr(e); }
-    return;
-  }
+async function onRowEdit(type, id){
+  try{
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    const det = await fetchDetailBy(type, id);
+    state.editing = { id, type: det.type };
+    openSheet(dateStr);
+    if(det.type==='job'){
+      setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
+    }else{
+      setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    }
+  }catch(e){ showErr(e); }
+}
 
-  // DELETE
-  if(btn.classList.contains('btn-delete')){
+async function onRowDelete(type, id){
+  try{
     if(!confirm('Opravdu smazat?')) return;
-    try{
-      if(typ==='job'){
-        await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'});
-      }else{
-        await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'});
-      }
-      await load(); renderDayList(dateStr);
-    }catch(e){ showErr(e); }
-    return;
-  }
-});
+    if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    await load(); renderDayList(dateStr);
+  }catch(e){ showErr(e); }
+}
 
-// ---- Intercept save to support PATCH when editing ----
+// Intercept save for PATCH when editing
 (function(){
-  const els = bindFormEls();
-  if(!els.saveBtn) return;
-  const orig = els.saveBtn.onclick;
-  els.saveBtn.onclick = async () => {
-    try{
-      const dateStr = state.focusDate;
-      if(state.editing){
-        const els2 = bindFormEls();
-        if(state.editing.type==='job'){
-          const payload = {
-            id: Number(state.editing.id),
-            title: (els2.jTitle?.value||'').trim(),
-            client: (els2.jClient?.value||'').trim(),
-            city: (els2.jCity?.value||'').trim(),
-            code: (els2.jCode?.value||'').trim(),
-            note: (els2.jNote?.value||'').trim(),
-            date: dateStr
-          };
-          await fetchJSON('/api/jobs', {method:'PATCH', body: JSON.stringify(payload)});
-        }else{
-          const payload = {
-            id: Number(state.editing.id),
-            title: (els2.tTitle?.value||'').trim(),
-            description: (els2.tDesc?.value||'').trim(),
-            due_date: (els2.tDue?.value||dateStr)
-          };
-          await fetchJSON('/api/tasks', {method:'PATCH', body: JSON.stringify(payload)});
+  const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
+  if(saveBtn){
+    const orig = saveBtn.onclick;
+    saveBtn.onclick = async () => {
+      try{
+        const dateStr = state.focusDate;
+        if(state.editing){
+          if(state.editing.type==='job'){
+            const payload = {
+              id:Number(state.editing.id),
+              title:(byId('jTitle')?.value||'').trim(),
+              client:(byId('jClient')?.value||'').trim(),
+              city:(byId('jCity')?.value||'').trim(),
+              code:(byId('jCode')?.value||'').trim(),
+              note:(byId('jNote')?.value||'').trim(), date:dateStr
+            };
+            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+          }else{
+            const payload = {
+              id:Number(state.editing.id),
+              title:(byId('tTitle')?.value||'').trim(),
+              description:(byId('tDesc')?.value||'').trim(),
+              due_date:(byId('tDue')?.value||dateStr)
+            };
+            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
+          }
+          state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
         }
-        state.editing = null;
-        closeSheet();
-        await load();
-        renderDayList(dateStr);
-        return;
-      }
-    }catch(e){ showErr(e); return; }
-    if(typeof orig==='function'){ return orig(); }
-  };
-  if(els.cancelBtn){
-    els.cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); });
+      }catch(e){ showErr(e); return; }
+      if(typeof orig==='function'){ return orig(); }
+    };
   }
+  if(cancelBtn){ cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); }); }
 })();
 
     // Init
