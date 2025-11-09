@@ -261,7 +261,7 @@
       dayEventsBox.innerHTML = list.map(e => {
   const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
   const rawId = String(e.id || e.job_id || e.task_id || e.key || '');
-  const id = (tag==='job') ? rawId : (rawId.match(/\d+/) ? rawId.match(/\d+/)[0] : rawId);
+  const id = (tag==='task') ? (rawId.match(/\d+/) ? rawId.match(/\d+/)[0] : rawId) : rawId;
   const title = e.title || e.name || '(bez názvu)';
   return `<div class="row" data-id="${id}" data-type="${tag}">
     <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
@@ -306,7 +306,33 @@
 
     
 // ---- Row action functions (global, simple and robust) ----
-async function fetchDetailBy(type, id){
+
+window.fetchDetailBy = async function(type, id){
+  if(type==='job'){
+    const d = await japi([`/gd/api/jobs/${id}`, `/api/jobs/${id}`]);
+    return {type:'job', data:(d && d.job)||{}};
+  }
+  if(type==='task'){
+    const list = await japi(['/gd/api/tasks','/api/tasks']);
+    const rows = list.rows || list || [];
+    const found = rows.find(r => String(r.id)===String(id));
+    return {type:'task', data:found||{id}};
+  }
+  try{
+    const d = await japi([`/gd/api/jobs/${id}`, `/api/jobs/${id}`]);
+    if(d && (d.job || d.id || d.title)) return {type:'job', data:d.job||d};
+  }catch(_){}
+  try{
+    const list = await japi(['/gd/api/tasks','/api/tasks']);
+    const rows = list.rows || list || [];
+    const found = rows.find(r => String(r.id)===String(id));
+    if(found) return {type:'task', data:found};
+  }catch(_){}
+  return {type:type||'task', data:{id}};
+}
+
+// old_fetchDetailBy_removed
+
   if(type==='job'){
     const d = await japi([`/gd/api/jobs/${id}`, `/api/jobs/${id}`]);
     return {type:'job', data:(d && d.job)||{}};
@@ -318,7 +344,26 @@ async function fetchDetailBy(type, id){
   }
 }
 
-async function onRowDetail(type, id){
+window.onRowDetail = async function(type, id){
+  try{
+    const dateStr = (window.state && state.focusDate) || (state?.d?.toISOString?.().slice(0,10)) || '';
+    const det = await window.fetchDetailBy(type, id);
+    if(typeof openSheet==='function') openSheet(dateStr);
+    if(det.type==='job'){
+      if(typeof setTab==='function') setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || det.data.name || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
+    }else{
+      if(typeof setTab==='function') setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || det.data.name || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || det.data.note || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    }
+  }catch(e){ showErr && showErr(e); }
+}
   try{
     const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
     const det = await fetchDetailBy(type, id);
@@ -339,7 +384,27 @@ async function onRowDetail(type, id){
   }catch(e){ showErr(e); }
 }
 
-async function onRowEdit(type, id){
+window.onRowEdit = async function(type, id){
+  try{
+    const dateStr = (window.state && state.focusDate) || (state?.d?.toISOString?.().slice(0,10)) || '';
+    const det = await window.fetchDetailBy(type, id);
+    window.state = window.state || {}; state.editing = { id, type: det.type };
+    if(typeof openSheet==='function') openSheet(dateStr);
+    if(det.type==='job'){
+      if(typeof setTab==='function') setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || det.data.name || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
+    }else{
+      if(typeof setTab==='function') setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || det.data.name || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || det.data.note || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    }
+  }catch(e){ showErr && showErr(e); }
+}
   try{
     const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
     const det = await fetchDetailBy(type, id);
@@ -361,7 +426,7 @@ async function onRowEdit(type, id){
   }catch(e){ showErr(e); }
 }
 
-async function onRowDelete(type, id){
+window.onRowDelete = async function(type, id){
   try{
     if(!confirm('Opravdu smazat?')) return;
     if(type==='job'){ await japi([`/gd/api/jobs?id=${encodeURIComponent(id)}`, `/api/jobs?id=${encodeURIComponent(id)}`], {method:'DELETE'}); }
