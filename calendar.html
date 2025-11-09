@@ -319,7 +319,7 @@ function bindFormEls(){
     saveBtn: byId('saveBtn'), cancelBtn: byId('cancelBtn')
   };
 }
-const _els = bindFormEls();
+/* defer bindFormEls until first use to avoid early ReferenceErrors */
 
 // ---- Row action handlers (global delegation) ----
 document.addEventListener('click', async (ev) => {
