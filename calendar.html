@@ -126,7 +126,7 @@
     window.addEventListener('unhandledrejection', (e)=> showErr(e.reason || e));
 
     // ---- Utils ----
-    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s));
+    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s)); const byId=id=>document.getElementById(id);
     function fmtMonth(d){ return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
     function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
     function ymdToCZ(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
