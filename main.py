@@ -751,6 +751,11 @@ def delete_note():
 
 
 # ---- Aliases for /gd/api/* (calendar uses these paths) ----
+
+@app.route('/gd/api/jobs', methods=['GET','POST','PATCH','DELETE'])
+def gd_api_jobs():
+    return api_jobs()
+
 @app.route('/gd/api/tasks', methods=['GET','POST','PATCH','DELETE'])
 def gd_api_tasks():
     return api_tasks()

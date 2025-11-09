@@ -352,5 +352,25 @@
 
 <script src="calendar-notes-wireup.js"></script>
   <script src="/calendar-notes-fix.js"></script>
+
+<script>
+(function(){
+  function qsDel(url){
+    return fetch(url, {method:'DELETE'}).catch(()=>({ok:false}));
+  }
+  window.__delByTypeQS = async function(type, id){
+    if(type==='job'){
+      let r = await qsDel(`/gd/api/jobs?id=${id}`); 
+      if(!r.ok){ r = await qsDel(`/api/jobs?id=${id}`); }
+      return r;
+    }
+    if(type==='task' || type==='reminder'){
+      return qsDel(`/gd/api/tasks?id=${id}`);
+    }
+    return qsDel(`/gd/api/notes?id=${id}`);
+  };
+})();
+</script>
+
 </body>
 </html>
