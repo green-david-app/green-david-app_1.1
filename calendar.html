@@ -132,6 +132,17 @@
     function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
     function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
     function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+
+    // Generic JSON fetch helper (we were missing this before)
+    async function fetchJSON(url, opts={}){
+      const res = await fetch(url,{credentials:'same-origin', headers:{'Content-Type':'application/json', ...(opts.headers||{})}, ...opts});
+      if(!res.ok){
+        const txt = await res.text().catch(()=>'');
+        throw new Error(txt || ('HTTP '+res.status));
+      }
+      try { return await res.json(); } catch { return {}; }
+    }
+
     async function japi(paths,opts={}){
       for (const p of paths){
         try{
@@ -222,7 +233,7 @@
       for(let dt=new Date(from); dt<=to; dt.setDate(dt.getDate()+1)){
         const key=ymd(dt);
         const div=document.createElement('div');
-        div.className='day'+(dt.getMonth()!==d.getMonth()?' out':'');
+        div.className='day'+(dt.getMonth()!==d.getMonth()?' out':''); 
         if(+dt===+today) div.classList.add('today');
         div.setAttribute('data-date',key);
 
@@ -259,20 +270,20 @@
       }
       dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
       dayEventsBox.innerHTML = list.map(e => {
-  const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
-  const rawId = String(e.id || e.job_id || e.task_id || e.key || '');
-  const id = (tag==='job') ? rawId : (rawId.match(/\d+/) ? rawId.match(/\d+/)[0] : rawId);
-  const title = e.title || e.name || '(bez názvu)';
-  return `<div class="row" data-id="${id}" data-type="${tag}">
-    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-    <div class="trow-title">${title}</div>
-    <div class="row-actions">
-      <button class="act" onclick="onRowDetail('${tag}','${id}')">Detail</button>
-      <button class="act" onclick="onRowEdit('${tag}','${id}')">Upravit</button>
-      <button class="act" onclick="onRowDelete('${tag}','${id}')">Smazat</button>
-    </div>
-  </div>`;
-}).join('');
+        const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
+        const rawId = String(e.id || e.job_id || e.task_id || e.key || '');
+        const id = (tag==='job') ? rawId.replace(/^\D+/,'') : (rawId.match(/\\d+/) ? rawId.match(/\\d+/)[0] : rawId);
+        const title = e.title || e.name || '(bez názvu)';
+        return `<div class="row" data-id="${id}" data-type="${tag}">
+          <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
+          <div class="trow-title">${title}</div>
+          <div class="row-actions">
+            <button class="act" onclick="onRowDetail('${tag}','${id}')">Detail</button>
+            <button class="act" onclick="onRowEdit('${tag}','${id}')">Upravit</button>
+            <button class="act" onclick="onRowDelete('${tag}','${id}')">Smazat</button>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
@@ -287,219 +298,174 @@
         if(!state.focusDate) return;
         const dateStr = state.focusDate;
         if(state.tab==='job'){
-          const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
+          const payload={ title:byId('jTitle').value.trim(), client:byId('jClient').value.trim(), status:byId('jStatus').value, city:byId('jCity').value.trim(), code:byId('jCode').value.trim(), date:dateStr, note:byId('jNote').value.trim() };
           if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
           await japi(['/gd/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)});
         }else if(state.tab==='task'){
-          const payload={ title:document.getElementById('tTitle').value.trim(), description:document.getElementById('tDesc').value.trim(), due_date:dateStr };
+          const payload={ title:byId('tTitle').value.trim(), description:byId('tDesc').value.trim(), due_date:dateStr };
           if(!payload.title){ alert('Vyplň název úkolu.'); return; }
           await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
         }else{
-          const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
+          const payload={ title:'Poznámka', description:(byId('nText').value.trim()||'Poznámka'), due_date:dateStr };
           await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
         }
-        ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+        ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=byId(id); if(el) el.value=''; });
         await load();
         renderDayList(dateStr); // refresh list in sheet too
       }catch(e){ showErr(e); }
     });
 
-    
-// ---- Row action functions (global, simple and robust) ----
-async function fetchDetailBy(type, id){
-  if(type==='job'){
-    const d = await fetchJSON(`/api/jobs/${id}`);
-    return {type:'job', data:(d && d.job)||{}};
-  }else{
-    const list = await fetchJSON('/api/tasks');
-    const rows = list.rows || list || [];
-    const found = rows.find(r => String(r.id)===String(id));
-    return {type:'task', data:found||{id}};
-  }
-}
-
-async function onRowDetail(type, id){
-  try{
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    const det = await fetchDetailBy(type, id);
-    openSheet(dateStr);
-    if(det.type==='job'){
-      setTab('job');
-      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
-      byId('jClient') && (byId('jClient').value = det.data.client || '');
-      byId('jCity') && (byId('jCity').value = det.data.city || '');
-      byId('jCode') && (byId('jCode').value = det.data.code || '');
-      byId('jNote') && (byId('jNote').value = det.data.note || '');
-    }else{
-      setTab('task');
-      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
-      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
-      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    // ---- Row action functions (global) ----
+    async function fetchDetailBy(type, id){
+      if(type==='job'){
+        const d = await fetchJSON(`/api/jobs/${id}`);
+        return {type:'job', data:(d && d.job)||{}};
+      }else{
+        const list = await fetchJSON('/api/tasks');
+        const rows = list.tasks || list.rows || list || [];
+        const found = rows.find(r => String(r.id)===String(id));
+        return {type:'task', data:found||{id}};
+      }
     }
-  }catch(e){ showErr(e); }
-}
 
-async function onRowEdit(type, id){
-  try{
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    const det = await fetchDetailBy(type, id);
-    state.editing = { id, type: det.type };
-    openSheet(dateStr);
-    if(det.type==='job'){
-      setTab('job');
-      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
-      byId('jClient') && (byId('jClient').value = det.data.client || '');
-      byId('jCity') && (byId('jCity').value = det.data.city || '');
-      byId('jCode') && (byId('jCode').value = det.data.code || '');
-      byId('jNote') && (byId('jNote').value = det.data.note || '');
-    }else{
-      setTab('task');
-      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
-      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
-      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
-    }
-  }catch(e){ showErr(e); }
-}
-
-async function onRowDelete(type, id){
-  try{
-    if(!confirm('Opravdu smazat?')) return;
-    if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
-    await load(); renderDayList(dateStr);
-  }catch(e){ showErr(e); }
-}
-
-// Intercept save for PATCH when editing
-(function(){
-  const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
-  if(saveBtn){
-    const orig = saveBtn.onclick;
-    saveBtn.onclick = async () => {
+    async function onRowDetail(type, id){
       try{
-        const dateStr = state.focusDate;
-        if(state.editing){
-          if(state.editing.type==='job'){
-            const payload = {
-              id:Number(state.editing.id),
-              title:(byId('jTitle')?.value||'').trim(),
-              client:(byId('jClient')?.value||'').trim(),
-              city:(byId('jCity')?.value||'').trim(),
-              code:(byId('jCode')?.value||'').trim(),
-              note:(byId('jNote')?.value||'').trim(), date:dateStr
-            };
-            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
-          }else{
-            const payload = {
-              id:Number(state.editing.id),
-              title:(byId('tTitle')?.value||'').trim(),
-              description:(byId('tDesc')?.value||'').trim(),
-              due_date:(byId('tDue')?.value||dateStr)
-            };
-            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
-          }
-          state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
+        const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+        const det = await fetchDetailBy(type, id);
+        openSheet(dateStr);
+        if(det.type==='job'){
+          setTab('job');
+          byId('jTitle').value = det.data.title || '';
+          byId('jClient').value = det.data.client || '';
+          byId('jCity').value = det.data.city || '';
+          byId('jCode').value = det.data.code || '';
+          byId('jNote').value = det.data.note || '';
+        }else{
+          setTab('task');
+          byId('tTitle').value = det.data.title || '';
+          byId('tDesc').value = det.data.description || '';
         }
-      }catch(e){ showErr(e); return; }
-      if(typeof orig==='function'){ return orig(); }
-    };
-  }
-  if(cancelBtn){ cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); }); }
-})();
+      }catch(e){ showErr(e); }
+    }
+
+    async function onRowEdit(type, id){
+      try{
+        const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+        const det = await fetchDetailBy(type, id);
+        state.editing = { id, type: det.type };
+        openSheet(dateStr);
+        if(det.type==='job'){
+          setTab('job');
+          byId('jTitle').value = det.data.title || '';
+          byId('jClient').value = det.data.client || '';
+          byId('jCity').value = det.data.city || '';
+          byId('jCode').value = det.data.code || '';
+          byId('jNote').value = det.data.note || '';
+        }else{
+          setTab('task');
+          byId('tTitle').value = det.data.title || '';
+          byId('tDesc').value = det.data.description || '';
+        }
+      }catch(e){ showErr(e); }
+    }
+
+    async function onRowDelete(type, id){
+      try{
+        if(!confirm('Opravdu smazat?')) return;
+        if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+        else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+        const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+        await load(); renderDayList(dateStr);
+      }catch(e){ showErr(e); }
+    }
+
+    // Intercept save for PATCH when editing
+    (function(){
+      const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
+      if(saveBtn){
+        const origClick = saveBtn.onclick;
+        saveBtn.onclick = async () => {
+          try{
+            const dateStr = state.focusDate;
+            if(state.editing){
+              if(state.editing.type==='job'){
+                const payload = {
+                  id:Number(state.editing.id),
+                  title:(byId('jTitle')?.value||'').trim(),
+                  client:(byId('jClient')?.value||'').trim(),
+                  city:(byId('jCity')?.value||'').trim(),
+                  code:(byId('jCode')?.value||'').trim(),
+                  note:(byId('jNote')?.value||'').trim(), date:dateStr
+                };
+                await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+              }else{
+                const payload = {
+                  id:Number(state.editing.id),
+                  title:(byId('tTitle')?.value||'').trim(),
+                  description:(byId('tDesc')?.value||'').trim(),
+                  due_date: (dateStr)
+                };
+                await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
+              }
+              state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
+            }
+          }catch(e){ showErr(e); return; }
+          if(typeof origClick==='function'){ return origClick(); }
+        };
+      }
+      if(cancelBtn){ cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); }); }
+    })();
 
     // Init
     load();
   </script>
 
-<!-- hotfix: ensure task creation sends created_at and correct endpoint/headers -->
-<script id="fix-2025-11-09">
-(function(){
-  if (window.__gd_fix_tasks__) return; // avoid double-injection
-  window.__gd_fix_tasks__ = true;
-  const isoDate = () => new Date().toISOString();
-  const isJSON = (h) => (''+(h||'')).toLowerCase().includes('application/json');
-  const origFetch = window.fetch.bind(window);
-  window.fetch = async function(input, init){
-    try{
-      let url = (typeof input === 'string') ? input : (input && input.url) || '';
-      if(!init) init = {};
-      const method = (init.method || 'GET').toUpperCase();
+  <!-- hotfix: ensure task creation sends created_at and correct endpoint/headers -->
+  <script id="fix-2025-11-09">
+  (function(){
+    if (window.__gd_fix_tasks__) return; // avoid double-injection
+    window.__gd_fix_tasks__ = true;
+    const isoDate = () => new Date().toISOString();
+    const isJSON = (h) => (''+(h||'')).toLowerCase().includes('application/json');
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async function(input, init){
+      try{
+        let url = (typeof input === 'string') ? input : (input && input.url) || '';
+        if(!init) init = {};
+        const method = (init.method || 'GET').toUpperCase();
 
-      // Normalize /gd/api/tasks -> /api/tasks for POSTs (server only exposes /api/tasks)
-      if(method === 'POST' && url.includes('/gd/api/tasks')){
-        url = url.replace('/gd/api/tasks','/api/tasks');
-        input = url;
-      }
-
-      if(method === 'POST' && url.includes('/api/tasks')){
-        let data = {};
-        if(init.body){
-          if(typeof init.body === 'string'){
-            try{ data = JSON.parse(init.body || '{}'); }catch(e){ data = {}; }
-          }else if(init.body instanceof FormData){
-            for(const [k,v] of init.body.entries()){ data[k]=v; }
-          }
+        // Normalize /gd/api/tasks -> /api/tasks for POSTs (server only exposes /api/tasks)
+        if(method === 'POST' && url.includes('/gd/api/tasks')){
+          url = url.replace('/gd/api/tasks','/api/tasks');
+          input = url;
         }
-        // fill required fields
-        if(!data.created_at) data.created_at = isoDate();
-        if(!data.status) data.status = 'open';
-        // Keep due_date as-is (backend normalizes). If missing and we have selected day on page, try to infer:
-        try{
-          if(!data.due_date){
-            const sel = document.querySelector('[data-selected-date]');
-            if(sel && sel.getAttribute('data-selected-date')){
-              data.due_date = sel.getAttribute('data-selected-date'); // expected YYYY-MM-DD
+
+        if(method === 'POST' && url.includes('/api/tasks')){
+          let data = {};
+          if(init.body){
+            if(typeof init.body === 'string'){
+              try{ data = JSON.parse(init.body || '{}'); }catch(e){ data = {}; }
+            }else if(init.body instanceof FormData){
+              for(const [k,v] of init.body.entries()){ data[k]=v; }
             }
           }
-        }catch(e){}
-
-        init.body = JSON.stringify(data);
-        const headers = new Headers(init.headers || {});
-        if(!isJSON(headers.get('Content-Type'))){
-          headers.set('Content-Type','application/json');
+          // fill required fields
+          if(!data.created_at) data.created_at = isoDate();
+          if(!data.status) data.status = 'open';
+          // Keep due_date as-is
+          init.body = JSON.stringify(data);
+          const headers = new Headers(init.headers || {});
+          if(!isJSON(headers.get('Content-Type'))){
+            headers.set('Content-Type','application/json');
+          }
+          init.headers = headers;
         }
-        init.headers = headers;
+        return await origFetch(input, init);
+      }catch(err){
+        return origFetch(input, init);
       }
-
-      const res = await origFetch(input, init);
-      // After successful create, gently reload lists
-      try{
-        if(method === 'POST' && (typeof res.status === 'number') && res.status < 400 && ((typeof input === 'string') ? input : (input && input.url) || '').includes('/api/tasks')){
-          if(typeof window.load === 'function'){ window.load(); }
-          if(typeof window.renderDayList === 'function' && window.state && state.currentDate){ renderDayList(state.currentDate); }
-        }
-      }catch(e){}
-      return res;
-    }catch(err){
-      return origFetch(input, init);
-    }
-  };
-
-  // Defensive override for explicit saveTask hooks if present
-  try{
-    const prevSave = window.saveTask;
-    window.saveTask = async function(payload){
-      try{
-        payload = payload || {};
-        if(!payload.created_at) payload.created_at = isoDate();
-        if(!payload.status) payload.status = 'open';
-      }catch(e){}
-      if(typeof prevSave === 'function'){
-        return prevSave.apply(this, [payload]);
-      }
-      // Fallback direct POST
-      try{
-        const res = await fetch('/api/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-        if(res.ok){
-          if(typeof window.load === 'function'){ window.load(); }
-          return true;
-        }
-      }catch(e){}
-      return false;
-    }
-  }catch(e){}
-})();
-</script>
+    };
+  })();
+  </script>
 </body>
 </html>
