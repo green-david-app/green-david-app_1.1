@@ -308,10 +308,10 @@
 // ---- Row action functions (global, simple and robust) ----
 async function fetchDetailBy(type, id){
   if(type==='job'){
-    const d = await fetchJSON(`/api/jobs/${id}`);
+    const d = await japi([`/gd/api/jobs/${id}`, `/api/jobs/${id}`]);
     return {type:'job', data:(d && d.job)||{}};
   }else{
-    const list = await fetchJSON('/api/tasks');
+    const list = await japi(['/gd/api/tasks','/api/tasks']);
     const rows = list.rows || list || [];
     const found = rows.find(r => String(r.id)===String(id));
     return {type:'task', data:found||{id}};
@@ -364,8 +364,8 @@ async function onRowEdit(type, id){
 async function onRowDelete(type, id){
   try{
     if(!confirm('Opravdu smazat?')) return;
-    if(type==='job'){ await fetchJSON(`/api/jobs?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
-    else { await fetchJSON(`/api/tasks?id=${encodeURIComponent(id)}`, {method:'DELETE'}); }
+    if(type==='job'){ await japi([`/gd/api/jobs?id=${encodeURIComponent(id)}`, `/api/jobs?id=${encodeURIComponent(id)}`], {method:'DELETE'}); }
+    else { await japi([`/gd/api/tasks?id=${encodeURIComponent(id)}`, `/api/tasks?id=${encodeURIComponent(id)}`], {method:'DELETE'}); }
     const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
     await load(); renderDayList(dateStr);
   }catch(e){ showErr(e); }
@@ -389,7 +389,7 @@ async function onRowDelete(type, id){
               code:(byId('jCode')?.value||'').trim(),
               note:(byId('jNote')?.value||'').trim(), date:dateStr
             };
-            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)});
+            await japi(['/gd/api/jobs','/api/jobs'], {method:'PATCH', body:JSON.stringify(payload)});
           }else{
             const payload = {
               id:Number(state.editing.id),
@@ -397,7 +397,7 @@ async function onRowDelete(type, id){
               description:(byId('tDesc')?.value||'').trim(),
               due_date:(byId('tDue')?.value||dateStr)
             };
-            await fetchJSON('/api/tasks', {method:'PATCH', body:JSON.stringify(payload)});
+            await japi(['/gd/api/tasks','/api/tasks'], {method:'PATCH', body:JSON.stringify(payload)});
           }
           state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
         }
