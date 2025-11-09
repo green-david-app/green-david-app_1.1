@@ -486,40 +486,72 @@ async function onRowDelete(type, id){
 })();
 </script>
 
+
+<!-- overlay: robust delete + task create with created_at -->
+<script>
+(function(){
+  const byId = (id)=>document.getElementById(id);
+
+  async function _tryMany(urls, options){
+    for (const u of urls){
+      try {
+        const r = await fetch(u, options);
+        if (r.ok) return {ok:true, res:r};
+      } catch(_) {}
+    }
+    return {ok:false};
+  }
+
+  // DELETE: try both job and task regardless of 'type' label
+  window.onRowDelete = async function(type, id){
+    try{
+      if(!confirm('Opravdu smazat?')) return;
+      const urls = [
+        `/gd/api/jobs?id=${encodeURIComponent(id)}`,
+        `/api/jobs?id=${encodeURIComponent(id)}`,
+        `/gd/api/tasks?id=${encodeURIComponent(id)}`,
+        `/api/tasks?id=${encodeURIComponent(id)}`
+      ];
+      await _tryMany(urls, {method:'DELETE'});
+      // optimistic UI removal
+      const row = document.querySelector(`.row[data-id="${id}"]`);
+      if (row) row.remove();
+      if (typeof load==='function') await load();
+      const dateStr = (window.state && state.focusDate) || (state?.d?.toISOString?.().slice(0,10)) || '';
+      if (typeof renderDayList==='function') renderDayList(dateStr);
+    }catch(e){ console.error(e); if(typeof showErr==='function') showErr(e); }
+  };
+
+  // TASK CREATE: ensure created_at (and sensible defaults) + use /api/tasks (supports POST)
+  window.saveTask = async function(){
+    try{
+      const dateStr = byId('tDue')?.value || (new Date()).toISOString().slice(0,10);
+      const payload = {
+        title: byId('tTitle')?.value || '',
+        description: byId('tDesc')?.value || '',
+        due_date: dateStr,
+        status: 'open',
+        created_at: new Date().toISOString()
+      };
+      // if job id field exists, include it (tie reminder to job)
+      const jid = byId('tJobId')?.value || byId('jId')?.value;
+      if (jid) payload.job_id = Number(jid) || String(jid);
+
+      const resp = await fetch('/api/tasks', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok){
+        const t = await resp.text();
+        throw new Error('Task create failed: ' + t);
+      }
+      if (typeof load==='function') await load();
+      if (typeof closeSheet==='function') closeSheet();
+    }catch(e){ console.error(e); if(typeof showErr==='function') showErr(e); }
+  };
+})();
+</script>
+
 </body>
 </html>
-
-<script>
-
-window.onRowDelete = async function(type, id){
-  try{
-    if(!confirm('Opravdu smazat?')) return;
-    const tryDelete = async (urls)=>{
-      for(const u of urls){
-        try{
-          const res = await fetch(u, {method:'DELETE'});
-          if(res.ok) return true;
-        }catch(_){/* continue */}
-      }
-      return false;
-    };
-    let ok=false;
-    if(type==='job'){
-      ok = await tryDelete([`/gd/api/jobs?id=${encodeURIComponent(id)}`, `/api/jobs?id=${encodeURIComponent(id)}`]);
-    }else{
-      ok = await tryDelete([`/gd/api/tasks?id=${encodeURIComponent(id)}`, `/api/tasks?id=${encodeURIComponent(id)}`]);
-    }
-    // Optimistický update UI: skryj řádek hned
-    const row = document.querySelector(`.row[data-id="${id}"]`);
-    if(row) row.remove();
-    // Tvrdý reload dat (den i měsíc), ať je jistota
-    if(typeof load==='function') await load();
-    if(typeof renderDayList==='function'){
-      const dateStr = (window.state && state.focusDate) || (state?.d?.toISOString?.().slice(0,10)) || '';
-      renderDayList(dateStr);
-    }
-    if(!ok){ throw new Error('Mazání neproběhlo na žádném endpointu'); }
-  }catch(e){ console.error(e); if(typeof showErr==='function') showErr(e); }
-};
-
-</script>
