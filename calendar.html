@@ -288,15 +288,39 @@
         const dateStr = state.focusDate;
         if(state.tab==='job'){
           const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
-          if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
-          await japi(['/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)}); showToast('Zakázka uložena');
+          if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); 
+
+// === UX helpers & validation (non-invasive) ===
+function showToast(msg, danger){
+  var t=document.getElementById('toastMsg'); if(!t) return;
+  t.textContent = msg; 
+  t.style.background = danger ? '#b3261e' : '#0a6040';
+  t.style.display='block';
+  clearTimeout(window.__toastTmr); window.__toastTmr = setTimeout(()=>{ t.style.display='none'; }, 2000);
+}
+function markInvalid(el, on){
+  if(!el) return;
+  el.style.outline = on ? '2px solid #b3261e' : '';
+}
+async function safeJapi(paths, options){
+  try{ return await japi(paths, options); }
+  catch(e){ console.error(e); showToast(e.message||'Chyba požadavku', true); return {error:true}; }
+}
+return; }
+          if(!(payload.title||'').trim() || !(payload.client||'').trim()){
+  markInvalid(document.getElementById('jTitle'), !(payload.title||'').trim());
+  markInvalid(document.getElementById('jClient'), !(payload.client||'').trim());
+  showToast('Vyplňte Název a Zákazník', true);
+  return;
+}
+await safeJapi(['/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)}); showToast('Zakázka uložena'); showToast('Zakázka uložena');
         }else if(state.tab==='task'){
           const payload={ title:document.getElementById('tTitle').value.trim(), description:document.getElementById('tDesc').value.trim(), due_date:dateStr };
           if(!payload.title){ alert('Vyplň název úkolu.'); return; }
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo');
+          await safeJapi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo'); showToast('Uloženo');
         }else{
           const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
-          await japi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo');
+          await safeJapi(['/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)}); showToast('Uloženo'); showToast('Uloženo');
         }
         ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
         await load();
@@ -408,7 +432,13 @@ async function onRowDelete(type, id){
               code:(byId('jCode')?.value||'').trim(),
               note:(byId('jNote')?.value||'').trim(), date:dateStr
             };
-            await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)}); showToast('Upraveno');
+            if(!(payload.title||'').trim() || !(payload.client||'').trim()){
+  markInvalid(document.getElementById('jTitle'), !(payload.title||'').trim());
+  markInvalid(document.getElementById('jClient'), !(payload.client||'').trim());
+  showToast('Vyplňte Název a Zákazník', true);
+  return;
+}
+await fetchJSON('/api/jobs', {method:'PATCH', body:JSON.stringify(payload)}); showToast('Upraveno'); showToast('Upraveno');
           }else{
             const payload = {
               id:Number(state.editing.id),
