@@ -32,8 +32,7 @@
 
   form.addEventListener('submit', async (e) => {
     if(window.__noteSubmitting){ e.preventDefault(); return; }
-    window.__noteSubmitting = true;
-    try {
+    window.__noteSubmitting=true;
     e.preventDefault();
     if (typeof currentJobId === 'undefined' || !currentJobId) return;
     const payload = {
@@ -45,11 +44,12 @@
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
-    });
+        setTimeout(()=>{ window.__noteSubmitting=false; },0);
+  });
     if (titleEl) titleEl.value='';
     if (bodyEl) bodyEl.value='';
     loadNotes();
-    } finally { window.__noteSubmitting = false; }
+      setTimeout(()=>{ window.__noteSubmitting=false; },0);
   });
 
   list.addEventListener('click', async (e) => {
@@ -59,14 +59,16 @@
     const id = +a.dataset.id;
     if (a.classList.contains('del-note')) {
       if (!confirm('Smazat poznámku?')) return;
-      await fetch(`/gd/api/notes?id=${id}`, { method:'DELETE' });
+      await fetch(`/gd/api/notes?id=${id}`, { method:'DELETE'     setTimeout(()=>{ window.__noteSubmitting=false; },0);
+  });
     } else if (a.classList.contains('pin-note')) {
       const pinned = a.dataset.pinned === 'true';
       await fetch('/gd/api/notes', {
         method:'PATCH',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id, pinned: !pinned })
-      });
+          setTimeout(()=>{ window.__noteSubmitting=false; },0);
+  });
     } else if (a.classList.contains('edit-note')) {
       const li = a.closest('li');
       const oldTitle = li?.querySelector('.note-head strong')?.textContent || '';
@@ -79,10 +81,11 @@
         method:'PATCH',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id, title: newTitle.trim(), body: newBody.trim() })
-      });
+          setTimeout(()=>{ window.__noteSubmitting=false; },0);
+  });
     }
     loadNotes();
-    } finally { window.__noteSubmitting = false; }
+      setTimeout(()=>{ window.__noteSubmitting=false; },0);
   });
 
   window.reloadNotes = loadNotes;

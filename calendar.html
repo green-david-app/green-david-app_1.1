@@ -54,6 +54,14 @@
     #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
     @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
   </style>
+
+<style>
+.row-actions{ margin-left:auto; display:flex; gap:8px; }
+.tact{ border:0; padding:6px 10px; border-radius:10px; font-weight:700; cursor:pointer; }
+.tact.open{ background:#0a6040; color:#fff;}
+.tact.edit{ background:#22577a; color:#fff;}
+.tact.del{ background:#b3002d; color:#fff;}
+</style>
 </head>
 <body>
   <div class="header-hero">
@@ -89,21 +97,21 @@
       <div id="tabNote" class="t">Poznámka</div>
     </div>
     <div id="formJob">
-      <div class="row"><input id="jTitle" placeholder="Název zakázky*" required></div>
-      <div class="row"><input id="jClient" placeholder="Zákazník*" required></div>
-      <div class="row">
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="jTitle" placeholder="Název zakázky*" required></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="jClient" placeholder="Zákazník*" required></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}">
         <select id="jStatus"><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
         <input id="jCity" placeholder="Město">
       </div>
-      <div class="row"><input id="jCode" placeholder="Kód (např. 2025-091)"></div>
-      <div class="row"><input id="jNote" placeholder="Poznámka"></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="jCode" placeholder="Kód (např. 2025-091)"></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="jNote" placeholder="Poznámka"></div>
     </div>
     <div id="formTask" style="display:none">
-      <div class="row"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
-      <div class="row"><input id="tDesc" placeholder="Popis"></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="tDesc" placeholder="Popis"></div>
     </div>
     <div id="formNote" style="display:none">
-      <div class="row"><input id="nText" placeholder="Text poznámky*"></div>
+      <div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}"><input id="nText" placeholder="Text poznámky*"></div>
     </div>
     <div class="actions">
       <button class="btn ghost" id="cancelBtn">Zrušit</button>
@@ -260,11 +268,39 @@
       dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
       dayEventsBox.innerHTML = list.map(e => {
         const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
-        return `<div class="row">
+        return `<div class="row" data-ev-id="${e.id||e._id||e.id_str||''}" data-ev-type="${e.type||'other'}" data-ev-date="${e.start||e.date||state.focusDate||''}">
           <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
-          <div class="trow-title">${e.title}</div>
+          <div class="trow-title" data-title>${e.title}</div><div class="row-actions"><button class="tact open" data-act="open">Otevřít</button><button class="tact edit" data-act="edit">Upravit</button><button class="tact del" data-act="del">Smazat</button></div>
         </div>`;
       }).join('');
+      dayEventsBox.querySelectorAll('.row [data-act]').forEach(btn=>{
+        btn.addEventListener('click', async (ev)=>{
+          ev.stopPropagation();
+          const row = btn.closest('.row');
+          let id = row?.getAttribute('data-ev-id') || '';
+          const type = row?.getAttribute('data-ev-type') || 'other';
+          const date = row?.getAttribute('data-ev-date') || state.focusDate;
+          const num = (String(id).match(/\d+$/)||[])[0];
+          if(btn.dataset.act==='del'){
+            if(!num){ alert('Chybí ID položky'); return; }
+            async function del(u, override=false){
+              try{
+                if(override) return await fetch(u,{method:'POST', headers:{'X-HTTP-Method-Override':'DELETE'}});
+                return await fetch(u,{method:'DELETE'});
+              }catch(_){ return {ok:false,status:0}; }
+            }
+            let res={ok:false,status:0};
+            if(type==='job'){ res=await del(`/gd/api/jobs/${num}`); if(!res.ok && (res.status===405||res.status===501)) res=await del(`/gd/api/jobs/${num}`, true); }
+            if(!res.ok && (type==='task'||type==='reminder')){ res=await del(`/gd/api/tasks/${num}`); if(!res.ok && (res.status===405||res.status===501)) res=await del(`/gd/api/tasks/${num}`, true); }
+            if(!res.ok && (type==='note'||type==='other')){ res=await del(`/gd/api/notes/${num}`); if(!res.ok && (res.status===405||res.status===501)) res=await del(`/gd/api/notes/${num}`, true); }
+            if(!res.ok){ res=await del(`/gd/api/calendar/${num}`); if(!res.ok && (res.status===405||res.status===501)) res=await del(`/gd/api/calendar/${num}`, true); }
+            if(res.ok){ openSheet(state.focusDate); load(); } else { alert('Smazání selhalo'); }
+          } else {
+            openQuickEditor({ id:num||id, type, date, title: row.querySelector('[data-title]')?.textContent?.trim() || '' });
+          }
+        });
+      });
+
     }
 
     function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }

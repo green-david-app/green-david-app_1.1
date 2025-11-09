@@ -8,10 +8,10 @@
 (function(){
   const origFetch = window.fetch;
   window.fetch = function(input, init){
-    try {
+    
       const url = (typeof input === "string") ? input : (input?.url || "");
       if (url.includes("/gd/api/tasks") && init && typeof init.body === "string") {
-        try {
+        
           const body = JSON.parse(init.body);
           if (!body.description && body.text) body.description = body.text;
           if (!body.description && body.body) body.description = body.body;
