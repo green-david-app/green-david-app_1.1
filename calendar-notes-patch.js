@@ -1,8 +1,6 @@
 /* calendar-notes-patch.js (enhanced) */
 (function(){
   const form = document.querySelector('#noteForm');
-  if(form && form.__wired){ return; }
-  if(form){ form.__wired = true; }
   const titleEl = document.querySelector('#noteTitle');
   const bodyEl = document.querySelector('#noteBody');
   const list = document.querySelector('#notesList');
@@ -35,6 +33,7 @@
   form.addEventListener('submit', async (e) => {
     if(window.__noteSubmitting){ e.preventDefault(); return; }
     window.__noteSubmitting = true;
+    try {
     e.preventDefault();
     if (typeof currentJobId === 'undefined' || !currentJobId) return;
     const payload = {
@@ -46,8 +45,7 @@
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
-      } finally { window.__noteSubmitting = false; }
-  });
+    });
     if (titleEl) titleEl.value='';
     if (bodyEl) bodyEl.value='';
     loadNotes();
@@ -61,16 +59,14 @@
     const id = +a.dataset.id;
     if (a.classList.contains('del-note')) {
       if (!confirm('Smazat poznámku?')) return;
-      await fetch(`/gd/api/notes?id=${id}`, { method:'DELETE'   } finally { window.__noteSubmitting = false; }
-  });
+      await fetch(`/gd/api/notes?id=${id}`, { method:'DELETE' });
     } else if (a.classList.contains('pin-note')) {
       const pinned = a.dataset.pinned === 'true';
       await fetch('/gd/api/notes', {
         method:'PATCH',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id, pinned: !pinned })
-        } finally { window.__noteSubmitting = false; }
-  });
+      });
     } else if (a.classList.contains('edit-note')) {
       const li = a.closest('li');
       const oldTitle = li?.querySelector('.note-head strong')?.textContent || '';
@@ -83,8 +79,7 @@
         method:'PATCH',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id, title: newTitle.trim(), body: newBody.trim() })
-        } finally { window.__noteSubmitting = false; }
-  });
+      });
     }
     loadNotes();
     } finally { window.__noteSubmitting = false; }
