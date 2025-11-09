@@ -138,6 +138,7 @@
     function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
     function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
     function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+    function $(id){ return document.getElementById(id); }
     async function japi(paths,opts={}){
       for (const p of paths){
         try{
