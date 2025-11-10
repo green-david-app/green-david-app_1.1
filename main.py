@@ -455,7 +455,8 @@ def api_tasks():
         data = request.get_json(force=True, silent=True) or {}
         title = (data.get("title") or "").strip()
         if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at) VALUES (?,?,?,?,?,?, datetime('now'))""",
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
+                      VALUES (?,?,?,?,?,?)""",
                    (int(data.get("job_id")) if data.get("job_id") else None,
                     int(data.get("employee_id")) if data.get("employee_id") else None,
                     title,
