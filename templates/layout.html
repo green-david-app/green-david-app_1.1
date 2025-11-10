@@ -49,42 +49,5 @@
     }
   })();
   </script>
-
-<script>
-// GD_FORCE_SEARCHBAR: robust injector to always show search in the tabs
-(function(){
-  function ensure(){
-    var tabs = document.querySelector('.tabs, #main-tabs');
-    if(!tabs) return;
-    if(document.getElementById('global-search')) return;
-    var form = document.createElement('form');
-    form.id='global-search';
-    form.action='/search';
-    form.method='get';
-    form.style.display='flex';
-    form.style.gap='8px';
-    form.style.marginLeft='auto';
-    form.style.alignItems='center';
-    var input=document.createElement('input');
-    input.type='search'; input.name='q'; input.placeholder='Hledat…';
-    input.style.padding='6px 10px'; input.style.borderRadius='8px';
-    input.style.border='1px solid #2f3b37';
-    var btn=document.createElement('button');
-    btn.type='submit'; btn.className='btn ghost'; btn.textContent='Hledat';
-    form.appendChild(input); form.appendChild(btn);
-    // ensure tabs are flex
-    var cs = tabs.style;
-    if(getComputedStyle(tabs).display!=='flex'){ cs.display='flex'; }
-    tabs.appendChild(form);
-  }
-  document.addEventListener('DOMContentLoaded', function(){
-    ensure();
-    setTimeout(ensure, 200);
-    setTimeout(ensure, 800);
-    setTimeout(ensure, 1600);
-  });
-})();
-</script>
-
 </body>
 </html>

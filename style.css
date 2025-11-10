@@ -124,6 +124,5 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 }
 
 
-/* searchbar force patch */
-.tabs{display:flex;align-items:center;gap:10px}
+/* searchbar for index.html header */
 #global-search input[type=search]{min-width:20ch}
