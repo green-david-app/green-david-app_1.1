@@ -1,23 +1,41 @@
+# green-david-app – Calendar Buttons Hotfix (DELETE / EDIT / DETAIL)
 
-# Calendar backend fix — 2025-11-09
+This bundle contains **surgical patches** that fix the calendar buttons without touching layout/CSS.
 
-## Co je uvnitř
-- `migrations/2025-11-09_fix_tasks_created_at.sql` — zrebuilduje tabulku `tasks` tak, aby `created_at` mělo DEFAULT `CURRENT_TIMESTAMP` a vloží se i tam, kde dřív chybělo.
-- `run_migration.py` — jednoduchý skript, který migraci spustí nad vaším `data.db`.
-- `main_api_tasks_snippet.py` — hotový blok pro endpoint `/api/tasks`, který při POST doplní `created_at` na straně serveru a zjednodušuje PATCH/DELETE.
+## What’s fixed
 
-## Doporučený postup (drop-in)
-1. Nakopírujte složku do repa, třeba jako `backend_patches/`.
-2. **Jednorázově** spusťte migraci:
-   ```bash
-   cd backend_patches
-   python3 run_migration.py ../data.db
-   ```
-   (případně upravte cestu k vaší SQLite DB)
+1) **Wrong path `/gd/api/*` → 404/405**  
+   Adds alias routes so `/gd/api/tasks` works the same as `/api/tasks` (GET, POST, PATCH/PUT, DELETE).
 
-3. Otevřete svůj `main.py` a nahraďte tělo endpointu `/api/tasks` obsahem z `main_api_tasks_snippet.py` (blok mezi `BEGIN/END PATCH`).  
-   → Pokud už máte route definovanou, stačí nahradit pouze logiku pro POST/PATCH/DELETE.
+2) **`POST /api/tasks` 500: `NOT NULL constraint failed: tasks.created_at`**  
+   The insert now sets `created_at` to `CURRENT_TIMESTAMP` so schema changes are not required.
 
-4. Deployni — frontend `calendar.html` už očekává tyto změny.
+3) **PATCH/PUT update for Edit button**  
+   Accepts partial body for fields (`title`, `description`, `status`, `due_date`, `job_id`, `employee_id`).
 
-Pozn.: SQLite neumí jednoduše změnit `DEFAULT`/`NOT NULL` u existujícího sloupce, proto migrace tabulku korektně přestaví a data zachová.
+4) **GET detail by `?id=`**  
+   Returns a single task when `id` is provided, keeping current list behaviour otherwise.
+
+## Files in this hotfix
+
+- `patches/api_tasks_patch.py` – drop‑in replacement for your `api_tasks` view function in `main.py`.
+- `patches/gd_api_alias_patch.py` – add once near your Flask routes to expose `/gd/api/tasks` as an alias.
+- `sql/migration.sql` – optional safety migration if you prefer a DB default for `created_at`.
+- `test/http_examples.http` – ready-to-run HTTP examples (Insomnia/VS Code REST Client format).
+
+## Apply
+
+1. **Open `main.py`** and replace your existing `api_tasks` function with the one from
+   `patches/api_tasks_patch.py` (it has the same endpoint: `/api/tasks`).
+
+2. **Add the alias route** from `patches/gd_api_alias_patch.py` (anywhere after `api_tasks`), so old
+   frontend calls to `/gd/api/tasks` keep working.
+
+3. (Optional) If you want DB-level defaults as well, run `sql/migration.sql` once on your SQLite DB.
+
+4. **Redeploy**. No template/CSS changes required; existing buttons calling
+   `DELETE /gd/api/tasks?id=…`, `PATCH /gd/api/tasks`, etc., will work immediately.
+
+---
+
+**Tip:** If your frontend calls `PUT` instead of `PATCH` for edits, the new handler supports both.
