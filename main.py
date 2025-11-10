@@ -652,3 +652,78 @@ def search_page():
         html.append("</ul>")
     html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
     return '\n'.join(html)
+
+
+# --- light DB helper used by /search ---
+import sqlite3, os
+def dbq(sql, params=()):
+    try_paths = [
+        os.path.join(os.path.dirname(__file__), "sql", "gd.db"),
+        os.path.join(os.path.dirname(__file__), "sql", "app.db"),
+        os.path.join(os.path.dirname(__file__), "app.db"),
+        os.environ.get("DB_PATH") or ""
+    ]
+    db_path = next((p for p in try_paths if p and os.path.exists(p)), None)
+    conn = sqlite3.connect(db_path or ":memory:")
+    conn.row_factory = sqlite3.Row
+    cur = conn.execute(sql, params)
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
+# --- Global Search route ---
+from flask import request
+
+@app.route("/search")
+def search_page():
+    q = (request.args.get("q") or "").strip()
+    results = []
+    if q:
+        like = f"%{q}%"
+        # Jobs
+        try:
+            for row in dbq("SELECT id, name, city, code, due_date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ? ) ORDER BY id DESC LIMIT 100", (like, like, like)):
+                title = row.get("name") or ""
+                sub = " • ".join([x for x in [row.get("city"), row.get("code"), row.get("due_date")] if x])
+                results.append({"type":"Zakázky","title":title,"sub":sub,"url":f"/jobs/{row.get('id')}"})
+        except Exception:
+            pass
+        # Tasks
+        try:
+            for row in dbq("SELECT id, title, status, due_date, job_id FROM tasks WHERE title LIKE ? ORDER BY id DESC LIMIT 100", (like,)):
+                sub = " • ".join([x for x in [row.get("status"), row.get("due_date")] if x])
+                url = f"/jobs/{row.get('job_id')}#task-{row.get('id')}" if row.get("job_id") else f"/tasks/{row.get('id')}"
+                results.append({"type":"Úkoly","title":row.get("title",""),"sub":sub,"url":url})
+        except Exception:
+            pass
+        # Calendar (optional)
+        try:
+            for row in dbq("SELECT id, title, date FROM calendar WHERE title LIKE ? ORDER BY date DESC LIMIT 100", (like,)):
+                date = row.get("date","")
+                month = date[:7] if date else ""
+                results.append({"type":"Kalendář","title":row.get("title",""),"sub":date,"url":f"/calendar.html?month={month}#d-{date}"})
+        except Exception:
+            pass
+
+    # Render simple HTML
+    html = ["<!doctype html><meta charset='utf-8'><link rel='stylesheet' href='/style.css'>",
+            "<div class='container'><h1>Výsledky vyhledávání</h1>"]
+    if not q:
+        html.append("<p class='small'>Zadejte dotaz do pole nahoře.</p>")
+    else:
+        html.append(f"<p class='small'>Hledám: <strong>{q}</strong> • Nalezeno: {len(results)}</p>")
+        if results:
+            html.append("<ul style='list-style:none;padding:0;display:grid;gap:.5rem'>")
+            for r in results:
+                html.append("<li class='card' style='padding:.7rem .9rem'>"
+                            f"<div class='small muted'>{r['type']}</div>"
+                            f"<a class='link' href='{r['url']}'>{r['title']}</a>"
+                            f"{('<div class=\\'small muted\\'>'+r['sub']+'</div>') if r.get('sub') else ''}"
+                            "</li>")
+            html.append("</ul>")
+        else:
+            html.append("<p>Nic jsme nenašli.</p>")
+    html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
+    return "\n".join(html)
+
