@@ -1,6 +1,6 @@
 import os, re, io, sqlite3
 from datetime import datetime, date, timedelta
-from flask import Flask, send_from_directory, request, jsonify, session, g, send_file, abort, render_template
+from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -609,100 +609,31 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
 
-# -------- Global Search (basic) --------
-@app.route("/search")
+@app.get("/api/search")
+def api_search():
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify([])
+    like = f"%{q}%"
+    db = get_db()
+    cur = db.execute(
+        "SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 100",
+        (like, like, like)
+    )
+    rows = [dict(id=r["id"], name=r["name"], city=r["city"], code=r["code"], date=r["date"]) for r in cur.fetchall()]
+    return jsonify(rows)
+
+
+@app.get("/search")
 def search_page():
     q = (request.args.get("q") or "").strip()
     results = []
     if q:
         like = f"%{q}%"
-        # Jobs
-        for row in dbq("SELECT id, name, city, code, due_date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ? ) ORDER BY id DESC LIMIT 100", (like, like, like)):
-            title = row["name"] or ""
-            sub = " • ".join([p for p in [row['city'], row['code'], row['due_date']] if p])
-            results.append({
-                "type":"Zakázky",
-                "title": title,
-                "sub": sub,
-                "url": f"/jobs/{row['id']}"
-            })
-        # Tasks
-        for row in dbq("SELECT id, title, status, due_date, job_id FROM tasks WHERE title LIKE ? ORDER BY id DESC LIMIT 100", (like,)):
-            sub = " • ".join([p for p in [row['status'], row['due_date']] if p])
-            url = f"/jobs/{row['job_id']}#task-{row['id']}" if row['job_id'] else f"/tasks/{row['id']}"
-            results.append({"type":"Úkoly", "title": row["title"], "sub": sub, "url": url})
-        # Calendar events (if table exists)
-        try:
-            for row in dbq("SELECT id, title, date FROM calendar WHERE title LIKE ? ORDER BY date DESC LIMIT 100", (like,)):
-                results.append({"type":"Kalendář", "title": row["title"], "sub": row["date"], "url": f"/calendar?month={row['date'][:7]}#d-{row['date']}"})
-        except Exception:
-            pass
-    # Simple HTML render (keep styles consistent)
-    html = ["<!doctype html><meta charset='utf-8'><link rel='stylesheet' href='/style.css'>"]
-    html.append("<div class='container'><h1>Výsledky vyhledávání</h1>")
-    if not q:
-        html.append("<p class='small'>Zadejte dotaz do pole nahoře.</p>")
-    else:
-        html.append(f"<p class='small'>Hledám: <strong>{q}</strong> • Nalezeno: {len(results)}</p>")
-        html.append("<ul style='list-style:none;padding:0;display:grid;gap:.5rem'>")
-        for r in results:
-            html.append(f"<li class='card' style='padding:.6rem .8rem'><div class='small muted'>{r['type']}</div><a href='{r['url']}' class='link'>{r['title']}</a>")
-            if r.get('sub'): html.append(f"<div class='small muted'>{r['sub']}</div>")
-            html.append("</li>")
-        html.append("</ul>")
-    html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
-    return '\n'.join(html)
-
-
-
-# --- Global Search (hotfix) ---
-from flask import request, Markup
-
-@app.route("/search", methods=["GET"], endpoint="gd_global_search")
-def gd_global_search():
-    q = request.args.get("q", "").strip()
-    like = f"%{q}%"
-    results = []
-    try:
-        for r in dbq(
-            "SELECT id, name, city, code FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 100",
-            (like, like, like),
-        ):
-            results.append(dict(r))
-    except Exception as e:
-        # Render minimal error so you can see it right away
-        return f"""<html><head><title>Search error</title>
-        <link rel='stylesheet' href='/style.css'/></head>
-        <body style='padding:2rem'>
-            <h2>Vyhledávání: chyba</h2>
-            <p style='color:#ffbcb7'>{Markup.escape(str(e))}</p>
-            <p><a href='/' class='btn'>Zpět do aplikace</a></p>
-        </body></html>"""
-
-    # Simple HTML result page (non-invasive, no JS needed)
-    items = "".join(
-        f"<li><strong>{Markup.escape(r.get('name',''))}</strong>"
-        f" <span class='muted'>({Markup.escape(r.get('city',''))} • {Markup.escape(r.get('code',''))})</span>"
-        f"</li>"
-        for r in results
-    ) or "<li class='muted'>Nic nenalezeno</li>"
-    resp = f"""<html><head>
-        <meta charset="utf-8"/>
-        <title>Hledat – green david app</title>
-        <link rel='stylesheet' href='/style.css'/>
-        <style>
-        .search-results {{ max-width: 960px; margin: 2rem auto; }}
-        .search-results h2 {{ margin-bottom: 1rem; }}
-        .search-results ul {{ list-style: none; padding: 0; }}
-        .search-results li {{ padding: .5rem 0; border-bottom: 1px solid rgba(255,255,255,.08); }}
-        .muted {{ opacity: .7; }}
-        .btn {{ display:inline-block; padding:.5rem 1rem; background:#2e7d32; color:#fff; border-radius:.5rem; text-decoration:none; }}
-        </style>
-    </head><body>
-        <div class="search-results">
-            <a href="/" class="btn">← Zpět</a>
-            <h2>Výsledky pro: {Markup.escape(q)}</h2>
-            <ul>{items}</ul>
-        </div>
-    </body></html>"""
-    return resp
+        db = get_db()
+        cur = db.execute(
+            "SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 100",
+            (like, like, like)
+        )
+        results = [dict(id=r["id"], name=r["name"], city=r["city"], code=r["code"], date=r["date"]) for r in cur.fetchall()]
+    return render_template("search.html", title="Hledání", q=q, results=results)

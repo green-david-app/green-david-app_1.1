@@ -1,5 +1,6 @@
 
-# WSGI entrypoint kept minimal. Import app from main.py,
-# then import search_fix so that the /search route is registered.
-from main import app  # noqa: F401
-import search_fix  # noqa: F401
+# wsgi.py
+# Ensure hotfix import registers routes exactly once.
+from main import app  # existing app instance
+import gd_calendar_hotfix  # safe registration (guarded)
+# Gunicorn: wsgi:app

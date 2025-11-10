@@ -8,16 +8,22 @@
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/style.css"/>
+
+  <style>
+    .tabs.with-search { display:flex; align-items:center; gap:12px; justify-content:center; position:relative; }
+    .tabs.with-search .search-in-tabs { display:flex; gap:8px; margin-left:auto; margin-right:auto; }
+    .tabs.with-search .search-in-tabs input[type="text"]{
+      background:#fff; color:#222; border:1px solid #666; border-radius:8px; padding:8px 12px; min-width:420px;
+    }
+    .tabs.with-search .search-in-tabs button{
+      background:#2e7d32; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer;
+    }
+    @media (max-width: 720px){
+      .tabs.with-search .search-in-tabs input[type="text"]{ min-width: 220px; }
+    }
+  </style>
 </head>
-\1
-
-<div class="global-search-wrap">
-  <form class="global-search" action="/search" method="get">
-    <input type="text" name="q" placeholder="Hledat zakázku, město nebo kód…" />
-    <button type="submit" class="btn">Hledat</button>
-  </form>
-</div>
-
+<body>
   <div class="app-header">
     <div class="brand">
       <img src="/logo.svg" alt="GD" style="height:28px;vertical-align:middle;margin-right:8px"/>
@@ -61,6 +67,15 @@
     if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', insertTabs); }
     else { insertTabs(); }
   })();
+  </script>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const q = params.get('q');
+      const inp = document.getElementById('global-search-input');
+      if(inp && q){ inp.value = q; }
+    })();
   </script>
 </body>
 </html>
