@@ -112,3 +112,24 @@ def delete_event(event_id):
 
 def _default_color(etype):
     return {"note": "#1976d2", "task": "#2e7d32", "job": "#ef6c00"}.get(etype, "#2e7d32")
+
+@api_bp.get("/search")
+def api_search():
+    q = (request.args.get("q") or "").strip()
+    items = []
+    if not q:
+        return jsonify({"items": items})
+    like = f"%{q}%"
+    try:
+        for ev in Event.query.filter((Event.title.ilike(like)) | (Event.details.ilike(like))).order_by(Event.date.desc()).limit(50).all():
+            items.append({
+                "kind":"event",
+                "id": ev.id,
+                "title": ev.title,
+                "date": ev.date.isoformat(),
+                "url": f"/calendar?month={ev.date.year}-{str(ev.date.month).zfill(2)}#d-{ev.date.isoformat()}",
+                "snippet": (ev.details or "")[:160]
+            })
+    except Exception:
+        pass
+    return jsonify({"items": items})
