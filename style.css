@@ -124,5 +124,6 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 }
 
 
-/* global search bar */
-#global-search input[type="search"]{outline:none}
+/* GD searchbar inside tabs */
+.tabs { display:flex; gap:10px; }
+.tabs #global-search input[type=search]{ min-width: 18ch; }
