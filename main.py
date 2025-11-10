@@ -607,3 +607,48 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
+
+# -------- Global Search (basic) --------
+@app.route("/search")
+def search_page():
+    q = (request.args.get("q") or "").strip()
+    results = []
+    if q:
+        like = f"%{q}%"
+        # Jobs
+        for row in dbq("SELECT id, name, city, code, due_date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ? ) ORDER BY id DESC LIMIT 100", (like, like, like)):
+            title = row["name"] or ""
+            sub = " • ".join([p for p in [row['city'], row['code'], row['due_date']] if p])
+            results.append({
+                "type":"Zakázky",
+                "title": title,
+                "sub": sub,
+                "url": f"/jobs/{row['id']}"
+            })
+        # Tasks
+        for row in dbq("SELECT id, title, status, due_date, job_id FROM tasks WHERE title LIKE ? ORDER BY id DESC LIMIT 100", (like,)):
+            sub = " • ".join([p for p in [row['status'], row['due_date']] if p])
+            url = f"/jobs/{row['job_id']}#task-{row['id']}" if row['job_id'] else f"/tasks/{row['id']}"
+            results.append({"type":"Úkoly", "title": row["title"], "sub": sub, "url": url})
+        # Calendar events (if table exists)
+        try:
+            for row in dbq("SELECT id, title, date FROM calendar WHERE title LIKE ? ORDER BY date DESC LIMIT 100", (like,)):
+                results.append({"type":"Kalendář", "title": row["title"], "sub": row["date"], "url": f"/calendar?month={row['date'][:7]}#d-{row['date']}"})
+        except Exception:
+            pass
+    # Simple HTML render (keep styles consistent)
+    html = ["<!doctype html><meta charset='utf-8'><link rel='stylesheet' href='/style.css'>"]
+    html.append("<div class='container'><h1>Výsledky vyhledávání</h1>")
+    if not q:
+        html.append("<p class='small'>Zadejte dotaz do pole nahoře.</p>")
+    else:
+        html.append(f"<p class='small'>Hledám: <strong>{q}</strong> • Nalezeno: {len(results)}</p>")
+        html.append("<ul style='list-style:none;padding:0;display:grid;gap:.5rem'>")
+        for r in results:
+            html.append(f"<li class='card' style='padding:.6rem .8rem'><div class='small muted'>{r['type']}</div><a href='{r['url']}' class='link'>{r['title']}</a>")
+            if r.get('sub'): html.append(f"<div class='small muted'>{r['sub']}</div>")
+            html.append("</li>")
+        html.append("</ul>")
+    html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
+    return '\n'.join(html)

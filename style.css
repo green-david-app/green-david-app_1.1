@@ -122,7 +122,3 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   /* Change ID mobile */
   .table td input[type="number"]{width:100% !important; max-width:100%}
 }
-
-
-/* searchbar for index.html header */
-#global-search input[type=search]{min-width:20ch}
