@@ -432,7 +432,7 @@ def api_job_assignments(job_id):
     return jsonify({"ok": True})
 
 # ----------------- Tasks CRUD -----------------
-@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
+@app.route("/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
 def api_tasks():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -455,8 +455,8 @@ def api_tasks():
         data = request.get_json(force=True, silent=True) or {}
         title = (data.get("title") or "").strip()
         if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
-                      VALUES (?,?,?,?,?,?)""",
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at)
+                  VALUES (?,?,?,?,?,?, CURRENT_TIMESTAMP)""",
                    (int(data.get("job_id")) if data.get("job_id") else None,
                     int(data.get("employee_id")) if data.get("employee_id") else None,
                     title,
@@ -607,3 +607,9 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
+
+@app.route("/gd/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
+def gd_api_tasks():
+    # Reuse the same handler so both paths behave identicky
+    return api_tasks()
