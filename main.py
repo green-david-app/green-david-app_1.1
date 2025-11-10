@@ -653,30 +653,31 @@ def search_page():
     html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
     return '\n'.join(html)
 
-
-# --- light DB helper used by /search ---
-import sqlite3, os
-def dbq(sql, params=()):
-    try_paths = [
-        os.path.join(os.path.dirname(__file__), "sql", "gd.db"),
-        os.path.join(os.path.dirname(__file__), "sql", "app.db"),
-        os.path.join(os.path.dirname(__file__), "app.db"),
-        os.environ.get("DB_PATH") or ""
-    ]
-    db_path = next((p for p in try_paths if p and os.path.exists(p)), None)
-    conn = sqlite3.connect(db_path or ":memory:")
-    conn.row_factory = sqlite3.Row
-    cur = conn.execute(sql, params)
-    rows = [dict(r) for r in cur.fetchall()]
-    conn.close()
-    return rows
-
-
-# --- Global Search route ---
+# --- Global Search (single endpoint) ---
 from flask import request
 
-@app.route("/search")
-def search_page():
+# (dbq helper is expected to exist; if not, define a tiny one)
+try:
+    dbq
+except NameError:
+    import sqlite3, os
+    def dbq(sql, params=()):
+        try_paths = [
+            os.path.join(os.path.dirname(__file__), "sql", "gd.db"),
+            os.path.join(os.path.dirname(__file__), "sql", "app.db"),
+            os.path.join(os.path.dirname(__file__), "app.db"),
+            os.environ.get("DB_PATH") or ""
+        ]
+        db_path = next((p for p in try_paths if p and os.path.exists(p)), None)
+        conn = sqlite3.connect(db_path or ":memory:")
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(sql, params)
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+@app.route("/search", endpoint="gd_global_search")
+def gd_global_search():
     q = (request.args.get("q") or "").strip()
     results = []
     if q:
@@ -717,17 +718,16 @@ def search_page():
             html.append("<ul style='list-style:none;padding:0;display:grid;gap:.5rem'>")
             for r in results:
                 sub_html = f"<div class='small muted'>{r['sub']}</div>" if r.get('sub') else ""
-                item = (
+                html.append(
                     f"<li class='card' style='padding:.7rem .9rem'>"
                     f"<div class='small muted'>{r['type']}</div>"
                     f"<a class='link' href='{r['url']}'>{r['title']}</a>"
                     f"{sub_html}"
                     f"</li>"
                 )
-                html.append(item)
             html.append("</ul>")
         else:
             html.append("<p>Nic jsme nenašli.</p>")
     html.append("<p><a class='btn ghost' href='/'>← Zpět</a></p></div>")
-    return "\n".join(html)
+    return "\\n".join(html)
 
