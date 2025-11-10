@@ -716,11 +716,15 @@ def search_page():
         if results:
             html.append("<ul style='list-style:none;padding:0;display:grid;gap:.5rem'>")
             for r in results:
-                html.append("<li class='card' style='padding:.7rem .9rem'>"
-                            f"<div class='small muted'>{r['type']}</div>"
-                            f"<a class='link' href='{r['url']}'>{r['title']}</a>"
-                            f"{('<div class=\\'small muted\\'>'+r['sub']+'</div>') if r.get('sub') else ''}"
-                            "</li>")
+                sub_html = f"<div class='small muted'>{r['sub']}</div>" if r.get('sub') else ""
+                item = (
+                    f"<li class='card' style='padding:.7rem .9rem'>"
+                    f"<div class='small muted'>{r['type']}</div>"
+                    f"<a class='link' href='{r['url']}'>{r['title']}</a>"
+                    f"{sub_html}"
+                    f"</li>"
+                )
+                html.append(item)
             html.append("</ul>")
         else:
             html.append("<p>Nic jsme nenašli.</p>")
