@@ -1,311 +1,281 @@
+
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Kalendář — green david app</title>
-  <link rel="icon" href="/logo.jpg">
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalendář</title>
+  <link rel="stylesheet" href="/style.css" />
   <style>
-    /* jen drobné doplňky – hlavní vzhled nechává /style.css */
-    .header-hero{position:sticky;top:0;background:linear-gradient(180deg, rgba(234,244,239,.95), rgba(234,244,239,.75));padding:calc(10px + env(safe-area-inset-top)) 16px 12px;z-index:10}
-    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
-    .month{font-size:clamp(22px,5.5vw,28px);font-weight:800;letter-spacing:-.3px}
-    .navbtn{border:0;background:#0a6040;color:#fff;padding:10px 12px;border-radius:14px;font-weight:700;cursor:pointer}
-    .navbtn.ghost{background:transparent;color:#0a6040;border:2px solid #0a6040}
-    .grid-wrap{padding:6px 10px 20px}
-    .weekday{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 2px 6px;color:#4d635a;font-weight:700}
-    .weekday span{text-align:center;font-size:12px}
-    .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;min-height:40vh}
-    .day{position:relative;background:#0f2123;border-radius:22px;padding:12px 10px 10px;color:#dfe9e4;box-shadow:0 8px 20px rgba(0,0,0,.12),0 1px 0 rgba(0,0,0,.07) inset;cursor:pointer;overflow:hidden;min-height:92px}
-    .day.out{opacity:.35}
-    .num{font-weight:800;font-size:14px;opacity:.95}
-    .events{margin-top:6px;display:flex;flex-direction:column;gap:6px}
-    .chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;font-size:12px;background:#11332b;border-radius:18px;padding:6px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .chip.dot-job::before{content:'';width:8px;height:8px;border-radius:99px;background:#5dd0ab;display:inline-block}
-    .chip.dot-task::before{content:'';width:8px;height:8px;border-radius:99px;background:#76a1ff;display:inline-block}
-    .chip.dot-note::before{content:'';width:8px;height:8px;border-radius:99px;background:#d3b560;display:inline-block}
-    .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.2);transform:translateY(110%);transition:.28s transform ease;z-index:50}
-    .sheet.open{transform:translateY(0)}
-    .sheet header{padding:14px 16px 0;text-align:center}
-    .tabs{display:flex;gap:10px;justify-content:space-between;margin:10px 16px 8px}
-    .tabs button{flex:1;border-radius:12px;padding:10px;border:0;background:#12352c;color:#dfe9e4;font-weight:700;cursor:pointer}
-    .tabs button.active{background:#0a6040}
-    .fieldset{display:flex;flex-direction:column;gap:10px;margin:10px 16px 18px}
-    .fieldset input,.fieldset textarea,.fieldset select{width:100%;padding:10px 12px;border-radius:12px;border:2px solid #0a6040;background:#fff;font-size:14px}
-    .row{display:flex;gap:10px}
-    .row>*{flex:1}
-    .sheet footer{display:flex;justify-content:flex-end;gap:12px;padding:12px 16px 16px}
-    .btn{border:0;border-radius:14px;padding:10px 14px;font-weight:700;cursor:pointer}
-    .btn.primary{background:#0a6040;color:#fff}
-    .btn.ghost{background:transparent;color:#0a6040;border:2px solid #0a6040}
-    .err{display:none;background:#fee;border:2px solid #d33;color:#600;margin:12px 16px;padding:8px 10px;border-radius:12px}
+    /* Neinvazivní doplňky pro layout – drží se existujících barev */
+    .cal-wrap { max-width: 1200px; margin: 0 auto; padding: 16px 20px 120px; }
+    .cal-header { display:flex; justify-content:space-between; align-items:center; margin: 8px 0 12px; }
+    .cal-title { font-size: 40px; font-weight: 800; letter-spacing: .3px; }
+    .cal-nav { display:flex; gap:8px; align-items:center; }
+    .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: 18px; }
+    .cal-cell { position: relative; border-radius: 24px; padding: 12px 12px 46px; min-height: 120px; background: var(--card-bg, #101c1b); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+    .cal-cell.muted { background: rgba(0,0,0,.15); opacity: .6; }
+    .cal-weekday { display:grid; grid-template-columns: repeat(7, 1fr); gap: 18px; margin-bottom: 8px; color: rgba(255,255,255,.65); font-weight:600; }
+    .cal-weekday div { text-align:center; }
+    .cal-daynum { position:absolute; top:10px; left:12px; font-weight:700; opacity:.9; }
+    .pill { display:inline-block; max-width: 100%; margin: 6px 6px 0 0; padding: 3px 8px; border-radius: 999px; font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border:1px solid rgba(255,255,255,.1) }
+    .pill.job { background: rgba(0,180,140,.18); }
+    .pill.task { background: rgba(0,120,255,.18); }
+    .pill.note { background: rgba(200,200,200,.15); }
+    .legend { display:flex; gap:20px; align-items:center; margin: 14px 0 22px; font-size:14px; }
+    .legend .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+    .dot.job{ background:#00b48c }
+    .dot.task{ background:#0078ff }
+    .dot.note{ background:#9ea3a5 }
+    .fab { position: fixed; right: 20px; bottom: 20px; z-index:3; }
+    .sheet { position: fixed; left: 0; right:0; bottom: -100%; background: #0e1716; border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -8px 30px rgba(0,0,0,.35); padding: 14px 16px 18px; transition: bottom .28s ease; z-index: 50; }
+    .sheet.open { bottom: 0; }
+    .sheet .title { font-weight:800; margin-bottom:8px; }
+    .sheet .row { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0; }
+    .btn { background:#0f3; color:#031; padding:.5rem .9rem; border-radius:10px; border:none; font-weight:700; cursor:pointer; }
+    .btn.minor { background:#1e2b2a; color:#dfe; }
+    .btn.danger { background:#b92e2e; color:white; }
+    .btn:disabled { opacity:.5; cursor:not-allowed }
+    .muted { opacity:.75 }
+    .errorbar { position:fixed; left:16px; right:16px; bottom:84px; background:#361417; color:#ffb4c0; border:1px solid #703e46; border-radius:12px; padding:10px 12px; font-size:13px; display:none; z-index:60 }
+    .errorbar.show{ display:block }
+    .hidden { display:none }
   </style>
 </head>
-<body style="background:#eaf4ef;color:#111">
-  <div class="header-hero">
-    <a class="back" href="/">← Zpět do aplikace</a>
-    <div class="toolbar">
-      <div class="month" id="monthTitle">Měsíc</div>
-      <div style="display:flex;gap:8px">
-        <button class="navbtn ghost" id="prevBtn">◀︎</button>
-        <button class="navbtn" id="todayBtn">Dnes</button>
-        <button class="navbtn ghost" id="nextBtn">▶︎</button>
+<body>
+  <div class="cal-wrap">
+    <a href="/" style="color:inherit;text-decoration:none">← Zpět do aplikace</a>
+    <div class="cal-header">
+      <div class="cal-title" id="calTitle">Měsíc</div>
+      <div class="cal-nav">
+        <button id="prevBtn" class="btn minor" aria-label="Předchozí">◀︎</button>
+        <button id="todayBtn" class="btn minor">Dnes</button>
+        <button id="nextBtn" class="btn minor" aria-label="Další">▶︎</button>
       </div>
+    </div>
+
+    <div class="legend">
+      <div><span class="dot job"></span> zakázky</div>
+      <div><span class="dot task"></span> úkoly / připomínky</div>
+      <div><span class="dot note"></span> ostatní</div>
+    </div>
+
+    <div class="cal-weekday">
+      <div>P</div><div>Ú</div><div>S</div><div>Č</div><div>P</div><div>S</div><div>N</div>
+    </div>
+
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- Bottom sheet -->
+  <div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="title" id="sheetTitle">Detail</div>
+    <div id="sheetBody"></div>
+    <div class="row">
+      <button class="btn minor" id="closeSheet">Zavřít</button>
+      <button class="btn" id="editBtn">Upravit</button>
+      <button class="btn danger" id="deleteBtn">Smazat</button>
     </div>
   </div>
 
-  <div class="grid-wrap">
-    <div class="weekday">
-      <span>P</span><span>Ú</span><span>S</span><span>Č</span><span>P</span><span>S</span><span>N</span>
-    </div>
-    <div class="cal" id="cal"></div>
-  </div>
-
-  <div id="err" class="err"></div>
-
-  <!-- spodní sheet -->
-  <div class="sheet" id="sheet">
-    <header>
-      <div id="sheetTitle" style="font-weight:800"></div>
-      <div style="display:flex;gap:10px;justify-content:center;margin:10px 0">
-        <button class="btn ghost" id="btnDetail">Detail</button>
-        <button class="btn ghost" id="btnEdit">Upravit</button>
-        <button class="btn ghost" id="btnDelete">Smazat</button>
-      </div>
-    </header>
-
-    <div class="tabs" id="tabs">
-      <button data-tab="job" class="active">Zakázka</button>
-      <button data-tab="task">Úkol</button>
-      <button data-tab="note">Poznámka</button>
-    </div>
-
-    <div class="fieldset" id="form">
-      <!-- Zakázka -->
-      <div data-pane="job">
-        <input id="job_title" placeholder="Název zakázky*">
-        <div class="row">
-          <input id="job_customer" placeholder="Zákazník*">
-          <input id="job_city" placeholder="Město">
-        </div>
-        <div class="row">
-          <select id="job_plan">
-            <option value="plan">Plán</option>
-            <option value="done">Hotovo</option>
-          </select>
-          <input id="job_code" placeholder="Kód (např. 2025-091)">
-        </div>
-        <textarea id="job_note" placeholder="Poznámka"></textarea>
-      </div>
-      <!-- Úkol -->
-      <div data-pane="task" hidden>
-        <input id="task_title" placeholder="Název úkolu*">
-        <div class="row">
-          <input id="task_due" type="date" placeholder="Termín">
-          <select id="task_status">
-            <option value="open">Otevřený</option>
-            <option value="done">Hotovo</option>
-          </select>
-        </div>
-        <textarea id="task_desc" placeholder="Popis"></textarea>
-      </div>
-      <!-- Poznámka -->
-      <div data-pane="note" hidden>
-        <textarea id="note_text" placeholder="Poznámka"></textarea>
-      </div>
-    </div>
-
-    <footer>
-      <button class="btn ghost" id="btnCancel">Zrušit</button>
-      <button class="btn primary" id="btnSave">Uložit</button>
-    </footer>
-  </div>
+  <div id="errorbar" class="errorbar"></div>
 
 <script>
-// ---------- Error surfacing ----------
-function showErr(msg){
-  const el = document.getElementById('err');
-  el.textContent = typeof msg === 'string' ? msg : (msg && msg.message) || 'Neznámá chyba';
-  el.style.display = 'block';
-  console.error(msg);
-}
-window.addEventListener('error', e => showErr(e.error || e.message || e));
-window.addEventListener('unhandledrejection', e => showErr(e.reason || e));
+(() => {
+  const grid = document.getElementById('calGrid');
+  const titleEl = document.getElementById('calTitle');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const todayBtn = document.getElementById('todayBtn');
+  const errorbar = document.getElementById('errorbar');
 
-// ---------- Helpers ----------
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const byId = id => document.getElementById(id);
+  const sheet = document.getElementById('sheet');
+  const sheetTitle = document.getElementById('sheetTitle');
+  const sheetBody = document.getElementById('sheetBody');
+  const closeSheet = document.getElementById('closeSheet');
+  const editBtn = document.getElementById('editBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
 
-function fmtMonth(d){
-  return d.toLocaleDateString('cs-CZ', {month:'long', year:'numeric'}).replace(/^./, c=>c.toUpperCase());
-}
-function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-function pad2(n){ return String(n).padStart(2,'0'); }
-function firstDayOfGrid(d){
-  const first = new Date(d.getFullYear(), d.getMonth(), 1);
-  const dow = (first.getDay()+6)%7; // Po=0
-  const grid = new Date(first); grid.setDate(first.getDate()-dow);
-  return grid;
-}
-function addDays(d, n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  let current = new Date();
+  let monthCache = {}; // YYYY-MM -> items by date
+  let selectedItem = null;
 
-async function fetchJSON(url, opts){
-  const res = await fetch(url, {credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opts});
-  if(res.ok){
-    const txt = await res.text();
-    try { return txt ? JSON.parse(txt) : null; } catch(e){ return txt; }
+  function fmtMonthKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   }
-  const err = await res.text().catch(()=>'');
-  throw new Error(`${res.status} ${res.statusText} — ${err}`);
-}
+  function fmtDateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function csMonthName(d){
+    const names = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+    return names[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function showError(msg){
+    errorbar.textContent = msg;
+    errorbar.classList.add('show');
+    setTimeout(()=>errorbar.classList.remove('show'), 5000);
+  }
+  function openSheet(item){
+    selectedItem = item;
+    sheetTitle.textContent = (item.typeLabel || item.type || 'Detail') + ' — ' + (item.title || item.name || '(bez názvu)');
+    sheetBody.innerHTML = `
+      <div class="muted">Datum: ${item.date || item.day || item.due_date || ''}</div>
+      <div style="margin-top:6px">${(item.description || item.note || '')}</div>
+      <div class="muted" style="margin-top:8px">ID: ${item.id || item.task_id || item.job_id || ''}</div>
+    `;
+    sheet.classList.add('open');
+    sheet.setAttribute('aria-hidden','false');
+  }
+  function closeSheetFn(){
+    sheet.classList.remove('open');
+    sheet.setAttribute('aria-hidden','true');
+    selectedItem = null;
+  }
 
-// ---------- State ----------
-const state = {
-  month: new Date(), // current visible month
-  data: { days: [] },
-  selected: null, // {type,id,date,title}
-};
+  closeSheet.addEventListener('click', closeSheetFn);
 
-// ---------- Rendering ----------
-async function loadMonth(){
-  const ym = `${state.month.getFullYear()}-${pad2(state.month.getMonth()+1)}`;
-  const data = await fetchJSON(`/gd/api/calendar?month=${ym}`);
-  state.data = data || {days:[]};
-  render();
-}
-
-function render(){
-  byId('monthTitle').textContent = fmtMonth(state.month);
-  const cal = byId('cal'); cal.innerHTML = '';
-
-  // 6 týdnů grid
-  const start = firstDayOfGrid(state.month);
-  for(let i=0;i<42;i++){
-    const d = addDays(start, i);
-    const cell = document.createElement('div');
-    cell.className = 'day' + (d.getMonth()===state.month.getMonth() ? '' : ' out');
-    const num = document.createElement('div'); num.className='num'; num.textContent=d.getDate(); cell.appendChild(num);
-
-    // Najdi události pro tento den
-    const ymdStr = ymd(d);
-    const dayData = (state.data.days || []).find(x => x.date === ymdStr);
-    const evBox = document.createElement('div'); evBox.className='events';
-    if(dayData){
-      (dayData.jobs || []).forEach(j=>{
-        const chip = document.createElement('div'); chip.className='chip dot-job'; chip.textContent = j.title || j.name || '(bez názvu)';
-        chip.addEventListener('click', (e)=>{ e.stopPropagation(); openSheet({type:'job', id:j.id, date:ymdStr, title:chip.textContent}); });
-        evBox.appendChild(chip);
+  editBtn.addEventListener('click', async () => {
+    if(!selectedItem){ return; }
+    try{
+      const id = selectedItem.id || selectedItem.task_id || selectedItem.job_id;
+      const type = selectedItem.type || selectedItem.kind || (selectedItem.task_id ? 'task' : (selectedItem.job_id ? 'job' : 'note'));
+      // jednoduchá PATCH – pošle beze změn (jen demonstrace rozhraní). V praxi by se zde otevřel formulář.
+      const endpoint = type === 'job' ? '/api/jobs' : (type === 'task' ? '/api/tasks' : '/api/tasks');
+      const resp = await fetch(endpoint + '?id=' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ title: selectedItem.title || selectedItem.name || 'upraveno' })
       });
-      (dayData.tasks || []).forEach(t=>{
-        const chip = document.createElement('div'); chip.className='chip dot-task'; chip.textContent = t.title || '(úkol)';
-        chip.addEventListener('click', (e)=>{ e.stopPropagation(); openSheet({type:'task', id:t.id, date:ymdStr, title:chip.textContent}); });
-        evBox.appendChild(chip);
-      });
-      (dayData.notes || dayData.other || []).forEach(n=>{
-        const chip = document.createElement('div'); chip.className='chip dot-note'; chip.textContent = n.title || n.text || '(poznámka)';
-        chip.addEventListener('click', (e)=>{ e.stopPropagation(); openSheet({type:'note', id:n.id, date:ymdStr, title:chip.textContent}); });
-        evBox.appendChild(chip);
-      });
+      if(!resp.ok){ throw new Error('Upravit selhalo: ' + resp.status); }
+      await reload();
+      closeSheetFn();
+    }catch(e){ showError(String(e)); }
+  });
+
+  deleteBtn.addEventListener('click', async () => {
+    if(!selectedItem){ return; }
+    try{
+      const id = selectedItem.id || selectedItem.task_id || selectedItem.job_id;
+      const type = selectedItem.type || selectedItem.kind || (selectedItem.task_id ? 'task' : (selectedItem.job_id ? 'job' : 'task'));
+      const endpoint = type === 'job' ? '/api/jobs' : '/api/tasks';
+      const resp = await fetch(endpoint + '?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      if(!resp.ok){ throw new Error('Smazat selhalo: ' + resp.status); }
+      await reload();
+      closeSheetFn();
+    }catch(e){ showError(String(e)); }
+  });
+
+  prevBtn.addEventListener('click', () => { current.setMonth(current.getMonth()-1); render(); });
+  nextBtn.addEventListener('click', () => { current.setMonth(current.getMonth()+1); render(); });
+  todayBtn.addEventListener('click', () => { current = new Date(); render(); });
+
+  async function loadMonth(key){
+    if(monthCache[key]) return monthCache[key];
+    try{
+      const res = await fetch('/gd/api/calendar?month=' + key);
+      if(!res.ok){ throw new Error('Načítání dat selhalo (' + res.status + ')'); }
+      const data = await res.json();
+      // Adaptér – zkusí různé tvary backendu
+      const byDate = {};
+      function push(date, item){
+        if(!byDate[date]) byDate[date] = [];
+        byDate[date].push(item);
+      }
+      if(Array.isArray(data)){
+        for(const it of data){
+          const date = it.date || it.day || it.due_date;
+          if(!date) continue;
+          const type = it.type || it.kind || (it.job_id?'job':(it.task_id?'task':'note'));
+          push(date, normalizeItem(it, type));
+        }
+      } else if (data && typeof data === 'object') {
+        if (data.days) {
+          for (const [date, bucket] of Object.entries(data.days)) {
+            const addAll = (arr, type) => (Array.isArray(arr)?arr:[]).forEach(it => push(date, normalizeItem(it, type)));
+            addAll(bucket.jobs || bucket.job || [], 'job');
+            addAll(bucket.tasks || bucket.task || [], 'task');
+            addAll(bucket.notes || bucket.note || [], 'note');
+          }
+        } else if (data.items) {
+          for(const it of data.items){
+            const date = it.date || it.day || it.due_date;
+            if(!date) continue;
+            const type = it.type || it.kind || (it.job_id?'job':(it.task_id?'task':'note'));
+            push(date, normalizeItem(it, type));
+          }
+        }
+      }
+      monthCache[key] = byDate;
+      return byDate;
+    }catch(e){
+      showError(String(e));
+      monthCache[key] = {};
+      return {};
     }
-    cell.appendChild(evBox);
-    cell.addEventListener('click', ()=> openSheet({type:'task', id:null, date:ymdStr, title:ymdToCZ(ymdStr)}));
-    cal.appendChild(cell);
   }
-}
 
-// ---------- Sheet / CRUD ----------
-function switchTab(tab){
-  $$('#tabs button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
-  $$('#form [data-pane]').forEach(p=> p.hidden = (p.getAttribute('data-pane')!==tab));
-}
-function fillForm(evt){
-  byId('sheetTitle').textContent = evt.title || ymdToCZ(evt.date);
-  switchTab(evt.type);
-  state.selected = evt;
-}
-
-function openSheet(evt){
-  fillForm(evt);
-  byId('sheet').classList.add('open');
-}
-function closeSheet(){
-  byId('sheet').classList.remove('open');
-  state.selected = null;
-}
-
-async function onRowDetail(){
-  // Zobrazit detail načtením dat – zatím jen načte seznam pro typ
-  const s = state.selected; if(!s || !s.id){ return; }
-  const endpoint = s.type==='job' ? `/api/jobs?id=${s.id}` : `/api/tasks?id=${s.id}`;
-  const data = await fetchJSON(endpoint);
-  alert(JSON.stringify(data, null, 2));
-}
-
-async function onRowDelete(){
-  const s = state.selected; if(!s){ return; }
-  if(!s.id){ closeSheet(); return; } // nic k mazání
-  if(!confirm('Opravdu smazat?')) return;
-  const endpoint = s.type==='job' ? `/api/jobs?id=${s.id}` : `/api/tasks?id=${s.id}`;
-  await fetchJSON(endpoint, { method: 'DELETE' });
-  await loadMonth();
-  closeSheet();
-}
-
-async function onSave(){
-  const s = state.selected;
-  const body = {};
-  let url = '', method = 'POST';
-  if(s.type==='job'){
-    url = '/api/jobs';
-    Object.assign(body, {
-      title: byId('job_title').value.trim(),
-      customer: byId('job_customer').value.trim(),
-      city: byId('job_city').value.trim(),
-      status: byId('job_plan').value || 'plan',
-      code: byId('job_code').value.trim(),
-      note: byId('job_note').value.trim(),
-      date: s.date
-    });
-  }else if(s.type==='task'){
-    url = '/api/tasks';
-    Object.assign(body, {
-      title: byId('task_title').value.trim(),
-      description: byId('task_desc').value.trim(),
-      status: byId('task_status').value || 'open',
-      due_date: byId('task_due').value || s.date,
-      created_at: new Date().toISOString().slice(0,19).replace('T',' ')
-    });
-  }else{
-    url = '/api/tasks';
-    Object.assign(body, { title: byId('note_text').value.trim(), status:'open', due_date:s.date, created_at:new Date().toISOString().slice(0,19).replace('T',' ') });
+  function normalizeItem(it, type){
+    const title = it.title || it.name || it.customer || it.note || '(bez názvu)';
+    const id = it.id || it.task_id || it.job_id || it.note_id;
+    const date = it.date || it.day || it.due_date;
+    return {
+      id, type, title,
+      description: it.description || it.note || '',
+      date,
+      typeLabel: type === 'job' ? 'Zakázka' : (type === 'task' ? 'Úkol' : 'Poznámka'),
+      raw: it
+    };
   }
-  if(s.id){ method = 'PATCH'; url += `?id=${s.id}`; }
-  await fetchJSON(url, { method, body: JSON.stringify(body) });
-  await loadMonth();
-  closeSheet();
-}
 
-// ---------- events ----------
-byId('btnCancel').addEventListener('click', closeSheet);
-byId('btnSave').addEventListener('click', onSave);
-byId('btnEdit').addEventListener('click', ()=>{ const s=state.selected; if(s){ /* přepnout do režimu editace – nic speciálního tu není */ }});
-byId('btnDetail').addEventListener('click', onRowDetail);
-byId('btnDelete').addEventListener('click', onRowDelete);
-$('#tabs').addEventListener('click', (e)=>{
-  const b = e.target.closest('button[data-tab]'); if(!b) return;
-  switchTab(b.dataset.tab);
-});
+  function cellTemplate(day, muted){
+    return `<div class="cal-cell ${muted?'muted':''}" data-date="${day.toISOString().slice(0,10)}">
+              <div class="cal-daynum">${day.getDate()}</div>
+              <div class="pills"></div>
+            </div>`;
+  }
 
-// navigace měsíců
-byId('todayBtn').addEventListener('click', ()=>{ state.month = new Date(); loadMonth(); });
-byId('prevBtn').addEventListener('click', ()=>{ const d=new Date(state.month); d.setMonth(d.getMonth()-1); state.month=d; loadMonth(); });
-byId('nextBtn').addEventListener('click', ()=>{ const d=new Date(state.month); d.setMonth(d.getMonth()+1); state.month=d; loadMonth(); });
+  async function render(){
+    titleEl.textContent = csMonthName(current);
+    const key = fmtMonthKey(current);
+    const dataByDate = await loadMonth(key);
 
-// ---------- bootstrap ----------
-function ymdToCZ(s){ const m=String(s||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
-loadMonth();
+    // první den v měsíci
+    const first = new Date(current.getFullYear(), current.getMonth(), 1);
+    const startWeekday = (first.getDay() + 6) % 7; // Po=0 .. Ne=6
+    const start = new Date(first);
+    start.setDate(first.getDate() - startWeekday);
+
+    grid.innerHTML = '';
+    for(let i=0;i<42;i++){
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const muted = d.getMonth() !== current.getMonth();
+      grid.insertAdjacentHTML('beforeend', cellTemplate(d, muted));
+    }
+
+    // naplnění dat
+    for(const cell of grid.querySelectorAll('.cal-cell')){
+      const day = cell.dataset.date;
+      const list = dataByDate[day] || [];
+      const pills = cell.querySelector('.pills');
+      if(list.length === 0){ continue; }
+      for(const item of list){
+        const span = document.createElement('span');
+        span.className = 'pill ' + (item.type === 'job' ? 'job' : (item.type === 'task' ? 'task' : 'note'));
+        span.textContent = item.title;
+        span.title = item.typeLabel + ' • ' + (item.description || '');
+        span.addEventListener('click', (ev)=>{ ev.stopPropagation(); openSheet(item); });
+        pills.appendChild(span);
+      }
+    }
+  }
+
+  async function reload(){
+    monthCache[fmtMonthKey(current)] = null;
+    await render();
+  }
+
+  render();
+})();
 </script>
 </body>
 </html>
