@@ -510,7 +510,8 @@ def api_tasks():
         cur = db.execute("DELETE FROM tasks WHERE id = ?", (tid,))
         db.commit()
         if cur.rowcount == 0:
-            return jsonify({"ok": False, "error": "not_found", "id": tid}), 404
+            # pokud záznam není -> přátelská odpověď, ať UI nemusí řešit 404
+            return jsonify({"ok": True, "deleted": tid, "note": "not_found_treated_as_deleted"}), 200
         return jsonify({"ok": True, "deleted": tid}), 200
 
     abort(405)
@@ -634,6 +635,5 @@ if __name__ == "__main__":
 
 
 @app.route("/gd/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
-def gd_api_tasks():
-    # Reuse the same handler so both paths behave identicky
+def gd_api_tasks_alias():
     return api_tasks()
