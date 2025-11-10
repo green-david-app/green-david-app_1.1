@@ -122,3 +122,12 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   /* Change ID mobile */
   .table td input[type="number"]{width:100% !important; max-width:100%}
 }
+
+
+/* --- Global search hotfix --- */
+.global-search-wrap{ display:flex; justify-content:center; margin:.75rem auto 0; }
+.global-search{ display:flex; gap:.5rem; width:min(900px, 92%); }
+.global-search input[type="text"]{ flex:1; background:#fff; color:#111; border-radius:.5rem; padding:.6rem .8rem; border:1px solid rgba(0,0,0,.2); }
+.global-search .btn{ background:#2e7d32; color:#fff; border:none; border-radius:.5rem; padding:.6rem 1rem; cursor:pointer; }
+@media (max-width:680px){ .global-search{ width:95%; } }
+
