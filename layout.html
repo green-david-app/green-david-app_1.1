@@ -20,7 +20,12 @@
       {% if me %}Přihlášen: {{ me.name }}{% endif %}
       <a class="btn ghost" href="/logout">Odhlásit</a>
     </div>
-  </div>
+  
+  <form id="global-search" style="margin:10px 0;display:flex;gap:8px" action="/search" method="get">
+    <input type="search" name="q" placeholder="Hledat..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #444">
+    <button class="btn ghost" type="submit">Hledat</button>
+  </form>
+</div>
 
   <div class="tabs" id="main-tabs">
     <!-- původní odkazy (Zakázky, Úkoly, …) se načtou ze stávajícího layoutu -->
