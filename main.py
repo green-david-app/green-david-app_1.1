@@ -432,89 +432,64 @@ def api_job_assignments(job_id):
     return jsonify({"ok": True})
 
 # ----------------- Tasks CRUD -----------------
-@app.route("/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
+@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
 def api_tasks():
-    from flask import request, jsonify, abort
-    import sqlite3
-
+    u, err = require_role(write=(request.method!="GET"))
+    if err: return err
     db = get_db()
-    method = request.method
 
-    def _normalize_date(v):
-        if not v:
-            return None
-        return str(v).strip()[:10]
+    if request.method == "GET":
+        jid = request.args.get("job_id", type=int)
+        q = """SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
+                      e.name AS employee_name
+               FROM tasks t
+               LEFT JOIN employees e ON e.id=t.employee_id"""
+        conds=[]; params=[]
+        if jid: conds.append("t.job_id=?"); params.append(jid)
+        if conds: q += " WHERE " + " AND ".join(conds)
+        q += " ORDER BY COALESCE(t.due_date,''), t.id ASC"
+        rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        return jsonify({"ok": True, "tasks": rows})
 
-    if method == "GET":
-        tid = request.args.get("id")
-        if tid:
-            row = db.execute("SELECT * FROM tasks WHERE id = ?", (tid,)).fetchone()
-            if not row:
-                return jsonify({"error": "not_found"}), 404
-            return jsonify(dict(row)), 200
-        rows = db.execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
-        return jsonify([dict(r) for r in rows]), 200
-
-    if method == "POST":
-        data = request.get_json(silent=True) or request.form
-        try:
-            db.execute(
-                "INSERT INTO tasks (job_id, employee_id, title, description, status, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
-                (
-                    data.get("job_id"),
-                    data.get("employee_id"),
-                    (data.get("title") or "").strip(),
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        title = (data.get("title") or "").strip()
+        if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
+                      VALUES (?,?,?,?,?,?)""",
+                   (int(data.get("job_id")) if data.get("job_id") else None,
+                    int(data.get("employee_id")) if data.get("employee_id") else None,
+                    title,
                     (data.get("description") or "").strip(),
-                    (data.get("status") or "open").strip(),
-                    _normalize_date(data.get("due_date")) if data.get("due_date") else None,
-                ),
-            )
-            db.commit()
-            new_id = db.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
-            row = db.execute("SELECT * FROM tasks WHERE id = ?", (new_id,)).fetchone()
-            return jsonify(dict(row)), 201
-        except sqlite3.IntegrityError as e:
-            db.rollback()
-            return jsonify({"error": "integrity_error", "detail": str(e)}), 400
-
-    if method in ("PATCH", "PUT"):
-        data = request.get_json(silent=True) or request.form
-        tid = data.get("id") or request.args.get("id")
-        if not tid:
-            return jsonify({"error": "missing_id"}), 400
-        fields, params = [], []
-        for k in ("job_id", "employee_id", "title", "description", "status", "due_date"):
-            if k in data and data.get(k) is not None:
-                v = data.get(k)
-                if k == "due_date":
-                    v = _normalize_date(v)
-                fields.append(f"{k} = ?")
-                params.append(v)
-        if not fields:
-            return jsonify({"error": "nothing_to_update"}), 400
-        params.append(tid)
-        db.execute(f"UPDATE tasks SET {', '.join(fields)} WHERE id = ?", params)
+                    (data.get("status") or "open"),
+                    _normalize_date(data.get("due_date")) if data.get("due_date") else None))
         db.commit()
-        row = db.execute("SELECT * FROM tasks WHERE id = ?", (tid,)).fetchone()
-        return jsonify(dict(row)), 200
+        return jsonify({"ok": True})
 
-    if method == "DELETE":
-        data = request.get_json(silent=True) or {}
-        tid_raw = request.args.get("id") or data.get("id")
-        if not tid_raw:
-            return jsonify({"error": "missing_id"}), 400
-        try:
-            tid = int(str(tid_raw).strip())
-        except ValueError:
-            return jsonify({"error": "invalid_id"}), 400
-        cur = db.execute("DELETE FROM tasks WHERE id = ?", (tid,))
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        tid = data.get("id")
+        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        allowed = ["title","description","status","due_date","employee_id","job_id"]
+        sets=[]; vals=[]
+        for k in allowed:
+            if k in data:
+                v = _normalize_date(data[k]) if k=="due_date" else data[k]
+                if k in ("employee_id","job_id") and v is not None:
+                    v = int(v)
+                sets.append(f"{k}=?"); vals.append(v)
+        if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+        vals.append(int(tid))
+        db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
         db.commit()
-        if cur.rowcount == 0:
-            # pokud záznam není -> přátelská odpověď, ať UI nemusí řešit 404
-            return jsonify({"ok": True, "deleted": tid, "note": "not_found_treated_as_deleted"}), 200
-        return jsonify({"ok": True, "deleted": tid}), 200
+        return jsonify({"ok": True})
 
-    abort(405)
+    tid = request.args.get("id", type=int)
+    if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+    db.execute("DELETE FROM tasks WHERE id=?", (tid,))
+    db.commit()
+    return jsonify({"ok": True})
+# timesheets CRUD + export
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
     u, err = require_role(write=(request.method!="GET"))
@@ -632,8 +607,3 @@ def page_timesheets():
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
-
-
-@app.route("/gd/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
-def gd_api_tasks_alias():
-    return api_tasks()
