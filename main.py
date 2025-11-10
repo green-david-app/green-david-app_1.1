@@ -502,12 +502,18 @@ def api_tasks():
         return jsonify(dict(row)), 200
 
     if method == "DELETE":
-        tid = request.args.get("id") or (request.get_json(silent=True) or {}).get("id")
-        if not tid:
-            return jsonify({"error":"missing_id"}), 400
-        db.execute("DELETE FROM tasks WHERE id = ?", (tid,))
-        db.commit()
-        return jsonify({"ok": True, "deleted": int(tid)}), 200
+    tid_raw = request.args.get("id") or (request.get_json(silent=True) or {}).get("id")
+    if not tid_raw:
+        return jsonify({"error":"missing_id"}), 400
+    try:
+        tid = int(str(tid_raw).strip())
+    except ValueError:
+        return jsonify({"error":"invalid_id"}), 400
+    cur = db.execute("DELETE FROM tasks WHERE id = ?", (tid,))
+    db.commit()
+    if cur.rowcount == 0:
+        return jsonify({"ok": False, "error": "not_found", "id": tid}), 404
+    return jsonify({"ok": True, "deleted": tid}), 200
 
     abort(405)
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
