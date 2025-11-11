@@ -7,7 +7,30 @@ DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__, static_folder=".", static_url_path="")
+app = Flask(__name__)
+
+ARCHIVE_BASE = os.path.join(os.getcwd(), "uploads", "zakazky", "archiv")
+
+def _ensure_dir(p):
+    if not p: return
+    os.makedirs(p, exist_ok=True)
+
+def _job_select_all():
+    return "SELECT id, title, client, city, code, status, date, note, completed_at FROM jobs"
+
+def _write_job_archive_file(job_row: dict, task_rows: list):
+    comp = job_row.get("completed_at")
+    if not comp:
+        return
+    ym = comp[:7].replace("/", "-")
+    target_dir = os.path.join(ARCHIVE_BASE, ym)
+    _ensure_dir(target_dir)
+    job_id = job_row.get("id")
+    outp = os.path.join(target_dir, f"job_{job_id}.json")
+    payload = {"job": job_row, "tasks": task_rows}
+    with open(outp, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+ static_folder=".", static_url_path="")
 
 # --- Employees/Zamestnanci aliases (to avoid 404) ---
 from flask import render_template
@@ -654,3 +677,31 @@ def archive_view():
     u, err = require_role(write=False)
     if err: return err
     return render_template("archive.html", title="Archiv zakázek")
+
+def _migrate_completed_at():
+    db = get_db()
+    cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
+    if "completed_at" not in cols:
+        db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
+        db.commit()
+
+@app.before_first_request
+def _init_app():
+    _migrate_completed_at()
+
+@app.route("/api/jobs/archive")
+def api_archive():
+    u, err = require_role(write=False)
+    if err: return err
+    months = {}
+    for path, dirs, files in os.walk(ARCHIVE_BASE):
+        for f in files:
+            if not f.endswith(".json"): continue
+            ym = os.path.basename(path)
+            try:
+                with open(os.path.join(path,f),"r",encoding="utf-8") as fh:
+                    obj = json.load(fh)
+            except Exception:
+                obj = None
+            months.setdefault(ym, []).append(obj)
+    return jsonify({"ok": True, "months": months})
