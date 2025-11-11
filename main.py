@@ -9,6 +9,13 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
+# Run lightweight DB migration on import (Flask 3)
+try:
+    with app.app_context():
+        _migrate_completed_at()
+except Exception:
+    pass
+
 
 def _migrate_completed_at():
     db = get_db()
@@ -20,9 +27,6 @@ def _migrate_completed_at():
     except Exception:
         pass
 
-@app.before_first_request
-def _init_migrations():
-    _migrate_completed_at()
 
 
 
