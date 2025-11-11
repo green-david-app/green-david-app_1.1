@@ -1,28 +1,32 @@
 {% extends "layout.html" %}
 {% block content %}
 <h1>Archiv zakázek</h1>
+<div class="toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+  <a class="btn" href="/?tab=jobs">← Zpět na zakázky</a>
+</div>
 <div id="arch"></div>
 <script>
 (async () => {
   const res = await fetch('/api/jobs/archive');
   const data = await res.json();
-  if(!data.ok){ document.getElementById('arch').textContent = 'Chyba načítání archivu'; return; }
   const root = document.getElementById('arch');
-  const months = Object.keys(data.months).sort().reverse();
+  if(!data.ok){ root.textContent = 'Chyba načítání archivu'; return; }
+  const months = Object.keys(data.months||{}).sort().reverse();
   if(months.length===0){ root.innerHTML = '<p>Archiv je prázdný.</p>'; return; }
   months.forEach(m => {
     const sec = document.createElement('section');
-    sec.innerHTML = `<h2>${m}</h2>`;
+    sec.innerHTML = `<h2 style="margin-top:20px">${m}</h2>`;
     const list = document.createElement('div');
+    list.className = 'grid';
     (data.months[m]||[]).forEach(item => {
       const j = item.job || {};
       const el = document.createElement('div');
       el.className = 'card';
-      el.innerHTML = `<div class="card-body">
-        <div><strong>${j.title || j.name || 'Bez názvu'}</strong></div>
-        <div>${j.client || ''} • ${j.city || ''} • ${j.code || ''}</div>
-        <div>Dokončeno: ${j.completed_at || ''}</div>
-        <details><summary>Detaily</summary><pre style="white-space:pre-wrap">${(j.note||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre></details>
+      el.innerHTML = `<div class="card-c">
+        <div style="font-weight:700">${j.title || j.name || 'Bez názvu'}</div>
+        <div style="opacity:.8">${[j.client,j.city,j.code].filter(Boolean).join(' • ')}</div>
+        <div style="margin-top:6px">Dokončeno: <strong>${j.completed_at || ''}</strong></div>
+        ${j.note ? `<details style="margin-top:8px"><summary>Poznámka</summary><div style="white-space:pre-wrap">${j.note}</div></details>` : ''}
       </div>`;
       list.appendChild(el);
     });

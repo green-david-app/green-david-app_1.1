@@ -647,3 +647,10 @@ def search_page():
                 results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
         except Exception: pass
     return render_template("search.html", title="Hledání", q=q, results=results)
+
+
+@app.route("/archive")
+def archive_view():
+    u, err = require_role(write=False)
+    if err: return err
+    return render_template("archive.html", title="Archiv zakázek")
