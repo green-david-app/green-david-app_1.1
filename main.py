@@ -7,7 +7,7 @@ DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".", static_url_path="")
 
 ARCHIVE_BASE = os.path.join(os.getcwd(), "uploads", "zakazky", "archiv")
 
@@ -372,6 +372,24 @@ def api_jobs():
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
         db.commit()
+        # after update: if completed -> stamp and archive
+        job = db.execute("SELECT id, title, client, city, code, status, date, note, completed_at FROM jobs WHERE id=?", (jid,)).fetchone()
+        if job:
+            job = dict(job)
+            if str(job.get("status","")).lower().startswith("dokon"):
+                if not job.get("completed_at"):
+                    job["completed_at"] = datetime.utcnow().strftime("%Y-%m-%d")
+                    db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (job["completed_at"], jid))
+                    db.commit()
+                # try fetch tasks if table exists, else empty
+                tasks = []
+                try:
+                    cols = [r[1] for r in db.execute("PRAGMA table_info(job_tasks)").fetchall()]
+                    if cols:
+                        tasks = [dict(r) for r in db.execute("SELECT * FROM job_tasks WHERE job_id=?", (jid,)).fetchall()]
+                except Exception:
+                    tasks = []
+                _write_job_archive_file(job, tasks)
         return jsonify({"ok": True})
 
     # DELETE
