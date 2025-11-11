@@ -411,6 +411,19 @@ def api_jobs():
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
         db.commit()
+        # Archive after PATCH if completed
+        if completed_at:
+            try:
+                db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (completed_at, jid))
+                db.commit()
+            except Exception:
+                pass
+            try:
+                jr = db.execute(_job_select_all() + " WHERE id=?", (jid,)).fetchone()
+                trows = [dict(r) for r in db.execute("SELECT * FROM tasks WHERE job_id=?", (jid,)).fetchall()]
+                _write_job_archive_file(dict(jr), trows)
+            except Exception:
+                pass
         return jsonify({"ok": True})
 
     # DELETE
@@ -709,19 +722,7 @@ def search_page():
                 results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
         except Exception: pass
     return render_template("search.html", title="Hledání", q=q, results=results)
-        # If status switched to completed, set completed_at and export archive
-        if completed_at:
-            try:
-                db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (completed_at, job_id))
-                db.commit()
-            except Exception:
-                pass
-            try:
-                jr = db.execute(_job_select_all() + " WHERE id=?", (job_id,)).fetchone()
-                trows = [dict(r) for r in db.execute("SELECT * FROM tasks WHERE job_id=?", (job_id,)).fetchall()]
-                _write_job_archive_file(dict(jr), trows)
-            except Exception:
-                pass
+        
 
 
 
