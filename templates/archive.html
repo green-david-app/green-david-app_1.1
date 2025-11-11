@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Archiv zakázek</h1>
+<div id="arch"></div>
+<script>
+(async () => {
+  const res = await fetch('/api/jobs/archive');
+  const data = await res.json();
+  if(!data.ok){ document.getElementById('arch').textContent = 'Chyba načítání archivu'; return; }
+  const root = document.getElementById('arch');
+  const months = Object.keys(data.months).sort().reverse();
+  if(months.length===0){ root.innerHTML = '<p>Archiv je prázdný.</p>'; return; }
+  months.forEach(m => {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${m}</h2>`;
+    const list = document.createElement('div');
+    (data.months[m]||[]).forEach(item => {
+      const j = item.job || {};
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `<div class="card-body">
+        <div><strong>${j.title || j.name || 'Bez názvu'}</strong></div>
+        <div>${j.client || ''} • ${j.city || ''} • ${j.code || ''}</div>
+        <div>Dokončeno: ${j.completed_at || ''}</div>
+        <details><summary>Detaily</summary><pre style="white-space:pre-wrap">${(j.note||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre></details>
+      </div>`;
+      list.appendChild(el);
+    });
+    sec.appendChild(list);
+    root.appendChild(sec);
+  });
+})();
+</script>
+{% endblock %}

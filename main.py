@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
+ARCHIVE_BASE = os.path.join(UPLOAD_DIR, 'zakazky', 'archiv')
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
@@ -46,6 +47,35 @@ def get_db():
     return g.db
 
 @app.teardown_appcontext
+
+
+# --- Archive helpers ---
+def _ensure_dir(p):
+    os.makedirs(p, exist_ok=True)
+
+def _archive_month_dir(dt):
+    # dt: date or str YYYY-MM-DD
+    if isinstance(dt, str):
+        try:
+            dt = datetime.strptime(dt, "%Y-%m-%d").date()
+        except Exception:
+            dt = datetime.utcnow().date()
+    ym = f"{dt.year}-{str(dt.month).zfill(2)}"
+    p = os.path.join(ARCHIVE_BASE, ym)
+    _ensure_dir(p)
+    return p, ym
+
+def _write_job_archive_file(job_row, tasks=None):
+    # job_row is dict with keys including id, title/name, status, date, client, city, code, note, completed_at
+    # tasks optional: list of dicts
+    completed = job_row.get("completed_at") or datetime.utcnow().strftime("%Y-%m-%d")
+    folder, ym = _archive_month_dir(completed)
+    fname = os.path.join(folder, f"job_{job_row['id']}.json")
+    payload = {"job": job_row, "tasks": tasks or []}
+    with open(fname, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    return fname
+
 def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
@@ -154,6 +184,16 @@ def ensure_schema():
     );
     """)
     db.commit()
+    # Ensure jobs.completed_at exists
+    try:
+        info = db.execute("PRAGMA table_info(jobs)").fetchall()
+        cols = {r[1] for r in info}
+        if "completed_at" not in cols:
+            db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
+            db.commit()
+    except Exception:
+        pass
+
 
 def seed_admin():
     db = get_db()
@@ -318,6 +358,12 @@ def api_jobs():
     note   = data.get("note") or ""
     dt     = _normalize_date(data.get("date"))
 
+    # Determine completed_at
+    completed_at = None
+    if status.lower() in ["dokončeno","dokonceno","hotovo","completed","done"]:
+        # prefer provided date, else today
+        completed_at = _normalize_date(data.get("completed_at") or data.get("date") or datetime.utcnow().strftime("%Y-%m-%d"))
+
     if request.method == "POST":
         req = [title, city, code, dt]
         if not all((v is not None and str(v).strip()!='') for v in req):
@@ -326,6 +372,22 @@ def api_jobs():
         sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
         db.execute(sql, vals)
         db.commit()
+        # Archive if created as completed
+        if completed_at:
+            try:
+                # set completed_at in DB
+                db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (completed_at, job_id))
+                db.commit()
+            except Exception:
+                pass
+            # Export archive file
+            try:
+                jr = db.execute(_job_select_all() + " WHERE id=?", (job_id,)).fetchone()
+                trows = [dict(r) for r in db.execute("SELECT * FROM tasks WHERE job_id=?", (job_id,)).fetchall()]
+                _write_job_archive_file(dict(jr), trows)
+            except Exception:
+                pass
+
         return jsonify({"ok": True})
 
     if request.method == "PATCH":
@@ -647,3 +709,40 @@ def search_page():
                 results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
         except Exception: pass
     return render_template("search.html", title="Hledání", q=q, results=results)
+        # If status switched to completed, set completed_at and export archive
+        if completed_at:
+            try:
+                db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (completed_at, job_id))
+                db.commit()
+            except Exception:
+                pass
+            try:
+                jr = db.execute(_job_select_all() + " WHERE id=?", (job_id,)).fetchone()
+                trows = [dict(r) for r in db.execute("SELECT * FROM tasks WHERE job_id=?", (job_id,)).fetchall()]
+                _write_job_archive_file(dict(jr), trows)
+            except Exception:
+                pass
+
+
+
+@app.get("/api/jobs/archive")
+def api_jobs_archive():
+    u, unauthorized = require_auth()
+    if unauthorized: return unauthorized
+    # Read archive directory and group by YYYY-MM
+    result = {}
+    if os.path.isdir(ARCHIVE_BASE):
+        for ym in sorted(os.listdir(ARCHIVE_BASE)):
+            month_dir = os.path.join(ARCHIVE_BASE, ym)
+            if not os.path.isdir(month_dir): continue
+            items = []
+            for fn in sorted(os.listdir(month_dir)):
+                if not fn.endswith(".json"): continue
+                try:
+                    with open(os.path.join(month_dir, fn), "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        items.append(data)
+                except Exception:
+                    continue
+            result[ym] = items
+    return jsonify({"ok": True, "months": result})
