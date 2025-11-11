@@ -109,7 +109,8 @@
           <div className="small">Výchozí admin: <b>admin@greendavid.local</b> / <b>admin123</b>.</div></form></div></div>);
       }
 
-      function Tabs({value,onChange,canAdmin,taskCount}){
+      
+function Tabs({value,onChange,canAdmin,taskCount}){
         const items = [
           {key:"calendar",label:"Kalendář",href:"/calendar.html"},
           {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
@@ -119,7 +120,6 @@
           {key:"warehouse",label:"Sklad"},
           ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
         ];
-        return 
         return <div className="tabs with-search">
           <div className="tabs-left">
             {items.map(it => (
@@ -128,15 +128,12 @@
                 : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
             ))}
           </div>
-          <form className="tabs-search" action="/search" method="GET" onSubmit={(e)=>{ /* keep SPA fast on Enter */
-            if(!e.target.q.value.trim()){ e.preventDefault(); }
-          }}>
+          <form className="tabs-search" action="/search" method="GET" onSubmit={(e)=>{ if(!e.target.q.value.trim()){ e.preventDefault(); }}}>
             <input type="search" name="q" placeholder="Hledat…" aria-label="Hledat"/>
             <button type="submit" className="btn small">Hledat</button>
           </form>
-        </div>
-
-        }
+        </div>;
+      }
 
       function JobsList({onOpen}){
         const [list,setList]=useState([]);
