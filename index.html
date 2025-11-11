@@ -119,19 +119,12 @@
           {key:"warehouse",label:"Sklad"},
           ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
         ];
-        return <div className="tabs with-search">
-          <div className="tabs-left">
+        return <div className="tabs">
           {items.map(it => (
             it.href
               ? <a key={it.key} className={"tab"+(value===it.key?" active":"")} href={it.href}>{it.label}</a>
               : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
           ))}
-        </div>
-          <form id="globalSearch" className="tabs-search" action="/search" method="GET"
-                onSubmit={(e)=>{ if(!e.target.q.value.trim()){ e.preventDefault(); } }}>
-            <input type="search" name="q" placeholder="Hledat…" aria-label="Hledat"/>
-            <button type="submit" className="btn small">Hledat</button>
-          </form>
         </div>;
       }
 

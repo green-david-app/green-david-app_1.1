@@ -616,13 +616,25 @@ def api_search():
         return jsonify([])
     like = f"%{q}%"
     db = get_db()
-    cur = db.execute(
-        "SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 100",
-        (like, like, like)
-    )
-    rows = [dict(id=r["id"], name=r["name"], city=r["city"], code=r["code"], date=r["date"]) for r in cur.fetchall()]
-    return jsonify(rows)
+    out = []
 
+    # Jobs
+    try:
+        cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
+        for r in cur.fetchall():
+            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url":f"/jobs-page?id={r['id']}"})
+    except Exception:
+        pass
+
+    # Employees
+    try:
+        cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
+        for r in cur.fetchall():
+            out.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url":"/?tab=employees"})
+    except Exception:
+        pass
+
+    return jsonify(out)
 
 @app.get("/search")
 def search_page():
@@ -631,9 +643,21 @@ def search_page():
     if q:
         like = f"%{q}%"
         db = get_db()
-        cur = db.execute(
-            "SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 100",
-            (like, like, like)
-        )
-        results = [dict(id=r["id"], name=r["name"], city=r["city"], code=r["code"], date=r["date"]) for r in cur.fetchall()]
+
+        # Jobs
+        try:
+            cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
+            for r in cur.fetchall():
+                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url":f"/jobs-page?id={r['id']}"})
+        except Exception:
+            pass
+
+        # Employees
+        try:
+            cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
+            for r in cur.fetchall():
+                results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url":"/?tab=employees"})
+        except Exception:
+            pass
+
     return render_template("search.html", title="Hledání", q=q, results=results)
