@@ -49,5 +49,31 @@
     }
   })();
   </script>
+
+<script>
+(function(){
+  function ensureSearch(container){
+    if(!container) return;
+    if(container.querySelector('#globalSearch')) return;
+    var form = document.createElement('form');
+    form.id = 'globalSearch';
+    form.className = 'tabs-search';
+    form.action = '/search';
+    form.method = 'GET';
+    form.innerHTML = '<input type="search" name="q" placeholder="Hledat…" aria-label="Hledat"/>' +
+                     '<button type="submit" class="btn small">Hledat</button>';
+    container.appendChild(form);
+  }
+  function findTabs(){
+    document.querySelectorAll('.tabs').forEach(ensureSearch);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    findTabs();
+    var obs = new MutationObserver(findTabs);
+    obs.observe(document.body, {subtree:true, childList:true});
+  });
+})();
+</script>
+
 </body>
 </html>
