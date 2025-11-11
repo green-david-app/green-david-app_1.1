@@ -46,7 +46,6 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
-@app.teardown_appcontext
 
 
 # --- Archive helpers ---
@@ -76,6 +75,7 @@ def _write_job_archive_file(job_row, tasks=None):
         json.dump(payload, f, ensure_ascii=False, indent=2)
     return fname
 
+@app.teardown_appcontext
 def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
