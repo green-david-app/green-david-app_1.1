@@ -4,42 +4,33 @@
 {% block content %}
 <h1>Archiv zakázek</h1>
 <p><a href="/?tab=jobs">← Zpět na zakázky</a></p>
-<div id="archive-root"></div>
-<script>
-async function loadArchive(){
-  const res = await fetch('/api/jobs/archive');
-  const data = await res.json();
-  const root = document.getElementById('archive-root');
-  root.innerHTML='';
-  if(!data.ok){ root.textContent='Nepodařilo se načíst archiv.'; return; }
-  const months = Object.keys(data.months).sort().reverse();
-  if(months.length===0){ root.textContent='V archivu zatím nic není.'; return; }
-  // group by year
-  const byYear = {};
-  for(const ym of months){
-    const [y,m] = ym.split('-');
-    (byYear[y] ||= []).push([ym, data.months[ym]]);
-  }
-  for(const y of Object.keys(byYear).sort().reverse()){
-    const h=document.createElement('h2'); h.textContent=y; root.appendChild(h);
-    const wrap=document.createElement('div'); wrap.style.display='grid'; wrap.style.gridTemplateColumns='repeat(auto-fill,minmax(260px,1fr))'; wrap.style.gap='12px'; root.appendChild(wrap);
-    for(const [ym, items] of byYear[y]){
-      const card=document.createElement('div'); card.className='card'; card.style.padding='12px'; card.style.background='#2f3337'; card.style.borderRadius='10px';
-      const mname = new Date(ym+'-01').toLocaleDateString('cs-CZ',{month:'long'});
-      const head=document.createElement('div'); head.innerHTML = `<strong style="text-transform:capitalize">${mname} ${y}</strong> <span style="opacity:.7">(${items.length})</span>`;
-      card.appendChild(head);
-      const ul=document.createElement('ul'); ul.style.margin='8px 0 0 0'; ul.style.padding='0 0 0 16px';
-      items.forEach(j=>{
-        const li=document.createElement('li');
-        const label = `${j.title || 'bez názvu'}${j.client? ' · '+j.client:''}${j.city? ' · '+j.city:''}`;
-        li.innerHTML = `${label} &nbsp; <a href='/?tab=jobs&jobId=${j.id}'>Detail</a> · <a href='/?tab=jobs&editId=${j.id}'>Upravit</a>`;
-        ul.appendChild(li);
-      });
-      card.appendChild(ul);
-      wrap.appendChild(card);
-    }
-  }
-}
-loadArchive().catch(()=>{document.getElementById('archive-root').textContent='Chyba načtení.'});
-</script>
+
+{% if not years or years|length == 0 %}
+<div class="alert">V archivu zatím nic není.</div>
+{% else %}
+  {% for y, items in years %}
+    <h2 style="margin-top:18px">{{ y }}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+      {% for ym, jobs in items %}
+        {% set mname = (ym ~ "-01")|tojson %}
+        <div class="card" style="background:#2f3337;border-radius:12px;padding:12px">
+          <div>
+            <strong style="text-transform:capitalize">
+              {{ (ym ~ "-01")|safe and (ym ~ "-01") }}
+            </strong>
+            <span style="opacity:.7">({{ jobs|length }})</span>
+          </div>
+          <ul style="margin:8px 0 0 16px;padding:0">
+            {% for j in jobs %}
+              <li style="margin:4px 0">
+                {{ j.title or 'bez názvu' }}{% if j.client %} · {{ j.client }}{% endif %}{% if j.city %} · {{ j.city }}{% endif %}
+                &nbsp; <a href='/?tab=jobs&jobId={{ j.id }}'>Detail</a> · <a href='/?tab=jobs&editId={{ j.id }}'>Upravit</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% endif %}
 {% endblock %}

@@ -30,13 +30,40 @@ def _migrate_completed_at():
 
 
 
+
 @app.route("/archive")
 def view_archive():
-    # simple server-side render, frontend fetches /api/jobs/archive via JS
     u, err = require_auth()
-    if err: 
+    if err:
         return err
-    return render_template("archive.html", me=u)
+    db = get_db()
+    rows = [dict(r) for r in db.execute(
+        "SELECT id,title,client,city,code,status,date,completed_at "
+        "FROM jobs "
+        "WHERE lower(status) LIKE 'dokon%' "
+        "ORDER BY COALESCE(date(completed_at), date(date)) DESC"
+    ).fetchall()]
+    months = {}
+    for r in rows:
+        src = r.get("completed_at") or r.get("date") or ""
+        ym = ""
+        try:
+            # normalize to YYYY-MM
+            if src and len(src) >= 7:
+                ym = f"{src[0:4]}-{src[5:7]}"
+        except Exception:
+            ym = ""
+        months.setdefault(ym or "unknown", []).append(r)
+    # group by year for template
+    by_year = {}
+    for ym, items in months.items():
+        y = (ym or "unknown").split("-")[0]
+        by_year.setdefault(y, []).append((ym, items))
+    # sort
+    for y in by_year:
+        by_year[y].sort(key=lambda x: x[0], reverse=True)
+    years = sorted(by_year.items(), key=lambda x: x[0], reverse=True)
+    return render_template("archive.html", me=u, years=years)
 
 
 
