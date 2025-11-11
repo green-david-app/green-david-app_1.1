@@ -168,7 +168,7 @@
         }
 
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
+          <div className="card"><div className="card-h" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div>Nová zakázka</div><div><a class="btn" href="/archive">Archiv zakázek</a></div></div><div className="card-c">
             <form onSubmit={add}><div className="form-row">
               <input placeholder="Název" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} style={{flex:2}} required/>
               <input placeholder="Zákazník" value={form.client} onChange={e=>setForm({...form,client:e.target.value})} style={{flex:2}} required/>
