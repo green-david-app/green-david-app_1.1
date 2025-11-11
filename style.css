@@ -122,13 +122,3 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   /* Change ID mobile */
   .table td input[type="number"]{width:100% !important; max-width:100%}
 }
-
-/* Tabs + search */
-.tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:6px;justify-content:center}
-.tab{padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--txt-inv)}
-.tab.active{background:var(--panel)}
-.tabs.with-search{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.tabs.with-search .tabs-left{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;flex:1 1 auto}
-.tabs .tabs-search input[type="search"]{background:#222b30;border:1px solid var(--line);color:var(--txt-inv);padding:8px 10px;border-radius:8px;min-width:220px;outline:none}
-.btn.small{padding:8px 10px;border-radius:8px;background:var(--accent);color:white;border:0;cursor:pointer}
-@media (max-width:700px){ .tabs .tabs-search input[type="search"]{min-width:140px} }
