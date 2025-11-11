@@ -19,3 +19,31 @@
   {% endfor %}
 </ul>
 {% endblock %}
+
+<!-- SPA-NAV-INJECTION -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.js-search-target').forEach(function (el) {
+    el.addEventListener('click', function (ev) {
+      // Always navigate in-app using SPA query params if we can
+      var t = el.getAttribute('data-type') || '';
+      var id = el.getAttribute('data-id') || '';
+      var href = el.getAttribute('href') || '';
+      var next = null;
+
+      var norm = t.toLowerCase();
+      if (id) {
+        if (norm.includes('zakáz') || norm.includes('zakaz')) { next = '/?tab=jobs&jobId=' + id; }
+        else if (norm.includes('zaměst') || norm.includes('zamest')) { next = '/?tab=employees&employeeId=' + id; }
+        else if (norm.includes('úkol') || norm.includes('ukol')) { next = '/?tab=tasks&taskId=' + id; }
+      }
+      if (!next && href && href !== '#') { next = href; }
+      if (next) {
+        ev.preventDefault();
+        window.location.assign(next);
+      }
+    });
+  });
+});
+</script>
