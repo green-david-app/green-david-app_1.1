@@ -747,3 +747,9 @@ def api_jobs_archive():
                     continue
             result[ym] = items
     return jsonify({"ok": True, "months": result})
+
+@app.route("/archive")
+def archive_view():
+    u, err = require_role(write=False)
+    if err: return err
+    return render_template("archive.html", title="Archiv zakázek")
