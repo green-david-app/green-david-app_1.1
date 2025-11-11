@@ -10,15 +10,14 @@
         <div class="small muted">Nic nenalezeno pro „{{ q }}“.</div>
       {% else %}
         <table class="table">
-          <tr><th>#</th><th>Název</th><th>Město</th><th>Kód</th><th>Termín</th><th></th></tr>
+          <tr><th>Typ</th><th>Název</th><th>Další</th><th>Datum</th><th></th></tr>
           {% for r in results %}
           <tr>
-            <td class="small">{{ r.id }}</td>
-            <td>{{ r.name }}</td>
-            <td>{{ r.city }}</td>
-            <td>{{ r.code }}</td>
-            <td>{{ r.date }}</td>
-            <td><a class="ghost" href="/jobs-page?id={{ r.id }}">Otevřít detail</a></td>
+            <td class="small">{{ r.type }}</td>
+            <td>{{ r.title }}</td>
+            <td class="small">{{ r.sub }}</td>
+            <td class="small">{{ r.date }}</td>
+            <td><a class="ghost" href="{{ r.url }}">Otevřít</a></td>
           </tr>
           {% endfor %}
         </table>
