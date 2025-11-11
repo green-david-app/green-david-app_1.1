@@ -607,7 +607,6 @@ def page_timesheets():
 
 @app.route("/jobs-page")
 def jobs_page():
-    # SSR page that bootstraps job detail; expects ?id=123
     return render_template("job_detail.html")
 # ----------------- run -----------------
 if __name__ == "__main__":
@@ -621,54 +620,28 @@ def api_search():
         return jsonify([])
     like = f"%{q}%"
     db = get_db()
-
-    results = []
+    out = []
 
     # Jobs
-    cur = db.execute(
-        "SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 50",
-        (like, like, like)
-    )
+    cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 50", (like, like, like))
     for r in cur.fetchall():
-        results.append({
-            "type": "Zakázka",
-            "id": r["id"],
-            "title": r["name"],
-            "sub": " • ".join([x for x in [r["city"], r["code"]] if x]),
-            "date": r["date"],
-            "url": f"/jobs-page?id={r['id']}"
-        })
+        out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url":f"/jobs-page?id={r['id']}"})
 
     # Employees
-    cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? OR role LIKE ?) ORDER BY id DESC LIMIT 50",
-                     (like, like))
+    cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? OR role LIKE ?) ORDER BY id DESC LIMIT 50", (like, like))
     for r in cur.fetchall():
-        results.append({
-            "type": "Zaměstnanec",
-            "id": r["id"],
-            "title": r["name"],
-            "sub": r["role"] or "",
-            "date": "",
-            "url": "/zamestnanci"
-        })
+        out.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url":"/zamestnanci"})
 
-    # Calendar (calendar_events)
+    # Calendar
     try:
         cur = db.execute("SELECT id, date, title, kind FROM calendar_events WHERE (title LIKE ?) ORDER BY date(date) DESC, id DESC LIMIT 50", (like,))
         for r in cur.fetchall():
             d = r["date"]
-            results.append({
-                "type": "Kalendář",
-                "id": r["id"],
-                "title": r["title"],
-                "sub": r["kind"] or "",
-                "date": d,
-                "url": f"/calendar.html#d-{d}"
-            })
+            out.append({"type":"Kalendář","id":r["id"],"title":r["title"],"sub":r["kind"] or "","date":d,"url":f"/calendar.html#d-{d}"})
     except Exception:
         pass
 
-    return jsonify(results)
+    return jsonify(out)
 
 
 @app.get("/search")
@@ -680,44 +653,19 @@ def search_page():
         db = get_db()
 
         # Jobs
-        cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 50",
-                         (like, like, like))
+        cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? OR city LIKE ? OR code LIKE ?) ORDER BY id DESC LIMIT 50", (like, like, like))
         for r in cur.fetchall():
-            results.append({
-                "type": "Zakázka",
-                "id": r["id"],
-                "title": r["name"],
-                "sub": " • ".join([x for x in [r["city"], r["code"]] if x]),
-                "date": r["date"],
-                "url": f"/jobs-page?id={r['id']}"
-            })
-
+            results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url":f"/jobs-page?id={r['id']}"})
         # Employees
-        cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? OR role LIKE ?) ORDER BY id DESC LIMIT 50",
-                         (like, like))
+        cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? OR role LIKE ?) ORDER BY id DESC LIMIT 50", (like, like))
         for r in cur.fetchall():
-            results.append({
-                "type": "Zaměstnanec",
-                "id": r["id"],
-                "title": r["name"],
-                "sub": r["role"] or "",
-                "date": "",
-                "url": "/zamestnanci"
-            })
-
+            results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url":"/zamestnanci"})
         # Calendar
         try:
             cur = db.execute("SELECT id, date, title, kind FROM calendar_events WHERE (title LIKE ?) ORDER BY date(date) DESC, id DESC LIMIT 50", (like,))
             for r in cur.fetchall():
                 d = r["date"]
-                results.append({
-                    "type": "Kalendář",
-                    "id": r["id"],
-                    "title": r["title"],
-                    "sub": r["kind"] or "",
-                    "date": d,
-                    "url": f"/calendar.html#d-{d}"
-                })
+                results.append({"type":"Kalendář","id":r["id"],"title":r["title"],"sub":r["kind"] or "","date":d,"url":f"/calendar.html#d-{d}"})
         except Exception:
             pass
 
