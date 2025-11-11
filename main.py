@@ -9,28 +9,53 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-ARCHIVE_BASE = os.path.join(os.getcwd(), "uploads", "zakazky", "archiv")
 
-def _ensure_dir(p):
-    if not p: return
-    os.makedirs(p, exist_ok=True)
+def _migrate_completed_at():
+    db = get_db()
+    try:
+        cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
+        if "completed_at" not in cols:
+            db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
+            db.commit()
+    except Exception:
+        pass
 
-def _job_select_all():
-    return "SELECT id, title, client, city, code, status, date, note, completed_at FROM jobs"
+@app.before_first_request
+def _init_migrations():
+    _migrate_completed_at()
 
-def _write_job_archive_file(job_row: dict, task_rows: list):
-    comp = job_row.get("completed_at")
-    if not comp:
-        return
-    ym = comp[:7].replace("/", "-")
-    target_dir = os.path.join(ARCHIVE_BASE, ym)
-    _ensure_dir(target_dir)
-    job_id = job_row.get("id")
-    outp = os.path.join(target_dir, f"job_{job_id}.json")
-    payload = {"job": job_row, "tasks": task_rows}
-    with open(outp, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
- static_folder=".", static_url_path="")
+
+
+@app.route("/archive")
+def view_archive():
+    # simple server-side render, frontend fetches /api/jobs/archive via JS
+    u, err = require_auth()
+    if err: 
+        return err
+    return render_template("archive.html", me=u)
+
+
+
+@app.route("/api/jobs/archive")
+def api_jobs_archive():
+    u, err = require_auth()
+    if err: 
+        return err
+    db = get_db()
+    rows = [dict(r) for r in db.execute("SELECT id,title,client,city,code,status,date,completed_at FROM jobs WHERE lower(status) LIKE 'dokon%' ORDER BY COALESCE(date(completed_at), date(date)) DESC").fetchall()]
+    months = {}
+    for r in rows:
+        # prefer completed_at month, fallback to scheduled date
+        src = r.get("completed_at") or r.get("date") or ""
+        ym = ""
+        try:
+            # normalize to YYYY-MM
+            if src and len(src)>=7:
+                ym = f"{src[0:4]}-{src[5:7]}"
+        except Exception:
+            ym = ""
+        months.setdefault(ym or "unknown", []).append(r)
+    return jsonify({"ok": True, "months": months})
 
 # --- Employees/Zamestnanci aliases (to avoid 404) ---
 from flask import render_template
@@ -372,24 +397,18 @@ def api_jobs():
         params.append(int(jid))
         db.execute("UPDATE jobs SET " + ", ".join(updates) + " WHERE id=?", params)
         db.commit()
-        # after update: if completed -> stamp and archive
-        job = db.execute("SELECT id, title, client, city, code, status, date, note, completed_at FROM jobs WHERE id=?", (jid,)).fetchone()
-        if job:
-            job = dict(job)
-            if str(job.get("status","")).lower().startswith("dokon"):
-                if not job.get("completed_at"):
-                    job["completed_at"] = datetime.utcnow().strftime("%Y-%m-%d")
-                    db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (job["completed_at"], jid))
-                    db.commit()
-                # try fetch tasks if table exists, else empty
-                tasks = []
-                try:
-                    cols = [r[1] for r in db.execute("PRAGMA table_info(job_tasks)").fetchall()]
-                    if cols:
-                        tasks = [dict(r) for r in db.execute("SELECT * FROM job_tasks WHERE job_id=?", (jid,)).fetchall()]
-                except Exception:
-                    tasks = []
-                _write_job_archive_file(job, tasks)
+        # if status is Dokončeno, ensure completed_at is set
+        try:
+            job = db.execute("SELECT id,status,completed_at FROM jobs WHERE id=?", (jid,)).fetchone()
+            if job:
+                s = (job["status"] or "").lower()
+                if s.startswith("dokon"):
+                    if not job["completed_at"]:
+                        today = datetime.utcnow().strftime("%Y-%m-%d")
+                        db.execute("UPDATE jobs SET completed_at=? WHERE id=?", (today, jid))
+                        db.commit()
+        except Exception:
+            pass
         return jsonify({"ok": True})
 
     # DELETE
@@ -688,38 +707,3 @@ def search_page():
                 results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
         except Exception: pass
     return render_template("search.html", title="Hledání", q=q, results=results)
-
-
-@app.route("/archive")
-def archive_view():
-    u, err = require_role(write=False)
-    if err: return err
-    return render_template("archive.html", title="Archiv zakázek")
-
-def _migrate_completed_at():
-    db = get_db()
-    cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
-    if "completed_at" not in cols:
-        db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
-        db.commit()
-
-@app.before_first_request
-def _init_app():
-    _migrate_completed_at()
-
-@app.route("/api/jobs/archive")
-def api_archive():
-    u, err = require_role(write=False)
-    if err: return err
-    months = {}
-    for path, dirs, files in os.walk(ARCHIVE_BASE):
-        for f in files:
-            if not f.endswith(".json"): continue
-            ym = os.path.basename(path)
-            try:
-                with open(os.path.join(path,f),"r",encoding="utf-8") as fh:
-                    obj = json.load(fh)
-            except Exception:
-                obj = None
-            months.setdefault(ym, []).append(obj)
-    return jsonify({"ok": True, "months": months})
