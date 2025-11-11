@@ -4,35 +4,79 @@
 <div class="toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
   <a class="btn" href="/?tab=jobs">← Zpět na zakázky</a>
 </div>
-<div id="arch"></div>
+<div id="arch" class="grid" style="grid-template-columns:1fr"></div>
+
 <script>
-(async () => {
-  const res = await fetch('/api/jobs/archive');
-  const data = await res.json();
+async function loadArchive(){
+  const host = location.origin;
+  const res = await fetch(host + '/api/jobs/archive');
+  const data = await res.json().catch(()=>({ok:false}));
   const root = document.getElementById('arch');
-  if(!data.ok){ root.textContent = 'Chyba načítání archivu'; return; }
-  const months = Object.keys(data.months||{}).sort().reverse();
-  if(months.length===0){ root.innerHTML = '<p>Archiv je prázdný.</p>'; return; }
-  months.forEach(m => {
-    const sec = document.createElement('section');
-    sec.innerHTML = `<h2 style="margin-top:20px">${m}</h2>`;
-    const list = document.createElement('div');
-    list.className = 'grid';
-    (data.months[m]||[]).forEach(item => {
-      const j = item.job || {};
-      const el = document.createElement('div');
-      el.className = 'card';
-      el.innerHTML = `<div class="card-c">
-        <div style="font-weight:700">${j.title || j.name || 'Bez názvu'}</div>
-        <div style="opacity:.8">${[j.client,j.city,j.code].filter(Boolean).join(' • ')}</div>
-        <div style="margin-top:6px">Dokončeno: <strong>${j.completed_at || ''}</strong></div>
-        ${j.note ? `<details style="margin-top:8px"><summary>Poznámka</summary><div style="white-space:pre-wrap">${j.note}</div></details>` : ''}
-      </div>`;
-      list.appendChild(el);
-    });
-    sec.appendChild(list);
-    root.appendChild(sec);
-  });
-})();
+  root.innerHTML = '';
+  if(!data || !data.ok){
+    root.innerHTML = '<div class="card"><div class="card-c">Nepodařilo se načíst archiv.</div></div>';
+    return;
+  }
+  const months = Object.keys(data.months||{}).sort(); // oldest..newest
+  if(months.length===0){
+    root.innerHTML = '<div class="card"><div class="card-c">Archiv je prázdný. Označ zakázku jako <b>Dokončeno</b> a ulož – automaticky se sem přesune.</div></div>';
+    return;
+  }
+
+  // group by year
+  const byYear = {};
+  for(const ym of months){
+    const [y,m] = ym.split('-');
+    byYear[y] = byYear[y] || {};
+    byYear[y][ym] = data.months[ym] || [];
+  }
+
+  for(const year of Object.keys(byYear).sort().reverse()){
+    // Year header
+    const yCard = document.createElement('div');
+    yCard.className = 'card';
+    yCard.innerHTML = `<div class="card-h"><div>Rok ${year}</div></div>`;
+    const yBody = document.createElement('div');
+    yBody.className = 'card-c';
+    // Month tiles
+    const monthsWrap = document.createElement('div');
+    monthsWrap.className = 'grid';
+    monthsWrap.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+    for(const ym of Object.keys(byYear[year]).sort().reverse()){
+      const items = byYear[year][ym] || [];
+      const pretty = new Date(ym+'-01').toLocaleDateString('cs-CZ', { month:'long', year:'numeric' });
+      const tile = document.createElement('div');
+      tile.className = 'card';
+      tile.innerHTML = `<div class="card-c"><div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700;text-transform:capitalize">${pretty}</div>
+        <div class="badge">${items.length}</div>
+      </div>
+      <div class="list" style="margin-top:8px"></div></div>`;
+      const list = tile.querySelector('.list');
+      items.forEach(obj => {
+        const j = (obj && obj.job) || {};
+        const row = document.createElement('div');
+        row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.alignItems='center';
+        row.style.gap='8px'; row.style.padding='6px 0'; row.style.borderTop='1px solid rgba(255,255,255,.08)';
+        row.innerHTML = `<div>
+          <div style="font-weight:600">${j.title || j.name || 'Bez názvu'}</div>
+          <div style="opacity:.8;font-size:.9em">${[j.client,j.city,j.code].filter(Boolean).join(' • ')}</div>
+          <div style="opacity:.8;font-size:.85em">Dokončeno: ${j.completed_at || ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;white-space:nowrap">
+          <a class="btn" href="/?tab=jobs&jobId=${j.id||''}">Detail</a>
+          <a class="btn" href="/?tab=jobs&editId=${j.id||''}">Upravit</a>
+        </div>`;
+        list.appendChild(row);
+      });
+      monthsWrap.appendChild(tile);
+    }
+    yBody.appendChild(monthsWrap);
+    yCard.appendChild(yBody);
+    root.appendChild(yCard);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadArchive);
 </script>
 {% endblock %}
