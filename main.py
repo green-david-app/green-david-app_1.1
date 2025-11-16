@@ -695,6 +695,21 @@ def api_timesheets_export():
 def page_timesheets():
     return render_template("timesheets.html")
 
+
+# ----------------- Job detail UI routes -----------------
+@app.route("/jobs/<int:job_id>")
+def page_job_detail(job_id):
+    # Render detail shell; JS inside template will load data via API
+    return render_template("job_detail.html", job_id=job_id)
+
+@app.route("/job.html")
+def page_job_detail_query():
+    jid = request.args.get("id", type=int)
+    if not jid:
+        # fallback to jobs tab if missing id
+        return render_template("jobs_list.html")
+    return render_template("job_detail.html", job_id=jid)
+
 # ----------------- run -----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
@@ -711,7 +726,7 @@ def api_search():
     try:
         cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
         for r in cur.fetchall():
-            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
     except Exception: pass
     try:
         cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
@@ -730,7 +745,7 @@ def search_page():
         try:
             cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
             for r in cur.fetchall():
-                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
         except Exception: pass
         try:
             cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
