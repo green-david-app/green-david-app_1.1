@@ -20,7 +20,7 @@
             <td>{{ r.title }}</td>
             <td class="small">{{ r.sub }}</td>
             <td class="small">{{ r.date }}</td>
-            <td>{% if r.type == 'Zakázka' %}<a class="ghost" href="/?tab=jobs&jobId={{ r.id }}">Otevřít</a>{% else %}<a class="ghost" href="{{ r.url }}">Otevřít</a>{% endif %}</td>
+            <td><a class="ghost" href="{{ r.url }}">Otevřít</a></td>
           </tr>
           {% endfor %}
         </table>
