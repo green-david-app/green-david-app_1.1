@@ -378,17 +378,18 @@ def api_employees():
 def api_jobs():
     db = get_db()
     if request.method == "GET":
-        info = _jobs_info()
-        base = _job_select_all()
-        if "status" in info:
-            sql = base + " WHERE (status IS NULL OR trim(lower(status)) NOT LIKE 'dokon%') ORDER BY date(date) DESC, id DESC"
-        else:
-            sql = base + " ORDER BY date(date) DESC, id DESC"
-        rows = [dict(r) for r in db.execute(sql).fetchall()]
+        rows = [dict(r) for r in db.execute(_job_select_all() + " ORDER BY date(date) DESC, id DESC").fetchall()]
         for r in rows:
-            if "date" in r and r.get("date"):
+            if "date" in r and r["date"]:
                 r["date"] = _normalize_date(r["date"])
-        return jsonify({"ok": True, "jobs": rows})
+        # hide completed jobs from main list (they are visible only in archive)
+        visible = []
+        for r in rows:
+            status = (r.get("status") or "").strip().lower()
+            if status.startswith("dokon"):  # "Dokončeno"
+                continue
+            visible.append(r)
+        return jsonify({"ok": True, "jobs": visible})
 
     # write operations require manager/admin
     u, err = require_role(write=True)
