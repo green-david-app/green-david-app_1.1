@@ -131,7 +131,7 @@ def close_db(error=None):
         db.close()
 
 def current_user():
-    uid = session, redirect.get("uid")
+    uid = session.get("uid")
     if not uid:
         return None
     db = get_db()
