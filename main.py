@@ -699,16 +699,25 @@ def page_timesheets():
 # ----------------- Job detail UI routes -----------------
 @app.route("/jobs/<int:job_id>")
 def page_job_detail(job_id):
-    # Classic server-rendered detail page with timesheet table
-    return render_template("job_detail.html", job_id=job_id)
+    """Redirect job detail URLs into the main SPA Zakázky tab.
+
+    From places like fulltext search or legacy links, /jobs/<id> will now
+    end up on /?tab=jobs&jobId=<id>, where the JS opens the detail panel
+    for the given zakázka.
+    """
+    return redirect(f"/?tab=jobs&jobId={job_id}")
 
 @app.route("/job.html")
 def page_job_detail_query():
+    """Legacy support for /job.html?id=<id>.
+
+    We just redirect into the same Zakázky tab deep-link as above.
+    """
     jid = request.args.get("id", type=int)
     if not jid:
-        # fallback to jobs tab if missing id
-        return render_template("jobs_list.html")
-    return render_template("job_detail.html", job_id=jid)
+        # no id – just show Zakázky tab
+        return redirect("/?tab=jobs")
+    return redirect(f"/?tab=jobs&jobId={jid}")
 
 # ----------------- run -----------------
 if __name__ == "__main__":
