@@ -699,7 +699,8 @@ def page_timesheets():
 # ----------------- Job detail UI routes -----------------
 @app.route("/jobs/<int:job_id>")
 def page_job_detail(job_id):
-    return redirect(f"/?tab=jobs&jobId={job_id}", code=302)
+    # Classic server-rendered detail page with timesheet table
+    return render_template("job_detail.html", job_id=job_id)
 
 @app.route("/job.html")
 def page_job_detail_query():
@@ -725,7 +726,7 @@ def api_search():
     try:
         cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
         for r in cur.fetchall():
-            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
     except Exception: pass
     try:
         cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
@@ -744,7 +745,7 @@ def search_page():
         try:
             cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
             for r in cur.fetchall():
-                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
         except Exception: pass
         try:
             cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
