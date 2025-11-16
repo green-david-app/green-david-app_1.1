@@ -209,7 +209,8 @@ def ensure_schema():
         title TEXT NOT NULL,
         description TEXT DEFAULT '',
         status TEXT NOT NULL DEFAULT 'open',
-        due_date TEXT
+        due_date TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS timesheets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -382,14 +383,7 @@ def api_jobs():
         for r in rows:
             if "date" in r and r["date"]:
                 r["date"] = _normalize_date(r["date"])
-        # hide completed jobs from main list (they are visible only in archive)
-        visible = []
-        for r in rows:
-            status = (r.get("status") or "").strip().lower()
-            if status.startswith("dokon"):  # "Dokončeno"
-                continue
-            visible.append(r)
-        return jsonify({"ok": True, "jobs": visible})
+        return jsonify({"ok": True, "jobs": rows})
 
     # write operations require manager/admin
     u, err = require_role(write=True)
@@ -552,20 +546,27 @@ def api_tasks():
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         title = (data.get("title") or "").strip()
-        if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
-                      VALUES (?,?,?,?,?,?)""",
-                   (int(data.get("job_id")) if data.get("job_id") else None,
-                    int(data.get("employee_id")) if data.get("employee_id") else None,
-                    title,
-                    (data.get("description") or "").strip(),
-                    (data.get("status") or "open"),
-                    _normalize_date(data.get("due_date")) if data.get("due_date") else None))
+        if not title:
+            return jsonify({"ok": False, "error": "invalid_input"}), 400
+        # ensure created_at is always filled (DB has NOT NULL constraint)
+        created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        db.execute(
+            """INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at)
+               VALUES (?,?,?,?,?,?,?)""",
+            (
+                int(data.get("job_id")) if data.get("job_id") else None,
+                int(data.get("employee_id")) if data.get("employee_id") else None,
+                title,
+                (data.get("description") or "").strip(),
+                (data.get("status") or "open"),
+                _normalize_date(data.get("due_date")) if data.get("due_date") else None,
+                created_at,
+            ),
+        )
         db.commit()
         return jsonify({"ok": True})
 
-    if request.method == "PATCH":
-        data = request.get_json(force=True, silent=True) or {}
+e=True, silent=True) or {}
         tid = data.get("id")
         if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]
