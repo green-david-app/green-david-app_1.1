@@ -83,6 +83,90 @@
 
 <!-- Deep-link handler for opening Job detail from /?tab=jobs&jobId=... -->
 
+<script>
+// SPA deep link helper: ?tab=jobs&jobId=123 or ?tab=employees
+(function(){
+  function qs(name){ return new URLSearchParams(window.location.search).get(name); }
+  const tab = qs('tab');
+  if (tab) {
+    // Try to switch initial tab by simulating click on the tab header if present
+    document.addEventListener('DOMContentLoaded', () => {
+      const map = {
+        'jobs': 'Zakázky', 'employees': 'Zaměstnanci',
+        'calendar': 'Kalendář','timesheets':'Výkazy hodin','tasks':'Úkoly','warehouse':'Sklad','users':'Uživatelé'
+      };
+      const label = map[tab] || null;
+      if (label) {
+        // try click tab with given label
+        const clickTab = () => {
+          const tabs = Array.from(document.querySelectorAll('.tab'));
+          const t = tabs.find(el => el.textContent.trim() === label);
+          if (t) t.click();
+        };
+        clickTab();
+        // also observe in case it renders later
+        const obs = new MutationObserver(clickTab);
+        obs.observe(document.body, {subtree:true, childList:true});
+        setTimeout(()=>obs.disconnect(), 5000);
+      }
+    });
+  }
+  const jobId = qs('jobId');
+  if (jobId) {
+    // After jobs list is rendered, try to open the detail of that job
+    const tryOpen = () => {
+      // Find card/item that contains the ID number (ID column or data-id attr)
+      const selectorCandidates = [
+        `[data-job-id="${jobId}"] .btn, [data-id="${jobId}"] .btn`,
+        `.job-row[data-id="${jobId}"] .btn`,
+        `.job-item[data-id="${jobId}"] .btn`,
+        `tr:has(td:first-child:contains("${jobId}")) .btn`,
+        `a[href*="detail"][data-id="${jobId}"]`, `button:contains("Otevřít detail")`
+      ];
+      // Basic contains polyfill for querySelectorAll
+      (function(){
+        function containsSelectorPolyfill(){
+          // no native :contains in querySelector; we implement manual scan
+          const rows = Array.from(document.querySelectorAll('tr, .job-item, .job-row, [data-job-id], [data-id]'));
+          for (const el of rows) {
+            if (el.dataset && (el.dataset.jobId === jobId || el.dataset.id === jobId)) {
+              const btn = el.querySelector('a,button');
+              if (btn) { btn.click(); return true; }
+            }
+            if (el.querySelector) {
+              const tds = el.querySelectorAll('td,div,span');
+              for (const td of tds) {
+                if (td.textContent && td.textContent.trim() === jobId) {
+                  const btn = el.querySelector('a,button');
+                  if (btn) { btn.click(); return true; }
+                }
+              }
+            }
+          }
+          // fallback: click first "Otevřít detail" on page
+          const any = Array.from(document.querySelectorAll('a,button')).find(b => /Otevřít detail/i.test(b.textContent));
+          if (any) { any.click(); return true; }
+          return false;
+        }
+        window.__openJobDetailById = containsSelectorPolyfill;
+      })();
+
+      if (window.__openJobDetailById && window.__openJobDetailById()) return;
+    };
+    document.addEventListener('DOMContentLoaded', ()=>{
+      tryOpen();
+      const obs = new MutationObserver(()=>tryOpen());
+      obs.observe(document.body, {subtree:true, childList:true});
+      setTimeout(()=>obs.disconnect(), 5000);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
+
+</script>
 <script src="/archive-cta.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import os, re, io, sqlite3
 from datetime import datetime, date, timedelta
-from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session
+from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DB_PATH", "app.db")
@@ -131,7 +131,7 @@ def close_db(error=None):
         db.close()
 
 def current_user():
-    uid = session.get("uid")
+    uid = session, redirect.get("uid")
     if not uid:
         return None
     db = get_db()
@@ -342,12 +342,12 @@ def api_login():
     row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
     if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
-    session["uid"] = row["id"]
+    session, redirect["uid"] = row["id"]
     return jsonify({"ok": True})
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
-    session.pop("uid", None)
+    session, redirect.pop("uid", None)
     return jsonify({"ok": True})
 
 # employees
@@ -699,8 +699,7 @@ def page_timesheets():
 # ----------------- Job detail UI routes -----------------
 @app.route("/jobs/<int:job_id>")
 def page_job_detail(job_id):
-    # Render detail shell; JS inside template will load data via API
-    return render_template("job_detail.html", job_id=job_id)
+    return redirect(f"/?tab=jobs&jobId={job_id}", code=302)
 
 @app.route("/job.html")
 def page_job_detail_query():
@@ -726,7 +725,7 @@ def api_search():
     try:
         cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
         for r in cur.fetchall():
-            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
+            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
     except Exception: pass
     try:
         cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
@@ -745,7 +744,7 @@ def search_page():
         try:
             cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
             for r in cur.fetchall():
-                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/jobs/{r['id']}"})
+                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
         except Exception: pass
         try:
             cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
