@@ -134,3 +134,50 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 .tabs-search input[type="search"]{background:#222b30;border:1px solid var(--line);color:var(--txt-inv);padding:8px 10px;border-radius:8px;min-width:220px;outline:none}
 .btn.small{padding:8px 10px;border-radius:8px;background:var(--accent);color:white;border:0;cursor:pointer}
 @media (max-width:700px){ .tabs-search input[type="search"]{min-width:140px} }
+
+
+/* Archiv zakázek */
+.archive-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+.archive-month-card{
+  cursor:pointer;
+}
+.archive-month-card-open{
+  outline:1px solid rgba(255,255,255,0.08);
+}
+.archive-month-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+  margin-bottom:4px;
+}
+.archive-month-name{
+  font-weight:600;
+}
+.archive-month-body{
+  margin-top:8px;
+  border-top:1px solid rgba(255,255,255,0.08);
+  padding-top:8px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.archive-job-row{
+  border-radius:10px;
+  padding:6px 8px;
+  background:rgba(0,0,0,0.08);
+}
+.archive-job-actions{
+  margin-top:4px;
+  display:flex;
+  justify-content:flex-end;
+}
+@media (max-width: 720px){
+  .archive-grid{
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  }
+}
