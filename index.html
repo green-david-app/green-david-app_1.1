@@ -117,7 +117,8 @@
           {key:"tasks",label:"Úkoly"},
           {key:"employees",label:"Zaměstnanci"},
           {key:"warehouse",label:"Sklad"},
-          ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
+          ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : []),
+          {key:"archive",label:"Archiv zakázek"}
         ];
         return <div className="tabs">
           {items.map(it => (
@@ -460,6 +461,111 @@
         </div>);
       }
 
+      function ArchiveTab(){
+        const [months,setMonths] = useState({});
+        const [year,setYear] = useState("");
+        const [err,setErr] = useState("");
+        const [loading,setLoading] = useState(true);
+
+        useEffect(() => {
+          (async () => {
+            try{
+              const data = await api("/api/jobs/archive");
+              const m = data && data.months ? data.months : {};
+              setMonths(m);
+              const keys = Object.keys(m);
+              const years = Array.from(new Set(keys.map(k => (k || "").slice(0,4)).filter(v => /^\d{4}$/.test(v)))).sort().reverse();
+              if (years.length){
+                setYear(year => year || years[0]);
+              } else {
+                const now = new Date();
+                setYear(String(now.getFullYear()));
+              }
+            }catch(e){
+              setErr(e.message || String(e));
+            }finally{
+              setLoading(false);
+            }
+          })();
+        },[]);
+
+        const MONTHS = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
+
+        function handleOpenJob(id){
+          if(!id) return;
+          // keep deep-link behaviour for job detail
+          location.href = "/?tab=jobs&jobId=" + id;
+        }
+
+        const monthKeys = Object.keys(months || {});
+        const years = Array.from(new Set(monthKeys.map(k => (k || "").slice(0,4)).filter(v => /^\d{4}$/.test(v)))).sort().reverse();
+        const activeYear = year || (years[0] || String(new Date().getFullYear()));
+
+        const cells = [];
+        for(let i=1;i<=12;i++){
+          const mm = String(i).padStart(2,"0");
+          const key = activeYear ? (activeYear + "-" + mm) : ("unknown-" + mm);
+          const items = months[key] || [];
+          cells.push({key,items,monthIndex:i-1});
+        }
+
+        return (
+          <div className="grid" style={{gridTemplateColumns:"1fr"}}>
+            <div className="card">
+              <div className="card-h">
+                <div>Archiv zakázek</div>
+                <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+                  {years.length > 0 && (
+                    <select className="ghost" value={activeYear} onChange={e => setYear(e.target.value)}>
+                      {years.map(y => (<option key={y} value={y}>{y}</option>))}
+                    </select>
+                  )}
+                </div>
+              </div>
+              <div className="card-c">
+                {loading && <div className="small">Načítám archiv…</div>}
+                {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+                {!loading && monthKeys.length === 0 && !err && (
+                  <div className="small">V archivu zatím nic není.</div>
+                )}
+                {monthKeys.length > 0 && (
+                  <div className="archive-grid">
+                    {cells.map(({key,items,monthIndex}) => (
+                      <div key={key} className="archive-month">
+                        <div className="archive-month-head">
+                          <span>{MONTHS[monthIndex]}</span>
+                          <span className="archive-month-count">
+                            {items.length ? (items.length + " zak.") : "–"}
+                          </span>
+                        </div>
+                        <div className="archive-month-body">
+                          {items.length === 0 ? (
+                            <div className="archive-job-empty">Žádné dokončené zakázky.</div>
+                          ) : items.map(j => (
+                            <div key={j.id} className="archive-job">
+                              <div className="archive-job-title" onClick={() => handleOpenJob(j.id)}>
+                                {j.title || "Bez názvu"}
+                              </div>
+                              <div className="archive-job-meta">
+                                {[j.client, j.city, j.code].filter(Boolean).join(" • ")}
+                              </div>
+                              <div className="archive-job-meta">
+                                Dokončeno: {toCZ(j.completed_at || j.date)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+
       function TasksTab(){
         const [list,setList]=useState([]);
         const [employees,setEmployees]=useState([]);
@@ -500,6 +606,7 @@
           {tab==="tasks" && <TasksTab/>}
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}
+          {tab==="archive" && <ArchiveTab/>}
           {tab==="users" && auth.user?.role==="admin" && <UsersTab/>}
         </div>);
       }
@@ -647,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.addEventListener('DOMContentLoaded', () => {
       const map = {
         'jobs': 'Zakázky', 'employees': 'Zaměstnanci',
-        'calendar': 'Kalendář','timesheets':'Výkazy hodin','tasks':'Úkoly','warehouse':'Sklad','users':'Uživatelé'
+        'calendar': 'Kalendář','timesheets':'Výkazy hodin','tasks':'Úkoly','warehouse':'Sklad','users':'Uživatelé','archive':'Archiv zakázek'
       };
       const label = map[tab] || null;
       if (label) {
