@@ -231,17 +231,31 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 }
 
 
-/* mobile: allow nav to wrap, no horizontal scroll */
+/* mobile: 3-column nav, left-aligned, search centered */
 @media (max-width: 640px){
   .tabs{
-    flex-wrap:wrap;
-    justify-content:center;
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:8px 16px;
+    justify-items:flex-start;
+    align-items:flex-start;
     overflow-x:visible;
+    padding-bottom:10px;
   }
   .tabs a,
   .tabs .tab{
-    flex:1 1 45%;
-    text-align:center;
+    width:100%;
+    text-align:left;
     white-space:nowrap;
+    flex:none;
+  }
+  /* search row spans full width and is centered */
+  .tabs-search{
+    grid-column:1 / -1;
+    justify-content:center;
+    margin:4px auto 0;
+    width:100%;
+    max-width:360px;
   }
 }
+
