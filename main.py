@@ -556,9 +556,7 @@ def api_tasks():
         if not title:
             return jsonify({"ok": False, "error": "invalid_input"}), 400
 
-        # Build insert dynamically so it works with both schemas:
-        #  - older DB without tasks.created_at
-        #  - newer DB where tasks.created_at is NOT NULL
+        # Build insert dynamically, aby fungovalo s DB se sloupcem created_at i bez něj
         cols = ["job_id", "employee_id", "title", "description", "status", "due_date"]
         vals = [
             int(data.get("job_id")) if data.get("job_id") else None,
@@ -569,7 +567,6 @@ def api_tasks():
             _normalize_date(data.get("due_date")) if data.get("due_date") else None,
         ]
 
-        # Detect optional created_at column
         has_created_at = False
         try:
             cur = db.execute("PRAGMA table_info(tasks)")
@@ -581,15 +578,14 @@ def api_tasks():
             has_created_at = False
 
         if has_created_at:
+            from datetime import datetime
             cols.append("created_at")
-            # Use UTC ISO8601 similar to migrations
             vals.append(datetime.utcnow().isoformat())
 
         placeholders = ",".join(["?"] * len(vals))
         db.execute(f"INSERT INTO tasks({','.join(cols)}) VALUES ({placeholders})", vals)
         db.commit()
         return jsonify({"ok": True})
-
 
     if request.method == "PATCH":
         data = request.get_json(force=True, silent=True) or {}
