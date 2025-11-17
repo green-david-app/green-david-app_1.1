@@ -127,7 +127,19 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
 
 
 /* evergreen search */
-.tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:6px;justify-content:center}
+.tabs{
+  display:flex;
+  gap:6px;
+  flex-wrap:nowrap;
+  align-items:center;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:6px 10px;
+  justify-content:flex-start;
+  overflow-x:auto;
+}
+
 .tab{padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--txt-inv)}
 .tab.active{background:var(--panel)}
 .tabs-search{display:flex;gap:6px;margin-left:auto}

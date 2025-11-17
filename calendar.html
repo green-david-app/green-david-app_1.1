@@ -312,8 +312,7 @@ async function fetchDetailBy(type, id){
     return {type:'job', data:(d && d.job)||{}};
   }else{
     const list = await japi(['/gd/api/tasks','/api/tasks']);
-    // backend vrací objekt ve tvaru {ok:true, tasks:[...]} – vezmeme tedy správné pole
-    const rows = list.tasks || list.rows || (Array.isArray(list) ? list : []);
+    const rows = list.rows || list || [];
     const found = rows.find(r => String(r.id)===String(id));
     return {type:'task', data:found||{id}};
   }

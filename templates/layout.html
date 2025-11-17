@@ -33,7 +33,7 @@
   </header>
 <div id="archive-cta" style="display:none; text-align:right; max-width:1200px; margin:0 auto; padding:6px 8px;">
   <a href="/archive" style="display:inline-block; padding:8px 14px; border-radius:10px; background:#2f7d32; color:#fff; text-decoration:none; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.2)">
-    Archiv zakázek
+    archiv zakázek
   </a>
 </div>
 
@@ -92,8 +92,8 @@
     // Try to switch initial tab by simulating click on the tab header if present
     document.addEventListener('DOMContentLoaded', () => {
       const map = {
-        'jobs': 'Zakázky', 'employees': 'Zaměstnanci',
-        'calendar': 'Kalendář','timesheets':'Výkazy hodin','tasks':'Úkoly','warehouse':'Sklad','users':'Uživatelé'
+        'jobs': 'zakázky', 'employees': 'zaměstnanci',
+        'calendar': 'kalendář','timesheets':'výkazy hodin','tasks':'úkoly','warehouse':'sklad','users':'uživatelé'
       };
       const label = map[tab] || null;
       if (label) {
