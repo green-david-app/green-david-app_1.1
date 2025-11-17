@@ -342,12 +342,14 @@ def api_login():
     row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
     if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
-    session, redirect["uid"] = row["id"]
+    # store user id in session
+    session["uid"] = row["id"]
     return jsonify({"ok": True})
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
-    session, redirect.pop("uid", None)
+    # remove user id from session
+    session.pop("uid", None)
     return jsonify({"ok": True})
 
 # employees
