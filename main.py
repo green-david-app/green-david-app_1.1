@@ -566,8 +566,7 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
 
-    if request.method == "PATCH":
-        data = request.get_json(force=True, silent=True) or {}
+e=True, silent=True) or {}
         tid = data.get("id")
         if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]
