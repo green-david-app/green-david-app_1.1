@@ -229,3 +229,19 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   padding:8px 10px;
   white-space:nowrap;
 }
+
+
+/* mobile: allow nav to wrap, no horizontal scroll */
+@media (max-width: 640px){
+  .tabs{
+    flex-wrap:wrap;
+    justify-content:center;
+    overflow-x:visible;
+  }
+  .tabs a,
+  .tabs .tab{
+    flex:1 1 45%;
+    text-align:center;
+    white-space:nowrap;
+  }
+}
