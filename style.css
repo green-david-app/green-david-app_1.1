@@ -219,3 +219,13 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
   font-size:12px;
   padding:6px 10px;
 }
+
+
+/* compact top nav */
+.tabs{ gap:6px; }
+.tabs a,
+.tabs .tab{
+  font-size:13px;
+  padding:8px 10px;
+  white-space:nowrap;
+}

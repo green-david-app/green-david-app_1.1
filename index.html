@@ -111,14 +111,14 @@
 
       function Tabs({value,onChange,canAdmin,taskCount}){
         const items = [
-          {key:"calendar",label:"Kalendář",href:"/calendar.html"},
-          {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
-          {key:"jobs",label:"Zakázky"},
-          {key:"tasks",label:"Úkoly"},
-          {key:"employees",label:"Zaměstnanci"},
-          {key:"warehouse",label:"Sklad"},
-          {key:"archive",label:"Archiv zakázek"},
-          ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
+          {key:"calendar",label:"kalendář",href:"/calendar.html"},
+          {key:"timesheets",label:"výkazy hodin",href:"/timesheets.html"},
+          {key:"jobs",label:"zakázky"},
+          {key:"tasks",label:"úkoly"},
+          {key:"employees",label:"zaměstnanci"},
+          {key:"warehouse",label:"sklad"},
+          {key:"archive",label:"archiv zakázek"},
+          ...(canAdmin ? [{key:"users",label:"uživatelé"}] : [])
         ];
         return <div className="tabs">
           {items.map(it => (
