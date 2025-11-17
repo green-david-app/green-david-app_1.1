@@ -566,23 +566,27 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
 
-e=True, silent=True) or {}
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
         tid = data.get("id")
-        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        if not tid:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]
-        sets=[]; vals=[]
+        sets = []
+        vals = []
         for k in allowed:
             if k in data:
-                v = _normalize_date(data[k]) if k=="due_date" else data[k]
+                v = _normalize_date(data[k]) if k == "due_date" else data[k]
                 if k in ("employee_id","job_id") and v is not None:
                     v = int(v)
-                sets.append(f"{k}=?"); vals.append(v)
-        if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
+                sets.append(f"{k}=?")
+                vals.append(v)
+        if not sets:
+            return jsonify({"ok": False, "error": "nothing_to_update"}), 400
         vals.append(int(tid))
         db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
         db.commit()
         return jsonify({"ok": True})
-
     tid = request.args.get("id", type=int)
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     db.execute("DELETE FROM tasks WHERE id=?", (tid,))
