@@ -114,6 +114,7 @@
           {key:"calendar",label:"Kalendář",href:"/calendar.html"},
           {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
           {key:"jobs",label:"Zakázky"},
+          {key:"archive",label:"Archiv zakázek",href:"/archive"},
           {key:"tasks",label:"Úkoly"},
           {key:"employees",label:"Zaměstnanci"},
           {key:"warehouse",label:"Sklad"},
@@ -168,7 +169,7 @@
         }
 
         return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nová zakázka</div><a href="/archive.html" className="linklike" style={{marginLeft:"auto"}}>Archiv zakázek</a></div><div className="card-c">
+          <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
             <form onSubmit={add}><div className="form-row">
               <input placeholder="Název" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} style={{flex:2}} required/>
               <input placeholder="Zákazník" value={form.client} onChange={e=>setForm({...form,client:e.target.value})} style={{flex:2}} required/>

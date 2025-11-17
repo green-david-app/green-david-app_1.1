@@ -380,10 +380,16 @@ def api_jobs():
     db = get_db()
     if request.method == "GET":
         rows = [dict(r) for r in db.execute(_job_select_all() + " ORDER BY date(date) DESC, id DESC").fetchall()]
+        # hide completed jobs (archived) from main list
+        filtered = []
         for r in rows:
+            status = str(r.get("status", "") or "").lower()
+            if status.startswith("dokon"):  # 'Dokončeno' etc.
+                continue
             if "date" in r and r["date"]:
                 r["date"] = _normalize_date(r["date"])
-        return jsonify({"ok": True, "jobs": rows})
+            filtered.append(r)
+        return jsonify({"ok": True, "jobs": filtered})
 
     # write operations require manager/admin
     u, err = require_role(write=True)
