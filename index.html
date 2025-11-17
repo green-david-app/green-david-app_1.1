@@ -114,10 +114,10 @@
           {key:"calendar",label:"Kalendář",href:"/calendar.html"},
           {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"},
           {key:"jobs",label:"Zakázky"},
-          {key:"archive",label:"Archiv zakázek",href:"/archive"},
           {key:"tasks",label:"Úkoly"},
           {key:"employees",label:"Zaměstnanci"},
           {key:"warehouse",label:"Sklad"},
+          {key:"archive",label:"Archiv zakázek"},
           ...(canAdmin ? [{key:"users",label:"Uživatelé"}] : [])
         ];
         return <div className="tabs">
@@ -461,6 +461,112 @@
         </div>);
       }
 
+
+      function ArchiveTab({onOpen}){
+        const [monthsData,setMonthsData] = useState({});
+        const [years,setYears] = useState([]);
+        const [activeYear,setActiveYear] = useState("");
+        const [err,setErr] = useState("");
+
+        useEffect(() => {
+          (async () => {
+            try{
+              const j = await api("/api/jobs/archive");
+              const months = j.months || {};
+              const byYear = {};
+              Object.keys(months).forEach(ym => {
+                if(!ym || ym === "unknown") return;
+                const parts = String(ym).split("-");
+                if(parts.length < 2) return;
+                const year = parts[0];
+                const monthIdx = parseInt(parts[1],10) - 1;
+                if(monthIdx < 0 || monthIdx > 11) return;
+                if(!byYear[year]) byYear[year] = Array.from({length:12}, () => []);
+                byYear[year][monthIdx] = months[ym] || [];
+              });
+              const yearsSorted = Object.keys(byYear).sort().reverse();
+              setYears(yearsSorted);
+              if(yearsSorted.length && !activeYear){
+                setActiveYear(yearsSorted[0]);
+              }
+              setMonthsData(byYear);
+            }catch(e){
+              console.error(e);
+              setErr(e.message || String(e));
+            }
+          })();
+        }, []);
+
+        const monthNames = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
+
+        const yearData = (activeYear && monthsData[activeYear]) || [];
+
+        function openJob(id){
+          if(onOpen) onOpen(id);
+        }
+
+        return (
+          <div className="card">
+            <div className="card-h">
+              <div>Archiv zakázek</div>
+              {years.length > 0 && (
+                <div style={{marginLeft:"auto"}}>
+                  <select value={activeYear} onChange={e=>setActiveYear(e.target.value)}>
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="card-c">
+              {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+              {years.length === 0 && !err && (
+                <div className="small">Zatím žádné dokončené zakázky.</div>
+              )}
+              {years.length > 0 && (
+                <div className="archive-grid">
+                  {monthNames.map((name, idx) => {
+                    const jobs = (yearData && yearData[idx]) || [];
+                    return (
+                      <div className="archive-month-card" key={idx}>
+                        <div className="archive-month-head">
+                          <div className="archive-month-title">{name}</div>
+                          {jobs.length > 0 && (
+                            <div className="archive-month-count small">
+                              {jobs.length} zakázek
+                            </div>
+                          )}
+                        </div>
+                        <div className="archive-month-body small">
+                          {jobs.length === 0 && (
+                            <div>Žádné dokončené zakázky.</div>
+                          )}
+                          {jobs.map(j => (
+                            <div className="archive-job-row" key={j.id}>
+                              <div className="archive-job-main">
+                                <div className="archive-job-title">{j.title}</div>
+                                <div className="archive-job-meta">
+                                  {j.client} • {j.city} • {j.code}
+                                </div>
+                                <div className="archive-job-meta">
+                                  Dokončeno: {toCZ(j.completed_at || j.date)}
+                                </div>
+                              </div>
+                              <div className="archive-job-actions">
+                                <button type="button" onClick={() => openJob(j.id)}>Otevřít detail</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
       function TasksTab(){
         const [list,setList]=useState([]);
         const [employees,setEmployees]=useState([]);
@@ -498,6 +604,7 @@
           <Tabs value={tab} onChange={(k)=>{ setTab(k); setJobOpen(null); }} canAdmin={auth.user?.role==="admin"} taskCount={auth.tasks}/>
           <div style={{height:12}}/>
           {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
+          {tab==="archive" && <ArchiveTab onOpen={(id)=>{ setJobOpen(id); setTab("jobs"); }}/>}
           {tab==="tasks" && <TasksTab/>}
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}

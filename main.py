@@ -209,8 +209,7 @@ def ensure_schema():
         title TEXT NOT NULL,
         description TEXT DEFAULT '',
         status TEXT NOT NULL DEFAULT 'open',
-        due_date TEXT,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        due_date TEXT
     );
     CREATE TABLE IF NOT EXISTS timesheets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -380,16 +379,17 @@ def api_jobs():
     db = get_db()
     if request.method == "GET":
         rows = [dict(r) for r in db.execute(_job_select_all() + " ORDER BY date(date) DESC, id DESC").fetchall()]
-        # hide completed jobs (archived) from main list
-        filtered = []
         for r in rows:
-            status = str(r.get("status", "") or "").lower()
-            if status.startswith("dokon"):  # 'Dokončeno' etc.
-                continue
             if "date" in r and r["date"]:
                 r["date"] = _normalize_date(r["date"])
-            filtered.append(r)
-        return jsonify({"ok": True, "jobs": filtered})
+        # hide completed jobs from main list (they are visible only in archive)
+        visible = []
+        for r in rows:
+            status = (r.get("status") or "").strip().lower()
+            if status.startswith("dokon"):  # "Dokončeno"
+                continue
+            visible.append(r)
+        return jsonify({"ok": True, "jobs": visible})
 
     # write operations require manager/admin
     u, err = require_role(write=True)
@@ -552,47 +552,36 @@ def api_tasks():
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         title = (data.get("title") or "").strip()
-        if not title:
-            return jsonify({"ok": False, "error": "invalid_input"}), 400
-        # ensure created_at is always filled (DB has NOT NULL constraint)
-        created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        db.execute(
-            """INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_at)
-               VALUES (?,?,?,?,?,?,?)""",
-            (
-                int(data.get("job_id")) if data.get("job_id") else None,
-                int(data.get("employee_id")) if data.get("employee_id") else None,
-                title,
-                (data.get("description") or "").strip(),
-                (data.get("status") or "open"),
-                _normalize_date(data.get("due_date")) if data.get("due_date") else None,
-                created_at,
-            ),
-        )
+        if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
+        db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
+                      VALUES (?,?,?,?,?,?)""",
+                   (int(data.get("job_id")) if data.get("job_id") else None,
+                    int(data.get("employee_id")) if data.get("employee_id") else None,
+                    title,
+                    (data.get("description") or "").strip(),
+                    (data.get("status") or "open"),
+                    _normalize_date(data.get("due_date")) if data.get("due_date") else None))
         db.commit()
         return jsonify({"ok": True})
 
     if request.method == "PATCH":
         data = request.get_json(force=True, silent=True) or {}
         tid = data.get("id")
-        if not tid:
-            return jsonify({"ok": False, "error": "missing_id"}), 400
+        if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]
-        sets = []
-        vals = []
+        sets=[]; vals=[]
         for k in allowed:
             if k in data:
-                v = _normalize_date(data[k]) if k == "due_date" else data[k]
+                v = _normalize_date(data[k]) if k=="due_date" else data[k]
                 if k in ("employee_id","job_id") and v is not None:
                     v = int(v)
-                sets.append(f"{k}=?")
-                vals.append(v)
-        if not sets:
-            return jsonify({"ok": False, "error": "nothing_to_update"}), 400
+                sets.append(f"{k}=?"); vals.append(v)
+        if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
         vals.append(int(tid))
         db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
         db.commit()
         return jsonify({"ok": True})
+
     tid = request.args.get("id", type=int)
     if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
     db.execute("DELETE FROM tasks WHERE id=?", (tid,))

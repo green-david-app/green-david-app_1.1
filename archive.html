@@ -1,15 +1,15 @@
-<!doctype html>
-<html lang="cs">
-  <head>
-    <meta charset="utf-8"/>
-    <title>Archiv zakázek</title>
-    <meta http-equiv="refresh" content="0;url=/archive"/>
-    <script>
-      // Fallback redirect for older browsers
-      window.location.replace("/archive");
-    </script>
-  </head>
-  <body>
-    <p>Přesměrovávám na <a href="/archive">Archiv zakázek</a>…</p>
-  </body>
-</html>
+<!doctype html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Archiv zakázek</title><link rel="stylesheet" href="/style.css"/></head><body><div class="container"><h1>Archiv zakázek</h1><div id="arch"></div></div><script>
+(async () => {
+  const res = await fetch('/api/jobs/archive'); const data = await res.json();
+  const root = document.getElementById('arch');
+  if(!data.ok){ root.textContent = 'Chyba načítání archivu'; return; }
+  const months = Object.keys(data.months).sort().reverse();
+  if(months.length===0){ root.innerHTML = '<p>Archiv je prázdný.</p>'; return; }
+  months.forEach(m => { const sec = document.createElement('section'); sec.innerHTML = `<h2>${m}</h2>`;
+    const list = document.createElement('div'); list.className = 'grid';
+    (data.months[m]||[]).forEach(item => { const j=item.job||{}; const el=document.createElement('div'); el.className='card';
+      el.innerHTML=`<div class="card-c"><div><strong>${j.title||j.name||'Bez názvu'}</strong></div>
+      <div>${j.client||''} • ${j.city||''} • ${j.code||''}</div><div>Dokončeno: ${j.completed_at||''}</div>
+      <details><summary>Detaily</summary><pre style="white-space:pre-wrap">${(j.note||'')}</pre></details></div>`;
+      list.appendChild(el); });
+    sec.appendChild(list); root.appendChild(sec); }); })();</script></body></html>
