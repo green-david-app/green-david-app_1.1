@@ -248,6 +248,10 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
     text-align:left;
     white-space:nowrap;
     flex:none;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,0.16);
   }
   /* search row spans full width and is centered */
   .tabs-search{
@@ -258,4 +262,5 @@ button.ghost{background:var(--panel);color:var(--txt-inv);border:1px solid var(-
     max-width:360px;
   }
 }
+
 
