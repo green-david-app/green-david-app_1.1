@@ -544,12 +544,6 @@
                             <div className="archive-job-row" key={j.id}>
                               <div className="archive-job-main">
                                 <div className="archive-job-title">{j.title}</div>
-                                <div className="archive-job-meta">
-                                  {j.client} • {j.city} • {j.code}
-                                </div>
-                                <div className="archive-job-meta">
-                                  Dokončeno: {toCZ(j.completed_at || j.date)}
-                                </div>
                               </div>
                               <div className="archive-job-actions">
                                 <button type="button" onClick={() => openJob(j.id)}>Otevřít detail</button>

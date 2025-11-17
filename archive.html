@@ -1,4 +1,4 @@
-<!doctype html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Archiv zakázek</title><link rel="stylesheet" href="/static/style.css"/></head><body><div class="page"><header class="top"><div class="top-logo"><a href="/">green david app</a></div></header><main class="container"><h1>Archiv zakázek</h1><div id="arch"></div></main></div><script>
+<!doctype html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Archiv zakázek</title><link rel="stylesheet" href="/style.css"/></head><body><div class="container"><h1>Archiv zakázek</h1><div id="arch"></div></div><script>
 (async () => {
   const res = await fetch('/api/jobs/archive'); const data = await res.json();
   const root = document.getElementById('arch');
@@ -8,11 +8,8 @@
   months.forEach(m => { const sec = document.createElement('section'); sec.innerHTML = `<h2>${m}</h2>`;
     const list = document.createElement('div'); list.className = 'grid';
     (data.months[m]||[]).forEach(item => { const j=item.job||{}; const el=document.createElement('div'); el.className='card';
-      el.innerHTML=`<div class="card-c">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span>${j.title||j.name||'Bez názvu'}</span>
-          ${j.id ? `<a href='/?tab=jobs&jobId=${j.id}' class="btn small">Otevřít detail</a>` : ''}
-        </div>
-      </div>`;
+      el.innerHTML=`<div class="card-c"><div><strong>${j.title||j.name||'Bez názvu'}</strong></div>
+      <div>${j.client||''} • ${j.city||''} • ${j.code||''}</div><div>Dokončeno: ${j.completed_at||''}</div>
+      <details><summary>Detaily</summary><pre style="white-space:pre-wrap">${(j.note||'')}</pre></details></div>`;
       list.appendChild(el); });
     sec.appendChild(list); root.appendChild(sec); }); })();</script></body></html>
