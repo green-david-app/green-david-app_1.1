@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="page">
+<div class="page" style="background:var(--bg-primary);">
   <div class="container">
     <!-- Page Header -->
     <div class="ts-page-header">
@@ -93,13 +93,13 @@
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: var(--space-sm);
-    background: var(--bg-primary);
+    background: #0a0e11 !important;
     padding: var(--space-md);
     border-radius: var(--radius-lg);
     border: 0.5px solid var(--border-primary);
   }
   .cal-cell {
-    background: #2a3036;
+    background: #2a3036 !important;
     border: 0.5px solid var(--border-primary);
     border-radius: var(--radius-md);
     padding: var(--space-sm);
@@ -111,16 +111,16 @@
   .cal-cell:hover {
     transform: translateY(-1px);
     border-color: var(--mint);
-    background: #323840;
+    background: #323840 !important;
     box-shadow: 0 2px 8px rgba(62, 167, 106, 0.15);
   }
   .cal-cell.muted {
     opacity: 0.4;
-    background: var(--bg-secondary);
+    background: #1f2428 !important;
   }
   .cal-cell.muted:hover {
     opacity: 0.6;
-    background: var(--bg-tertiary);
+    background: #2a2f35 !important;
   }
   .cal-date {
     font-weight: 700;
@@ -267,7 +267,7 @@ async function loadMonth() {
   const dayNames = ['P', 'Ú', 'S', 'Č', 'P', 'S', 'N'];
   for(let i=0; i<7; i++){
     const header = document.createElement("div");
-    header.style.cssText = "text-align:center;font-weight:600;color:var(--text-secondary);font-size:11px;padding:8px 4px;text-transform:uppercase;background:var(--bg-primary);";
+    header.style.cssText = "text-align:center;font-weight:600;color:var(--text-secondary);font-size:11px;padding:8px 4px;text-transform:uppercase;background:#0a0e11 !important;";
     header.textContent = dayNames[i];
     grid.appendChild(header);
   }
@@ -276,10 +276,30 @@ async function loadMonth() {
     const day = new Date(first); day.setDate(first.getDate()+i);
     const cell = document.createElement("div");
     cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
+    cell.style.cssText = "background:#2a3036 !important;border:0.5px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-sm);min-height:68px;position:relative;cursor:pointer;transition:all var(--transition);";
+    if(day.getMonth()!=cur.getMonth()){
+      cell.style.cssText += "opacity:0.4;background:#1f2428 !important;";
+    }
     cell.innerHTML = `<div class="cal-date">${day.getDate()}.</div><div class="cal-events"></div>`;
     cell.dataset.date = ymd(day);
     cell.addEventListener("click", ()=>selectDay(ymd(day), cell));
     cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
+    cell.addEventListener("mouseenter", function(){
+      if(day.getMonth()==cur.getMonth()){
+        this.style.background = "#323840 !important";
+      } else {
+        this.style.opacity = "0.6";
+        this.style.background = "#2a2f35 !important";
+      }
+    });
+    cell.addEventListener("mouseleave", function(){
+      if(day.getMonth()==cur.getMonth()){
+        this.style.background = "#2a3036 !important";
+      } else {
+        this.style.opacity = "0.4";
+        this.style.background = "#1f2428 !important";
+      }
+    });
     grid.appendChild(cell);
   }
   const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));

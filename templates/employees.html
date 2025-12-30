@@ -36,14 +36,7 @@
         </div>
       </div>
       <div class="card-c">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:200px;text-align:right;">Akce</th></tr>
-            </thead>
-            <tbody id="listBody"></tbody>
-          </table>
-        </div>
+        <div id="listBody" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
       </div>
     </div>
   </div>
@@ -77,25 +70,75 @@
     border-color: var(--mint);
     font-weight: 600;
   }
+  .emp-card {
+    background: var(--bg-card);
+    border: 0.5px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    transition: all var(--transition);
+  }
+  .emp-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--mint-border);
+    transform: translateY(-1px);
+  }
+  .emp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: var(--space-sm);
+  }
+  .emp-card-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .emp-card-role {
+    font-size: 14px;
+    color: var(--text-secondary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .emp-card-id {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+  }
   .emp-actions {
     display: flex;
     gap: 6px;
     justify-content: flex-end;
     align-items: center;
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 0.5px solid var(--border-primary);
   }
   .emp-actions button {
-    padding: 4px 8px;
+    padding: 6px 10px;
     font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   .emp-edit-row {
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    align-items: center;
   }
   .emp-edit-row input {
-    flex: 1;
+    width: 100%;
     padding: 6px 10px;
     font-size: 13px;
+  }
+  @media (max-width: 768px) {
+    #listBody {
+      grid-template-columns: 1fr !important;
+    }
   }
 </style>
 
@@ -241,7 +284,7 @@
   }
 
   async function render(){
-    listBody.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;padding:20px;">Načítám…</td></tr>';
+    listBody.innerHTML = '<div class="muted" style="text-align:center;padding:20px;grid-column:1/-1;">Načítám…</div>';
     const data = await fetchJSON('/api/employees');
     let rows = data.employees || [];
     if(scope==='brig'){
@@ -250,60 +293,69 @@
       rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
     }
     if(rows.length===0){
-      listBody.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;padding:20px;">Žádné položky</td></tr>';
+      listBody.innerHTML = '<div class="muted" style="text-align:center;padding:20px;grid-column:1/-1;">Žádné položky</div>';
       return;
     }
     listBody.innerHTML = '';
     for(const e of rows){
-      const tr = document.createElement('tr');
-      tr.id = `emp-${e.id}`;
+      const card = document.createElement('div');
+      card.className = 'emp-card';
+      card.id = `emp-${e.id}`;
       
       if(editId === e.id){
-        tr.innerHTML = `
-          <td>${e.id}</td>
-          <td><input id="edit-name-${e.id}" type="text" value="${e.name}" class="form-input" style="width:100%;padding:6px 10px;"/></td>
-          <td><input id="edit-role-${e.id}" type="text" value="${e.role||''}" class="form-input" style="width:100%;padding:6px 10px;"/></td>
-          <td>
-            <div class="emp-actions">
-              <button class="btn btn-primary btn-sm" onclick="window.saveEdit(${e.id})">Uložit</button>
-              <button class="btn btn-ghost btn-sm" onclick="window.cancelEdit()">Zrušit</button>
+        card.innerHTML = `
+          <div class="emp-card-header">
+            <div>
+              <input id="edit-name-${e.id}" type="text" value="${e.name}" class="form-input" style="width:100%;padding:6px 10px;margin-bottom:8px;"/>
+              <input id="edit-role-${e.id}" type="text" value="${e.role||''}" class="form-input" style="width:100%;padding:6px 10px;"/>
             </div>
-          </td>
+            <span class="emp-card-id">ID: ${e.id}</span>
+          </div>
+          <div class="emp-actions">
+            <button class="btn btn-primary btn-sm" onclick="window.saveEdit(${e.id})">Uložit</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.cancelEdit()">Zrušit</button>
+          </div>
         `;
       } else if(changeIdFor === e.id){
-        tr.innerHTML = `
-          <td>${e.id}</td>
-          <td>${e.name}</td>
-          <td>${e.role||''}</td>
-          <td>
-            <div class="emp-edit-row">
-              <input id="change-id-${e.id}" type="number" value="${e.id}" placeholder="Nové ID" class="form-input" style="width:80px;padding:6px 10px;"/>
-              <button class="btn btn-primary btn-sm" onclick="window.saveChangeId(${e.id})">Uložit</button>
-              <button class="btn btn-ghost btn-sm" onclick="window.cancelChangeId()">Zrušit</button>
+        card.innerHTML = `
+          <div class="emp-card-header">
+            <div>
+              <div class="emp-card-name">${e.name}</div>
+              <div class="emp-card-role">${e.role||''}</div>
             </div>
-          </td>
+            <span class="emp-card-id">ID: ${e.id}</span>
+          </div>
+          <div class="emp-edit-row">
+            <input id="change-id-${e.id}" type="number" value="${e.id}" placeholder="Nové ID" class="form-input" style="padding:6px 10px;"/>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="window.saveChangeId(${e.id})" style="flex:1;">Uložit</button>
+              <button class="btn btn-ghost btn-sm" onclick="window.cancelChangeId()" style="flex:1;">Zrušit</button>
+            </div>
+          </div>
         `;
       } else {
-        tr.innerHTML = `
-          <td>${e.id}</td>
-          <td>${e.name}</td>
-          <td>${e.role||''}</td>
-          <td>
-            <div class="emp-actions">
-              <button class="btn btn-ghost btn-sm" onclick="window.startEdit(${e.id})" title="Upravit">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="window.startChangeId(${e.id})" title="Změnit ID">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="window.del(${e.id})" title="Smazat" style="color:#ff6b6b;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
+        card.innerHTML = `
+          <div class="emp-card-header">
+            <div>
+              <div class="emp-card-name">${e.name}</div>
+              <div class="emp-card-role">${e.role||''}</div>
             </div>
-          </td>
+            <span class="emp-card-id">ID: ${e.id}</span>
+          </div>
+          <div class="emp-actions">
+            <button class="btn btn-ghost btn-sm" onclick="window.startEdit(${e.id})" title="Upravit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="window.startChangeId(${e.id})" title="Změnit ID">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="window.del(${e.id})" title="Smazat" style="color:#ff6b6b;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
         `;
       }
-      listBody.appendChild(tr);
+      listBody.appendChild(card);
     }
     
     // Store functions globally for onclick handlers
