@@ -1,823 +1,308 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>green david app</title>
-    <link rel="stylesheet" href="/style.css"/>
-  </head>
-  <body>
-    <header class="header">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'"/>
-        <div>
-          <div class="brand-title">green david app</div>
-          <div class="brand-sub">interní systém</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green David App - Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <img src="/logo.jpg" alt="Green David" onerror="this.innerHTML='GD'">
+                </div>
+                <div class="app-title">green david</div>
+            </div>
+            <div class="profile-btn" onclick="showProfile()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
         </div>
-        <div class="right small" id="userbox"></div>
-      </div>
-    </header>
-
-    <div class="container" style="margin-top:.5rem">
-      <div class="row-gap" style="justify-content:flex-start">
-
-      </div>
-    </div>
-
-
-    <main class="container">
-      <div id="app"></div>
-      <div id="js-error" class="error-overlay" style="display:none"></div>
-      <p class="small footer">© green david s.r.o.</p>
-    </main>
-
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <script>
-
-      function toISODateFlex(v){
-        if(!v) return v;
-        const d = String(v).replace(/\D+/g, '');
-        if(d.length !== 8) return v;
-        const yFirst = parseInt(d.slice(0,4),10);
-        let y,m,day;
-        if(yFirst >= 1900 && yFirst <= 2100){
-          y = yFirst; m = parseInt(d.slice(4,6),10); day = parseInt(d.slice(6,8),10);
-        } else {
-          day = parseInt(d.slice(0,2),10); m = parseInt(d.slice(2,4),10); y = parseInt(d.slice(4,8),10);
-        }
-        if(!(y && m && day)) return v;
-        const pad = (n)=> String(n).padStart(2,'0');
-        return `${y}-${pad(m)}-${pad(day)}`;
-      }
-      function toCZ(iso){
-        if(!iso) return iso||'';
-        const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(!m) return iso;
-        const [_,y,mm,dd] = m;
-        return `${dd}.${mm}.${y}`;
-      }
-
-      function normalizeDate(v){
-        if(!v) return v;
-        var m=v.match(/^(\d{1,2})[\.\s-](\d{1,2})[\.\s-](\d{4})$/);
-        if(m){
-          var d=m[1].padStart(2,'0'); var M=m[2].padStart(2,'0'); var y=m[3];
-          return y+"-"+M+"-"+d;
-        }
-        return v;
-      }
-      function showJSError(msg){
-        var el = document.getElementById('js-error');
-        el.style.display = 'block';
-        el.textContent = String(msg || 'Neznámá chyba ve skriptu.');
-        console.error(msg);
-      }
-      window.addEventListener('error', function(e){ showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)); });
-      window.addEventListener('unhandledrejection', function(e){ showJSError(e.reason ? (e.reason.stack||e.reason) : e); });
-      async function api(path, opts={}){
-        const res = await fetch(path, {credentials:"same-origin", headers:{"Content-Type":"application/json"}, ...opts});
-        if(!res.ok){ let msg = res.statusText; try{ const j = await res.json(); msg = j.error || msg; }catch{} throw new Error(msg); }
-        try{ return await res.json(); }catch{return {};}
-      }
-      async function refreshUserBox(){
-        const box = document.getElementById("userbox");
-        try{
-          const j = await api("/api/me");
-          if(j.authenticated){
-            box.innerHTML = `Přihlášen: <b>${j.user.name}</b> (${j.user.role}) • Úkoly: <b>${j.tasks_count}</b> &nbsp; <button class="ghost" id="logout-btn">Odhlásit</button>`;
-            document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
-          } else {
-            box.innerHTML = '<span>Nepřihlášen</span>';
-          }
-        }catch(e){ box.innerText = ""; }
-      }
-    </script>
-
-    <script type="text/babel" data-presets="env,react">
-      const { useState, useEffect, useMemo } = React;
-
-      function Login({onLogged}){
-        const [email,setEmail]=useState(""); const [pass,setPass]=useState(""); const [err,setErr]=useState("");
-        async function submit(e){ e.preventDefault(); setErr(""); try{ await api("/api/login",{method:"POST", body: JSON.stringify({email, password:pass})}); onLogged(); }catch(e){ setErr("Špatný e‑mail nebo heslo"); } }
-        return (<div className="card" style={{maxWidth:460, margin:"40px auto"}}><div className="card-h"><div>Přihlášení</div></div><div className="card-c">
-          <form onSubmit={submit}><div className="form-row"><input type="email" placeholder="E‑mail" value={email} onChange={e=>setEmail(e.target.value)} required style={{flex:1}}/></div>
-          <div className="form-row"><input type="password" placeholder="Heslo" value={pass} onChange={e=>setPass(e.target.value)} required style={{flex:1}}/></div>
-          {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}<div className="form-row" style={{justifyContent:"flex-end"}}><button type="submit">Přihlásit</button></div>
-          <div className="small">Výchozí admin: <b>admin@greendavid.local</b> / <b>admin123</b>.</div></form></div></div>);
-      }
-
-      function Tabs({value,onChange,canAdmin,taskCount}){
-        const items = [
-          {key:"calendar",label:"kalendář",href:"/calendar.html"},
-          {key:"timesheets",label:"výkazy hodin",href:"/timesheets.html"},
-          {key:"jobs",label:"zakázky"},
-          {key:"tasks",label:"úkoly"},
-          {key:"employees",label:"zaměstnanci"},
-          {key:"warehouse",label:"sklad"},
-          {key:"archive",label:"archiv zakázek"},
-          ...(canAdmin ? [{key:"users",label:"uživatelé"}] : [])
-        ];
-        return <div className="tabs">
-          {items.map(it => (
-            it.href
-              ? <a key={it.key} className={"tab"+(value===it.key?" active":"")} href={it.href}>{it.label}</a>
-              : <div key={it.key} className={"tab"+(value===it.key?" active":"")} onClick={()=>onChange(it.key)}>{it.label}</div>
-          ))}
-        </div>;
-      }
-
-      function JobsList({onOpen}){
-        const [list,setList]=useState([]);
-        const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
-        const [err,setErr]=useState("");
-
-        // NEW: edit mode state
-        const [editId, setEditId] = useState(null);
-        const [edit, setEdit] = useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
-
-        async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
-
-        async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
-        async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
-
-        // NEW: start/cancel/save edit
-        function startEdit(z){
-          setEditId(z.id);
-          setEdit({
-            title: z.title || "",
-            client: z.client || "",
-            status: z.status || "Plán",
-            city: z.city || "",
-            code: z.code || "",
-            date: toCZ(z.date || ""),
-            note: z.note || ""
-          });
-        }
-        function cancelEdit(){ setEditId(null); }
-        async function saveEdit(e){
-          e.preventDefault();
-          try{
-            const payload = { id: editId, ...edit, date: toISODateFlex(edit.date) };
-            await api("/api/jobs", { method:"PATCH", body: JSON.stringify(payload) });
-            setEditId(null);
-            load();
-          }catch(e){ setErr(e.message || String(e)); }
-        }
-
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
-            <form onSubmit={add}><div className="form-row">
-              <input placeholder="Název" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} style={{flex:2}} required/>
-              <input placeholder="Zákazník" value={form.client} onChange={e=>setForm({...form,client:e.target.value})} style={{flex:2}} required/>
-              <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
-            </div><div className="form-row">
-              <input placeholder="Město" value={form.city} onChange={e=>setForm({...form,city:e.target.value})} required/>
-              <input placeholder="Kód (např. 2025-091)" value={form.code} onChange={e=>setForm({...form,code:e.target.value})} required/>
-              <input type="text" placeholder="DD.MM.RRRR" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
-            </div><div className="form-row">
-              <input placeholder="Poznámka" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:1}}/>
-              <button type="submit">Přidat</button>
-            </div></form>{err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}</div></div>
-
-          {list.map(z=> (
-            <div className="card" key={z.id}>
-              <div className="card-h">
-                <div>
-                  <div style={{fontWeight:700}}><span className="linklike" onClick={()=> onOpen(z.id)}>{z.title}</span></div>
-                  <div className="small">{z.client} • {z.city} • {z.code}</div>
-                </div>
-                <span className="badge">{z.status}</span>
-              </div>
-
-              <div className="card-c">
-                <div className="kv small"><span>📅</span> <span>{toCZ(z.date)}</span></div>
-
-                {/* EDIT MODE UI */}
-                {editId === z.id ? (
-                  <form onSubmit={saveEdit} className="small" style={{marginTop:12}}>
-                    <div className="form-row">
-                      <input placeholder="Název" value={edit.title} onChange={e=>setEdit({...edit,title:e.target.value})} style={{flex:2}} required/>
-                      <input placeholder="Zákazník" value={edit.client} onChange={e=>setEdit({...edit,client:e.target.value})} style={{flex:2}} required/>
-                      <select value={edit.status} onChange={e=>setEdit({...edit,status:e.target.value})}>
-                        <option>Plán</option><option>Probíhá</option><option>Dokončeno</option>
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <input placeholder="Město" value={edit.city} onChange={e=>setEdit({...edit,city:e.target.value})} required/>
-                      <input placeholder="Kód (např. 2025-091)" value={edit.code} onChange={e=>setEdit({...edit,code:e.target.value})} required/>
-                      <input type="text" placeholder="DD.MM.RRRR" value={edit.date} onChange={e=>setEdit({...edit,date:e.target.value})} required/>
-                    </div>
-                    <div className="form-row">
-                      <input placeholder="Poznámka" value={edit.note} onChange={e=>setEdit({...edit,note:e.target.value})} style={{flex:1}}/>
-                      <div>
-                        <button type="submit">Uložit</button>
-                        <button type="button" className="ghost" onClick={cancelEdit} style={{marginLeft:6}}>Zrušit</button>
-                      </div>
-                    </div>
-                  </form>
-                ) : null}
-
-                <div style={{marginTop:12, display:"flex", gap:8}}>
-                  <button onClick={()=> onOpen(z.id)}>Otevřít detail</button>
-                  {/* NEW EDIT BUTTON next to Delete */}
-                  {editId === z.id ? (
-                    <button className="ghost" onClick={cancelEdit}>Zrušit úpravy</button>
-                  ) : (
-                    <button className="ghost" onClick={()=> startEdit(z)}>Upravit</button>
-                  )}
-                  <button className="ghost" onClick={()=> del(z.id)}>Smazat</button>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše.</div></div>}
-        </div>);
-      }
-
-      function PhotoUploader({jobId,onUploaded}){
-        function compressAndSend(file){
-          var reader = new FileReader();
-          reader.onload = function(){
-            var img = new Image();
-            img.onload = async function(){
-              var maxSide = 1600, quality = 0.82;
-              var scale = (img.width>img.height) ? maxSide/img.width : maxSide/img.height;
-              var w = Math.min(maxSide, Math.round(img.width*scale));
-              var h = Math.min(maxSide, Math.round(img.height*scale));
-              var c = document.createElement("canvas"); c.width=w; c.height=h;
-              var ctx = c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
-              var dataUrl = c.toDataURL("image/jpeg", quality);
-              await api(`/api/jobs/${jobId}/photos`, {method:"POST", body: JSON.stringify({data_url:dataUrl})});
-              onUploaded && onUploaded();
-            };
-            img.src = reader.result;
-          };
-          reader.readAsDataURL(file);
-        }
-        return (<label><input type="file" accept="image/*" onChange={e=>{ var f=e.target.files && e.target.files[0]; if(f) compressAndSend(f); }}/><button className="ghost">Nahrát fotku</button></label>);
-      }
-
-      function JobTasks({jobId}){
-        const [list,setList]=useState([]);
-        const [employees,setEmployees]=useState([]);
-        const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:""});
-        async function load(){ try{ const [t,e]=await Promise.all([api("/api/tasks?job_id="+jobId), api("/api/employees")]); setList(t.tasks||[]); setEmployees(e.employees||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
-        async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date), job_id: jobId || null})}); setForm({title:"",description:"",due_date:"",employee_id:""}); load(); }
-        async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
-        async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
-        return (<div className="card"><div className="card-h"><div>Úkoly zakázky</div></div><div className="card-c">
-          <form onSubmit={add}><div className="form-row">
-            <input placeholder="Nadpis úkolu" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required style={{flex:2}}/>
-            <input placeholder="Do kdy (YYYY-MM-DD)" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})}/>
-            <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})}><option value="">Nepřiřazovat</option>{employees.map(emp=>(<option key={emp.id} value={emp.id}>{emp.name}</option>))}</select>
-            <button type="submit">Přidat</button>
-          </div><div className="form-row"><input placeholder="Popis" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{flex:1}}/></div></form>
-          <table className="table"><thead><tr><th>Stav</th><th>Název</th><th>Přiřazeno</th><th>Termín</th><th></th></tr></thead><tbody>
-            {list.map(t=>(<tr key={t.id}><td><span className="badge">{t.status}</span></td><td>{t.title}</td><td>{t.employee_id || "-"}</td><td>{t.due_date || "-"}</td><td className="small">
-              <button className="ghost" onClick={()=>setStatus(t,"nový")}>nový</button><button className="ghost" onClick={()=>setStatus(t,"probíhá")}>probíhá</button><button className="ghost" onClick={()=>setStatus(t,"hotovo")}>hotovo</button><button className="ghost" onClick={()=>del(t)}>smazat</button></td></tr>))}
-          </tbody></table>{list.length===0 && <div className="small">Žádné úkoly.</div>}</div></div>);
-      }
-
-      function JobHours({jobId}){
-        const [rows,setRows]=useState([]);
-        const [employees,setEmployees]=useState([]);
-        const [form,setForm]=useState({employee_id:"",date:"",hours:0,place:"",activity:""});
-        async function load(){ try{ const [h,e]=await Promise.all([api("/api/timesheets?job_id="+jobId), api("/api/employees")]); setRows(h.rows||[]); setEmployees(e.employees||[]);}catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
-        async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({job_id:jobId, ...form})}); setForm({employee_id:"",date:"",hours:0,place:"",activity:""}); load(); }
-        async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
-        return (<div className="card"><div className="card-h"><div>Hodiny na zakázce</div></div><div className="card-c">
-          <form onSubmit={add}><div className="form-row">
-            <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} required><option value="">Zaměstnanec…</option>{employees.map(emp=>(<option key={emp.id} value={emp.id}>{emp.name}</option>))}</select>
-            <input type="text" placeholder="DD.MM.RRRR" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
-            <input type="number" step="0.25" value={form.hours} onChange={e=>setForm({...form,hours:e.target.value})} required/>
-          </div>
-          <div className="form-row">
-            <input placeholder="Místo" value={form.place} onChange={e=>setForm({...form,place:e.target.value})} style={{flex:1}}/>
-            <input placeholder="Popis činnosti" value={form.activity} onChange={e=>setForm({...form,activity:e.target.value})} style={{flex:2}}/>
-            <button type="submit">Přidat</button>
-          </div></form>
-          <table className="table"><thead><tr><th>Datum</th><th>Hodiny</th><th>Zaměstnanec</th><th>Místo</th><th>Popis činnosti</th><th></th></tr></thead><tbody>
-            {rows.map(r=>(<tr key={r.id}><td>{toCZ(r.date)}</td><td>{r.hours}</td><td>{r.employee_name || r.employee_id}</td><td>{r.place||"-"}</td><td>{r.activity||"-"}</td>
-              <td><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></td></tr>))}
-          </tbody></table>{rows.length===0 && <div className="small">Zatím žádné hodiny.</div>}
-        </div></div>);
-      }
-
-      function JobDetail({jobId,onBack}){
-        const [data,setData]=useState(null); const [employees,setEmployees]=useState([]); const [selEmp,setSelEmp]=useState([]);
-        const [mat,setMat]=useState({name:"",qty:0,unit:"ks"}); const [tool,setTool]=useState({name:"",qty:0,unit:"ks"});
-        const [err,setErr]=useState("");
-        async function load(){ try{ const [d, e] = await Promise.all([api(`/api/jobs/${jobId}`), api("/api/employees")]); setData(d); setEmployees(e.employees||[]); setSelEmp(d.assignments||[]);}catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[jobId]);
-        async function addMat(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/materials`,{method:"POST",body:JSON.stringify(mat)}); setMat({name:"",qty:0,unit:"ks"}); load(); }
-        async function addTool(e){ e.preventDefault(); await api(`/api/jobs/${jobId}/tools`,{method:"POST",body:JSON.stringify(tool)}); setTool({name:"",qty:0,unit:"ks"}); load(); }
-        async function delMat(id){ await api(`/api/jobs/${jobId}/materials?id=${id}`,{method:"DELETE"}); load(); }
-        async function delTool(id){ await api(`/api/jobs/${jobId}/tools?id=${id}`,{method:"DELETE"}); load(); }
-        async function setAssign(){ await api(`/api/jobs/${jobId}/assignments`,{method:"POST",body:JSON.stringify({employee_ids:selEmp})}); load(); }
-        if(!data) return <div className="small">Načítám…</div>;
-        const j = data.job;
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <button className="ghost" onClick={onBack}>← Zpět na seznam</button>
-          <div className="card"><div className="card-h"><div><div style={{fontWeight:800,fontSize:18}}>{j.title}</div><div className="small">{j.client} • {j.city} • {j.code}</div></div><span className="badge">{j.status}</span></div>
-            <div className="card-c"><div className="kv small"><span>📅</span> <span>{toCZ(j.date)}</span></div>{j.note && <div className="small" style={{marginTop:8}}>{j.note}</div>}</div></div>
-          <div className="card"><div className="card-h"><div>Přiřazení zaměstnanci</div><button onClick={setAssign}>Uložit přiřazení</button></div>
-            <div className="card-c small"><div className="row h"><div style={{gridColumn:"span 6"}}>Jméno</div><div style={{gridColumn:"span 6"}}>Přiřazen</div></div>
-              {employees.map(e=> (<div className="row" key={e.id}><div style={{gridColumn:"span 6"}}>{e.name}</div><div style={{gridColumn:"span 6"}}><input type="checkbox" checked={selEmp.includes(e.id)} onChange={(ev)=>{ const checked=ev.target.checked; setSelEmp(s=> checked? [...new Set([...s, e.id])] : s.filter(x=>x!==e.id)); }}/></div></div>))}
-            </div></div>
-          <JobTasks jobId={jobId}/>
-          <JobHours jobId={jobId}/>
-          <div className="card"><div className="card-h"><div>Materiál</div><a className="ghost" href={`/export/job_materials.xlsx?job_id=${jobId}`}>Export XLSX</a></div>
-            <div className="card-c"><form onSubmit={addMat}><div className="form-row">
-              <input placeholder="Název" value={mat.name} onChange={e=>setMat({...mat,name:e.target.value})} required style={{flex:2}}/>
-              <input type="number" step="0.01" placeholder="Množství" value={mat.qty} onChange={e=>setMat({...mat,qty:e.target.value})} required style={{width:120}}/>
-              <input placeholder="Jedn." value={mat.unit} onChange={e=>setMat({...mat,unit:e.target.value})} required style={{width:80}}/>
-              <button type="submit">Přidat</button></div></form>
-              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}></div></div>
-              {(data.materials||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delMat(r.id)}>Smazat</button></div></div>))}
-              {data.materials?.length===0 && <div className="small">Zatím žádný materiál.</div>}</div></div>
-          <div className="card"><div className="card-h"><div>Nářadí</div></div>
-            <div className="card-c"><form onSubmit={addTool}><div className="form-row">
-              <input placeholder="Název" value={tool.name} onChange={e=>setTool({...tool,name:e.target.value})} required style={{flex:2}}/>
-              <input type="number" step="0.01" placeholder="Množství" value={tool.qty} onChange={e=>setTool({...tool,qty:e.target.value})} required style={{width:120}}/>
-              <input placeholder="Jedn." value={tool.unit} onChange={e=>setTool({...tool,unit:e.target.value})} required style={{width:80}}/>
-              <button type="submit">Přidat</button></div></form>
-              <div className="row h"><div style={{gridColumn:"span 7"}}>Název</div><div style={{gridColumn:"span 2",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1"}}>Jedn.</div><div style={{gridColumn:"span 2",textAlign:"right"}}></div></div>
-              {(data.tools||[]).map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 7"}}>{r.name}</div><div style={{gridColumn:"span 2",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1"}}>{r.unit}</div><div style={{gridColumn:"span 2",textAlign:"right"}}><button className="ghost" onClick={()=>delTool(r.id)}>Smazat</button></div></div>))}
-              {data.tools?.length===0 && <div className="small">Zatím žádné nářadí.</div>}</div></div>
-          <div className="card"><div className="card-h"><div>Fotky</div></div>
-            <div className="card-c"><PhotoUploader jobId={jobId} onUploaded={load}/>
-              <div className="grid" style={{gridTemplateColumns:"repeat(5,1fr)"}}>
-                {(data.photos||[]).map(p=> (<div key={p.id}><img className="img-preview" src={`/uploads/${p.filename}`} alt="foto"/></div>))}
-              </div>
-              {data.photos?.length===0 && <div className="small">Zatím žádné fotky.</div>}
-            </div></div>
-        </div>);
-      }
-
-      function EmployeeDetail({employee,onBack}){
-        const [rows,setRows]=useState([]);
-        const [jobs,setJobs]=useState([]);
-        const [form,setForm]=useState({job_id:"",date:"",hours:0,place:"",activity:""});
-        async function load(){ try{ const [t,j] = await Promise.all([api("/api/timesheets?employee_id="+employee.id), api("/api/jobs")]); setRows(t.rows||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[employee.id]);
-        async function add(e){ e.preventDefault(); await api("/api/timesheets",{method:"POST",body:JSON.stringify({employee_id:employee.id, ...form})}); setForm({job_id:"",date:"",hours:0,place:"",activity:""}); load(); }
-        async function del(id){ if(!confirm("Smazat záznam?")) return; await api("/api/timesheets?id="+id,{method:"DELETE"}); load(); }
-        return (
-          <div className="grid" style={{gridTemplateColumns:"1fr"}}>
-            <button className="ghost" onClick={onBack}>← Zpět na seznam</button>
-            <div className="card">
-              <div className="card-h"><div>{employee.name} — výkazy hodin</div><a className="ghost" href={`/export/employee_hours.xlsx?employee_id=${employee.id}`}>Export XLSX</a></div>
-              <div className="card-c">
-                <form onSubmit={add}>
-                  <div className="form-row">
-                    <select value={form.job_id} onChange={e=>setForm({...form,job_id:e.target.value})} required>
-                      <option value="">Vyber zakázku…</option>
-                      {jobs.map(j=>(<option key={j.id} value={j.id}>{j.title} ({j.code})</option>))}
-                    </select>
-                    <input type="text" placeholder="DD.MM.RRRR" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} required/>
-                    <input type="number" step="0.25" value={form.hours} onChange={e=>setForm({...form,hours:e.target.value})} required/>
-                  </div>
-                  <div className="form-row">
-                    <input placeholder="Místo (např. Praha 6)" value={form.place} onChange={e=>setForm({...form,place:e.target.value})} style={{flex:1}}/>
-                    <input placeholder="Popis činnosti" value={form.activity} onChange={e=>setForm({...form,activity:e.target.value})} style={{flex:2}}/>
-                    <button type="submit">Přidat</button>
-                  </div>
-                </form>
-                <table className="table">
-                  <thead><tr><th>Datum</th><th>Hodiny</th><th>Zakázka</th><th>Místo</th><th>Popis činnosti</th><th></th></tr></thead>
-                  <tbody>
-                    {rows.map(r=>(
-                      <tr key={r.id}>
-                        <td>{toCZ(r.date)}</td><td>{r.hours}</td><td>{r.job_title}</td><td>{r.place||"-"}</td><td>{r.activity||"-"}</td>
-                        <td><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {rows.length===0 && <div className="small">Zatím žádné záznamy.</div>}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      const CATS = ['trvalky','trávy','dřeviny','stromy','cibuloviny','hnojiva/postřiky','materiál zahrada','materiál stavba'];
-      function Warehouse(){
-        const [site,setSite]=useState("lipnik"); const [list,setList]=useState([]); const [form,setForm]=useState({category:CATS[0],name:"",qty:0,unit:"ks"}); const [q,setQ]=useState("");
-        async function load(){ try{ const j=await api("/api/items?site="+site); setList(j.items||[]); }catch(e){ console.error(e);} } useEffect(()=>{ load().catch(()=>{}); },[site]);
-        async function add(e){ e.preventDefault(); await api("/api/items",{method:"POST",body:JSON.stringify({...form,site})}); setForm({category:CATS[0],name:"",qty:0,unit:"ks"}); load(); }
-        async function del(id){ if(!confirm("Smazat položku?")) return; await api("/api/items?id="+id,{method:"DELETE"}); load(); }
-        const filtered = React.useMemo(()=> list.filter(r=> (r.name||"").toLowerCase().includes(q.toLowerCase())), [list,q]);
-        return (<div><div style={{display:"flex",gap:8,alignItems:"center",margin:"8px 0 12px"}}>
-          <div className="tabs"><div className={"tab"+(site==="lipnik"?" active":"")} onClick={()=>setSite("lipnik")}>Lipník</div><div className={"tab"+(site==="praha"?" active":"")} onClick={()=>setSite("praha")}>Praha</div></div>
-          <div className="search" style={{flex:1}}><input value={q} onChange={e=> setQ(e.target.value)} placeholder="Hledat položku…"/><button className="ghost">Hledat</button></div>
-          <a className="ghost" href="/export/warehouse.xlsx">Export XLSX</a></div>
-          <div className="card"><div className="card-h"><div>Nová položka</div></div><div className="card-c">
-            <form onSubmit={add}><div className="form-row">
-              <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATS.map(c=>(<option key={c}>{c}</option>))}</select>
-              <input placeholder="Název" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={{flex:2}}/>
-              <input type="number" step="0.01" placeholder="Množství" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} required style={{width:120}}/>
-              <input placeholder="Jedn." value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} required style={{width:80}}/>
-              <button type="submit">Přidat</button></div></form></div></div>
-          <div className="card"><div className="card-h"><div>Inventář – {site==="lipnik"?"Lipník":"Praha"}</div></div><div className="card-c">
-            <div className="row h"><div style={{gridColumn:"span 4"}}>Kategorie</div><div style={{gridColumn:"span 6"}}>Název</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Množství</div><div style={{gridColumn:"span 1",textAlign:"right"}}>Jedn.</div></div>
-            {filtered.length===0 && <div className="small">Prázdné – přidej položky výše.</div>}
-            {filtered.map(r=> (<div className="row small" key={r.id}><div style={{gridColumn:"span 4"}}>{r.category}</div><div style={{gridColumn:"span 6"}}>{r.name}</div><div style={{gridColumn:"span 1",textAlign:"right"}}>{r.qty}</div><div style={{gridColumn:"span 1",textAlign:"right"}}>{r.unit}</div>
-              <div style={{gridColumn:"span 12",textAlign:"right"}}><button className="ghost" onClick={()=>del(r.id)}>Smazat</button></div></div>))}
-          </div></div></div>);
-      }
-
-      function UsersTab(){
-        const [list,setList]=useState([]); const [form,setForm]=useState({email:"",name:"",role:"worker",password:""}); const [err,setErr]=useState("");
-        async function load(){ try{ const j=await api("/api/users"); setList(j.users||[]); }catch(e){ setErr(e.message);} } useEffect(()=>{load().catch(()=>{}); },[]);
-        async function create(e){ e.preventDefault(); await api("/api/users",{method:"POST",body:JSON.stringify(form)}); setForm({email:"",name:"",role:"worker",password:""}); load(); }
-        async function setRole(id,role){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id,role})}); load(); }
-        async function toggleActive(u){ await api("/api/users",{method:"PATCH",body:JSON.stringify({id:u.id,active:!u.active})}); load(); }
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nový uživatel</div></div><div className="card-c">
-            <form onSubmit={create}><div className="form-row">
-              <input placeholder="E‑mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required style={{flex:1}}/>
-              <input placeholder="Jméno" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={{flex:1}}/></div>
-              <div className="form-row"><select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option value="worker">worker</option><option value="manager">manager</option><option value="admin">admin</option></select>
-              <input type="password" placeholder="Heslo" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/><button type="submit">Vytvořit</button></div></form>
-          </div></div>
-          <div className="card"><div className="card-h"><div>Uživatelé</div></div><div className="card-c">
-            {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
-            <table className="table"><thead><tr><th>ID</th><th>E‑mail</th><th>Jméno</th><th>Role</th><th>Aktivní</th><th></th></tr></thead><tbody>
-              {list.map(u=>(<tr key={u.id}><td>{u.id}</td><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td><td>{u.active? "ano":"ne"}</td>
-                <td className="small"><button className="ghost" onClick={()=>setRole(u.id,"worker")}>worker</button>
-                  <button className="ghost" onClick={()=>setRole(u.id,"manager")}>manager</button>
-                  <button className="ghost" onClick={()=>setRole(u.id,"admin")}>admin</button>
-                  <button className="ghost" onClick={()=>toggleActive(u)}>{u.active?"deaktivovat":"aktivovat"}</button></td></tr>))}
-            </tbody></table>
-          </div></div>
-        </div>);
-      }
-
-
-      function ArchiveTab({onOpen}){
-        const [monthsData,setMonthsData] = useState({});
-        const [years,setYears] = useState([]);
-        const [activeYear,setActiveYear] = useState("");
-        const [err,setErr] = useState("");
-
-        useEffect(() => {
-          (async () => {
-            try{
-              const j = await api("/api/jobs/archive");
-              const months = j.months || {};
-              const byYear = {};
-              Object.keys(months).forEach(ym => {
-                if(!ym || ym === "unknown") return;
-                const parts = String(ym).split("-");
-                if(parts.length < 2) return;
-                const year = parts[0];
-                const monthIdx = parseInt(parts[1],10) - 1;
-                if(monthIdx < 0 || monthIdx > 11) return;
-                if(!byYear[year]) byYear[year] = Array.from({length:12}, () => []);
-                byYear[year][monthIdx] = months[ym] || [];
-              });
-              const yearsSorted = Object.keys(byYear).sort().reverse();
-              setYears(yearsSorted);
-              if(yearsSorted.length && !activeYear){
-                setActiveYear(yearsSorted[0]);
-              }
-              setMonthsData(byYear);
-            }catch(e){
-              console.error(e);
-              setErr(e.message || String(e));
-            }
-          })();
-        }, []);
-
-        const monthNames = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
-
-        const yearData = (activeYear && monthsData[activeYear]) || [];
-
-        function openJob(id){
-          if(onOpen) onOpen(id);
-        }
-
-        return (
-          <div className="card">
-            <div className="card-h">
-              <div>Archiv zakázek</div>
-              {years.length > 0 && (
-                <div style={{marginLeft:"auto"}}>
-                  <select value={activeYear} onChange={e=>setActiveYear(e.target.value)}>
-                    {years.map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-            <div className="card-c">
-              {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
-              {years.length === 0 && !err && (
-                <div className="small">Zatím žádné dokončené zakázky.</div>
-              )}
-              {years.length > 0 && (
-                <div className="archive-grid">
-                  {monthNames.map((name, idx) => {
-                    const jobs = (yearData && yearData[idx]) || [];
-                    return (
-                      <div className="archive-month-card" key={idx}>
-                        <div className="archive-month-head">
-                          <div className="archive-month-title">{name}</div>
-                          {jobs.length > 0 && (
-                            <div className="archive-month-count small">
-                              {jobs.length} zakázek
-                            </div>
-                          )}
-                        </div>
-                        <div className="archive-month-body small">
-                          {jobs.length === 0 && (
-                            <div>Žádné dokončené zakázky.</div>
-                          )}
-                          {jobs.map(j => (
-                            <div className="archive-job-row" key={j.id}>
-                              <div className="archive-job-main">
-                                <div className="archive-job-title">{j.title}</div>
-                              </div>
-                              <div className="archive-job-actions">
-                                <button type="button" onClick={() => openJob(j.id)}>Otevřít detail</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      function TasksTab(){
-        const [list,setList]=useState([]);
-        const [employees,setEmployees]=useState([]);
-        const [jobs,setJobs]=useState([]);
-        const [form,setForm]=useState({title:"",description:"",due_date:"",employee_id:"",job_id:""});
-        async function load(){ try{ const [t,e,j]=await Promise.all([api("/api/tasks"), api("/api/employees"), api("/api/jobs")]); setList(t.tasks||[]); setEmployees(e.employees||[]); setJobs(j.jobs||[]); }catch(e){ console.error(e);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
-        async function add(e){ e.preventDefault(); await api("/api/tasks",{method:"POST",body:JSON.stringify({...form, due_date: toISODateFlex(form.due_date)})}); setForm({title:"",description:"",due_date:"",employee_id:"",job_id:""}); load(); }
-        async function setStatus(t, status){ await api("/api/tasks",{method:"PATCH",body:JSON.stringify({id:t.id,status})}); load(); }
-        async function del(t){ if(!confirm("Smazat úkol?")) return; await api("/api/tasks?id="+t.id,{method:"DELETE"}); load(); }
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Úkoly</div></div><div className="card-c">
-            <form onSubmit={add}><div className="form-row">
-              <input placeholder="Nadpis" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required style={{flex:2}}/>
-              <input placeholder="Termín (YYYY-MM-DD)" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})}/>
-              <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})}><option value="">Bez přiřazení</option>{employees.map(emp=>(<option key={emp.id} value={emp.id}>{emp.name}</option>))}</select>
-              <select value={form.job_id} onChange={e=>setForm({...form,job_id:e.target.value})}><option value="">Bez zakázky</option>{jobs.map(j=>(<option key={j.id} value={j.id}>{j.title}</option>))}</select>
-              <button type="submit">Přidat</button>
-            </div><div className="form-row"><input placeholder="Popis" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{flex:1}}/></div></form>
-            <table className="table"><thead><tr><th>Stav</th><th>Název</th><th>Zaměstnanec</th><th>Zakázka</th><th>Termín</th><th></th></tr></thead><tbody>
-              {list.map(t=>(<tr key={t.id}><td><span className="badge">{t.status}</span></td><td>{t.title}</td><td>{t.employee_id || "-"}</td><td>{t.job_id || "-"}</td><td>{t.due_date || "-"}</td>
-              <td className="small"><button className="ghost" onClick={()=>setStatus(t,"nový")}>nový</button><button className="ghost" onClick={()=>setStatus(t,"probíhá")}>probíhá</button><button className="ghost" onClick={()=>setStatus(t,"hotovo")}>hotovo</button><button className="ghost" onClick={()=>del(t)}>smazat</button></td></tr>))}
-            </tbody></table>
-            {list.length===0 && <div className="small">Zatím žádné úkoly.</div>}
-          </div></div>
-        </div>);
-      }
-
-      function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
-        useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
-        if(!auth.ready) return <div className="small">Načítám…</div>;
-        if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
-        return (<div>
-          <Tabs value={tab} onChange={(k)=>{ setTab(k); setJobOpen(null); }} canAdmin={auth.user?.role==="admin"} taskCount={auth.tasks}/>
-          <div style={{height:12}}/>
-          {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
-          {tab==="archive" && <ArchiveTab onOpen={(id)=>{ setJobOpen(id); setTab("jobs"); }}/>}
-          {tab==="tasks" && <TasksTab/>}
-          {tab==="employees" && <Employees/>}
-          {tab==="warehouse" && <Warehouse/>}
-          {tab==="users" && auth.user?.role==="admin" && <UsersTab/>}
-        </div>);
-      }
-
-      // Employees root (needs after App def)
-      function Employees(){
-        const [list,setList]=useState([]);
-        const [form,setForm]=useState({name:"",role:"Zahradník"});
-        const [editId,setEditId]=useState(null);
-        const [edit,setEdit]=useState({name:"",role:""});
-        const [changeIdFor,setChangeIdFor]=useState(null);
-        const [newId,setNewId]=useState("");
-        const [open,setOpen]=useState(null);
-        const [err,setErr]=useState("");
-        async function load(){ try{ const j=await api("/api/employees"); setList(j.employees||[]); }catch(e){ setErr(e.message);} }
-        useEffect(()=>{ load().catch(()=>{}); },[]);
-        async function add(e){ e.preventDefault(); await api("/api/employees",{method:"POST",body:JSON.stringify(form)}); setForm({name:"",role:"Zahradník"}); load(); }
-        async function del(id){ if(!confirm("Smazat zaměstnance?")) return; await api("/api/employees?id="+id,{method:"DELETE"}); load(); }
         
-        async function startEdit(e){ setEditId(e.id); setEdit({name:e.name, role:e.role}); }
-        async function cancelEdit(){ setEditId(null); setEdit({name:"",role:""}); }
-        async function saveEdit(e){
-          await api("/api/employees",{method:"PATCH", body: JSON.stringify({id:e.id, name:edit.name, role:edit.role})});
-          setEditId(null); setEdit({name:"",role:""}); load();
-        }
-
-        async function startChangeId(e){ setChangeIdFor(e.id); setNewId(String(e.id)); }
-        async function cancelChangeId(){ setChangeIdFor(null); setNewId(""); }
-        async function saveChangeId(e){
-          const nid = parseInt(newId, 10);
-          if(!nid || nid<=0){ alert("Zadej platné číslo ID"); return; }
-          await api("/api/employees/reassign_id",{method:"POST", body: JSON.stringify({old_id:e.id,new_id:nid})});
-          setChangeIdFor(null); setNewId(""); load();
-        }
-if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail employee={emp} onBack={()=>setOpen(null)}/>; }
-        return (
-          <div className="grid" style={{gridTemplateColumns:"1fr"}}>
-            <div className="card">
-              <div className="card-h"><div>Nový zaměstnanec</div></div>
-              <div className="card-c">
-                <form onSubmit={add}>
-                  <div className="form-row">
-                    <input placeholder="Jméno" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={{flex:1}}/>
-                    <input placeholder="Role (např. Zahradník)" value={form.role} onChange={e=>setForm({...form,role:e.target.value})} required style={{flex:1}}/>
-                    <button type="submit">Přidat</button>
-                  </div>
-                </form>
-              </div>
+        <div class="user-info">
+            <div class="user-left">
+                <div class="user-name" id="user-name">Načítání...</div>
+                <div class="user-role" id="user-role">...</div>
             </div>
-            <div className="card">
-              <div className="card-h"><div>Seznam</div></div>
-              <div className="card-c">
-                {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
-                <table className="table">
-                  <thead><tr><th>ID</th><th>Jméno</th><th>Role</th><th></th></tr></thead>
-                  <tbody>
-                    {list.map(e=>(
-                      <tr key={e.id}>
-                        <td>{e.id}</td>
-                        <td>{editId===e.id ? (<input value={edit.name} onChange={ev=>setEdit({...edit,name:ev.target.value})} placeholder="Jméno"/>) : (<span className="link" onClick={()=>setOpen(e.id)}>{e.name}</span>)}</td>
-                        <td>{editId===e.id ? (<input value={edit.role} onChange={ev=>setEdit({...edit,role:ev.target.value})} placeholder="Role"/>) : e.role}</td>
-                        <td>
-                          {editId===e.id ? (
-                            <>
-                              <button onClick={()=>saveEdit(e)}>Uložit</button>
-                              <button className="ghost" onClick={cancelEdit} style={{marginLeft:6}}>Zrušit</button>
-                            </>
-                          ) : changeIdFor===e.id ? (
-                            <>
-                              <input type="number" value={newId} onChange={ev=>setNewId(ev.target.value)} placeholder="Nové ID" style={{width:100}}/>
-                              <button onClick={()=>saveChangeId(e)} style={{marginLeft:6}}>Uložit ID</button>
-                              <button className="ghost" onClick={cancelChangeId} style={{marginLeft:6}}>Zrušit</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={()=>setOpen(e.id)}>Detail</button>
-                              <button className="ghost" onClick={()=>startEdit(e)} style={{marginLeft:6}}>Upravit</button>
-                              <button className="ghost" onClick={()=>startChangeId(e)} style={{marginLeft:6}}>Změnit ID</button>
-                              <button className="ghost" onClick={()=>del(e.id)} style={{marginLeft:6}}>Smazat</button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {list.length===0 && <div className="small">Zatím žádní zaměstnanci – přidej prvního výše.</div>}
-              </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-jobs">-</div>
+                    <div class="stat-label">zakázky</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-team">-</div>
+                    <div class="stat-label">tým</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-tasks">-</div>
+                    <div class="stat-label">úkoly</div>
+                </div>
             </div>
-          </div>
-        );
-      }
-
-      ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
-    </script>
-  <script>
-// Hide old green shortcut row "Kalendář Výkazy hodin" if it exists (we keep only the tabs bar)
-document.addEventListener('DOMContentLoaded', function(){
-  const anchors = Array.from(document.querySelectorAll('a'));
-  const kal = anchors.find(a => a.textContent && a.textContent.trim().match(/^Kalend[aá]ř$/));
-  if (kal && kal.parentElement){
-    const sib = kal.parentElement.querySelector('a + a');
-    const txt = sib ? sib.textContent.trim() : "";
-    if (/^V[ýy]kazy\s*hodin$/i.test(txt)) {
-      // Hide the whole container row
-      kal.parentElement.style.display = 'none';
-    }
-  }
-});
-</script>
-
-<script>
-(function(){
-  function ensureSearch(container){
-    if(!container) return;
-    if(container.querySelector('#globalSearch')) return;
-    var form = document.createElement('form');
-    form.id = 'globalSearch';
-    form.className = 'tabs-search';
-    form.action = '/search';
-    form.method = 'GET';
-    form.innerHTML = '<input type="search" name="q" placeholder="Hledat…" aria-label="Hledat"/>' +
-                     '<button type="submit" class="btn small">Hledat</button>';
-    container.appendChild(form);
-  }
-  function findTabs(){
-    document.querySelectorAll('.tabs').forEach(ensureSearch);
-  }
-  document.addEventListener('DOMContentLoaded', function(){
-    findTabs();
-    var obs = new MutationObserver(findTabs);
-    obs.observe(document.body, {subtree:true, childList:true});
-  });
-})();
-</script>
-
-
-<script>
-// SPA deep link helper: ?tab=jobs&jobId=123 or ?tab=employees
-(function(){
-  function qs(name){ return new URLSearchParams(window.location.search).get(name); }
-  const tab = qs('tab');
-  if (tab) {
-    // Try to switch initial tab by simulating click on the tab header if present
-    document.addEventListener('DOMContentLoaded', () => {
-      const map = {
-        'jobs': 'Zakázky', 'employees': 'Zaměstnanci',
-        'calendar': 'Kalendář','timesheets':'Výkazy hodin','tasks':'Úkoly','warehouse':'Sklad','users':'Uživatelé'
-      };
-      const label = map[tab] || null;
-      if (label) {
-        // try click tab with given label
-        const clickTab = () => {
-          const tabs = Array.from(document.querySelectorAll('.tab'));
-          const t = tabs.find(el => el.textContent.trim() === label);
-          if (t) t.click();
-        };
-        clickTab();
-        // also observe in case it renders later
-        const obs = new MutationObserver(clickTab);
-        obs.observe(document.body, {subtree:true, childList:true});
-        setTimeout(()=>obs.disconnect(), 5000);
-      }
-    });
-  }
-  const jobId = qs('jobId');
-  if (jobId) {
-    // After jobs list is rendered, try to open the detail of that job
-    const tryOpen = () => {
-      // Find card/item that contains the ID number (ID column or data-id attr)
-      const selectorCandidates = [
-        `[data-job-id="${jobId}"] .btn, [data-id="${jobId}"] .btn`,
-        `.job-row[data-id="${jobId}"] .btn`,
-        `.job-item[data-id="${jobId}"] .btn`,
-        `tr:has(td:first-child:contains("${jobId}")) .btn`,
-        `a[href*="detail"][data-id="${jobId}"]`, `button:contains("Otevřít detail")`
-      ];
-      // Basic contains polyfill for querySelectorAll
-      (function(){
-        function containsSelectorPolyfill(){
-          // no native :contains in querySelector; we implement manual scan
-          const rows = Array.from(document.querySelectorAll('tr, .job-item, .job-row, [data-job-id], [data-id]'));
-          for (const el of rows) {
-            if (el.dataset && (el.dataset.jobId === jobId || el.dataset.id === jobId)) {
-              const btn = el.querySelector('a,button');
-              if (btn) { btn.click(); return true; }
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="action-card" onclick="location.href='/jobs?action=new'">
+            <div class="action-icon icon-mint">
+                <svg viewBox="0 0 24 24">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
+            <div>
+                <div class="action-title">Nová zakázka</div>
+                <div class="action-subtitle">Vytvořit</div>
+            </div>
+        </div>
+        
+        <div class="action-card" onclick="location.href='/timesheets?action=new'">
+            <div class="action-icon icon-gray">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div>
+                <div class="action-title">Výkaz hodin</div>
+                <div class="action-subtitle">Přidat čas</div>
+            </div>
+        </div>
+        
+        <div class="action-card" onclick="location.href='/employees'">
+            <div class="action-icon icon-mint">
+                <svg viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="action-title">Tým</div>
+                <div class="action-subtitle">Spravovat</div>
+            </div>
+        </div>
+        
+        <div class="action-card" onclick="location.href='/stats'">
+            <div class="action-icon icon-gray">
+                <svg viewBox="0 0 24 24">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </div>
+            <div>
+                <div class="action-title">Statistiky</div>
+                <div class="action-subtitle">Přehledy</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Jobs Section -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">Aktivní zakázky</div>
+            <div class="see-all" onclick="location.href='/jobs'">Vše ›</div>
+        </div>
+        
+        <div id="active-jobs-list">
+            <!-- Loading -->
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="location.href='/'">
+            <div class="tab-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <div class="tab-label">domů</div>
+        </div>
+        
+        <div class="tab-item" onclick="location.href='/jobs'">
+            <div class="tab-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div class="tab-label">zakázky</div>
+        </div>
+        
+        <div class="tab-item" onclick="location.href='/timesheets'">
+            <div class="tab-icon">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="tab-label">výkazy</div>
+        </div>
+        
+        <div class="tab-item" onclick="location.href='/calendar'">
+            <div class="tab-icon">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <div class="tab-label">kalendář</div>
+        </div>
+        
+        <div class="tab-item" onclick="showMore()">
+            <div class="tab-icon">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m4.22-13.22l-2.83 2.83m0 4.24l2.83 2.83m1.39-9.9l-2.83 2.83m-8.5 0l-2.83-2.83m2.83 11.73l-2.83 2.83m8.5 0l2.83-2.83"></path>
+                </svg>
+            </div>
+            <div class="tab-label">více</div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // API Helper
+        async function api(path, opts = {}) {
+            const res = await fetch(path, {
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                ...opts
+            });
+            if (!res.ok) {
+                let msg = res.statusText;
+                try {
+                    const j = await res.json();
+                    msg = j.error || msg;
+                } catch {}
+                throw new Error(msg);
             }
-            if (el.querySelector) {
-              const tds = el.querySelectorAll('td,div,span');
-              for (const td of tds) {
-                if (td.textContent && td.textContent.trim() === jobId) {
-                  const btn = el.querySelector('a,button');
-                  if (btn) { btn.click(); return true; }
+            try {
+                return await res.json();
+            } catch {
+                return {};
+            }
+        }
+        
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const data = await api('/api/me');
+                if (data.authenticated && data.user) {
+                    document.getElementById('user-name').textContent = data.user.name;
+                    document.getElementById('user-role').textContent = data.user.role;
+                    document.getElementById('stat-tasks').textContent = data.tasks_count || 0;
+                } else {
+                    // Redirect to login
+                    location.href = '/login';
                 }
-              }
+            } catch (error) {
+                console.error('Error loading user:', error);
             }
-          }
-          // fallback: click first "Otevřít detail" on page
-          const any = Array.from(document.querySelectorAll('a,button')).find(b => /Otevřít detail/i.test(b.textContent));
-          if (any) { any.click(); return true; }
-          return false;
         }
-        window.__openJobDetailById = containsSelectorPolyfill;
-      })();
-
-      if (window.__openJobDetailById && window.__openJobDetailById()) return;
-    };
-    document.addEventListener('DOMContentLoaded', ()=>{
-      tryOpen();
-      const obs = new MutationObserver(()=>tryOpen());
-      obs.observe(document.body, {subtree:true, childList:true});
-      setTimeout(()=>obs.disconnect(), 5000);
-    });
-  }
-})();
-</script>
-
+        
+        // Load stats
+        async function loadStats() {
+            try {
+                // Jobs count
+                const jobs = await api('/api/jobs');
+                document.getElementById('stat-jobs').textContent = jobs.jobs?.length || 0;
+                
+                // Team count
+                const employees = await api('/api/employees');
+                document.getElementById('stat-team').textContent = employees.employees?.length || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Load active jobs
+        async function loadActiveJobs() {
+            const container = document.getElementById('active-jobs-list');
+            try {
+                const data = await api('/api/jobs');
+                const jobs = data.jobs || [];
+                
+                if (jobs.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <div class="empty-title">Žádné aktivní zakázky</div>
+                            <div class="empty-text">Vytvořte první zakázku pomocí tlačítka výše</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Show first 5 jobs
+                const html = jobs.slice(0, 5).map(job => {
+                    const status = job.status || 'Plán';
+                    const badgeClass = status.toLowerCase().includes('aktivní') ? 'badge-active' : 'badge-plan';
+                    
+                    return `
+                        <div class="card list-card" onclick="location.href='/jobs/${job.id}'">
+                            <div class="card-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-title">${job.title || job.name || 'Bez názvu'}</div>
+                                <div class="card-subtitle">${job.city || '-'} • ${job.date || '-'}</div>
+                            </div>
+                            <div class="card-badge ${badgeClass}">${status}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-title">Chyba při načítání</div>
+                        <div class="empty-text">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Show profile
+        function showProfile() {
+            // TODO: Show profile modal
+            alert('Profil - TODO');
+        }
+        
+        // Show more menu
+        function showMore() {
+            // TODO: Show more menu modal
+            alert('Více možností - TODO');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            loadStats();
+            loadActiveJobs();
+        });
+    </script>
 </body>
 </html>
