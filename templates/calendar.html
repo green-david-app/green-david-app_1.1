@@ -239,6 +239,10 @@ function renderEvents(items){
     const kind = ev.kind || ev.type || 'note';
     pill.className = "badge " + (kind=='task'?'task':(kind=='job'?'job':''));
     pill.textContent = ev.title || ev.name || ev.description || '(bez názvu)';
+    pill.style.overflow = 'hidden';
+    pill.style.textOverflow = 'ellipsis';
+    pill.style.whiteSpace = 'nowrap';
+    pill.style.maxWidth = '100%';
     container.appendChild(pill);
   }
 }

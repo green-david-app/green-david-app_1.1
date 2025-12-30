@@ -84,6 +84,9 @@ body {
   background: linear-gradient(135deg, var(--bg-primary) 0%, #15191d 100%);
   min-height: 100vh;
   padding-bottom: 100px; /* Space for bottom nav */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ========================================
@@ -127,11 +130,17 @@ a:hover {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--space-lg);
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .page {
   padding: var(--space-lg) 0;
   min-height: calc(100vh - 140px);
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .grid {
@@ -192,11 +201,10 @@ a:hover {
 }
 
 .brand-logo {
-  width: 36px;
   height: 36px;
+  width: auto;
   border-radius: var(--radius-sm);
-  object-fit: cover;
-  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-light) 100%);
+  object-fit: contain;
 }
 
 .brand-title {
@@ -259,6 +267,9 @@ a:hover {
   background: var(--bg-elevated);
   gap: var(--space-md);
   flex-wrap: wrap;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .card-title {
@@ -275,6 +286,9 @@ a:hover {
 
 .card-c, .card-body {
   padding: var(--space-lg);
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .card-f, .card-footer {
@@ -417,6 +431,10 @@ textarea,
   transition: all var(--transition);
   -webkit-appearance: none;
   appearance: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .form-input:focus,
@@ -473,9 +491,11 @@ input[type="checkbox"] {
   border-radius: var(--radius-lg);
   border: 0.5px solid var(--border-primary);
   overflow-x: auto;
+  overflow-y: hidden;
   margin-bottom: var(--space-lg);
   position: sticky;
   top: 60px;
+  -webkit-overflow-scrolling: touch;
   z-index: 100;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -496,6 +516,9 @@ input[type="checkbox"] {
   white-space: nowrap;
   border: 0.5px solid transparent;
   flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .tab:hover {
@@ -597,6 +620,11 @@ input[type="checkbox"] {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -605,6 +633,11 @@ input[type="checkbox"] {
   padding: var(--space-md);
   border-bottom: 0.5px solid var(--border-primary);
   color: var(--text-primary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table tbody tr {
@@ -698,6 +731,10 @@ input[type="checkbox"] {
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
   font-weight: 500;
   border: 0.5px solid;
   white-space: nowrap;

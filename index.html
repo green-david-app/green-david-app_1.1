@@ -590,147 +590,116 @@
       }
 
       function Dashboard({user, taskCount}){
-        const [stats,setStats]=useState({totalHours:0,avgHours:0,activeJobs:0,completedTasks:0,productivity:0});
-        const [recentTimesheets,setRecentTimesheets]=useState([]);
-        const [upcomingJobs,setUpcomingJobs]=useState([]);
+        const [stats,setStats]=useState({activeJobs:0,employees:0,tasks:0});
+        const [activeJobs,setActiveJobs]=useState([]);
         
         useEffect(()=>{
           (async()=>{
             try{
-              // Get this week's timesheets
-              const today = new Date();
-              const monday = new Date(today);
-              monday.setDate(today.getDate() - ((today.getDay()+6)%7));
-              const sunday = new Date(monday);
-              sunday.setDate(monday.getDate() + 6);
-              const fmt = (d)=>d.toISOString().slice(0,10);
-              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
-              const totalH = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
-              
               // Get jobs
               const jobs = await api("/api/jobs");
               const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").length;
+              const activeList = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").slice(0,5);
+              
+              // Get employees
+              const emps = await api("/api/employees");
+              const empCount = (emps.employees||[]).length;
               
               // Get tasks
               const tasks = await api("/api/tasks");
-              const completed = (tasks.tasks||[]).filter(t=>t.status==="hotovo").length;
+              const taskCount = (tasks.tasks||[]).length;
               
               setStats({
-                totalHours: totalH,
-                avgHours: totalH/7,
                 activeJobs: active,
-                completedTasks: completed,
-                productivity: 94
+                employees: empCount,
+                tasks: taskCount
               });
               
-              // Recent timesheets (last 3)
-              const recent = (timesheets.rows||[]).slice(-3).reverse();
-              setRecentTimesheets(recent);
-              
-              // Upcoming jobs (next 3)
-              const upcoming = (jobs.jobs||[]).filter(j=>j.status==="Plán"||j.status==="Probíhá").slice(0,3);
-              setUpcomingJobs(upcoming);
+              setActiveJobs(activeList);
             }catch(e){console.error(e);}
           })();
         },[]);
         
-        return (<div style={{paddingBottom:100}}>
-          {/* Welcome Section */}
-          <div style={{marginBottom:32}}>
-            <h1 style={{fontSize:32,fontWeight:700,marginBottom:8,background:"linear-gradient(135deg, #3ea76a 0%, #4bb878 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              Vítej zpět, {user?.name || "Admin"}! 👋
-            </h1>
-            <p style={{color:"#9ca8b3",fontSize:16}}>Zde je přehled tvé práce za poslední týden</p>
-          </div>
-          
-          {/* Stats Grid */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:20,marginBottom:32}}>
-            <div className="card" style={{position:"relative",overflow:"hidden"}}>
-              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Celkem hodin tento týden</div>
-              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.totalHours.toFixed(1)}</div>
-              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +8.2% vs minulý týden</div>
+        return (<div style={{paddingBottom:100,padding:"0 16px"}}>
+          {/* Stats Card */}
+          <div className="card" style={{margin:"16px 0",padding:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:600,color:"#e8eef2"}}>{user?.name || "Admin"}</div>
+                <div style={{fontSize:15,color:"#3ea76a",marginTop:4}}>{user?.role || "admin"}</div>
+              </div>
             </div>
-            <div className="card">
-              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Aktivní zakázky</div>
-              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.activeJobs}</div>
-              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +3 nové tento měsíc</div>
-            </div>
-            <div className="card">
-              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Dokončené úkoly</div>
-              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.completedTasks}</div>
-              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +15% vs minulý měsíc</div>
-            </div>
-            <div className="card">
-              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Produktivita týmu</div>
-              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.productivity}%</div>
-              <div style={{fontSize:14,color:"#ef4444",display:"flex",alignItems:"center",gap:4}}>↓ -2% vs průměr</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,textAlign:"center"}}>
+              <div>
+                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.activeJobs}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>zakázky</div>
+              </div>
+              <div>
+                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.employees}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>tým</div>
+              </div>
+              <div>
+                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.tasks}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>úkoly</div>
+              </div>
             </div>
           </div>
-          
-          {/* Charts Section */}
-          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:20,marginBottom:32}}>
-            <div className="card">
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-                <div style={{fontSize:18,fontWeight:600}}>Hodiny per zaměstnanec</div>
-                <div style={{display:"flex",gap:8}}>
-                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Týden</button>
-                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Měsíc</button>
-                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Rok</button>
+
+          {/* Action Cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2, 1fr)",gap:16,margin:"0 0 24px 0"}}>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>{const tabs=document.querySelectorAll('.tab'); const jobsTab=Array.from(tabs).find(t=>t.textContent.trim()==='zakázky'); if(jobsTab) jobsTab.click(); else if(tabs[0]) tabs[0].click();}}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Nová zakázka</div>
+              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Vytvořit</div>
+            </div>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>window.location.href="/timesheets.html"}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Výkaz hodin</div>
+              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Přidat čas</div>
+            </div>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>window.location.href="/employees.html"}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Tým</div>
+              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Spravovat</div>
+            </div>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Statistiky</div>
+              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Přehledy</div>
+            </div>
+          </div>
+
+          {/* Active Jobs */}
+          <div style={{margin:"0 0 88px 0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontSize:22,fontWeight:700,color:"#e8eef2"}}>Aktivní zakázky</div>
+              <a href="/" onClick={(e)=>{e.preventDefault(); const tabs=document.querySelectorAll('.tab'); const jobsTab=Array.from(tabs).find(t=>t.textContent.trim()==='zakázky'); if(jobsTab) jobsTab.click(); else if(tabs[0]) tabs[0].click();}} style={{fontSize:15,color:"#3ea76a",fontWeight:500,textDecoration:"none",whiteSpace:"nowrap"}}>Vše &gt;</a>
+            </div>
+            {activeJobs.length===0 ? (
+              <div className="card" style={{padding:16}}>
+                <div style={{color:"#9ca8b3",textAlign:"center"}}>Zatím žádné aktivní zakázky</div>
+              </div>
+            ) : activeJobs.map(j=>(
+              <div key={j.id} className="card" style={{padding:16,display:"flex",alignItems:"center",gap:16,marginBottom:12,cursor:"pointer"}} onClick={()=>{const t=document.querySelector('.tab'); if(t) t.click();}}>
+                <div style={{width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{j.title}</div>
+                  <div style={{fontSize:15,color:"#9ca8b3",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{j.client} • {j.city}</div>
+                  <div style={{fontSize:13,color:"#636366"}}>{toCZ(j.date)}</div>
+                </div>
+                <div style={{padding:"6px 12px",borderRadius:9999,fontSize:13,fontWeight:500,background:j.status==="Probíhá"?"rgba(62, 167, 106, 0.15)":"rgba(59, 130, 246, 0.15)",color:j.status==="Probíhá"?"#3ea76a":"#3b82f6",whiteSpace:"nowrap"}}>{j.status}</div>
               </div>
-              <div style={{height:300,background:"linear-gradient(180deg, rgba(62, 167, 106, 0.05) 0%, transparent 100%)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",color:"#6b7580",fontSize:14,border:"1px dashed #353b41"}}>
-                📊 Bar Chart - Hodin per zaměstnanec (tento týden)
-              </div>
-            </div>
-            <div className="card">
-              <div style={{fontSize:18,fontWeight:600,marginBottom:20}}>Rozdělení hodin</div>
-              <div style={{height:300,background:"linear-gradient(180deg, rgba(62, 167, 106, 0.05) 0%, transparent 100%)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",color:"#6b7580",fontSize:14,border:"1px dashed #353b41"}}>
-                🥧 Pie Chart - Hodin per zakázka
-              </div>
-            </div>
-          </div>
-          
-          {/* Recent Activity */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-            <div className="card">
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-                <div style={{fontSize:18,fontWeight:600}}>Poslední výkazy</div>
-                <a href="/timesheets.html" style={{color:"#3ea76a",fontSize:14,textDecoration:"none"}}>Zobrazit vše →</a>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {recentTimesheets.length===0 ? <div className="small">Zatím žádné výkazy</div> : recentTimesheets.map(r=>(
-                  <div key={r.id} style={{padding:12,background:"rgba(255,255,255,0.02)",border:"1px solid #2a3036",borderRadius:12}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                      <div style={{fontWeight:600,fontSize:14}}>{r.employee_name} - {r.job_title}</div>
-                      <span className="badge" style={{background:"rgba(62, 167, 106, 0.12)",color:"#3ea76a",borderColor:"rgba(62, 167, 106, 0.24)",padding:"4px 10px",borderRadius:999,fontSize:11,fontWeight:600}}>{r.hours}h</span>
-                    </div>
-                    <div style={{fontSize:12,color:"#6b7580"}}>{toCZ(r.date)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="card">
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-                <div style={{fontSize:18,fontWeight:600}}>Nadcházející zakázky</div>
-                <a href="/" onClick={(e)=>{e.preventDefault();}} style={{color:"#3ea76a",fontSize:14,textDecoration:"none"}}>Zobrazit vše →</a>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {upcomingJobs.length===0 ? <div className="small">Zatím žádné zakázky</div> : upcomingJobs.map(j=>(
-                  <div key={j.id} style={{padding:12,background:"rgba(255,255,255,0.02)",border:"1px solid #2a3036",borderRadius:12}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                      <div style={{fontWeight:600,fontSize:14}}>{j.title}</div>
-                      <span className="badge" style={{
-                        background:j.status==="Probíhá"?"rgba(62, 167, 106, 0.12)":j.status==="Plán"?"rgba(59, 130, 246, 0.12)":"rgba(107, 117, 128, 0.12)",
-                        color:j.status==="Probíhá"?"#3ea76a":j.status==="Plán"?"#3b82f6":"#6b7580",
-                        borderColor:j.status==="Probíhá"?"rgba(62, 167, 106, 0.24)":j.status==="Plán"?"rgba(59, 130, 246, 0.24)":"rgba(107, 117, 128, 0.24)",
-                        padding:"4px 10px",borderRadius:999,fontSize:11,fontWeight:600
-                      }}>{j.status}</span>
-                    </div>
-                    <div style={{fontSize:12,color:"#6b7580"}}>{j.client} • {j.city} • {j.code}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>);
       }
