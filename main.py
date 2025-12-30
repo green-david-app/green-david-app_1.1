@@ -38,24 +38,6 @@ app.config.update(
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 logger.info("🌿 Green David App v2.0 starting...")
 
-# Database migration
-def _migrate_completed_at():
-    """Přidá completed_at sloupec pokud neexistuje"""
-    try:
-        with app.app_context():
-            db = get_db()
-            cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
-            if "completed_at" not in cols:
-                db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
-                db.commit()
-                logger.info("✅ Migration: added completed_at column")
-    except Exception as e:
-        logger.error(f"Migration error: {e}")
-
-try:
-    _migrate_completed_at()
-except Exception:
-    pass
 @app.route("/archive")
 def view_archive():
     u, err = require_auth()
@@ -151,6 +133,26 @@ def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
+# Database migration - musí být až po get_db()
+def _migrate_completed_at():
+    """Přidá completed_at sloupec pokud neexistuje"""
+    try:
+        with app.app_context():
+            db = get_db()
+            cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
+            if "completed_at" not in cols:
+                db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
+                db.commit()
+                logger.info("✅ Migration: added completed_at column")
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+
+# Spustit migraci
+try:
+    _migrate_completed_at()
+except Exception:
+    pass
 
 def current_user():
     uid = session.get("uid")
