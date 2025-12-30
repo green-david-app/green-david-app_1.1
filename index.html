@@ -7,14 +7,13 @@
     <link rel="stylesheet" href="/style.css"/>
   </head>
   <body>
-    <header class="header">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" onerror="this.src='/logo.svg'"/>
-        <div>
-          <div class="brand-title">green david app</div>
-          <div class="brand-sub">interní systém</div>
+    <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
+      <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="/logo.jpg" alt="Green David" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+          <div style="font-size:18px;font-weight:600;color:#e8eef2;">Green David</div>
         </div>
-        <div class="right small" id="userbox"></div>
+        <div id="userbox" style="display:flex;align-items:center;gap:16px;font-size:14px;color:#9ca8b3;"></div>
       </div>
     </header>
 
@@ -87,7 +86,7 @@
         try{
           const j = await api("/api/me");
           if(j.authenticated){
-            box.innerHTML = `Přihlášen: <b>${j.user.name}</b> (${j.user.role}) • Úkoly: <b>${j.tasks_count}</b> &nbsp; <button class="ghost" id="logout-btn">Odhlásit</button>`;
+            box.innerHTML = `<span>Přihlášen: <strong style="color:#e8eef2;">${j.user.name}</strong></span> <span>•</span> <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
             document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
           } else {
             box.innerHTML = '<span>Nepřihlášen</span>';
@@ -111,6 +110,7 @@
 
       function Tabs({value,onChange,canAdmin,taskCount}){
         const items = [
+          {key:"dashboard",label:"přehled"},
           {key:"calendar",label:"kalendář",href:"/calendar.html"},
           {key:"timesheets",label:"výkazy hodin",href:"/timesheets.html"},
           {key:"jobs",label:"zakázky"},
@@ -589,14 +589,161 @@
         </div>);
       }
 
+      function Dashboard({user, taskCount}){
+        const [stats,setStats]=useState({totalHours:0,avgHours:0,activeJobs:0,completedTasks:0,productivity:0});
+        const [recentTimesheets,setRecentTimesheets]=useState([]);
+        const [upcomingJobs,setUpcomingJobs]=useState([]);
+        
+        useEffect(()=>{
+          (async()=>{
+            try{
+              // Get this week's timesheets
+              const today = new Date();
+              const monday = new Date(today);
+              monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+              const sunday = new Date(monday);
+              sunday.setDate(monday.getDate() + 6);
+              const fmt = (d)=>d.toISOString().slice(0,10);
+              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              const totalH = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
+              
+              // Get jobs
+              const jobs = await api("/api/jobs");
+              const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").length;
+              
+              // Get tasks
+              const tasks = await api("/api/tasks");
+              const completed = (tasks.tasks||[]).filter(t=>t.status==="hotovo").length;
+              
+              setStats({
+                totalHours: totalH,
+                avgHours: totalH/7,
+                activeJobs: active,
+                completedTasks: completed,
+                productivity: 94
+              });
+              
+              // Recent timesheets (last 3)
+              const recent = (timesheets.rows||[]).slice(-3).reverse();
+              setRecentTimesheets(recent);
+              
+              // Upcoming jobs (next 3)
+              const upcoming = (jobs.jobs||[]).filter(j=>j.status==="Plán"||j.status==="Probíhá").slice(0,3);
+              setUpcomingJobs(upcoming);
+            }catch(e){console.error(e);}
+          })();
+        },[]);
+        
+        return (<div style={{paddingBottom:100}}>
+          {/* Welcome Section */}
+          <div style={{marginBottom:32}}>
+            <h1 style={{fontSize:32,fontWeight:700,marginBottom:8,background:"linear-gradient(135deg, #3ea76a 0%, #4bb878 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+              Vítej zpět, {user?.name || "Admin"}! 👋
+            </h1>
+            <p style={{color:"#9ca8b3",fontSize:16}}>Zde je přehled tvé práce za poslední týden</p>
+          </div>
+          
+          {/* Stats Grid */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:20,marginBottom:32}}>
+            <div className="card" style={{position:"relative",overflow:"hidden"}}>
+              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Celkem hodin tento týden</div>
+              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.totalHours.toFixed(1)}</div>
+              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +8.2% vs minulý týden</div>
+            </div>
+            <div className="card">
+              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Aktivní zakázky</div>
+              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.activeJobs}</div>
+              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +3 nové tento měsíc</div>
+            </div>
+            <div className="card">
+              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Dokončené úkoly</div>
+              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.completedTasks}</div>
+              <div style={{fontSize:14,color:"#3ea76a",display:"flex",alignItems:"center",gap:4}}>↑ +15% vs minulý měsíc</div>
+            </div>
+            <div className="card">
+              <div style={{fontSize:13,color:"#6b7580",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,fontWeight:600}}>Produktivita týmu</div>
+              <div style={{fontSize:36,fontWeight:700,color:"#e8eef2",marginBottom:4}}>{stats.productivity}%</div>
+              <div style={{fontSize:14,color:"#ef4444",display:"flex",alignItems:"center",gap:4}}>↓ -2% vs průměr</div>
+            </div>
+          </div>
+          
+          {/* Charts Section */}
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:20,marginBottom:32}}>
+            <div className="card">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                <div style={{fontSize:18,fontWeight:600}}>Hodiny per zaměstnanec</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Týden</button>
+                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Měsíc</button>
+                  <button className="btn btn-ghost btn-sm" style={{padding:"6px 12px",fontSize:12}}>Rok</button>
+                </div>
+              </div>
+              <div style={{height:300,background:"linear-gradient(180deg, rgba(62, 167, 106, 0.05) 0%, transparent 100%)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",color:"#6b7580",fontSize:14,border:"1px dashed #353b41"}}>
+                📊 Bar Chart - Hodin per zaměstnanec (tento týden)
+              </div>
+            </div>
+            <div className="card">
+              <div style={{fontSize:18,fontWeight:600,marginBottom:20}}>Rozdělení hodin</div>
+              <div style={{height:300,background:"linear-gradient(180deg, rgba(62, 167, 106, 0.05) 0%, transparent 100%)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",color:"#6b7580",fontSize:14,border:"1px dashed #353b41"}}>
+                🥧 Pie Chart - Hodin per zakázka
+              </div>
+            </div>
+          </div>
+          
+          {/* Recent Activity */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div className="card">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                <div style={{fontSize:18,fontWeight:600}}>Poslední výkazy</div>
+                <a href="/timesheets.html" style={{color:"#3ea76a",fontSize:14,textDecoration:"none"}}>Zobrazit vše →</a>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {recentTimesheets.length===0 ? <div className="small">Zatím žádné výkazy</div> : recentTimesheets.map(r=>(
+                  <div key={r.id} style={{padding:12,background:"rgba(255,255,255,0.02)",border:"1px solid #2a3036",borderRadius:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                      <div style={{fontWeight:600,fontSize:14}}>{r.employee_name} - {r.job_title}</div>
+                      <span className="badge" style={{background:"rgba(62, 167, 106, 0.12)",color:"#3ea76a",borderColor:"rgba(62, 167, 106, 0.24)",padding:"4px 10px",borderRadius:999,fontSize:11,fontWeight:600}}>{r.hours}h</span>
+                    </div>
+                    <div style={{fontSize:12,color:"#6b7580"}}>{toCZ(r.date)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="card">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                <div style={{fontSize:18,fontWeight:600}}>Nadcházející zakázky</div>
+                <a href="/" onClick={(e)=>{e.preventDefault();}} style={{color:"#3ea76a",fontSize:14,textDecoration:"none"}}>Zobrazit vše →</a>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {upcomingJobs.length===0 ? <div className="small">Zatím žádné zakázky</div> : upcomingJobs.map(j=>(
+                  <div key={j.id} style={{padding:12,background:"rgba(255,255,255,0.02)",border:"1px solid #2a3036",borderRadius:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                      <div style={{fontWeight:600,fontSize:14}}>{j.title}</div>
+                      <span className="badge" style={{
+                        background:j.status==="Probíhá"?"rgba(62, 167, 106, 0.12)":j.status==="Plán"?"rgba(59, 130, 246, 0.12)":"rgba(107, 117, 128, 0.12)",
+                        color:j.status==="Probíhá"?"#3ea76a":j.status==="Plán"?"#3b82f6":"#6b7580",
+                        borderColor:j.status==="Probíhá"?"rgba(62, 167, 106, 0.24)":j.status==="Plán"?"rgba(59, 130, 246, 0.24)":"rgba(107, 117, 128, 0.24)",
+                        padding:"4px 10px",borderRadius:999,fontSize:11,fontWeight:600
+                      }}>{j.status}</span>
+                    </div>
+                    <div style={{fontSize:12,color:"#6b7580"}}>{j.client} • {j.city} • {j.code}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>);
+      }
+
       function App(){
-        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("jobs"); const [jobOpen,setJobOpen]=useState(null);
+        const [auth,setAuth]=useState({ready:false, ok:false, user:null, tasks:0}); const [tab, setTab] = useState("dashboard"); const [jobOpen,setJobOpen]=useState(null);
         useEffect(()=>{(async()=>{ try{ const j=await api("/api/me"); setAuth({ready:true, ok:j.authenticated, user:j.user||null, tasks:j.tasks_count||0}); refreshUserBox(); }catch(e){ showJSError(e.message);} })()},[]);
         if(!auth.ready) return <div className="small">Načítám…</div>;
         if(!auth.ok) return <Login onLogged={()=>location.reload()}/>;
         return (<div>
           <Tabs value={tab} onChange={(k)=>{ setTab(k); setJobOpen(null); }} canAdmin={auth.user?.role==="admin"} taskCount={auth.tasks}/>
           <div style={{height:12}}/>
+          {tab==="dashboard" && <Dashboard user={auth.user} taskCount={auth.tasks}/>}
           {tab==="jobs" && (jobOpen? <JobDetail jobId={jobOpen} onBack={()=>setJobOpen(null)}/> : <JobsList onOpen={setJobOpen}/>)}
           {tab==="archive" && <ArchiveTab onOpen={(id)=>{ setJobOpen(id); setTab("jobs"); }}/>}
           {tab==="tasks" && <TasksTab/>}

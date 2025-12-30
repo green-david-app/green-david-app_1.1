@@ -1,16 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="page">
+  <!-- Header -->
+  <div class="ts-header">
+    <div class="ts-header-content">
+      <div class="brand">
+        <img src="/logo.jpg" alt="Green David" class="brand-logo" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+        <div class="brand-title">Green David</div>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
-    <h1>kalendář</h1>
+    <!-- Page Header -->
+    <div class="ts-page-header">
+      <h1 class="ts-page-title">Kalendář</h1>
+      <p class="ts-page-subtitle">Přehled událostí, úkolů a zakázek</p>
+    </div>
 
     <!-- Calendar Controls -->
     <div class="card" style="margin-bottom:var(--space-lg);">
       <div class="card-c">
         <div class="form-row" style="align-items:center;flex-wrap:wrap;">
-          <button id="prev" class="btn btn-ghost btn-sm">◀</button>
+          <button id="prev" class="btn btn-ghost btn-sm">← Předchozí</button>
           <div id="monthLabel" style="font-weight:700;font-size:22px;color:var(--text-primary);flex:1;text-align:center;"></div>
-          <button id="next" class="btn btn-ghost btn-sm">▶</button>
+          <button id="next" class="btn btn-ghost btn-sm">Další →</button>
           <div class="spacer"></div>
           <button id="addNote" class="btn btn-primary btn-sm">+ Poznámka</button>
           <button id="addTask" class="btn btn-primary btn-sm">+ Úkol</button>

@@ -192,11 +192,10 @@ a:hover {
 }
 
 .brand-logo {
-  width: 36px;
   height: 36px;
+  width: auto;
   border-radius: var(--radius-sm);
-  object-fit: cover;
-  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-light) 100%);
+  object-fit: contain;
 }
 
 .brand-title {

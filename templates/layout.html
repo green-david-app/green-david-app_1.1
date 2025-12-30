@@ -17,19 +17,18 @@
   </style>
 </head>
 <body>
-  <header class="header">
-    <div class="brand-wrap">
-      <img class="brand-logo" src="/logo.jpg" alt="green david logo">
-      <div>
-        <div class="brand-title">green david app</div>
-        <div class="brand-sub">interní systém</div>
+  <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
+    <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="/logo.jpg" alt="Green David" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Green David</div>
       </div>
+      {% if session.get('uid') %}
+        <div>
+          <button id="logoutBtn" class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
+        </div>
+      {% endif %}
     </div>
-    {% if session.get('uid') %}
-      <div class="logout-abs">
-        <button id="logoutBtn" class="ghost" style="border:none;background:none;cursor:pointer;">Odhlásit</button>
-      </div>
-    {% endif %}
   </header>
 <div id="archive-cta" style="display:none; text-align:right; max-width:1200px; margin:0 auto; padding:6px 8px;">
   <a href="/archive" style="display:inline-block; padding:8px 14px; border-radius:10px; background:#2f7d32; color:#fff; text-decoration:none; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.2)">

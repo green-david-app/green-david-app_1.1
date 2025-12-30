@@ -1,30 +1,61 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="page">
-  <div class="container">
-    <!-- Sticky Header Card -->
-    <div class="card" style="position:sticky;top:60px;z-index:100;margin-bottom:var(--space-lg);">
-      <div class="card-h">
-        <a href="/" class="btn btn-ghost btn-sm">← zpět</a>
-        <div style="font-size:17px;font-weight:600;color:var(--text-primary);">výkazy hodin - týden</div>
-        <div></div>
+  <!-- Header -->
+  <div class="ts-header">
+    <div class="ts-header-content">
+      <div class="brand">
+        <img src="/logo.jpg" alt="Green David" class="brand-logo" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+        <div class="brand-title">Green David</div>
       </div>
-      <div class="card-c">
-        <div class="form-row" style="flex-wrap:wrap;gap:var(--space-sm);align-items:center;">
-          <label class="small" style="display:flex;align-items:center;gap:var(--space-xs);">týden od <input id="weekStart" type="date" class="form-input" style="width:auto;padding:6px 10px;font-size:13px;"/></label>
-          <button id="prevWeek" class="btn btn-ghost btn-sm">← předchozí</button>
-          <button id="nextWeek" class="btn btn-ghost btn-sm">následující →</button>
-          <span class="sep"></span>
-          <label class="small" style="display:flex;align-items:center;gap:var(--space-xs);">filtrovat zakázku <select id="filterJob" class="form-select" style="width:auto;padding:6px 10px;font-size:13px;"><option value="">vše</option></select></label>
-          <label class="small" style="display:flex;align-items:center;gap:var(--space-xs);">filtrovat zaměstnance <select id="filterEmployee" class="form-select" style="width:auto;padding:6px 10px;font-size:13px;"><option value="">všichni</option></select></label>
-          <span class="spacer"></span>
-          <button id="exportCsv" class="btn btn-primary btn-sm">export csv (týden)</button>
-        </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Page Header -->
+    <div class="ts-page-header">
+      <h1 class="ts-page-title">Výkazy hodin</h1>
+      <p class="ts-page-subtitle">Týdenní přehled - Edituj, přidávej nebo kopíruj záznamy</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="ts-toolbar">
+      <div class="ts-week-nav">
+        <button id="prevWeek" class="ts-nav-btn">← Předchozí</button>
+        <div id="weekLabel" class="ts-week-label">23. - 29. prosince 2025</div>
+        <button id="nextWeek" class="ts-nav-btn">Další →</button>
+      </div>
+      <div class="ts-actions">
+        <button id="exportCsv" class="btn btn-secondary">📊 Export</button>
+        <button id="addTimesheet" class="btn btn-primary">+ Přidat výkaz</button>
       </div>
     </div>
 
-    <!-- Week Days -->
-    <div id="week" style="display:flex;flex-direction:column;gap:var(--space-lg);margin-bottom:100px;"></div>
+    <!-- Filters (hidden by default, can be shown) -->
+    <div class="ts-filters" style="display:none;">
+      <input id="weekStart" type="date" class="form-input" style="width:auto;"/>
+      <select id="filterJob" class="form-select" style="width:auto;"><option value="">vše</option></select>
+      <select id="filterEmployee" class="form-select" style="width:auto;"><option value="">všichni</option></select>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="ts-summary-bar">
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Celkem hodin</div>
+        <div id="summaryTotal" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Průměr na den</div>
+        <div id="summaryAvg" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Aktivních projektů</div>
+        <div id="summaryProjects" class="ts-summary-value">0</div>
+      </div>
+    </div>
+
+    <!-- Week Grid -->
+    <div id="weekGrid" class="ts-week-grid"></div>
   </div>
 </div>
 
@@ -72,90 +103,277 @@
 </div>
 
 <style>
-  /* Timesheets specific styles */
-  .week {
+  /* Timesheets Header */
+  .ts-header {
+    background: rgba(31, 36, 40, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-medium);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .ts-header-content {
+    max-width: 1400px;
+    margin: 0 auto;
     display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-    position: relative;
-    z-index: 1;
+    align-items: center;
+    justify-content: space-between;
   }
-  .day {
-    background: var(--bg-card);
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo {
+    height: 36px;
+    width: auto;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+  .brand-title {
+    font-size: 18px;
+    font-weight: 600;
     color: var(--text-primary);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-    border: 0.5px solid var(--border-primary);
   }
-  .day-h {
+
+  /* Page Header */
+  .ts-page-header {
+    margin-bottom: 32px;
+  }
+  .ts-page-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .ts-page-subtitle {
+    color: var(--text-tertiary);
+    font-size: 16px;
+  }
+
+  /* Toolbar */
+  .ts-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-md);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
   }
-  .day-actions {
+  .ts-week-nav {
     display: flex;
-    gap: var(--space-sm);
     align-items: center;
+    gap: 12px;
   }
-  .btn-add {
-    background: var(--mint-bg);
-    color: var(--mint);
-    border: 0.5px solid var(--mint-border);
-    border-radius: var(--radius-md);
-    padding: 6px 10px;
+  .ts-week-label {
+    font-size: 18px;
+    font-weight: 600;
+    min-width: 200px;
+    text-align: center;
+    color: var(--text-primary);
+  }
+  .ts-nav-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    color: var(--text-primary);
     cursor: pointer;
-    font-size: 13px;
+    transition: all 0.2s;
+    font-size: 14px;
     font-weight: 500;
-    transition: all var(--transition);
   }
-  .btn-add:hover {
-    background: rgba(62, 167, 106, 0.25);
+  .ts-nav-btn:hover {
+    background: var(--mint);
     border-color: var(--mint);
   }
-  .entry {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    margin: var(--space-sm) 0;
+  .ts-actions {
     display: flex;
-    gap: var(--space-md);
+    gap: 12px;
+  }
+
+  /* Summary Bar */
+  .ts-summary-bar {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-around;
     align-items: center;
-    cursor: pointer;
-    border: 0.5px solid var(--border-primary);
-    transition: all var(--transition);
   }
-  .entry:hover {
-    background: var(--bg-elevated);
-    border-color: var(--mint-border);
+  .ts-summary-item {
+    text-align: center;
   }
-  .pill {
-    display: inline-block;
-    border-radius: var(--radius-full);
-    padding: 3px 8px;
-    background: var(--mint-bg);
-    color: var(--mint);
-    margin-left: var(--space-sm);
+  .ts-summary-label {
     font-size: 12px;
-    border: 0.5px solid var(--mint-border);
-    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
-  .day-empty {
-    opacity: 0.6;
-    font-style: italic;
+  .ts-summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--mint);
+  }
+
+  /* Week Grid */
+  .ts-week-grid {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 100px;
+  }
+  .ts-grid-header {
+    display: grid;
+    grid-template-columns: 150px repeat(7, 1fr);
+    background: #252a2f;
+    border-bottom: 2px solid var(--border-medium);
+  }
+  .ts-grid-cell {
+    padding: 16px;
+    border-right: 1px solid #2a3036;
+    text-align: center;
+  }
+  .ts-grid-cell:last-child {
+    border-right: none;
+  }
+  .ts-day-header {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  .ts-day-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .ts-day-header.today {
+    color: var(--mint);
+  }
+  .ts-grid-row {
+    display: grid;
+    grid-template-columns: 150px repeat(7, 1fr);
+    border-bottom: 1px solid #2a3036;
+  }
+  .ts-grid-row:last-child {
+    border-bottom: none;
+  }
+  .ts-employee-cell {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-right: 1px solid #2a3036;
+    background: var(--bg-card);
+  }
+  .ts-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--mint) 0%, var(--mint-light) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+  }
+  .ts-employee-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  .ts-day-cell {
+    padding: 12px;
+    border-right: 1px solid #2a3036;
+    min-height: 80px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-day-cell:hover {
+    background: rgba(62, 167, 106, 0.05);
+  }
+  .ts-day-cell:last-child {
+    border-right: none;
+  }
+  .ts-time-entry {
+    background: rgba(62, 167, 106, 0.12);
+    border: 1px solid rgba(62, 167, 106, 0.24);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .ts-time-entry:hover {
+    background: rgba(62, 167, 106, 0.2);
+    transform: scale(1.02);
+  }
+  .ts-entry-hours {
+    font-weight: 700;
+    color: var(--mint);
+    margin-bottom: 2px;
+  }
+  .ts-entry-project {
     color: var(--text-tertiary);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ts-add-btn {
+    width: 100%;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--border-medium);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-add-btn:hover {
+    background: rgba(62, 167, 106, 0.05);
+    border-color: var(--mint);
+    color: var(--mint);
+  }
+
+  @media (max-width: 1200px) {
+    .ts-grid-header,
+    .ts-grid-row {
+      grid-template-columns: 120px repeat(7, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .ts-week-grid {
+      overflow-x: auto;
+    }
+    .ts-grid-header,
+    .ts-grid-row {
+      min-width: 800px;
+    }
   }
 </style>
 
 <script>
 (function(){
-  const elWeek = document.getElementById('week');
+  const elWeekGrid = document.getElementById('weekGrid');
   const elWeekStart = document.getElementById('weekStart');
   const elPrev = document.getElementById('prevWeek');
   const elNext = document.getElementById('nextWeek');
   const elFJob = document.getElementById('filterJob');
   const elFEmp = document.getElementById('filterEmployee');
+  const elWeekLabel = document.getElementById('weekLabel');
+  const elSummaryTotal = document.getElementById('summaryTotal');
+  const elSummaryAvg = document.getElementById('summaryAvg');
+  const elSummaryProjects = document.getElementById('summaryProjects');
 
   // modal elems
   const modal = document.getElementById('modal');
@@ -171,6 +389,10 @@
   const mCancel = document.getElementById('mCancel');
   const mDelete = document.getElementById('mDelete');
 
+  // Store employees list
+  let employeesList = [];
+  let jobsList = [];
+
   // --- Local date helpers (no UTC conversion) ---
   const fmtLocal = (d)=>{
     const y = d.getFullYear();
@@ -181,6 +403,10 @@
   const parse = (s)=> { const [y,m,dd] = s.split('-').map(x=>parseInt(x,10)); return new Date(y, m-1, dd); };
   const monday = (d)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const wd = x.getDay(); const diff = (wd===0?6:wd-1); x.setDate(x.getDate()-diff); x.setHours(0,0,0,0); return x; };
   const addDays = (d,n)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; };
+  const formatDateRange = (start, end) => {
+    const fmt = (d) => d.toLocaleDateString('cs-CZ', {day: 'numeric', month: 'long', year: 'numeric'});
+    return fmt(start) + ' - ' + fmt(end);
+  };
 
   async function apiJSON(url, options){
     const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
@@ -192,18 +418,22 @@
   async function loadFilters(){
     try{
       const jobs = await fetchJSON('/api/jobs');
-      jobs.jobs.forEach(j => {
+      jobsList = jobs.jobs || [];
+      jobsList.forEach(j => {
         const opt = document.createElement('option');
-        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); document.getElementById('filterJob').appendChild(opt);
-        const opt2 = opt.cloneNode(true); document.getElementById('mJob').appendChild(opt2);
+        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); 
+        elFJob.appendChild(opt);
+        const opt2 = opt.cloneNode(true); mJob.appendChild(opt2);
       });
     }catch(e){}
     try{
       const emps = await fetchJSON('/api/employees');
-      (emps.employees||[]).forEach(e => {
+      employeesList = emps.employees || [];
+      employeesList.forEach(e => {
         const opt = document.createElement('option');
-        opt.value = e.id; opt.textContent = e.name; document.getElementById('filterEmployee').appendChild(opt);
-        const opt2 = opt.cloneNode(true); document.getElementById('mEmployee').appendChild(opt2);
+        opt.value = e.id; opt.textContent = e.name; 
+        elFEmp.appendChild(opt);
+        const opt2 = opt.cloneNode(true); mEmployee.appendChild(opt2);
       });
     }catch(e){}
   }
@@ -211,58 +441,133 @@
   async function renderWeek(){
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
+    elWeekLabel.textContent = formatDateRange(start, end);
 
     const q = new URLSearchParams();
     q.set('from', fmtLocal(start));
     q.set('to', fmtLocal(end));
-    if(document.getElementById('filterJob').value) q.set('job_id', document.getElementById('filterJob').value);
-    if(document.getElementById('filterEmployee').value) q.set('employee_id', document.getElementById('filterEmployee').value);
+    if(elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp.value) q.set('employee_id', elFEmp.value);
 
     const data = await fetchJSON('/api/timesheets?' + q.toString());
     const rows = (data.rows||[]);
+    
+    // Group by employee and date
+    const byEmployee = {};
     const byDate = {};
+    let totalHours = 0;
+    const projectSet = new Set();
+    
     for(const r of rows){
+      const empId = r.employee_id;
       const d = (r.date||'').slice(0,10);
-      (byDate[d] ||= []).push(r);
-    }
-    elWeek.innerHTML='';
-    for(let i=0;i<7;i++){
-      const d = addDays(start, i);
-      const dstr = fmtLocal(d);
-      const box = document.createElement('div'); box.className='day';
-      const head = document.createElement('div'); head.className='day-h';
-      head.innerHTML = '<div><strong>'+d.toLocaleDateString('cs-CZ', {weekday:'short'})+'</strong> <span class="muted small">'+d.toLocaleDateString('cs-CZ')+'</span></div>';
-      const actions = document.createElement('div'); actions.className='day-actions';
-      const btnAdd = document.createElement('button'); btnAdd.className='btn-add'; btnAdd.textContent='přidat záznam';
-      btnAdd.addEventListener('click', (ev)=> { ev.stopPropagation(); openModal({date: dstr}); });
-      const cnt = document.createElement('div'); cnt.className='muted small'; cnt.textContent = (byDate[dstr]? byDate[dstr].length : 0)+' záznamů';
-      actions.appendChild(cnt); actions.appendChild(btnAdd);
-      head.appendChild(actions);
-      box.appendChild(head);
-
-      const list = document.createElement('div');
-      const items = (byDate[dstr]||[]);
-      if(items.length===0){
-        const empty = document.createElement('div'); empty.className='day-empty'; empty.textContent='Žádné záznamy';
-        list.appendChild(empty);
-      }else{
-        for(const r of items){
-          const it = document.createElement('div'); it.className='entry';
-          const hours = document.createElement('span'); hours.className='pill'; hours.textContent = (r.hours||0)+' h';
-          it.innerHTML = '<strong>'+ (r.employee_name||('ID '+r.employee_id)) +'</strong>' +
-                         ' · ' + (r.job_title||('Zakázka '+r.job_id)) +
-                         (r.place? ' · '+r.place : '') +
-                         (r.activity? ' — '+r.activity : '');
-          it.appendChild(hours);
-          it.addEventListener('click', (ev)=>{ ev.stopPropagation(); openModal({
-            id:r.id, employee_id:r.employee_id, job_id:r.job_id, date:r.date, hours:r.hours, place:r.place, activity:r.activity
-          });});
-          list.appendChild(it);
-        }
+      if(!byEmployee[empId]) {
+        byEmployee[empId] = {};
+        const emp = employeesList.find(e => e.id === empId);
+        byEmployee[empId].name = emp ? emp.name : ('ID '+empId);
+        byEmployee[empId].initials = emp ? (emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)) : '?';
+        byEmployee[empId].entries = {};
       }
-      box.appendChild(list);
-      elWeek.appendChild(box);
+      if(!byEmployee[empId].entries[d]) byEmployee[empId].entries[d] = [];
+      byEmployee[empId].entries[d].push(r);
+      
+      if(!byDate[d]) byDate[d] = [];
+      byDate[d].push(r);
+      
+      totalHours += (r.hours || 0);
+      if(r.job_id) projectSet.add(r.job_id);
     }
+
+    // Update summary
+    elSummaryTotal.textContent = totalHours.toFixed(1) + 'h';
+    elSummaryAvg.textContent = (totalHours / 7).toFixed(1) + 'h';
+    elSummaryProjects.textContent = projectSet.size;
+
+    // Get active employees (those with entries or all if no filter)
+    const activeEmployees = elFEmp.value 
+      ? [employeesList.find(e => e.id == elFEmp.value)].filter(Boolean)
+      : employeesList.filter(e => byEmployee[e.id] || !elFEmp.value);
+    
+    // If no employees, show all
+    if(activeEmployees.length === 0) activeEmployees.push(...employeesList);
+
+    // Build grid
+    elWeekGrid.innerHTML = '';
+    
+    // Header row
+    const headerRow = document.createElement('div');
+    headerRow.className = 'ts-grid-header';
+    const headerCell = document.createElement('div');
+    headerCell.className = 'ts-grid-cell';
+    headerCell.innerHTML = '<div class="ts-day-header">Zaměstnanec</div>';
+    headerRow.appendChild(headerCell);
+    
+    for(let i=0; i<7; i++){
+      const d = addDays(start, i);
+      const isToday = fmtLocal(d) === fmtLocal(new Date());
+      const cell = document.createElement('div');
+      cell.className = 'ts-grid-cell';
+      cell.innerHTML = '<div class="ts-day-header' + (isToday ? ' today' : '') + '">' + 
+                      d.toLocaleDateString('cs-CZ', {weekday: 'short'}) + '</div>' +
+                      '<div class="ts-day-date">' + d.toLocaleDateString('cs-CZ', {day: '2-digit', month: '2-digit'}) + '</div>';
+      headerRow.appendChild(cell);
+    }
+    elWeekGrid.appendChild(headerRow);
+
+    // Employee rows
+    activeEmployees.forEach(emp => {
+      const empId = emp.id;
+      const empData = byEmployee[empId] || {name: emp.name, initials: (emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)), entries: {}};
+      
+      const row = document.createElement('div');
+      row.className = 'ts-grid-row';
+      
+      // Employee cell
+      const empCell = document.createElement('div');
+      empCell.className = 'ts-employee-cell';
+      empCell.innerHTML = '<div class="ts-avatar">' + empData.initials + '</div>' +
+                         '<div class="ts-employee-name">' + empData.name + '</div>';
+      row.appendChild(empCell);
+      
+      // Day cells
+      for(let i=0; i<7; i++){
+        const d = addDays(start, i);
+        const dstr = fmtLocal(d);
+        const dayCell = document.createElement('div');
+        dayCell.className = 'ts-day-cell';
+        
+        const entries = (empData.entries[dstr] || []);
+        if(entries.length > 0){
+          entries.forEach(r => {
+            const entry = document.createElement('div');
+            entry.className = 'ts-time-entry';
+            entry.innerHTML = '<div class="ts-entry-hours">' + (r.hours||0) + 'h</div>' +
+                             '<div class="ts-entry-project">' + (r.job_title || ('Zakázka '+r.job_id)) + '</div>';
+            entry.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              openModal({
+                id: r.id, employee_id: r.employee_id, job_id: r.job_id, 
+                date: r.date, hours: r.hours, place: r.place, activity: r.activity
+              });
+            });
+            dayCell.appendChild(entry);
+          });
+        } else {
+          const addBtn = document.createElement('button');
+          addBtn.className = 'ts-add-btn';
+          addBtn.textContent = '+ Přidat';
+          addBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openModal({date: dstr, employee_id: empId});
+          });
+          dayCell.appendChild(addBtn);
+        }
+        
+        row.appendChild(dayCell);
+      }
+      
+      elWeekGrid.appendChild(row);
+    });
   }
 
   function openModal(data){
@@ -286,7 +591,7 @@
     const payload = {
       employee_id: Number(mEmployee.value||0),
       job_id: Number(mJob.value||0),
-      date: mDate.value, // already in YYYY-MM-DD local format
+      date: mDate.value,
       hours: Number(mHours.value||0),
       place: mPlace.value || '',
       activity: mActivity.value || ''
@@ -318,24 +623,27 @@
     }
   });
 
-  document.getElementById('prevWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
-  document.getElementById('nextWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
-  document.getElementById('filterJob').addEventListener('change', ()=>renderWeek().catch(console.error));
-  document.getElementById('filterEmployee').addEventListener('change', ()=>renderWeek().catch(console.error));
+  elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
+  elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
   document.getElementById('exportCsv').addEventListener('click', ()=>{
     const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
     const q = new URLSearchParams(); q.set('from', fmtLocal(d0)); q.set('to', fmtLocal(d6));
-    const fj = document.getElementById('filterJob').value;
-    const fe = document.getElementById('filterEmployee').value;
+    const fj = elFJob.value;
+    const fe = elFEmp.value;
     if(fj) q.set('job_id', fj); if(fe) q.set('employee_id', fe);
     window.location.href = '/api/timesheets/export?' + q.toString();
+  });
+  document.getElementById('addTimesheet').addEventListener('click', ()=>{
+    openModal({date: elWeekStart.value});
   });
 
   // Initialize
   const today = new Date();
   const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
   startMonday.setHours(0,0,0,0);
-  document.getElementById('weekStart').value = fmtLocal(startMonday);
+  elWeekStart.value = fmtLocal(startMonday);
   loadFilters().finally(()=>renderWeek().catch(console.error));
 })();
 </script>
