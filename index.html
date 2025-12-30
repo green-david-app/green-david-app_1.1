@@ -113,26 +113,8 @@
         try{
           const j = await api("/api/me");
           if(j.authenticated){
-            box.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
-              <input type="text" id="global-search" placeholder="Hledat..." style="width:180px;padding:6px 10px;background:var(--bg-tertiary);border:0.5px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:13px;"/>
-              <button id="search-btn" class="btn btn-primary" style="padding:6px 12px;font-size:13px;">Hledat</button>
-            </div>
-            <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
+            box.innerHTML = `<span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
             document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
-            // Attach search event listeners
-            const searchInput = document.getElementById('global-search');
-            const searchBtn = document.getElementById('search-btn');
-            if(searchInput && searchBtn){
-              function doSearch(){
-                const query = searchInput.value.trim();
-                if(!query) return;
-                window.location.href = '/search?q=' + encodeURIComponent(query);
-              }
-              searchBtn.onclick = doSearch;
-              searchInput.onkeypress = function(e){
-                if(e.key === 'Enter') doSearch();
-              };
-            }
           } else {
             box.innerHTML = '<span>Nepřihlášen</span>';
           }
@@ -788,6 +770,23 @@
           })();
         },[]);
         
+        // Attach search event listeners
+        useEffect(() => {
+          const searchInput = document.getElementById('global-search');
+          const searchBtn = document.getElementById('search-btn');
+          if(searchInput && searchBtn){
+            function doSearch(){
+              const query = searchInput.value.trim();
+              if(!query) return;
+              window.location.href = '/search?q=' + encodeURIComponent(query);
+            }
+            searchBtn.onclick = doSearch;
+            searchInput.onkeypress = function(e){
+              if(e.key === 'Enter') doSearch();
+            };
+          }
+        }, [stats]);
+        
         // Simple SVG Bar Chart Component
         const BarChart = ({data,height=200,color="#3ea76a"})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
@@ -845,9 +844,9 @@
                 <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.activeJobs}</div>
                 <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>zakázky</div>
               </div>
-              <div style={{cursor:"pointer"}} onClick={()=>window.location.href="/employees.html"}>
-                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.employees}</div>
-                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>tým</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",justifyContent:"center"}}>
+                <input type="text" id="global-search" placeholder="Hledat..." style={{width:"100%",maxWidth:"200px",padding:"6px 10px",background:"var(--bg-tertiary)",border:"0.5px solid var(--border-primary)",borderRadius:"8px",color:"var(--text-primary)",fontSize:"13px"}}/>
+                <button id="search-btn" className="btn btn-primary" style={{padding:"6px 12px",fontSize:"13px"}}>Hledat</button>
               </div>
               <div style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('tasks');}}>
                 <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.tasks}</div>
@@ -1312,21 +1311,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 
 <script>
-  // Search functionality
-  document.addEventListener('DOMContentLoaded', function(){
-    const searchInput = document.getElementById('global-search');
-    const searchBtn = document.getElementById('search-btn');
-    if(searchInput && searchBtn){
-      function doSearch(){
-        const query = searchInput.value.trim();
-        if(!query) return;
-        window.location.href = '/search?q=' + encodeURIComponent(query);
-      }
-      searchBtn.addEventListener('click', doSearch);
-      searchInput.addEventListener('keypress', function(e){
-        if(e.key === 'Enter') doSearch();
-      });
-    }
+  // Search is now in Dashboard component (KPI stats), handled by React useEffect
     
     // Show/hide users menu item based on admin status
     function updateUsersMenu(){
