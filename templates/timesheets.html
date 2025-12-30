@@ -620,11 +620,32 @@
   modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
 
   mSave.addEventListener('click', async ()=>{
+    const empId = Number(mEmployee.value||0);
+    const jobId = Number(mJob.value||0);
+    const hours = Number(mHours.value||0);
+    
+    if(!empId || empId <= 0){
+      alert('Vyber zaměstnance');
+      return;
+    }
+    if(!jobId || jobId <= 0){
+      alert('Vyber zakázku');
+      return;
+    }
+    if(!mDate.value){
+      alert('Vyplň datum');
+      return;
+    }
+    if(!hours || hours <= 0){
+      alert('Vyplň počet hodin');
+      return;
+    }
+    
     const payload = {
-      employee_id: Number(mEmployee.value||0),
-      job_id: Number(mJob.value||0),
+      employee_id: empId,
+      job_id: jobId,
       date: mDate.value,
-      hours: Number(mHours.value||0),
+      hours: hours,
       place: mPlace.value || '',
       activity: mActivity.value || ''
     };

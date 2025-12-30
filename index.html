@@ -26,11 +26,12 @@
             <div style="font-size:12px;color:#9ca8b3;">interní systém</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;flex:1;max-width:400px;justify-content:flex-end;">
-          <input type="text" id="global-search" placeholder="Hledat..." style="flex:1;max-width:300px;padding:8px 12px;background:var(--bg-tertiary);border:0.5px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;"/>
-          <button id="search-btn" class="btn btn-primary" style="padding:8px 16px;font-size:14px;">Hledat</button>
+        <div id="userbox" style="display:flex;align-items:center;gap:12px;font-size:14px;color:#9ca8b3;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="text" id="global-search" placeholder="Hledat..." style="width:200px;padding:6px 10px;background:var(--bg-tertiary);border:0.5px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:13px;"/>
+            <button id="search-btn" class="btn btn-primary" style="padding:6px 12px;font-size:13px;">Hledat</button>
+          </div>
         </div>
-        <div id="userbox" style="display:flex;align-items:center;gap:16px;font-size:14px;color:#9ca8b3;"></div>
       </div>
     </header>
 
@@ -116,8 +117,31 @@
         try{
           const j = await api("/api/me");
           if(j.authenticated){
+            // Keep search input if it exists
+            const searchHtml = box.querySelector('#global-search') ? box.querySelector('#global-search').outerHTML + box.querySelector('#search-btn').outerHTML : '';
             box.innerHTML = `<span>Přihlášen: <strong style="color:#e8eef2;">${j.user.name}</strong></span> <span>•</span> <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
             document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
+            // Re-attach search if it was there
+            if(searchHtml){
+              const searchDiv = document.createElement('div');
+              searchDiv.style.cssText = 'display:flex;align-items:center;gap:8px;';
+              searchDiv.innerHTML = searchHtml;
+              box.insertBefore(searchDiv, box.firstChild);
+              // Re-attach event listeners
+              const searchInput = document.getElementById('global-search');
+              const searchBtn = document.getElementById('search-btn');
+              if(searchInput && searchBtn){
+                function doSearch(){
+                  const query = searchInput.value.trim();
+                  if(!query) return;
+                  window.location.href = '/?q=' + encodeURIComponent(query);
+                }
+                searchBtn.addEventListener('click', doSearch);
+                searchInput.addEventListener('keypress', function(e){
+                  if(e.key === 'Enter') doSearch();
+                });
+              }
+            }
           } else {
             box.innerHTML = '<span>Nepřihlášen</span>';
           }
@@ -822,15 +846,15 @@
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,textAlign:"center"}}>
-              <div>
+              <div style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
                 <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.activeJobs}</div>
                 <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>zakázky</div>
               </div>
-              <div>
+              <div style={{cursor:"pointer"}} onClick={()=>window.location.href="/employees.html"}>
                 <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.employees}</div>
                 <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>tým</div>
               </div>
-              <div>
+              <div style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('tasks');}}>
                 <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.tasks}</div>
                 <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>úkoly</div>
               </div>
@@ -860,38 +884,12 @@
               <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Tým</div>
               <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Spravovat</div>
             </div>
-            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}}>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>{if(window.setAppTab) window.setAppTab('statistics');}}>
               <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
               <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Statistiky</div>
               <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Přehledy</div>
-            </div>
-          </div>
-          
-          {/* Charts Section - moved below action cards */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,margin:"0 0 24px 0"}}>
-            <div className="card" style={{padding:20}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>Hodiny per zaměstnanec</div>
-                <div style={{display:"flex",gap:4}}>
-                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="week"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("week")}>Týden</button>
-                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
-                </div>
-              </div>
-              <BarChart data={chartData.employees} height={200} color="#3ea76a"/>
-            </div>
-            <div className="card" style={{padding:20}}>
-              <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>
-              <PieChart data={chartData.jobs} size={200}/>
-              <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:4}}>
-                {chartData.jobs.slice(0,3).map((d,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#9ca8b3"}}>
-                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"120px"}}>{d.name}</span>
-                    <span style={{fontWeight:600,color:"#e8eef2"}}>{d.hours.toFixed(1)}h</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -917,6 +915,7 @@
           {tab==="employees" && <Employees/>}
           {tab==="warehouse" && <Warehouse/>}
           {tab==="users" && auth.user?.role==="admin" && <UsersTab/>}
+          {tab==="statistics" && <StatisticsTab user={auth.user}/>}
         </div>);
       }
 
@@ -1007,6 +1006,112 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             </div>
           </div>
         );
+      }
+
+      function StatisticsTab({user}){
+        const [chartData,setChartData]=useState({employees:[],jobs:[]});
+        const [chartPeriod,setChartPeriod]=useState("week");
+        
+        useEffect(()=>{
+          (async()=>{
+            try{
+              const today = new Date();
+              const monday = new Date(today);
+              monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+              const sunday = new Date(monday);
+              sunday.setDate(monday.getDate() + 6);
+              const fmt = (d)=>d.toISOString().slice(0,10);
+              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              
+              // Chart data - hours per employee
+              const empHours = {};
+              (timesheets.rows||[]).forEach(r=>{
+                const name = r.employee_name || 'Neznámý';
+                empHours[name] = (empHours[name]||0) + (r.hours||0);
+              });
+              const empChartData = Object.entries(empHours).map(([name,hours])=>({name,hours})).slice(0,5);
+              
+              // Chart data - hours per job
+              const jobHours = {};
+              (timesheets.rows||[]).forEach(r=>{
+                const title = r.job_title || `Zakázka ${r.job_id}`;
+                jobHours[title] = (jobHours[title]||0) + (r.hours||0);
+              });
+              const jobChartData = Object.entries(jobHours).map(([name,hours])=>({name,hours})).slice(0,5);
+              
+              setChartData({employees:empChartData,jobs:jobChartData});
+            }catch(e){console.error(e);}
+          })();
+        },[]);
+        
+        const BarChart = ({data,height=200,color="#3ea76a"})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const max = Math.max(...data.map(d=>d.hours),1);
+          const barWidth = 280 / data.length;
+          return <svg width="100%" height={height} style={{overflow:"visible"}}>
+            {data.map((d,i)=>{
+              const barHeight = (d.hours/max)*150;
+              return <g key={i}>
+                <rect x={i*barWidth+10} y={height-barHeight-20} width={barWidth-10} height={barHeight} fill={color} opacity={0.8} rx={4}/>
+                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
+              </g>;
+            })}
+          </svg>;
+        };
+        
+        const PieChart = ({data,size=200,colors=["#3ea76a","#4bb878","#2d8f55","#1f6b42","#0d4d2a"]})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const total = data.reduce((s,d)=>s+d.hours,0);
+          if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          let currentAngle = -90;
+          const center = size/2;
+          const radius = size/2-20;
+          return <svg width={size} height={size} style={{margin:"0 auto",display:"block"}}>
+            {data.map((d,i)=>{
+              const angle = (d.hours/total)*360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + angle;
+              currentAngle += angle;
+              const x1 = center + radius*Math.cos(startAngle*Math.PI/180);
+              const y1 = center + radius*Math.sin(startAngle*Math.PI/180);
+              const x2 = center + radius*Math.cos(endAngle*Math.PI/180);
+              const y2 = center + radius*Math.sin(endAngle*Math.PI/180);
+              const largeArc = angle>180?1:0;
+              return <path key={i} d={`M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`} fill={colors[i%colors.length]} opacity={0.8} stroke="#0a0e11" strokeWidth="2"/>
+            })}
+            <text x={center} y={center+5} fontSize="14" fill="#e8eef2" textAnchor="middle" fontWeight="600">{total.toFixed(1)}h</text>
+            <text x={center} y={center+20} fontSize="11" fill="#9ca8b3" textAnchor="middle">Celkem</text>
+          </svg>;
+        };
+        
+        return (<div style={{paddingBottom:100,padding:"16px"}}>
+          <h1 style={{fontSize:24,fontWeight:700,color:"#e8eef2",marginBottom:24}}>Statistiky</h1>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,margin:"0 0 24px 0"}}>
+            <div className="card" style={{padding:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>Hodiny per zaměstnanec</div>
+                <div style={{display:"flex",gap:4}}>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="week"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("week")}>Týden</button>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
+                </div>
+              </div>
+              <BarChart data={chartData.employees} height={200} color="#3ea76a"/>
+            </div>
+            <div className="card" style={{padding:20}}>
+              <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>
+              <PieChart data={chartData.jobs} size={200}/>
+              <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:4}}>
+                {chartData.jobs.slice(0,3).map((d,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#9ca8b3"}}>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"120px"}}>{d.name}</span>
+                    <span style={{fontWeight:600,color:"#e8eef2"}}>{d.hours.toFixed(1)}h</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>);
       }
 
       ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
@@ -1135,11 +1240,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Bottom Navigation -->
 <nav class="bottom-nav">
-  <a href="/" class="nav-item active">
+  <a href="/" class="nav-item active" onclick="if(window.setAppTab) {event.preventDefault(); window.setAppTab('dashboard');}">
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
     <div class="nav-label">Domů</div>
   </a>
-  <a href="#" onclick="event.preventDefault(); const tabs=document.querySelectorAll('.tab'); const jobsTab=Array.from(tabs).find(t=>t.textContent.trim()==='zakázky'); if(jobsTab) jobsTab.click();" class="nav-item">
+  <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs');" class="nav-item">
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
     <div class="nav-label">Zakázky</div>
   </a>
@@ -1224,6 +1329,22 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     }
     setInterval(updateUsersMenu, 500);
+    
+    // Update bottom nav active state
+    function updateBottomNav(){
+      const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        const href = item.getAttribute('href');
+        if(href === '/' && window.location.pathname === '/') {
+          item.classList.add('active');
+        } else if(href && window.location.pathname.includes(href.replace('/',''))) {
+          item.classList.add('active');
+        }
+      });
+    }
+    updateBottomNav();
+    setInterval(updateBottomNav, 1000);
   });
 </script>
 
