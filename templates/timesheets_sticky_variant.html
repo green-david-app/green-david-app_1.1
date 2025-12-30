@@ -1,0 +1,47 @@
+<div class="ts-sticky">
+  <div class="ts-row ts-nav">
+    <a href="/">dashboard</a>
+    <a href="/jobs">zakázky</a>
+    <a href="/calendar.html">kalendář</a>
+    <a href="/timesheets.html">hodiny</a>
+    <a href="/warehouse">sklad</a>
+    <a href="/export">Export XLSX</a>
+    {# removed duplicate Odhlásit; show only in header #}
+  </div>
+  <div class="ts-row" style="margin-top:6px;">
+    <a href="/" class="btn ghost">← Zpět na hlavní</a>
+    <h1 class="page-title">výkazy hodin — týden</h1>
+    <div class="spacer"></div>
+    <label>Filtrovat zakázku <select id="filterJob"><option value=''>Vše</option></select></label>
+    <label>Filtrovat zaměstnance <select id="filterEmployee"><option value=''>Všichni</option></select></label>
+    <button id="exportCsv">Export CSV (týden)</button>
+  </div>
+  <div class="ts-row" style="margin-top:6px;">
+    <label>Týden od <input id="weekStart" type="date"/></label>
+    <button id="prevWeek" class="ghost">← Předchozí</button>
+    <button id="nextWeek" class="ghost">Následující →</button>
+    <span id="weekLabel" class="small"></span>
+  </div>
+</div>
+
+<div id="lanes" class="week-lanes"></div>
+
+<!-- Modal -->
+<div id="modal" class="modal-backdrop">
+  <div class="card modal-card">
+    <div class="card-h"><div id="modalTitle">Nový záznam</div></div>
+    <div class="card-c form-grid">
+      <label>Zaměstnanec <select id="fEmployee"></select></label>
+      <label>Zakázka <select id="fJob"></select></label>
+      <label>Datum <input id="fDate" type="date"/></label>
+      <label>Hodin <input id="fHours" type="number" min="0" step="0.25" placeholder="8"/></label>
+      <label>Místo <input id="fPlace" type="text"/></label>
+      <label class="span2">Činnost <textarea id="fActivity" rows="2"></textarea></label>
+    </div>
+    <div class="card-f actions">
+      <button id="btnDelete" class="ghost" style="display:none;">Smazat</button>
+      <button id="btnCancel" class="ghost">Zrušit</button>
+      <button id="btnSave">Uložit</button>
+    </div>
+  </div>
+</div>

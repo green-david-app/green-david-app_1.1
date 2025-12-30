@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Výsledky hledání</div>
+        <a href="/" class="btn btn-ghost btn-sm">Zpět</a>
+      </div>
+      <div class="card-c">
+        {% if not q %}
+          <div class="empty-state">
+            <div class="empty-text">Napište dotaz do pole nahoře a stiskněte Hledat.</div>
+          </div>
+        {% else %}
+          {% if results|length == 0 %}
+            <div class="empty-state">
+              <div class="empty-title">Nic nenalezeno</div>
+              <div class="empty-text">Pro dotaz „{{ q }}" nebylo nalezeno žádné výsledky.</div>
+            </div>
+          {% else %}
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Typ</th>
+                    <th>Název</th>
+                    <th>Další informace</th>
+                    <th>Datum</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in results %}
+                  <tr>
+                    <td><span class="badge badge-secondary">{{ r.type }}</span></td>
+                    <td><strong>{{ r.title }}</strong></td>
+                    <td class="text-muted">{{ r.sub }}</td>
+                    <td class="text-muted">{{ r.date or "-" }}</td>
+                    <td><a class="btn btn-ghost btn-sm" href="{{ r.url }}">Otevřít</a></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

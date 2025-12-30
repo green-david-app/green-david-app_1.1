@@ -1,0 +1,446 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="ts-head">
+  <div class="ts-head-row1">
+    <a href="/" class="ts-back">← zpět</a>
+    <div class="ts-title">výkazy hodin - týden</div>
+    <div class="ts-right"></div>
+  </div>
+  <div class="ts-head-row2">
+    <label class="ts-inline smallc">týden od <input id="weekStart" type="date" class="ctl-sm"/></label>
+    <button id="prevWeek" class="chip chip-ghost chip-sm">← předchozí</button>
+    <button id="nextWeek" class="chip chip-ghost chip-sm">následující →</button>
+    <span class="sep"></span>
+    <label class="ts-inline smallc">filtrovat zakázku <select id="filterJob" class="ctl-sm"><option value="">vše</option></select></label>
+    <label class="ts-inline smallc">filtrovat zaměstnance <select id="filterEmployee" class="ctl-sm"><option value="">všichni</option></select></label>
+    <span class="spacer"></span>
+    <button id="exportCsv" class="chip chip-primary chip-xs">export csv</button>
+  </div>
+</div>
+
+<div id="week" class="week"></div>
+
+<!-- Modal -->
+<div id="modal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <div id="modalTitle" class="modal-title">upravit záznam</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="hidden" id="mId"/>
+        <div class="form-group">
+          <label class="form-label">zaměstnanec</label>
+          <select id="mEmployee" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">zakázka</label>
+          <select id="mJob" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">datum</label>
+          <input id="mDate" type="date" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">hodin</label>
+          <input id="mHours" type="number" min="0" step="0.25" placeholder="8" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">místo</label>
+          <input id="mPlace" type="text" class="form-input"/>
+        </div>
+        <div class="form-group" style="grid-column: 1 / span 2;">
+          <label class="form-label">činnost</label>
+          <textarea id="mActivity" rows="2" class="form-textarea"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="mDelete" class="btn btn-danger" style="margin-right:auto;display:none;">smazat</button>
+      <button id="mCancel" class="btn btn-ghost">zrušit</button>
+      <button id="mSave" class="btn btn-primary">uložit</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ts-head{
+    position:relative; 
+    z-index:0; 
+    background:var(--bg-card); 
+    color:var(--text-primary); 
+    border-radius:var(--radius-lg); 
+    padding:var(--space-lg); 
+    border:0.5px solid var(--border-primary); 
+    margin-bottom:var(--space-lg);
+  }
+  .ts-head-row1{
+    display:grid; 
+    grid-template-columns: 1fr auto 1fr; 
+    align-items:center; 
+    gap:var(--space-md); 
+    margin-bottom:var(--space-md);
+  }
+  .ts-back{
+    justify-self:start; 
+    display:inline-block; 
+    padding:8px 12px; 
+    border-radius:var(--radius-md); 
+    background:var(--bg-tertiary); 
+    color:var(--mint); 
+    text-decoration:none; 
+    border:0.5px solid var(--border-primary); 
+    transition: all var(--transition);
+    font-size:15px;
+    font-weight:500;
+  }
+  .ts-back:hover{
+    background:var(--bg-elevated); 
+    border-color:var(--mint-border);
+  }
+  .ts-title{
+    justify-self:center; 
+    font-size:17px; 
+    line-height:1.2; 
+    font-weight:600; 
+    color:var(--text-primary);
+  }
+  .ts-head-row2{
+    display:flex; 
+    flex-wrap:wrap; 
+    gap:var(--space-sm); 
+    align-items:center; 
+    min-height:36px;
+  }
+  .smallc{
+    font-size:13px; 
+    color:var(--text-tertiary);
+  }
+  .ctl-sm{
+    font-size:13px; 
+    padding:6px 10px; 
+    height:32px;
+  }
+  .ts-inline input[type=date], 
+  .ts-inline select{
+    background:var(--bg-tertiary); 
+    color:var(--text-primary); 
+    border:0.5px solid var(--border-primary); 
+    border-radius:var(--radius-md);
+  }
+  .ts-inline input[type=date]:focus, 
+  .ts-inline select:focus{
+    border-color:var(--mint); 
+    outline:none; 
+    box-shadow:0 0 0 3px var(--mint-bg);
+  }
+  .chip{
+    border-radius:var(--radius-md); 
+    padding:8px 12px; 
+    cursor:pointer; 
+    border:0.5px solid transparent; 
+    font-weight:500; 
+    white-space:nowrap; 
+    transition: all var(--transition);
+    font-size:15px;
+  }
+  .chip-sm{
+    padding:6px 10px; 
+    font-size:13px;
+  }
+  .chip-xs{
+    padding:6px 10px; 
+    font-size:13px;
+  }
+  .chip-ghost{
+    background:var(--bg-tertiary); 
+    color:var(--text-secondary); 
+    border-color:var(--border-primary);
+  }
+  .chip-ghost:hover{
+    background:var(--bg-elevated); 
+    border-color:var(--mint-border); 
+    color:var(--mint);
+  }
+  .chip-primary{
+    background:var(--mint); 
+    color:#000000; 
+    border-color:var(--mint);
+    font-weight:600;
+  }
+  .chip-primary:hover{
+    background:var(--mint-light);
+  }
+  .spacer{flex:1}
+  .sep{width:10px; height:1px; opacity:0;}
+  .week{
+    display:flex;
+    flex-direction:column;
+    gap:var(--space-lg); 
+    position:relative; 
+    z-index:1;
+  }
+  .day{
+    background:var(--bg-card); 
+    color:var(--text-primary); 
+    border-radius:var(--radius-lg); 
+    padding:var(--space-lg); 
+    border:0.5px solid var(--border-primary);
+  }
+  .day-h{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:var(--space-md);
+  }
+  .day-actions{
+    display:flex;
+    gap:var(--space-sm);
+    align-items:center;
+  }
+  .btn-add{
+    background:var(--mint-bg);
+    color:var(--mint);
+    border:0.5px solid var(--mint-border);
+    border-radius:var(--radius-md);
+    padding:8px 12px;
+    cursor:pointer;
+    transition: all var(--transition);
+    font-size:13px;
+    font-weight:500;
+  }
+  .btn-add:hover{
+    background:rgba(74, 222, 128, 0.2);
+    border-color:var(--mint);
+  }
+  .entry{
+    background:var(--bg-tertiary);
+    color:var(--text-primary);
+    border-radius:var(--radius-md);
+    padding:var(--space-md);
+    margin:var(--space-sm) 0;
+    display:flex;
+    gap:var(--space-md);
+    align-items:center;
+    cursor:pointer;
+    border:0.5px solid var(--border-primary);
+    transition: all var(--transition);
+  }
+  .entry:hover{
+    background:var(--bg-elevated);
+    border-color:var(--border-primary);
+  }
+  .pill{
+    display:inline-block;
+    border-radius:var(--radius-full);
+    padding:4px 10px;
+    background:var(--mint-bg);
+    color:var(--mint);
+    margin-left:var(--space-sm);
+    font-size:12px;
+    border:0.5px solid var(--mint-border);
+    font-weight:500;
+  }
+  .muted{opacity:.6}
+  .day-empty{
+    opacity:.6;
+    font-style:italic; 
+    color:var(--text-tertiary);
+  }
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:var(--space-md);
+  }
+</style>
+
+<script>
+(function(){
+  const elWeek = document.getElementById('week');
+  const elWeekStart = document.getElementById('weekStart');
+  const elPrev = document.getElementById('prevWeek');
+  const elNext = document.getElementById('nextWeek');
+  const elFJob = document.getElementById('filterJob');
+  const elFEmp = document.getElementById('filterEmployee');
+
+  const modal = document.getElementById('modal');
+  const mId = document.getElementById('mId');
+  const mEmployee = document.getElementById('mEmployee');
+  const mJob = document.getElementById('mJob');
+  const mDate = document.getElementById('mDate');
+  const mHours = document.getElementById('mHours');
+  const mPlace = document.getElementById('mPlace');
+  const mActivity = document.getElementById('mActivity');
+  const mTitle = document.getElementById('modalTitle');
+  const mSave = document.getElementById('mSave');
+  const mCancel = document.getElementById('mCancel');
+  const mDelete = document.getElementById('mDelete');
+
+  const fmtLocal = (d)=>{
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  };
+  const parse = (s)=> { const [y,m,dd] = s.split('-').map(x=>parseInt(x,10)); return new Date(y, m-1, dd); };
+  const monday = (d)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const wd = x.getDay(); const diff = (wd===0?6:wd-1); x.setDate(x.getDate()-diff); x.setHours(0,0,0,0); return x; };
+  const addDays = (d,n)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; };
+
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+  async function loadFilters(){
+    try{
+      const jobs = await fetchJSON('/api/jobs');
+      jobs.jobs.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); document.getElementById('filterJob').appendChild(opt);
+        const opt2 = opt.cloneNode(true); document.getElementById('mJob').appendChild(opt2);
+      });
+    }catch(e){}
+    try{
+      const emps = await fetchJSON('/api/employees');
+      (emps.employees||[]).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.name; document.getElementById('filterEmployee').appendChild(opt);
+        const opt2 = opt.cloneNode(true); document.getElementById('mEmployee').appendChild(opt2);
+      });
+    }catch(e){}
+  }
+
+  async function renderWeek(){
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(document.getElementById('filterJob').value) q.set('job_id', document.getElementById('filterJob').value);
+    if(document.getElementById('filterEmployee').value) q.set('employee_id', document.getElementById('filterEmployee').value);
+
+    const data = await fetchJSON('/api/timesheets?' + q.toString());
+    const rows = (data.rows||[]);
+    const byDate = {};
+    for(const r of rows){
+      const d = (r.date||'').slice(0,10);
+      (byDate[d] ||= []).push(r);
+    }
+    elWeek.innerHTML='';
+    for(let i=0;i<7;i++){
+      const d = addDays(start, i);
+      const dstr = fmtLocal(d);
+      const box = document.createElement('div'); box.className='day';
+      const head = document.createElement('div'); head.className='day-h';
+      head.innerHTML = '<div><strong>'+d.toLocaleDateString('cs-CZ', {weekday:'short'})+'</strong> <span class="muted small">'+d.toLocaleDateString('cs-CZ')+'</span></div>';
+      const actions = document.createElement('div'); actions.className='day-actions';
+      const btnAdd = document.createElement('button'); btnAdd.className='btn-add'; btnAdd.textContent='+ přidat záznam';
+      btnAdd.addEventListener('click', (ev)=> { ev.stopPropagation(); openModal({date: dstr}); });
+      const cnt = document.createElement('div'); cnt.className='muted small'; cnt.textContent = (byDate[dstr]? byDate[dstr].length : 0)+' záznamů';
+      actions.appendChild(cnt); actions.appendChild(btnAdd);
+      head.appendChild(actions);
+      box.appendChild(head);
+
+      const list = document.createElement('div');
+      const items = (byDate[dstr]||[]);
+      if(items.length===0){
+        const empty = document.createElement('div'); empty.className='day-empty'; empty.textContent='Žádné záznamy';
+        list.appendChild(empty);
+      }else{
+        for(const r of items){
+          const it = document.createElement('div'); it.className='entry';
+          const hours = document.createElement('span'); hours.className='pill'; hours.textContent = (r.hours||0)+' h';
+          it.innerHTML = '<strong>'+ (r.employee_name||('ID '+r.employee_id)) +'</strong>' +
+                         ' · ' + (r.job_title||('Zakázka '+r.job_id)) +
+                         (r.place? ' · '+r.place : '') +
+                         (r.activity? ' — '+r.activity : '');
+          it.appendChild(hours);
+          it.addEventListener('click', (ev)=>{ ev.stopPropagation(); openModal({
+            id:r.id, employee_id:r.employee_id, job_id:r.job_id, date:r.date, hours:r.hours, place:r.place, activity:r.activity
+          });});
+          list.appendChild(it);
+        }
+      }
+      box.appendChild(list);
+      elWeek.appendChild(box);
+    }
+  }
+
+  function openModal(data){
+    mId.value = data.id || '';
+    mTitle.textContent = data.id ? 'upravit záznam' : 'nový záznam';
+    if(data.employee_id) mEmployee.value = String(data.employee_id);
+    if(data.job_id) mJob.value = String(data.job_id);
+    mDate.value = (data.date ? data.date.slice(0,10) : elWeekStart.value);
+    mHours.value = (data.hours!=null ? data.hours : '');
+    mPlace.value = (data.place || '');
+    mActivity.value = (data.activity || '');
+    mDelete.style.display = data.id ? '' : 'none';
+    modal.style.display='flex';
+    modal.classList.add('active');
+  }
+  function closeModal(){ modal.style.display='none'; modal.classList.remove('active'); }
+
+  mCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  mSave.addEventListener('click', async ()=>{
+    const payload = {
+      employee_id: Number(mEmployee.value||0),
+      job_id: Number(mJob.value||0),
+      date: mDate.value,
+      hours: Number(mHours.value||0),
+      place: mPlace.value || '',
+      activity: mActivity.value || ''
+    };
+    try{
+      if(mId.value){
+        payload.id = Number(mId.value);
+        await apiJSON('/api/timesheets', {method:'PATCH', body: JSON.stringify(payload)});
+      }else{
+        await apiJSON('/api/timesheets', {method:'POST', body: JSON.stringify(payload)});
+      }
+      closeModal();
+      renderWeek().catch(console.error);
+    }catch(e){
+      alert('Chyba při ukládání: ' + e.message);
+    }
+  });
+
+  mDelete.addEventListener('click', async ()=>{
+    if(!mId.value) return;
+    if(!confirm('Opravdu smazat záznam?')) return;
+    try{
+      const url = '/api/timesheets?id=' + encodeURIComponent(mId.value);
+      const r = await fetch(url, {method:'DELETE'});
+      if(!r.ok) throw new Error(await r.text());
+      closeModal(); renderWeek().catch(console.error);
+    }catch(e){
+      alert('Chyba při mazání: ' + e.message);
+    }
+  });
+
+  document.getElementById('prevWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  document.getElementById('nextWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  document.getElementById('filterJob').addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('filterEmployee').addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('exportCsv').addEventListener('click', ()=>{
+    const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
+    const q = new URLSearchParams(); q.set('from', fmtLocal(d0)); q.set('to', fmtLocal(d6));
+    const fj = document.getElementById('filterJob').value;
+    const fe = document.getElementById('filterEmployee').value;
+    if(fj) q.set('job_id', fj); if(fe) q.set('employee_id', fe);
+    window.location.href = '/api/timesheets/export?' + q.toString();
+  });
+
+  const today = new Date();
+  const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+  startMonday.setHours(0,0,0,0);
+  document.getElementById('weekStart').value = fmtLocal(startMonday);
+  loadFilters().finally(()=>renderWeek().catch(console.error));
+})();
+</script>
+{% endblock %}

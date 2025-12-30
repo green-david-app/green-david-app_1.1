@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Nový zaměstnanec</div>
+      </div>
+      <div class="card-c">
+        <div class="form-row">
+          <input id="newName" type="text" placeholder="Jméno" class="form-input" style="flex:2;" />
+          <select id="newRole" class="form-select" style="flex:1;">
+            <option value="zahradník">Zahradník</option>
+            <option value="svářeč">Svářeč</option>
+            <option value="brigádník">Brigádník</option>
+            <option value="jiné">Jiné</option>
+          </select>
+          <button id="btnAdd" class="btn btn-primary">Přidat</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Seznam</div>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <button data-scope="all" class="btn btn-sm chip-on" style="background:rgba(74, 222, 128, 0.1); color:#4ade80; border-color:rgba(74, 222, 128, 0.3);">Všichni</button>
+          <button data-scope="employees" class="btn btn-sm btn-ghost">zaměstnanci</button>
+          <button data-scope="brig" class="btn btn-sm btn-ghost">brigádníci</button>
+        </div>
+      </div>
+      <div class="card-c">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const listBody = document.getElementById('listBody');
+  const newName = document.getElementById('newName');
+  const newRole = document.getElementById('newRole');
+  const btnAdd = document.getElementById('btnAdd');
+  const chips = Array.from(document.querySelectorAll('.chips .chip'));
+  let scope = 'all';
+
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  btnAdd.addEventListener('click', async ()=>{
+    const name = newName.value.trim();
+    const role = newRole.value;
+    if(!name) return;
+    await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
+    newName.value=''; await render();
+  });
+
+  chips.forEach(chip => chip.addEventListener('click', ()=>{
+    chips.forEach(c=>{
+      c.classList.remove('chip-on');
+      c.className = 'btn btn-sm btn-ghost';
+    });
+    chip.classList.add('chip-on');
+    chip.style.background = 'rgba(74, 222, 128, 0.1)';
+    chip.style.color = '#4ade80';
+    chip.style.borderColor = 'rgba(74, 222, 128, 0.3)';
+    scope = chip.getAttribute('data-scope');
+    render();
+  }));
+
+  async function render(){
+    listBody.innerHTML = '<tr><td colspan="4" class="muted">Načítám…</td></tr>';
+    const data = await fetchJSON('/api/employees');
+    let rows = data.employees || [];
+    if(scope==='brig'){
+      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
+    }else if(scope==='employees'){
+      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
+    }
+    if(rows.length===0){
+      listBody.innerHTML = '<tr><td colspan="4" class="muted">Žádné položky</td></tr>';
+      return;
+    }
+    listBody.innerHTML = '';
+    for(const e of rows){
+      const tr = document.createElement('tr');
+      tr.id = `emp-${e.id}`;
+      tr.innerHTML = `<td>${e.id}</td><td>${e.name}</td><td>${e.role||''}</td><td></td>`;
+      listBody.appendChild(tr);
+    }
+  }
+  await render();
+
+  // If URL contains #emp-<id>, scroll and highlight
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#emp-')) {
+    const target = document.querySelector(hash);
+    if (target) {
+      target.classList.add('pulse-highlight');
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=>target.classList.remove('pulse-highlight'), 2000);
+    }
+  }
+
+})();
+</script>
+{% endblock %}
+
+<script src="/static/js/brigadnici-embed.js"></script>
