@@ -355,6 +355,12 @@ def calendar_view():
     """Stránka kalendáře"""
     return send_from_directory(".", "calendar.html")
 
+@app.route("/login")
+def login_view():
+    """Přihlašovací stránka"""
+    return send_from_directory(".", "login.html")
+
+
 
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
