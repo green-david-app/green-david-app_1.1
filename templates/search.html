@@ -1,31 +1,52 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-  <div class="card">
-    <div class="card-h" style="display:flex;align-items:center;justify-content:space-between">
-      <div><strong>Výsledky hledání</strong></div>
-      <div><a href="/" class="btn small">Zpět</a></div>
+<div class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Výsledky hledání</div>
+        <a href="/" class="btn btn-ghost btn-sm">Zpět</a>
+      </div>
+      <div class="card-c">
+        {% if not q %}
+          <div class="empty-state">
+            <div class="empty-text">Napište dotaz do pole nahoře a stiskněte Hledat.</div>
+          </div>
+        {% else %}
+          {% if results|length == 0 %}
+            <div class="empty-state">
+              <div class="empty-title">Nic nenalezeno</div>
+              <div class="empty-text">Pro dotaz „{{ q }}" nebylo nalezeno žádné výsledky.</div>
+            </div>
+          {% else %}
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Typ</th>
+                    <th>Název</th>
+                    <th>Další informace</th>
+                    <th>Datum</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in results %}
+                  <tr>
+                    <td><span class="badge badge-secondary">{{ r.type }}</span></td>
+                    <td><strong>{{ r.title }}</strong></td>
+                    <td class="text-muted">{{ r.sub }}</td>
+                    <td class="text-muted">{{ r.date or "-" }}</td>
+                    <td><a class="btn btn-ghost btn-sm" href="{{ r.url }}">Otevřít</a></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
     </div>
-    {% if not q %}
-      <div class="small muted">Napište dotaz do pole nahoře a stiskněte Hledat.</div>
-    {% else %}
-      {% if results|length == 0 %}
-        <div class="small muted">Nic nenalezeno pro „{{ q }}“.</div>
-      {% else %}
-        <table class="table">
-          <tr><th>Typ</th><th>Název</th><th>Další</th><th>Datum</th><th></th></tr>
-          {% for r in results %}
-          <tr>
-            <td class="small">{{ r.type }}</td>
-            <td>{{ r.title }}</td>
-            <td class="small">{{ r.sub }}</td>
-            <td class="small">{{ r.date }}</td>
-            <td><a class="ghost" href="{{ r.url }}">Otevřít</a></td>
-          </tr>
-          {% endfor %}
-        </table>
-      {% endif %}
-    {% endif %}
   </div>
 </div>
 {% endblock %}

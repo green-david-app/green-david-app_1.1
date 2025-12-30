@@ -1,1 +1,76 @@
-{% extends "layout.html" %}{% block content %}<h1>dashboard</h1><h3>Moje poslední hodiny</h3><table class="table"><tr><th>Datum</th><th>hodiny</th><th>Zakázka</th><th>Pozn.</th></tr>{% for r in hours %}<tr><td>{{r.work_date}}</td><td>{{r.hours}}</td><td>{{r.job_name or "-"}}</td><td>{{r.note or ""}}</td></tr>{% endfor %}</table><h3>Moje zakázky</h3><table class="table"><tr><th>Název</th><th>Klient</th><th>Stav</th></tr>{% for j in jobs %}<tr><td>{{j.name}}</td><td>{{j.client or ""}}</td><td>{{j.status}}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <h1>Dashboard</h1>
+  
+  <div class="grid" style="grid-template-columns: 1fr; gap: 24px; margin-top: 32px;">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Moje poslední hodiny</div>
+      </div>
+      <div class="card-c">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Hodiny</th>
+                <th>Zakázka</th>
+                <th>Poznámka</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in hours %}
+              <tr>
+                <td>{{r.work_date}}</td>
+                <td>{{r.hours}}</td>
+                <td>{{r.job_name or "-"}}</td>
+                <td>{{r.note or ""}}</td>
+              </tr>
+              {% endfor %}
+              {% if not hours %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">Zatím žádné záznamy</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Moje zakázky</div>
+      </div>
+      <div class="card-c">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Název</th>
+                <th>Klient</th>
+                <th>Stav</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for j in jobs %}
+              <tr>
+                <td>{{j.name}}</td>
+                <td>{{j.client or "-"}}</td>
+                <td><span class="badge badge-primary">{{j.status}}</span></td>
+              </tr>
+              {% endfor %}
+              {% if not jobs %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">Zatím žádné zakázky</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
