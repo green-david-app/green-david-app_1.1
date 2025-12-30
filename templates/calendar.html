@@ -24,7 +24,7 @@
     </div>
 
     <!-- Calendar Grid -->
-    <div id="calendar" style="display:grid;grid-template-columns: repeat(7, minmax(0,1fr));gap:var(--space-sm);margin-bottom:var(--space-lg);"></div>
+    <div id="calendar" class="calendar-grid" style="margin-bottom:var(--space-lg);"></div>
 
     <!-- Day Detail -->
     <div id="dayDetail" class="card hidden" style="margin-bottom:100px;">
@@ -74,9 +74,13 @@
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: var(--space-sm);
+    background: var(--bg-primary);
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border-primary);
   }
   .cal-cell {
-    background: var(--bg-elevated);
+    background: var(--bg-card);
     border: 0.5px solid var(--border-primary);
     border-radius: var(--radius-md);
     padding: var(--space-sm);
@@ -88,7 +92,7 @@
   .cal-cell:hover {
     transform: translateY(-1px);
     border-color: var(--mint-border);
-    background: var(--bg-card);
+    background: var(--bg-card-hover);
   }
   .cal-cell.muted {
     opacity: 0.45;
@@ -202,6 +206,15 @@ async function loadMonth() {
 
   const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
   first.setDate(1-startDow);
+  // Add day headers
+  const dayNames = ['P', 'Ú', 'S', 'Č', 'P', 'S', 'N'];
+  for(let i=0; i<7; i++){
+    const header = document.createElement("div");
+    header.style.cssText = "text-align:center;font-weight:600;color:var(--text-secondary);font-size:12px;padding:8px;text-transform:uppercase;";
+    header.textContent = dayNames[i];
+    grid.appendChild(header);
+  }
+  // Add day cells
   for (let i=0;i<42;i++){
     const day = new Date(first); day.setDate(first.getDate()+i);
     const cell = document.createElement("div");
@@ -362,19 +375,63 @@ loadMonth().then(autoSelectToday);
 <nav class="bottom-nav">
   <a href="/" class="nav-item">
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-    <div class="nav-label">Přehled</div>
+    <div class="nav-label">Domů</div>
+  </a>
+  <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs');" class="nav-item">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+    <div class="nav-label">Zakázky</div>
   </a>
   <a href="/timesheets.html" class="nav-item">
-    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
     <div class="nav-label">Výkazy</div>
   </a>
   <a href="/calendar.html" class="nav-item active">
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
     <div class="nav-label">Kalendář</div>
   </a>
-  <a href="/employees.html" class="nav-item">
-    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-    <div class="nav-label">Tým</div>
+  <a href="#" id="more-menu-btn" class="nav-item" onclick="event.preventDefault(); document.getElementById('more-menu').classList.toggle('show');">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
+    <div class="nav-label">Více</div>
   </a>
 </nav>
+
+<!-- More Menu (Expandable) -->
+<div id="more-menu" class="more-menu">
+  <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+  <div class="more-menu-panel">
+    <div class="more-menu-header">
+      <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+      <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div class="more-menu-content">
+      <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>přehled</span>
+      </a>
+      <a href="/calendar.html" class="more-menu-item">
+        <span>kalendář</span>
+      </a>
+      <a href="/timesheets.html" class="more-menu-item">
+        <span>výkazy hodin</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>zakázky</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('tasks'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>úkoly</span>
+      </a>
+      <a href="/employees.html" class="more-menu-item">
+        <span>zaměstnanci</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('warehouse'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>sklad</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>archiv zakázek</span>
+      </a>
+      <a href="#" id="users-menu-item" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('users'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item" style="display:none;">
+        <span>uživatelé</span>
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}
