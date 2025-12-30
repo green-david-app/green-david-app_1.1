@@ -212,6 +212,10 @@ a:hover {
   font-size: 18px;
   color: var(--text-primary);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .brand-sub {
@@ -272,6 +276,12 @@ a:hover {
   overflow-wrap: break-word;
 }
 
+.card-h > div, .card-header > div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
 .card-title {
   font-weight: 600;
   font-size: 16px;
@@ -289,6 +299,12 @@ a:hover {
   overflow-x: hidden;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.card-c > *, .card-body > * {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .card-f, .card-footer {
@@ -715,6 +731,7 @@ input[type="checkbox"] {
   hyphens: auto;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  max-width: 200px;
 }
 
 .table td {
@@ -724,6 +741,7 @@ input[type="checkbox"] {
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+  max-width: 200px;
 }
 
 .table tbody tr {

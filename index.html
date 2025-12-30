@@ -22,7 +22,7 @@
         <div style="display:flex;align-items:center;gap:12px;">
           <img src="/logo.jpg" alt="green david app" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
           <div>
-            <div style="font-size:18px;font-weight:600;color:#e8eef2;">green david app</div>
+            <div style="font-size:18px;font-weight:600;color:#e8eef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">green david app</div>
             <div style="font-size:12px;color:#9ca8b3;">interní systém</div>
           </div>
         </div>
@@ -113,30 +113,25 @@
         try{
           const j = await api("/api/me");
           if(j.authenticated){
-            // Keep search input if it exists
-            const searchHtml = box.querySelector('#global-search') ? box.querySelector('#global-search').outerHTML + box.querySelector('#search-btn').outerHTML : '';
-            box.innerHTML = `<span>Přihlášen: <strong style="color:#e8eef2;">${j.user.name}</strong></span> <span>•</span> <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
+            box.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
+              <input type="text" id="global-search" placeholder="Hledat..." style="width:180px;padding:6px 10px;background:var(--bg-tertiary);border:0.5px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:13px;"/>
+              <button id="search-btn" class="btn btn-primary" style="padding:6px 12px;font-size:13px;">Hledat</button>
+            </div>
+            <span>Přihlášen: <strong style="color:#e8eef2;">${j.user.name}</strong></span> <span>•</span> <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
             document.getElementById("logout-btn").onclick = async ()=>{ await api("/api/logout",{method:"POST"}); location.reload(); };
-            // Re-attach search if it was there
-            if(searchHtml){
-              const searchDiv = document.createElement('div');
-              searchDiv.style.cssText = 'display:flex;align-items:center;gap:8px;';
-              searchDiv.innerHTML = searchHtml;
-              box.insertBefore(searchDiv, box.firstChild);
-              // Re-attach event listeners
-              const searchInput = document.getElementById('global-search');
-              const searchBtn = document.getElementById('search-btn');
-              if(searchInput && searchBtn){
-                function doSearch(){
-                  const query = searchInput.value.trim();
-                  if(!query) return;
-                  window.location.href = '/?q=' + encodeURIComponent(query);
-                }
-                searchBtn.addEventListener('click', doSearch);
-                searchInput.addEventListener('keypress', function(e){
-                  if(e.key === 'Enter') doSearch();
-                });
+            // Attach search event listeners
+            const searchInput = document.getElementById('global-search');
+            const searchBtn = document.getElementById('search-btn');
+            if(searchInput && searchBtn){
+              function doSearch(){
+                const query = searchInput.value.trim();
+                if(!query) return;
+                window.location.href = '/?q=' + encodeURIComponent(query);
               }
+              searchBtn.onclick = doSearch;
+              searchInput.onkeypress = function(e){
+                if(e.key === 'Enter') doSearch();
+              };
             }
           } else {
             box.innerHTML = '<span>Nepřihlášen</span>';
