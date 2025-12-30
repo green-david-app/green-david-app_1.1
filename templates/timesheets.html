@@ -418,11 +418,34 @@
   };
 
   async function apiJSON(url, options){
-    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
-    if(!r.ok) throw new Error(await r.text());
+    const r = await fetch(url, Object.assign({
+      credentials: 'same-origin',
+      headers:{'Content-Type':'application/json'}
+    }, options||{}));
+    if(!r.ok) {
+      const errorText = await r.text();
+      let errorMsg = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error || errorJson.message || errorText;
+      } catch {}
+      throw new Error(errorMsg);
+    }
     return r.json();
   }
-  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function fetchJSON(url){ 
+    const r = await fetch(url, {credentials: 'same-origin'}); 
+    if(!r.ok) {
+      const errorText = await r.text();
+      let errorMsg = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error || errorJson.message || errorText;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return r.json(); 
+  }
 
   async function loadFilters(){
     try{
@@ -614,8 +637,17 @@
       }
       closeModal();
       renderWeek().catch(console.error);
+      // Show success notification if available
+      if(typeof showNotification === 'function'){
+        showNotification('Výkaz úspěšně uložen', 'success');
+      }
     }catch(e){
-      alert('Chyba při ukládání: ' + e.message);
+      const errorMsg = 'Chyba při ukládání: ' + (e.message || String(e));
+      alert(errorMsg);
+      console.error('Timesheet save error:', e);
+      if(typeof showNotification === 'function'){
+        showNotification(errorMsg, 'error');
+      }
     }
   });
 
@@ -624,11 +656,28 @@
     if(!confirm('Opravdu smazat záznam?')) return;
     try{
       const url = '/api/timesheets?id=' + encodeURIComponent(mId.value);
-      const r = await fetch(url, {method:'DELETE'});
-      if(!r.ok) throw new Error(await r.text());
-      closeModal(); renderWeek().catch(console.error);
+      const r = await fetch(url, {method:'DELETE', credentials: 'same-origin'});
+      if(!r.ok) {
+        const errorText = await r.text();
+        let errorMsg = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.error || errorJson.message || errorText;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+      closeModal(); 
+      renderWeek().catch(console.error);
+      if(typeof showNotification === 'function'){
+        showNotification('Výkaz smazán', 'success');
+      }
     }catch(e){
-      alert('Chyba při mazání: ' + e.message);
+      const errorMsg = 'Chyba při mazání: ' + (e.message || String(e));
+      alert(errorMsg);
+      console.error('Timesheet delete error:', e);
+      if(typeof showNotification === 'function'){
+        showNotification(errorMsg, 'error');
+      }
     }
   });
 

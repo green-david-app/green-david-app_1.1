@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>green david app</title>
     <link rel="stylesheet" href="/style.css"/>
+    <style>
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    </style>
   </head>
   <body>
     <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
@@ -68,6 +78,26 @@
         }
         return v;
       }
+      // Notification System (global)
+      let notificationContainer = null;
+      function showNotification(message,type="info"){
+        if(!notificationContainer) {
+          notificationContainer = document.createElement('div');
+          notificationContainer.id = 'notification-container';
+          notificationContainer.style.cssText = 'position:fixed;top:80px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:400px;';
+          document.body.appendChild(notificationContainer);
+        }
+        const notif = document.createElement('div');
+        const colors = {success:'#3ea76a',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
+        notif.style.cssText = `padding:12px 16px;background:${colors[type]||colors.info}20;border:1px solid ${colors[type]||colors.info}40;border-radius:12px;color:#e8eef2;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;`;
+        notif.textContent = message;
+        notificationContainer.appendChild(notif);
+        setTimeout(()=>{
+          notif.style.animation = 'slideOut 0.3s ease';
+          setTimeout(()=>notif.remove(),300);
+        },4000);
+      }
+      
       function showJSError(msg){
         var el = document.getElementById('js-error');
         el.style.display = 'block';
@@ -133,16 +163,46 @@
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
+        const [viewMode,setViewMode]=useState("kanban"); // "kanban" or "list"
+        const [draggedJob,setDraggedJob]=useState(null);
 
         // NEW: edit mode state
         const [editId, setEditId] = useState(null);
         const [edit, setEdit] = useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
 
-        async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message);} }
+        async function load(){ try{ const j=await api("/api/jobs"); setList(j.jobs||[]); }catch(e){ setErr(e.message); showNotification("Chyba při načítání zakázek: "+e.message,"error");} }
         useEffect(()=>{ load().catch(()=>{}); },[]);
+        
+        // Drag & Drop handlers
+        function handleDragStart(e,job){
+          setDraggedJob(job);
+          e.dataTransfer.effectAllowed = "move";
+        }
+        function handleDragOver(e){
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }
+        async function handleDrop(e,newStatus){
+          e.preventDefault();
+          if(!draggedJob || draggedJob.status===newStatus) return;
+          try{
+            await api("/api/jobs",{method:"PATCH",body:JSON.stringify({id:draggedJob.id,status:newStatus})});
+            showNotification(`Zakázka "${draggedJob.title}" přesunuta do ${newStatus}`,"success");
+            load();
+          }catch(e){
+            showNotification("Chyba při přesunu zakázky: "+e.message,"error");
+          }
+          setDraggedJob(null);
+        }
+        
+        const columns = [
+          {id:"Plán",label:"Plán",color:"#3b82f6"},
+          {id:"Probíhá",label:"Probíhá",color:"#3ea76a"},
+          {id:"Dokončeno",label:"Dokončeno",color:"#6b7580"}
+        ];
 
-        async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); load(); }catch(e){ setErr(e.message || String(e)); } }
-        async function del(id){ if(!confirm("Smazat zakázku?")) return; await api("/api/jobs?id="+id,{method:"DELETE"}); load(); }
+        async function add(e){ e.preventDefault(); try{ const payload={...form, date: toISODateFlex(form.date)}; await api("/api/jobs",{method:"POST",body:JSON.stringify(payload)}); setForm({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""}); showNotification("Zakázka přidána","success"); load(); }catch(e){ setErr(e.message || String(e)); showNotification("Chyba při přidávání zakázky: "+e.message,"error"); } }
+        async function del(id){ if(!confirm("Smazat zakázku?")) return; try{ await api("/api/jobs?id="+id,{method:"DELETE"}); showNotification("Zakázka smazána","success"); load(); }catch(e){ showNotification("Chyba při mazání: "+e.message,"error"); } }
 
         // NEW: start/cancel/save edit
         function startEdit(z){
@@ -164,12 +224,52 @@
             const payload = { id: editId, ...edit, date: toISODateFlex(edit.date) };
             await api("/api/jobs", { method:"PATCH", body: JSON.stringify(payload) });
             setEditId(null);
+            showNotification("Zakázka upravena","success");
             load();
-          }catch(e){ setErr(e.message || String(e)); }
+          }catch(e){ setErr(e.message || String(e)); showNotification("Chyba při ukládání: "+e.message,"error"); }
         }
 
-        return (<div className="grid" style={{gridTemplateColumns:"1fr"}}>
-          <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
+        return (<div style={{paddingBottom:100}}>
+          {/* View Mode Toggle */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <h2 style={{fontSize:22,fontWeight:700,color:"#e8eef2"}}>Zakázky</h2>
+            <div style={{display:"flex",gap:8}}>
+              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="kanban"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setViewMode("kanban")}>Kanban</button>
+              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="list"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setViewMode("list")}>Seznam</button>
+            </div>
+          </div>
+          
+          {/* Kanban Board View */}
+          {viewMode==="kanban" ? (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,marginBottom:24}}>
+              {columns.map(col=>{
+                const colJobs = list.filter(j=>j.status===col.id);
+                return <div key={col.id} className="card" style={{minHeight:400}} onDragOver={handleDragOver} onDrop={(e)=>handleDrop(e,col.id)}>
+                  <div className="card-h" style={{background:col.color+"20",borderBottom:`2px solid ${col.color}`}}>
+                    <div style={{fontWeight:600,color:"#e8eef2"}}>{col.label}</div>
+                    <span className="badge" style={{background:col.color+"30",color:col.color}}>{colJobs.length}</span>
+                  </div>
+                  <div className="card-c" style={{display:"flex",flexDirection:"column",gap:12}}>
+                    {colJobs.map(job=>(
+                      <div key={job.id} className="card" draggable onDragStart={(e)=>handleDragStart(e,job)} style={{cursor:"move",opacity:draggedJob?.id===job.id?0.5:1}}>
+                        <div style={{fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>{job.title}</div>
+                        <div className="small" style={{color:"#9ca8b3",marginBottom:8}}>{job.client} • {job.city}</div>
+                        <div className="small" style={{color:"#6b7580",marginBottom:8}}>{toCZ(job.date)} • {job.code}</div>
+                        <div style={{display:"flex",gap:4}}>
+                          <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11}} onClick={()=>onOpen(job.id)}>Detail</button>
+                          <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11}} onClick={()=>del(job.id)}>Smazat</button>
+                        </div>
+                      </div>
+                    ))}
+                    {colJobs.length===0 && <div style={{textAlign:"center",color:"#6b7580",padding:20,fontSize:13}}>Žádné zakázky</div>}
+                  </div>
+                </div>;
+              })}
+            </div>
+          ) : (
+            /* List View */
+            <div className="grid" style={{gridTemplateColumns:"1fr"}}>
+              <div className="card"><div className="card-h"><div>Nová zakázka</div></div><div className="card-c">
             <form onSubmit={add}><div className="form-row">
               <input placeholder="Název" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} style={{flex:2}} required/>
               <input placeholder="Zákazník" value={form.client} onChange={e=>setForm({...form,client:e.target.value})} style={{flex:2}} required/>
@@ -235,7 +335,9 @@
             </div>
           ))}
 
-          {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše.</div></div>}
+              {list.length===0 && <div className="card"><div className="card-c small">Zatím žádné zakázky – přidej první výše.</div></div>}
+            </div>
+          )}
         </div>);
       }
 
@@ -590,12 +692,34 @@
       }
 
       function Dashboard({user, taskCount}){
-        const [stats,setStats]=useState({activeJobs:0,employees:0,tasks:0});
+        const [stats,setStats]=useState({
+          activeJobs:0,employees:0,tasks:0,
+          totalHoursWeek:0,totalHoursMonth:0,
+          topEmployee:null,upcomingTasks:0
+        });
         const [activeJobs,setActiveJobs]=useState([]);
+        const [chartData,setChartData]=useState({employees:[],jobs:[]});
+        const [chartPeriod,setChartPeriod]=useState("week");
         
         useEffect(()=>{
           (async()=>{
             try{
+              // Get this week's timesheets
+              const today = new Date();
+              const monday = new Date(today);
+              monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+              const sunday = new Date(monday);
+              sunday.setDate(monday.getDate() + 6);
+              const fmt = (d)=>d.toISOString().slice(0,10);
+              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              const totalHWeek = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
+              
+              // Get this month's timesheets
+              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+              const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+              const timesheetsMonth = await api(`/api/timesheets?from=${fmt(monthStart)}&to=${fmt(monthEnd)}`);
+              const totalHMonth = (timesheetsMonth.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
+              
               // Get jobs
               const jobs = await api("/api/jobs");
               const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").length;
@@ -608,17 +732,85 @@
               // Get tasks
               const tasks = await api("/api/tasks");
               const taskCount = (tasks.tasks||[]).length;
+              const upcoming = (tasks.tasks||[]).filter(t=>t.status!=="hotovo"&&t.due_date&&new Date(t.due_date)>=today).length;
+              
+              // Calculate top employee
+              const empHours = {};
+              (timesheets.rows||[]).forEach(r=>{
+                const name = r.employee_name || 'Neznámý';
+                empHours[name] = (empHours[name]||0) + (r.hours||0);
+              });
+              const topEmp = Object.entries(empHours).sort((a,b)=>b[1]-a[1])[0];
+              
+              // Chart data - hours per employee
+              const empChartData = Object.entries(empHours).map(([name,hours])=>({name,hours})).slice(0,5);
+              
+              // Chart data - hours per job
+              const jobHours = {};
+              (timesheets.rows||[]).forEach(r=>{
+                const title = r.job_title || `Zakázka ${r.job_id}`;
+                jobHours[title] = (jobHours[title]||0) + (r.hours||0);
+              });
+              const jobChartData = Object.entries(jobHours).map(([name,hours])=>({name,hours})).slice(0,5);
               
               setStats({
                 activeJobs: active,
                 employees: empCount,
-                tasks: taskCount
+                tasks: taskCount,
+                totalHoursWeek: totalHWeek,
+                totalHoursMonth: totalHMonth,
+                topEmployee: topEmp ? {name:topEmp[0],hours:topEmp[1]} : null,
+                upcomingTasks: upcoming
               });
               
               setActiveJobs(activeList);
+              setChartData({employees:empChartData,jobs:jobChartData});
             }catch(e){console.error(e);}
           })();
         },[]);
+        
+        // Simple SVG Bar Chart Component
+        const BarChart = ({data,height=200,color="#3ea76a"})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const max = Math.max(...data.map(d=>d.hours),1);
+          const barWidth = 280 / data.length;
+          return <svg width="100%" height={height} style={{overflow:"visible"}}>
+            {data.map((d,i)=>{
+              const barHeight = (d.hours/max)*150;
+              return <g key={i}>
+                <rect x={i*barWidth+10} y={height-barHeight-20} width={barWidth-10} height={barHeight} fill={color} opacity={0.8} rx={4}/>
+                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
+              </g>;
+            })}
+          </svg>;
+        };
+        
+        // Simple SVG Pie Chart Component
+        const PieChart = ({data,size=200,colors=["#3ea76a","#4bb878","#2d8f55","#1f6b42","#0d4d2a"]})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const total = data.reduce((s,d)=>s+d.hours,0);
+          if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          let currentAngle = -90;
+          const center = size/2;
+          const radius = size/2-20;
+          return <svg width={size} height={size} style={{margin:"0 auto",display:"block"}}>
+            {data.map((d,i)=>{
+              const angle = (d.hours/total)*360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + angle;
+              currentAngle += angle;
+              const x1 = center + radius*Math.cos(startAngle*Math.PI/180);
+              const y1 = center + radius*Math.sin(startAngle*Math.PI/180);
+              const x2 = center + radius*Math.cos(endAngle*Math.PI/180);
+              const y2 = center + radius*Math.sin(endAngle*Math.PI/180);
+              const largeArc = angle>180?1:0;
+              return <path key={i} d={`M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`} fill={colors[i%colors.length]} opacity={0.8} stroke="#0a0e11" strokeWidth="2"/>
+            })}
+            <text x={center} y={center+5} fontSize="14" fill="#e8eef2" textAnchor="middle" fontWeight="600">{total.toFixed(1)}h</text>
+            <text x={center} y={center+20} fontSize="11" fill="#9ca8b3" textAnchor="middle">Celkem</text>
+          </svg>;
+        };
         
         return (<div style={{paddingBottom:100,padding:"0 16px"}}>
           {/* Stats Card */}
@@ -627,6 +819,16 @@
               <div>
                 <div style={{fontSize:17,fontWeight:600,color:"#e8eef2"}}>{user?.name || "Admin"}</div>
                 <div style={{fontSize:15,color:"#3ea76a",marginTop:4}}>{user?.role || "admin"}</div>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2, 1fr)",gap:16,marginBottom:16}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:28,fontWeight:700,color:"#3ea76a"}}>{stats.totalHoursWeek.toFixed(1)}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>hodin tento týden</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:28,fontWeight:700,color:"#3ea76a"}}>{stats.totalHoursMonth.toFixed(1)}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>hodin tento měsíc</div>
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,textAlign:"center"}}>
@@ -639,8 +841,41 @@
                 <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>tým</div>
               </div>
               <div>
-                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.tasks}</div>
-                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>úkoly</div>
+                <div style={{fontSize:28,fontWeight:700,color:"#e8eef2"}}>{stats.upcomingTasks}</div>
+                <div style={{fontSize:13,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>nadcházející úkoly</div>
+              </div>
+            </div>
+            {stats.topEmployee && (
+              <div style={{marginTop:16,padding:12,background:"rgba(62, 167, 106, 0.1)",borderRadius:12,border:"1px solid rgba(62, 167, 106, 0.2)"}}>
+                <div style={{fontSize:12,color:"#9ca8b3",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Nejproduktivnější zaměstnanec</div>
+                <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>{stats.topEmployee.name}</div>
+                <div style={{fontSize:14,color:"#3ea76a",marginTop:2}}>{stats.topEmployee.hours.toFixed(1)}h tento týden</div>
+              </div>
+            )}
+          </div>
+          
+          {/* Charts Section */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,margin:"0 0 24px 0"}}>
+            <div className="card" style={{padding:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>Hodiny per zaměstnanec</div>
+                <div style={{display:"flex",gap:4}}>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="week"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("week")}>Týden</button>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
+                </div>
+              </div>
+              <BarChart data={chartData.employees} height={200} color="#3ea76a"/>
+            </div>
+            <div className="card" style={{padding:20}}>
+              <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>
+              <PieChart data={chartData.jobs} size={200}/>
+              <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:4}}>
+                {chartData.jobs.slice(0,3).map((d,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#9ca8b3"}}>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"120px"}}>{d.name}</span>
+                    <span style={{fontWeight:600,color:"#e8eef2"}}>{d.hours.toFixed(1)}h</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

@@ -301,15 +301,47 @@ function openDlg(data){
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const fd = new FormData(form);
-  const payload = Object.fromEntries(fd.entries());
-  payload.type = payload.kind || payload.type; delete payload.kind; payload.details = payload.description || payload.details || payload.note || ''; delete payload.description; delete payload.note;
-const url = "/gd/api/calendar";
-  let method = "POST";
-  if (payload.id){ method="PATCH"; }
-  const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-  if (resp.ok){ dlg.close(); await loadMonth(); if (selectedDate) selectDay(selectedDate, grid.querySelector(`.cal-cell[data-date="${selectedDate}"]`)); }
-  else { alert("Uložení selhalo"); }
+  try {
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    payload.type = payload.kind || payload.type; delete payload.kind; payload.details = payload.description || payload.details || payload.note || ''; delete payload.description; delete payload.note;
+    const url = "/gd/api/calendar";
+    let method = "POST";
+    if (payload.id){ method="PATCH"; }
+    const resp = await fetch(url, {
+      method, 
+      credentials: 'same-origin',
+      headers:{'Content-Type':'application/json'}, 
+      body: JSON.stringify(payload)
+    });
+    if (resp.ok){
+      dlg.close(); 
+      await loadMonth(); 
+      if (selectedDate) selectDay(selectedDate, grid.querySelector(`.cal-cell[data-date="${selectedDate}"]`));
+      if(typeof showNotification === 'function'){
+        showNotification('Událost úspěšně uložena', 'success');
+      }
+    } else { 
+      const errorText = await resp.text();
+      let errorMsg = "Uložení selhalo";
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error || errorJson.message || errorText;
+      } catch {}
+      alert(errorMsg);
+      console.error('Calendar save error:', errorText);
+      if(typeof showNotification === 'function'){
+        showNotification(errorMsg, 'error');
+      }
+    }
+  } catch(e) {
+    const errorMsg = 'Chyba při ukládání: ' + (e.message || String(e));
+    alert(errorMsg);
+    console.error('Calendar save error:', e);
+    if(typeof showNotification === 'function'){
+      showNotification(errorMsg, 'error');
+    }
+  }
 });
 
 document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
