@@ -1,0 +1,73 @@
+<!-- Bottom Navigation -->
+<div class="tab-bar">
+    <a href="/" class="tab-item" id="tab-home">
+        <div class="tab-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </div>
+        <div class="tab-label">domů</div>
+    </a>
+    
+    <a href="/jobs.html" class="tab-item" id="tab-jobs">
+        <div class="tab-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+        </div>
+        <div class="tab-label">zakázky</div>
+    </a>
+    
+    <a href="/timesheets.html" class="tab-item" id="tab-timesheets">
+        <div class="tab-icon">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+        </div>
+        <div class="tab-label">výkazy</div>
+    </a>
+    
+    <a href="/calendar.html" class="tab-item" id="tab-calendar">
+        <div class="tab-icon">
+            <svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        </div>
+        <div class="tab-label">kalendář</div>
+    </a>
+    
+    <a href="/employees.html" class="tab-item" id="tab-more">
+        <div class="tab-icon">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+            </svg>
+        </div>
+        <div class="tab-label">více</div>
+    </a>
+</div>
+
+<script>
+// Set active tab based on current page
+(function() {
+    const path = window.location.pathname;
+    const tabs = {
+        '/': 'tab-home',
+        '/index.html': 'tab-home',
+        '/jobs.html': 'tab-jobs',
+        '/timesheets.html': 'tab-timesheets',
+        '/calendar.html': 'tab-calendar',
+        '/employees.html': 'tab-more'
+    };
+    const activeTab = tabs[path] || 'tab-home';
+    const el = document.getElementById(activeTab);
+    if (el) el.classList.add('active');
+})();
+</script>
