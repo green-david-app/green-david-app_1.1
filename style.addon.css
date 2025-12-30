@@ -1,4 +1,0 @@
-
-/* Optional tweaks for the in-bar search form */
-#gd-global-search input[type="text"]::placeholder{ color:#666; }
-#gd-global-search button:hover{ filter:brightness(0.95); }
