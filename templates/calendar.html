@@ -1,16 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="page">
-  <!-- Header -->
-  <div class="ts-header">
-    <div class="ts-header-content">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
-        <div class="brand-title">Green David</div>
-      </div>
-    </div>
-  </div>
-
   <div class="container">
     <!-- Page Header -->
     <div class="ts-page-header">
@@ -121,9 +111,9 @@
     font-size: 12px;
     background: var(--mint);
     color: #000000;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
     font-weight: 500;
   }
   .badge.task {
@@ -239,9 +229,9 @@ function renderEvents(items){
     const kind = ev.kind || ev.type || 'note';
     pill.className = "badge " + (kind=='task'?'task':(kind=='job'?'job':''));
     pill.textContent = ev.title || ev.name || ev.description || '(bez názvu)';
-    pill.style.overflow = 'hidden';
-    pill.style.textOverflow = 'ellipsis';
-    pill.style.whiteSpace = 'nowrap';
+    pill.style.wordWrap = 'break-word';
+    pill.style.overflowWrap = 'break-word';
+    pill.style.hyphens = 'auto';
     pill.style.maxWidth = '100%';
     container.appendChild(pill);
   }

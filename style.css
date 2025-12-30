@@ -712,9 +712,7 @@ input[type="checkbox"] {
   color: var(--text-secondary);
   word-wrap: break-word;
   overflow-wrap: break-word;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  hyphens: auto;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -725,9 +723,7 @@ input[type="checkbox"] {
   color: var(--text-primary);
   word-wrap: break-word;
   overflow-wrap: break-word;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  hyphens: auto;
 }
 
 .table tbody tr {
@@ -974,4 +970,38 @@ input[type="checkbox"] {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--space-md);
+  }
+  
+  .card {
+    border-radius: var(--radius-md);
+  }
+  
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+  }
+  
+  /* Kanban board - switch to single column on mobile */
+  .kanban-board {
+    grid-template-columns: 1fr !important;
+  }
 }

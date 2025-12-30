@@ -20,17 +20,13 @@
     <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
       <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <img src="/logo.jpg" alt="Green David" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+          <img src="/logo.jpg" alt="green david app" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
           <div>
-            <div style="font-size:18px;font-weight:600;color:#e8eef2;">Green David</div>
+            <div style="font-size:18px;font-weight:600;color:#e8eef2;">green david app</div>
             <div style="font-size:12px;color:#9ca8b3;">interní systém</div>
           </div>
         </div>
         <div id="userbox" style="display:flex;align-items:center;gap:12px;font-size:14px;color:#9ca8b3;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input type="text" id="global-search" placeholder="Hledat..." style="width:200px;padding:6px 10px;background:var(--bg-tertiary);border:0.5px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:13px;"/>
-            <button id="search-btn" class="btn btn-primary" style="padding:6px 12px;font-size:13px;">Hledat</button>
-          </div>
         </div>
       </div>
     </header>
@@ -187,7 +183,11 @@
         const [list,setList]=useState([]);
         const [form,setForm]=useState({title:"",client:"",status:"Plán",city:"",code:"",date:"",note:""});
         const [err,setErr]=useState("");
-        const [viewMode,setViewMode]=useState("kanban"); // "kanban" or "list"
+        // Default to list view on mobile, kanban on desktop
+        const [viewMode,setViewMode]=useState(()=>{
+          if(typeof window !== 'undefined' && window.innerWidth < 768) return "list";
+          return "kanban";
+        }); // "kanban" or "list"
         const [draggedJob,setDraggedJob]=useState(null);
 
         // NEW: edit mode state
@@ -265,7 +265,7 @@
           
           {/* Kanban Board View */}
           {viewMode==="kanban" ? (
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,marginBottom:24}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:16,marginBottom:24}} className="kanban-board">
               {columns.map(col=>{
                 const colJobs = list.filter(j=>j.status===col.id);
                 return <div key={col.id} className="card" style={{minHeight:400}} onDragOver={handleDragOver} onDrop={(e)=>handleDrop(e,col.id)}>
@@ -863,33 +863,47 @@
 
           {/* Action Cards */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(2, 1fr)",gap:16,margin:"0 0 24px 0"}}>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Zakázky</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Přehled</div>
+            </div>
+            <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>window.location.href="/calendar.html"}>
+              <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Kalendář</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Přehled</div>
+            </div>
             <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>{const tabs=document.querySelectorAll('.tab'); const jobsTab=Array.from(tabs).find(t=>t.textContent.trim()==='zakázky'); if(jobsTab) jobsTab.click(); else if(tabs[0]) tabs[0].click();}}>
               <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </div>
-              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Nová zakázka</div>
-              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Vytvořit</div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Nová zakázka</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Vytvořit</div>
             </div>
             <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>window.location.href="/timesheets.html"}>
               <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
-              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Výkaz hodin</div>
-              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Přidat čas</div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Výkaz hodin</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Přidat čas</div>
             </div>
             <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>window.location.href="/employees.html"}>
               <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
-              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Tým</div>
-              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Spravovat</div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Tým</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Spravovat</div>
             </div>
             <div className="card" style={{padding:24,textAlign:"center",cursor:"pointer",transition:"all 200ms"}} onClick={()=>{if(window.setAppTab) window.setAppTab('statistics');}}>
               <div style={{width:48,height:48,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(62, 167, 106, 0.15)",borderRadius:12}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ea76a" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
-              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis"}}>Statistiky</div>
-              <div style={{fontSize:15,color:"#9ca8b3",overflow:"hidden",textOverflow:"ellipsis"}}>Přehledy</div>
+              <div style={{fontSize:17,fontWeight:600,color:"#e8eef2",marginBottom:4,wordWrap:"break-word",overflowWrap:"break-word"}}>Statistiky</div>
+              <div style={{fontSize:15,color:"#9ca8b3",wordWrap:"break-word",overflowWrap:"break-word"}}>Přehledy</div>
             </div>
           </div>
 

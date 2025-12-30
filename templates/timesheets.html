@@ -1,16 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="page">
-  <!-- Header -->
-  <div class="ts-header">
-    <div class="ts-header-content">
-      <div class="brand">
-        <img src="/logo.jpg" alt="Green David" class="brand-logo" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
-        <div class="brand-title">Green David</div>
-      </div>
-    </div>
-  </div>
-
   <div class="container">
     <!-- Page Header -->
     <div class="ts-page-header">
@@ -103,40 +93,6 @@
 </div>
 
 <style>
-  /* Timesheets Header */
-  .ts-header {
-    background: rgba(31, 36, 40, 0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-medium);
-    padding: 16px 24px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .ts-header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .brand-logo {
-    height: 36px;
-    width: auto;
-    border-radius: 8px;
-    object-fit: contain;
-  }
-  .brand-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
   /* Page Header */
   .ts-page-header {
     margin-bottom: 32px;
@@ -233,140 +189,196 @@
     margin-bottom: 100px;
   }
   .ts-grid-header {
-    display: grid;
-    grid-template-columns: 150px repeat(7, 1fr);
+    display: table;
+    width: 100%;
+    table-layout: fixed;
     background: #252a2f;
     border-bottom: 2px solid var(--border-medium);
   }
   .ts-grid-cell {
-    padding: 16px;
+    display: table-cell;
+    padding: 12px 8px;
     border-right: 1px solid #2a3036;
     text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-grid-cell:first-child {
+    text-align: left;
+    padding-left: 16px;
+    width: 140px;
+    min-width: 120px;
   }
   .ts-grid-cell:last-child {
     border-right: none;
   }
   .ts-day-header {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-primary);
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-day-date {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-day-header.today {
     color: var(--mint);
   }
   .ts-grid-row {
-    display: grid;
-    grid-template-columns: 150px repeat(7, 1fr);
+    display: table-row;
     border-bottom: 1px solid #2a3036;
   }
   .ts-grid-row:last-child {
     border-bottom: none;
   }
+  .ts-grid-row:hover {
+    background: rgba(62, 167, 106, 0.05);
+  }
   .ts-employee-cell {
-    padding: 16px;
+    display: table-cell;
+    padding: 12px 8px 12px 16px;
+    border-right: 1px solid #2a3036;
+    background: transparent;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-employee-cell > div {
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-right: 1px solid #2a3036;
-    background: var(--bg-card);
+    gap: 10px;
   }
   .ts-avatar {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, var(--mint) 0%, var(--mint-light) 100%);
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--mint) 0%, #4bb878 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 14px;
     color: white;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
   }
   .ts-employee-name {
     font-weight: 500;
     font-size: 14px;
     color: var(--text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
   }
   .ts-day-cell {
-    padding: 12px;
+    display: table-cell;
+    padding: 8px;
     border-right: 1px solid #2a3036;
-    min-height: 80px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .ts-day-cell:hover {
-    background: rgba(62, 167, 106, 0.05);
+    min-height: 50px;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-day-cell:last-child {
     border-right: none;
   }
   .ts-time-entry {
-    background: rgba(62, 167, 106, 0.12);
-    border: 1px solid rgba(62, 167, 106, 0.24);
-    border-radius: 8px;
-    padding: 8px;
+    background: rgba(62, 167, 106, 0.15);
+    border: 1px solid rgba(62, 167, 106, 0.3);
+    border-radius: 6px;
+    padding: 6px 8px;
     margin-bottom: 6px;
-    font-size: 12px;
-    transition: all 0.2s;
+    width: 100%;
+    max-width: 100%;
     cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-time-entry:hover {
-    background: rgba(62, 167, 106, 0.2);
-    transform: scale(1.02);
+    background: rgba(62, 167, 106, 0.25);
+    border-color: var(--mint);
   }
   .ts-entry-hours {
     font-weight: 700;
     color: var(--mint);
     margin-bottom: 2px;
+    font-size: 13px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-entry-project {
     color: var(--text-tertiary);
-    font-size: 11px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     max-width: 100%;
+    line-height: 1.3;
   }
   .ts-add-btn {
     width: 100%;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed var(--border-medium);
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 12px;
+    padding: 6px 8px;
+    background: rgba(62, 167, 106, 0.1);
+    border: 1px dashed rgba(62, 167, 106, 0.4);
+    border-radius: 6px;
+    color: var(--mint);
     cursor: pointer;
+    font-size: 11px;
     transition: all 0.2s;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-add-btn:hover {
-    background: rgba(62, 167, 106, 0.05);
+    background: rgba(62, 167, 106, 0.2);
     border-color: var(--mint);
-    color: var(--mint);
   }
 
-  @media (max-width: 1200px) {
-    .ts-grid-header,
-    .ts-grid-row {
-      grid-template-columns: 120px repeat(7, 1fr);
-    }
-  }
   @media (max-width: 768px) {
     .ts-week-grid {
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .ts-grid-header,
     .ts-grid-row {
-      min-width: 800px;
+      min-width: 700px;
+    }
+    .ts-grid-cell {
+      padding: 10px 6px;
+      font-size: 12px;
+    }
+    .ts-grid-cell:first-child {
+      width: 100px;
+      min-width: 90px;
+      padding-left: 12px;
+    }
+    .ts-employee-name {
+      font-size: 12px;
+    }
+    .ts-avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 11px;
+    }
+    .ts-day-header {
+      font-size: 11px;
+    }
+    .ts-day-date {
+      font-size: 10px;
+    }
+    .ts-entry-hours {
+      font-size: 12px;
+    }
+    .ts-entry-project {
+      font-size: 9px;
+    }
+    .ts-add-btn {
+      font-size: 10px;
+      padding: 5px 6px;
     }
   }
 </style>
@@ -557,8 +569,8 @@
       // Employee cell
       const empCell = document.createElement('div');
       empCell.className = 'ts-employee-cell';
-      empCell.innerHTML = '<div class="ts-avatar">' + empData.initials + '</div>' +
-                         '<div class="ts-employee-name">' + empData.name + '</div>';
+      empCell.innerHTML = '<div><div class="ts-avatar">' + empData.initials + '</div>' +
+                         '<div class="ts-employee-name">' + empData.name + '</div></div>';
       row.appendChild(empCell);
       
       // Day cells
