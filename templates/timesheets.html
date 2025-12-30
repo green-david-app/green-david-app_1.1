@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="ts-head">
+  <div class="ts-head-row1">
+    <a href="/" class="ts-back">zpět</a>
+    <div class="ts-title">výkazy hodin - týden</div>
+    <div class="ts-right"></div>
+  </div>
+  <div class="ts-head-row2">
+    <label class="ts-inline smallc">týden od <input id="weekStart" type="date" class="ctl-sm"/></label>
+    <button id="prevWeek" class="chip chip-ghost chip-sm">← předchozí</button>
+    <button id="nextWeek" class="chip chip-ghost chip-sm">následující →</button>
+
+    <span class="sep"></span>
+
+    <label class="ts-inline smallc">filtrovat zakázku <select id="filterJob" class="ctl-sm"><option value="">vše</option></select></label>
+    <label class="ts-inline smallc">filtrovat zaměstnance <select id="filterEmployee" class="ctl-sm"><option value="">všichni</option></select></label>
+
+    <span class="spacer"></span>
+    <button id="exportCsv" class="chip chip-primary chip-xs">export csv (týden)</button>
+  </div>
+</div>
+
+<div id="week" class="week"></div>
+
+<!-- Modal -->
+<div id="modal" class="modal-backdrop" style="display:none;">
+  <div class="card modal-card">
+    <div class="card-h">
+      <div id="modalTitle" class="modal-title">upravit záznam</div>
+    </div>
+    <div class="card-c form-grid">
+      <input type="hidden" id="mId"/>
+      <label>zaměstnanec <select id="mEmployee" class="modal-field"></select></label>
+      <label>zakázka <select id="mJob" class="modal-field"></select></label>
+      <label>datum <input id="mDate" type="date" class="modal-field"/></label>
+      <label>hodin <input id="mHours" type="number" min="0" step="0.25" placeholder="8" class="modal-field"/></label>
+      <label>místo <input id="mPlace" type="text" class="modal-field"/></label>
+      <label class="span2">činnost <textarea id="mActivity" rows="2" class="modal-field"></textarea></label>
+    </div>
+    <div class="card-f actions">
+      <button id="mDelete" class="ghost danger" style="margin-right:auto;">smazat</button>
+      <button id="mCancel" class="ghost">zrušit</button>
+      <button id="mSave">uložit</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ts-head{position:relative; z-index:0; background:#2b2f31; color:#e8efe9; border-radius:16px; padding:12px 14px; border:1px solid rgba(0,0,0,.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); margin-bottom:16px;}
+  .ts-head-row1{display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap:10px; margin-bottom:6px;}
+  .ts-back{ justify-self:start; display:inline-block; padding:6px 10px; border-radius:10px; background:#e6e6e6; color:#1b5e20; text-decoration:none; border:1px solid rgba(0,0,0,.2); }
+  .ts-title{ justify-self:center; font-size:16px; line-height:1.2; font-weight:400; color:#e8efe9; }
+  .ts-head-row2{display:flex; flex-wrap:nowrap; gap:8px; align-items:center; min-height:36px;}
+  @media (max-width: 820px){ .ts-head-row2{ flex-wrap:wrap; } }
+  .smallc{ font-size:12px; color:#cfead5; }
+  .ctl-sm{ font-size:12px; padding:4px 6px; height:28px; }
+  .ts-inline input[type=date], .ts-inline select{ background:#1f2224; color:#e8efe9; border:1px solid rgba(255,255,255,.12); border-radius:8px; }
+  .chip{ border-radius:10px; padding:8px 12px; cursor:pointer; border:1px solid transparent; font-weight:500; white-space:nowrap; }
+  .chip-sm{ padding:6px 10px; font-size:12px; }
+  .chip-xs{ padding:4px 8px; font-size:11px; }
+  .chip-ghost{ background:#cfead5; color:#1b5e20; border-color:#83c090; }
+  .chip-primary{ background:#2e7d32; color:#ffffff; border-color:#2e7d32; }
+  .spacer{flex:1}
+  .sep{width:10px; height:1px; opacity:0;}
+  .week{display:flex;flex-direction:column;gap:14px; position:relative; z-index:1;}
+  .day{background:#2b2f31; color:#e8efe9; border-radius:14px; padding:12px 14px; border:1px solid rgba(0,0,0,.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);}
+  .day-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;opacity:.95}
+  .day-actions{display:flex;gap:8px;align-items:center;}
+  .btn-add{background:#cfead5;color:#1b5e20;border:1px solid #83c090;border-radius:10px;padding:6px 10px;cursor:pointer; pointer-events:auto;}
+  .entry{background:#e8f3ea;color:#0c2b14;border-radius:12px;padding:10px 12px;margin:8px 0;display:flex;gap:10px;align-items:center;cursor:pointer; pointer-events:auto;}
+  .pill{display:inline-block;border-radius:999px;padding:3px 8px;background:#cfead5;margin-left:6px;font-size:12px;}
+  .muted{opacity:.6} .small{font-size:12px}
+  .day-empty{opacity:.6;font-style:italic}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  .modal-card{background:#ffffff; color:#111; border-radius:14px; min-width:320px; max-width:560px; width:90%;}
+  .modal-title{ color:#2e7d32; font-weight:700; }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .form-grid .span2{grid-column:1 / span 2;}
+  .form-grid label{ color:#446a4a; font-weight:600; }
+  .modal-field{ background:#f7f9f8; color:#111; border:1px solid #cfd8d4; border-radius:8px; padding:8px 10px; }
+  .modal-field:focus{ outline:2px solid #83c090; border-color:#83c090; }
+  .card-h{padding:12px 14px;border-bottom:1px solid #eee;}
+  .card-c{padding:12px 14px;}
+  .card-f{padding:12px 14px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;}
+  .card-f .ghost{background:#eef0ef;border:1px solid #d4d9d6;color:#111;}
+  .card-f .ghost.danger{ background:#fff; border-color:#b00020; color:#b00020; }
+  .card-f button#mSave{border:1px solid #2e7d32;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;}
+</style>
+
+<script>
+(function(){
+  const elWeek = document.getElementById('week');
+  const elWeekStart = document.getElementById('weekStart');
+  const elPrev = document.getElementById('prevWeek');
+  const elNext = document.getElementById('nextWeek');
+  const elFJob = document.getElementById('filterJob');
+  const elFEmp = document.getElementById('filterEmployee');
+
+  // modal elems
+  const modal = document.getElementById('modal');
+  const mId = document.getElementById('mId');
+  const mEmployee = document.getElementById('mEmployee');
+  const mJob = document.getElementById('mJob');
+  const mDate = document.getElementById('mDate');
+  const mHours = document.getElementById('mHours');
+  const mPlace = document.getElementById('mPlace');
+  const mActivity = document.getElementById('mActivity');
+  const mTitle = document.getElementById('modalTitle');
+  const mSave = document.getElementById('mSave');
+  const mCancel = document.getElementById('mCancel');
+  const mDelete = document.getElementById('mDelete');
+
+  // --- Local date helpers (no UTC conversion) ---
+  const fmtLocal = (d)=>{
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  };
+  const parse = (s)=> { const [y,m,dd] = s.split('-').map(x=>parseInt(x,10)); return new Date(y, m-1, dd); };
+  const monday = (d)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const wd = x.getDay(); const diff = (wd===0?6:wd-1); x.setDate(x.getDate()-diff); x.setHours(0,0,0,0); return x; };
+  const addDays = (d,n)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; };
+
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, options||{}));
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+  async function loadFilters(){
+    try{
+      const jobs = await fetchJSON('/api/jobs');
+      jobs.jobs.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); document.getElementById('filterJob').appendChild(opt);
+        const opt2 = opt.cloneNode(true); document.getElementById('mJob').appendChild(opt2);
+      });
+    }catch(e){}
+    try{
+      const emps = await fetchJSON('/api/employees');
+      (emps.employees||[]).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.name; document.getElementById('filterEmployee').appendChild(opt);
+        const opt2 = opt.cloneNode(true); document.getElementById('mEmployee').appendChild(opt2);
+      });
+    }catch(e){}
+  }
+
+  async function renderWeek(){
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(document.getElementById('filterJob').value) q.set('job_id', document.getElementById('filterJob').value);
+    if(document.getElementById('filterEmployee').value) q.set('employee_id', document.getElementById('filterEmployee').value);
+
+    const data = await fetchJSON('/api/timesheets?' + q.toString());
+    const rows = (data.rows||[]);
+    const byDate = {};
+    for(const r of rows){
+      const d = (r.date||'').slice(0,10);
+      (byDate[d] ||= []).push(r);
+    }
+    elWeek.innerHTML='';
+    for(let i=0;i<7;i++){
+      const d = addDays(start, i);
+      const dstr = fmtLocal(d);
+      const box = document.createElement('div'); box.className='day';
+      const head = document.createElement('div'); head.className='day-h';
+      head.innerHTML = '<div><strong>'+d.toLocaleDateString('cs-CZ', {weekday:'short'})+'</strong> <span class="muted small">'+d.toLocaleDateString('cs-CZ')+'</span></div>';
+      const actions = document.createElement('div'); actions.className='day-actions';
+      const btnAdd = document.createElement('button'); btnAdd.className='btn-add'; btnAdd.textContent='přidat záznam';
+      btnAdd.addEventListener('click', (ev)=> { ev.stopPropagation(); openModal({date: dstr}); });
+      const cnt = document.createElement('div'); cnt.className='muted small'; cnt.textContent = (byDate[dstr]? byDate[dstr].length : 0)+' záznamů';
+      actions.appendChild(cnt); actions.appendChild(btnAdd);
+      head.appendChild(actions);
+      box.appendChild(head);
+
+      const list = document.createElement('div');
+      const items = (byDate[dstr]||[]);
+      if(items.length===0){
+        const empty = document.createElement('div'); empty.className='day-empty'; empty.textContent='Žádné záznamy';
+        list.appendChild(empty);
+      }else{
+        for(const r of items){
+          const it = document.createElement('div'); it.className='entry';
+          const hours = document.createElement('span'); hours.className='pill'; hours.textContent = (r.hours||0)+' h';
+          it.innerHTML = '<strong>'+ (r.employee_name||('ID '+r.employee_id)) +'</strong>' +
+                         ' · ' + (r.job_title||('Zakázka '+r.job_id)) +
+                         (r.place? ' · '+r.place : '') +
+                         (r.activity? ' — '+r.activity : '');
+          it.appendChild(hours);
+          it.addEventListener('click', (ev)=>{ ev.stopPropagation(); openModal({
+            id:r.id, employee_id:r.employee_id, job_id:r.job_id, date:r.date, hours:r.hours, place:r.place, activity:r.activity
+          });});
+          list.appendChild(it);
+        }
+      }
+      box.appendChild(list);
+      elWeek.appendChild(box);
+    }
+  }
+
+  function openModal(data){
+    mId.value = data.id || '';
+    mTitle.textContent = data.id ? 'upravit záznam' : 'nový záznam';
+    if(data.employee_id) mEmployee.value = String(data.employee_id);
+    if(data.job_id) mJob.value = String(data.job_id);
+    mDate.value = (data.date ? data.date.slice(0,10) : elWeekStart.value);
+    mHours.value = (data.hours!=null ? data.hours : '');
+    mPlace.value = (data.place || '');
+    mActivity.value = (data.activity || '');
+    mDelete.style.display = data.id ? '' : 'none';
+    modal.style.display='flex';
+  }
+  function closeModal(){ modal.style.display='none'; }
+
+  mCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  mSave.addEventListener('click', async ()=>{
+    const payload = {
+      employee_id: Number(mEmployee.value||0),
+      job_id: Number(mJob.value||0),
+      date: mDate.value, // already in YYYY-MM-DD local format
+      hours: Number(mHours.value||0),
+      place: mPlace.value || '',
+      activity: mActivity.value || ''
+    };
+    try{
+      if(mId.value){
+        payload.id = Number(mId.value);
+        await apiJSON('/api/timesheets', {method:'PATCH', body: JSON.stringify(payload)});
+      }else{
+        await apiJSON('/api/timesheets', {method:'POST', body: JSON.stringify(payload)});
+      }
+      closeModal();
+      renderWeek().catch(console.error);
+    }catch(e){
+      alert('Chyba při ukládání: ' + e.message);
+    }
+  });
+
+  mDelete.addEventListener('click', async ()=>{
+    if(!mId.value) return;
+    if(!confirm('Opravdu smazat záznam?')) return;
+    try{
+      const url = '/api/timesheets?id=' + encodeURIComponent(mId.value);
+      const r = await fetch(url, {method:'DELETE'});
+      if(!r.ok) throw new Error(await r.text());
+      closeModal(); renderWeek().catch(console.error);
+    }catch(e){
+      alert('Chyba při mazání: ' + e.message);
+    }
+  });
+
+  document.getElementById('prevWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  document.getElementById('nextWeek').addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  document.getElementById('filterJob').addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('filterEmployee').addEventListener('change', ()=>renderWeek().catch(console.error));
+  document.getElementById('exportCsv').addEventListener('click', ()=>{
+    const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
+    const q = new URLSearchParams(); q.set('from', fmtLocal(d0)); q.set('to', fmtLocal(d6));
+    const fj = document.getElementById('filterJob').value;
+    const fe = document.getElementById('filterEmployee').value;
+    if(fj) q.set('job_id', fj); if(fe) q.set('employee_id', fe);
+    window.location.href = '/api/timesheets/export?' + q.toString();
+  });
+
+  // Initialize
+  const today = new Date();
+  const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+  startMonday.setHours(0,0,0,0);
+  document.getElementById('weekStart').value = fmtLocal(startMonday);
+  loadFilters().finally(()=>renderWeek().catch(console.error));
+})();
+</script>
+{% endblock %}
