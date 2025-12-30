@@ -1,0 +1,4 @@
+// Only the changed Tabs() snippet; replace your /timesheets.html link with /timesheets
+// Find in index.html: {key:"timesheets",label:"Výkazy hodin",href:"/timesheets.html"}
+// Replace with:
+{key:"timesheets",label:"Výkazy hodin",href:"/timesheets"},

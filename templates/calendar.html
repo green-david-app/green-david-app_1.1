@@ -1,0 +1,339 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <div class="container">
+    <h1>kalendář</h1>
+
+    <!-- Calendar Controls -->
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-c">
+        <div class="form-row" style="align-items:center;flex-wrap:wrap;">
+          <button id="prev" class="btn btn-ghost btn-sm">◀</button>
+          <div id="monthLabel" style="font-weight:700;font-size:22px;color:var(--text-primary);flex:1;text-align:center;"></div>
+          <button id="next" class="btn btn-ghost btn-sm">▶</button>
+          <div class="spacer"></div>
+          <button id="addNote" class="btn btn-primary btn-sm">+ Poznámka</button>
+          <button id="addTask" class="btn btn-primary btn-sm">+ Úkol</button>
+          <button id="addJob" class="btn btn-primary btn-sm">+ Zakázka</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div id="calendar" style="display:grid;grid-template-columns: repeat(7, minmax(0,1fr));gap:var(--space-sm);margin-bottom:var(--space-lg);"></div>
+
+    <!-- Day Detail -->
+    <div id="dayDetail" class="card hidden" style="margin-bottom:100px;">
+      <div class="card-h">
+        <div id="dayDetailDate" style="font-weight:700;font-size:17px;color:var(--text-primary);">—</div>
+        <div style="display:flex;gap:var(--space-sm);">
+          <button id="quickAddNote" class="btn btn-ghost btn-sm">+ Pozn.</button>
+          <button id="quickAddTask" class="btn btn-ghost btn-sm">+ Úkol</button>
+          <button id="quickAddJob" class="btn btn-ghost btn-sm">+ Zak.</button>
+        </div>
+      </div>
+      <div class="card-c">
+        <ul id="dayEvents" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-sm);"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog -->
+<dialog id="eventDlg">
+  <form method="dialog" id="eventForm" style="padding:var(--space-lg);background:var(--bg-card);color:var(--text-primary);border:0.5px solid var(--border-primary);border-radius:var(--radius-lg);min-width:300px;">
+    <h3 id="dlgTitle" style="margin-bottom:var(--space-lg);">Událost</h3>
+    <input type="hidden" name="id"/>
+    <input type="hidden" name="kind"/>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input type="date" name="date" class="form-input" required/>
+    </div>
+    <div class="form-group" id="titleRow">
+      <label class="form-label">Název</label>
+      <input type="text" name="title" class="form-input" placeholder="Název"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Popis</label>
+      <textarea name="description" rows="3" class="form-textarea" placeholder="Podrobnosti"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:var(--space-sm);margin-top:var(--space-lg);">
+      <button value="cancel" class="btn btn-ghost">Zavřít</button>
+      <button id="saveBtn" value="default" class="btn btn-primary">Uložit</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  /* Calendar specific styles */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+  .cal-cell {
+    background: var(--bg-card);
+    border: 0.5px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    min-height: 68px;
+    position: relative;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .cal-cell:hover {
+    transform: translateY(-1px);
+    border-color: var(--mint-border);
+    background: var(--bg-card-hover);
+  }
+  .cal-cell.muted {
+    opacity: 0.45;
+  }
+  .cal-date {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  .cal-events {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    background: var(--mint);
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+  .badge.task {
+    background: #2d6cdf;
+    color: #ffffff;
+  }
+  .badge.job {
+    background: #9b59b6;
+    color: #ffffff;
+  }
+  .cal-cell.selected {
+    outline: 2px solid var(--mint);
+    outline-offset: 2px;
+  }
+  .day-detail.hidden {
+    display: none;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .day-event {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    background: var(--bg-tertiary);
+    border: 0.5px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    color: var(--text-primary);
+    transition: all var(--transition);
+  }
+  .day-event:hover {
+    background: var(--bg-elevated);
+    border-color: var(--mint-border);
+  }
+  .day-event .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .day-event .title {
+    font-weight: 600;
+  }
+  .day-event .kind {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  dialog {
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: transparent;
+  }
+</style>
+
+<script>
+const grid = document.getElementById("calendar");
+const label = document.getElementById("monthLabel");
+const dlg = document.getElementById("eventDlg");
+const form = document.getElementById("eventForm");
+const dayDetail = document.getElementById("dayDetail");
+const dayDetailDate = document.getElementById("dayDetailDate");
+const dayEventsList = document.getElementById("dayEvents");
+
+let cur = new Date(); cur.setDate(1);
+let monthItems = []; // cache for current month
+let selectedDate = null;
+
+function fmtMonth(d){return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
+function fmtDayLong(d){return d.toLocaleDateString('cs-CZ',{weekday:'long', day:'numeric', month:'long'});}
+function ymd(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
+
+async function loadMonth() {
+  label.textContent = fmtMonth(cur);
+  grid.innerHTML = "";
+  dayDetail.classList.add('hidden');
+  selectedDate = null;
+
+  const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
+  first.setDate(1-startDow);
+  for (let i=0;i<42;i++){
+    const day = new Date(first); day.setDate(first.getDate()+i);
+    const cell = document.createElement("div");
+    cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
+    cell.innerHTML = `<div class="cal-date">${day.getDate()}.</div><div class="cal-events"></div>`;
+    cell.dataset.date = ymd(day);
+    cell.addEventListener("click", ()=>selectDay(ymd(day), cell));
+    cell.addEventListener("dblclick", ()=>openDlg({date: ymd(day)}));
+    grid.appendChild(cell);
+  }
+  const from = ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+  const to = ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+  const resp = await fetch(`/gd/api/calendar?from=${from}&to=${to}`);
+  const data = await resp.json();
+  monthItems = Array.isArray(data) ? data : (data && (data.items||data.events) ? (data.items||data.events) : []);
+  renderEvents(monthItems);
+}
+
+function renderEvents(items){
+  // clear event pills
+  grid.querySelectorAll(".cal-events").forEach(e=>e.innerHTML="");
+  for (const ev of items){
+    const container = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-events`);
+    if (!container) continue;
+    const pill = document.createElement("div");
+    const kind = ev.kind || ev.type || 'note';
+    pill.className = "badge " + (kind=='task'?'task':(kind=='job'?'job':''));
+    pill.textContent = ev.title || ev.name || ev.description || '(bez názvu)';
+    container.appendChild(pill);
+  }
+}
+
+function selectDay(dateStr, cellEl){
+  // highlight selected cell
+  grid.querySelectorAll(".cal-cell.selected").forEach(c=>c.classList.remove("selected"));
+  if (cellEl) cellEl.classList.add("selected");
+
+  selectedDate = dateStr;
+  const d = new Date(dateStr+"T00:00:00");
+  dayDetailDate.textContent = fmtDayLong(d);
+  // fill list
+  const events = monthItems.filter(x => x.date === dateStr);
+  dayEventsList.innerHTML = "";
+  if (events.length===0){
+    const li = document.createElement("li");
+    li.className = "day-event";
+    li.innerHTML = '<div class="meta"><span class="kind">Žádné události</span></div><div class="actions"><button class="btn" onclick="openDlg({date:selectedDate})">+ Přidat</button></div>';
+    dayEventsList.appendChild(li);
+  } else {
+    for (const ev of events){
+      const li = document.createElement("li");
+      const kind = ev.kind || ev.type || 'note';
+      li.className = "day-event";
+      li.innerHTML = `<div class="meta"><span class="badge ${kind=='task'?'task':(kind=='job'?'job':'')}">${kind}</span><span class="title">${ev.title || ev.name || '(bez názvu)'}</span></div>
+                      <div class="actions">
+                        <button class="btn ghost" onclick='openDlg(${JSON.stringify({id:"__ID__",type:"__K__",date:"__D__",title:"__T__",details:"__DS__"})}
+                          .replace("__ID__", ev.id || "")
+                          .replace("__K__", kind)
+                          .replace("__D__", ev.date || "")
+                          .replace("__T__", (ev.title||ev.name||"").replaceAll("'", "\\'"))
+                          .replace("__DS__", (ev.description||"").replaceAll("'", "\\'"))
+                        )'>Upravit</button>
+                      </div>`;
+      dayEventsList.appendChild(li);
+    }
+  }
+  dayDetail.classList.remove('hidden');
+  // scroll into view on mobile
+  dayDetail.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// dialog logic
+function openDlg(data){
+  const f = form;
+  f.reset();
+  f.kind.value = data.kind || data.type || 'note';
+  f.date.value = data.date || (selectedDate || ymd(new Date()));
+  f.title.value = data.title || data.name || '';
+  f.description.value = data.details || data.description || '';
+  f.id.value = data.id || '';
+  document.getElementById("dlgTitle").textContent = (data.id?'Upravit':'Přidat') + ' ' + (f.kind.value==='task'?'úkol':(f.kind.value==='job'?'zakázku':'poznámku'));
+  dlg.showModal();
+}
+
+form.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(form);
+  const payload = Object.fromEntries(fd.entries());
+  payload.type = payload.kind || payload.type; delete payload.kind; payload.details = payload.description || payload.details || payload.note || ''; delete payload.description; delete payload.note;
+const url = "/gd/api/calendar";
+  let method = "POST";
+  if (payload.id){ method="PATCH"; }
+  const resp = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  if (resp.ok){ dlg.close(); await loadMonth(); if (selectedDate) selectDay(selectedDate, grid.querySelector(`.cal-cell[data-date="${selectedDate}"]`)); }
+  else { alert("Uložení selhalo"); }
+});
+
+document.getElementById("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1); loadMonth();};
+document.getElementById("next").onclick=()=>{cur.setMonth(cur.getMonth()+1); loadMonth();};
+document.getElementById("addNote").onclick=()=>openDlg({type:"note", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addTask").onclick=()=>openDlg({type:"task", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+document.getElementById("addJob").onclick=()=>openDlg({type:"job", date: ymd(new Date(cur.getFullYear(),cur.getMonth(),1))});
+
+document.getElementById("quickAddNote").onclick=()=>openDlg({type:"note", date: selectedDate || ymd(new Date())});
+document.getElementById("quickAddTask").onclick=()=>openDlg({type:"task", date: selectedDate || ymd(new Date())});
+document.getElementById("quickAddJob").onclick=()=>openDlg({type:"job", date: selectedDate || ymd(new Date())});
+
+// auto select today if in current month
+function autoSelectToday(){
+  const today = new Date();
+  if (today.getFullYear()===cur.getFullYear() && today.getMonth()===cur.getMonth()){
+    const ds = ymd(today);
+    const cell = grid.querySelector(`.cal-cell[data-date="${ds}"]`);
+    if (cell) selectDay(ds, cell);
+  }
+}
+
+loadMonth().then(autoSelectToday);
+</script>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="/" class="nav-item">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <div class="nav-label">Přehled</div>
+  </a>
+  <a href="/timesheets.html" class="nav-item">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <div class="nav-label">Výkazy</div>
+  </a>
+  <a href="/calendar.html" class="nav-item active">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <div class="nav-label">Kalendář</div>
+  </a>
+  <a href="/employees.html" class="nav-item">
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <div class="nav-label">Tým</div>
+  </a>
+</nav>
+{% endblock %}
