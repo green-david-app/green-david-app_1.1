@@ -1,49 +1,44 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="page-pad">
-  <div class="tabs sticky">
-    <a href="/calendar">kalendář</a>
-    <a href="/timesheets.html">výkazy hodin</a>
-    <a href="/jobs">zakázky</a>
-    <a href="/tasks">úkoly</a>
-    <a class="active" href="/employees">zaměstnanci</a>
-    <a href="/brigadnici.html">brigádníci</a>
-    <a href="/stock">sklad</a>
-    <a href="/users">uživatelé</a>
-  </div>
-
-  <div class="card card-dark">
-    <div class="card-h"><strong>Nový zaměstnanec</strong></div>
-    <div class="card-c">
-      <div class="row">
-        <input id="newName" type="text" placeholder="Jméno" class="inp" />
-        <select id="newRole" class="inp sel">
-          <option value="zahradník">Zahradník</option>
-          <option value="svářeč">Svářeč</option>
-          <option value="brigádník">Brigádník</option>
-          <option value="jiné">Jiné</option>
-        </select>
-        <button id="btnAdd" class="btn btn-primary">Přidat</button>
+<div class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Nový zaměstnanec</div>
+      </div>
+      <div class="card-c">
+        <div class="form-row">
+          <input id="newName" type="text" placeholder="Jméno" class="form-input" style="flex:2;" />
+          <select id="newRole" class="form-select" style="flex:1;">
+            <option value="zahradník">Zahradník</option>
+            <option value="svářeč">Svářeč</option>
+            <option value="brigádník">Brigádník</option>
+            <option value="jiné">Jiné</option>
+          </select>
+          <button id="btnAdd" class="btn btn-primary">Přidat</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card card-dark">
-    <div class="card-h">
-      <strong>Seznam</strong>
-      <div class="chips" style="margin-top:8px;">
-        <button data-scope="all" class="chip chip-on">Všichni</button>
-        <button data-scope="employees" class="chip">zaměstnanci</button>
-        <button data-scope="brig" class="chip">brigádníci</button>
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Seznam</div>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <button data-scope="all" class="btn btn-sm chip-on" style="background:rgba(74, 222, 128, 0.1); color:#4ade80; border-color:rgba(74, 222, 128, 0.3);">Všichni</button>
+          <button data-scope="employees" class="btn btn-sm btn-ghost">zaměstnanci</button>
+          <button data-scope="brig" class="btn btn-sm btn-ghost">brigádníci</button>
+        </div>
       </div>
-    </div>
-    <div class="card-c">
-      <table class="tbl">
-        <thead>
-          <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
-        </thead>
-        <tbody id="listBody"></tbody>
-      </table>
+      <div class="card-c">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>ID</th><th>Jméno</th><th>Role</th><th style="width:220px"></th></tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -73,8 +68,14 @@
   });
 
   chips.forEach(chip => chip.addEventListener('click', ()=>{
-    chips.forEach(c=>c.classList.remove('chip-on'));
+    chips.forEach(c=>{
+      c.classList.remove('chip-on');
+      c.className = 'btn btn-sm btn-ghost';
+    });
     chip.classList.add('chip-on');
+    chip.style.background = 'rgba(74, 222, 128, 0.1)';
+    chip.style.color = '#4ade80';
+    chip.style.borderColor = 'rgba(74, 222, 128, 0.3)';
     scope = chip.getAttribute('data-scope');
     render();
   }));

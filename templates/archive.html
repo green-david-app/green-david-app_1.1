@@ -2,35 +2,54 @@
 {% extends "layout.html" %}
 {% block title %}archiv zakázek{% endblock %}
 {% block content %}
-<h1>archiv zakázek</h1>
-<p><a href="/?tab=jobs">← Zpět na zakázky</a></p>
+<div class="page">
+  <div class="container">
+    <h1>Archiv zakázek</h1>
+    <p style="margin-bottom: 24px;"><a href="/?tab=jobs" class="link">← Zpět na zakázky</a></p>
 
-{% if not years or years|length == 0 %}
-<div class="alert">V archivu zatím nic není.</div>
-{% else %}
-  {% for y, items in years %}
-    <h2 style="margin-top:18px">{{ y }}</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
-      {% for ym, jobs in items %}
-        {% set mname = (ym ~ "-01")|tojson %}
-        <div class="card" style="background:#2f3337;border-radius:12px;padding:12px">
-          <div>
-            <strong style="text-transform:capitalize">
-              {{ (ym ~ "-01")|safe and (ym ~ "-01") }}
-            </strong>
-            <span style="opacity:.7">({{ jobs|length }})</span>
-          </div>
-          <ul style="margin:8px 0 0 16px;padding:0">
-            {% for j in jobs %}
-              <li style="margin:4px 0">
-                {{ j.title or 'bez názvu' }}{% if j.client %} · {{ j.client }}{% endif %}{% if j.city %} · {{ j.city }}{% endif %}
-                &nbsp; <a href='/?tab=jobs&jobId={{ j.id }}'>Detail</a> · <a href='/?tab=jobs&editId={{ j.id }}'>Upravit</a>
-              </li>
-            {% endfor %}
-          </ul>
+    {% if not years or years|length == 0 %}
+    <div class="card">
+      <div class="card-c">
+        <div class="empty-state">
+          <div class="empty-text">V archivu zatím nic není.</div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+      {% for y, items in years %}
+        <h2 style="margin-top:24px; margin-bottom:16px; color:#ffffff;">{{ y }}</h2>
+        <div class="archive-grid">
+          {% for ym, jobs in items %}
+            <div class="archive-month-card">
+              <div class="archive-month-head">
+                <div class="archive-month-title">
+                  {% set month_num = (ym|string).split('-')[1]|int %}
+                  {% set month_names = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'] %}
+                  {{ month_names[month_num - 1] }}
+                </div>
+                <div class="archive-month-count">{{ jobs|length }} zakázek</div>
+              </div>
+              <div class="archive-month-body">
+                {% for j in jobs %}
+                  <div class="archive-job-row">
+                    <div class="archive-job-main">
+                      <div class="archive-job-title">{{ j.title or 'bez názvu' }}</div>
+                      <div style="font-size:12px; color:#a3a3a3; margin-top:2px;">
+                        {% if j.client %}{{ j.client }}{% endif %}{% if j.client and j.city %} · {% endif %}{% if j.city %}{{ j.city }}{% endif %}
+                      </div>
+                    </div>
+                    <div class="archive-job-actions">
+                      <a href='/?tab=jobs&jobId={{ j.id }}' class="btn btn-ghost btn-sm">Detail</a>
+                      <a href='/?tab=jobs&editId={{ j.id }}' class="btn btn-ghost btn-sm">Upravit</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
         </div>
       {% endfor %}
-    </div>
-  {% endfor %}
-{% endif %}
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

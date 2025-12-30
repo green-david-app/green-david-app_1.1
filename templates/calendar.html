@@ -1,16 +1,18 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>kalendář</h1>
+<div class="page">
+  <div class="container">
+    <h1>Kalendář</h1>
 
-<div class="cal-controls">
-  <button id="prev">◀</button>
-  <div id="monthLabel" class="month-label"></div>
-  <button id="next">▶</button>
-  <div class="spacer"></div>
-  <button id="addNote" class="btn">+ Poznámka</button>
-  <button id="addTask" class="btn">+ Úkol</button>
-  <button id="addJob" class="btn">+ Zakázka</button>
-</div>
+    <div class="cal-controls">
+      <button id="prev">◀</button>
+      <div id="monthLabel" class="month-label"></div>
+      <button id="next">▶</button>
+      <div class="spacer"></div>
+      <button id="addNote" class="btn btn-primary">+ Poznámka</button>
+      <button id="addTask" class="btn btn-primary">+ Úkol</button>
+      <button id="addJob" class="btn btn-primary">+ Zakázka</button>
+    </div>
 
 <div id="calendar" class="calendar-grid"></div>
 
@@ -42,8 +44,8 @@
       <textarea name="description" rows="3" placeholder="Podrobnosti"></textarea>
     </label>
     <menu>
-      <button value="cancel" class="btn ghost">Zavřít</button>
-      <button id="saveBtn" value="default" class="btn">Uložit</button>
+      <button value="cancel" class="btn btn-ghost">Zavřít</button>
+      <button id="saveBtn" value="default" class="btn btn-primary">Uložit</button>
     </menu>
   </form>
 </dialog>
@@ -54,31 +56,32 @@
   display:grid;
   grid-template-columns: repeat(7, minmax(0,1fr));
   gap:6px;
+  margin-bottom: 16px;
 }
 .cal-cell{
-  background: var(--panel);
-  border:1px solid var(--line);
+  background: #2a2a2a;
+  border:1px solid #333333;
   border-radius:12px;
   padding:8px;
   min-height:68px;
   position:relative;
   cursor:pointer;
-  transition:transform .08s ease;
+  transition:all 0.2s ease;
 }
-.cal-cell:hover{ transform: translateY(-1px); }
+.cal-cell:hover{ transform: translateY(-1px); border-color:#404040; }
 .cal-cell.muted{ opacity:.45; }
-.cal-date{ font-weight:700; font-size:14px; color: var(--txt-inv); }
+.cal-date{ font-weight:700; font-size:14px; color: #ffffff; }
 .cal-events{ display:flex; flex-direction:column; gap:4px; margin-top:4px; }
-.badge{ display:inline-block; padding:2px 6px; border-radius:999px; font-size:12px; background: var(--accent); color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.badge.task{ background:#2d6cdf; }
-.badge.job{ background:#9b59b6; }
-.cal-cell.selected{ outline:2px solid var(--accent); outline-offset:2px; }
+.badge{ display:inline-block; padding:2px 6px; border-radius:999px; font-size:12px; background: #4ade80; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+.badge.task{ background:#3b82f6; color:#ffffff; }
+.badge.job{ background:#a855f7; color:#ffffff; }
+.cal-cell.selected{ outline:2px solid #4ade80; outline-offset:2px; }
 
 /* Day detail strip */
 .day-detail{
   margin-top:12px;
-  background: var(--panel);
-  border:1px solid var(--line);
+  background: #2a2a2a;
+  border:1px solid #333333;
   border-radius:14px;
   padding:10px;
   animation: slideDown .18s ease;
@@ -86,24 +89,33 @@
 @keyframes slideDown{ from{ opacity:0; transform: translateY(-6px)} to{ opacity:1; transform:none } }
 .day-detail.hidden{ display:none; }
 .day-detail-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.day-detail-date{ font-weight:800; font-size:16px; color:var(--txt-inv); }
-.day-detail-actions .btn.ghost{ padding:6px 10px; font-size:12px; }
+.day-detail-date{ font-weight:800; font-size:16px; color:#ffffff; }
+.day-detail-actions .btn.ghost{ padding:6px 10px; font-size:12px; background:#2f2f2f; border:1px solid #333333; color:#d4d4d4; }
+.day-detail-actions .btn.ghost:hover{ background:#333333; border-color:#404040; color:#ffffff; }
 
 .day-events{ list-style:none; padding:0; margin:8px 0 0 0; display:flex; flex-direction:column; gap:8px; }
-.day-event{ display:flex; align-items:center; justify-content:space-between; gap:12px; background: var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:8px 10px; color: var(--txt-inv); }
+.day-event{ display:flex; align-items:center; justify-content:space-between; gap:12px; background: #2f2f2f; border:1px solid #333333; border-radius:12px; padding:8px 10px; color: #ffffff; }
+.day-event:hover{ background:#333333; border-color:#404040; }
 .day-event .meta{ display:flex; align-items:center; gap:8px; }
 .day-event .title{ font-weight:700; }
 .day-event .kind{ font-size:12px; opacity:.8; }
 .day-event .actions button{ padding:6px 8px; font-size:12px; }
 
-.month-label{ font-weight:800; font-size:18px; }
+.month-label{ font-weight:800; font-size:18px; color:#ffffff; }
 .cal-controls{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.cal-controls button{ background:#2f2f2f; border:1px solid #333333; color:#ffffff; border-radius:8px; padding:8px 12px; cursor:pointer; transition:all 0.2s; }
+.cal-controls button:hover{ background:#333333; border-color:#4ade80; color:#4ade80; }
+.cal-controls .btn{ background:#4ade80; color:#1a1a1a; border-color:#4ade80; }
+.cal-controls .btn:hover{ background:#22c55e; }
 .cal-controls .spacer{ flex:1; }
-dialog{ border:none; border-radius:12px; padding:0; }
-dialog form{ padding:14px; background:var(--panel); color:var(--txt-inv); border:1px solid var(--line); border-radius:12px; min-width:300px; }
-dialog input, dialog textarea{ width:100%; }
+dialog{ border:none; border-radius:12px; padding:0; background:transparent; }
+dialog form{ padding:14px; background:#2a2a2a; color:#ffffff; border:1px solid #333333; border-radius:12px; min-width:300px; }
+dialog input, dialog textarea{ width:100%; background:#2f2f2f; border:1px solid #333333; color:#ffffff; border-radius:8px; padding:8px 10px; }
+dialog input:focus, dialog textarea:focus{ outline:none; border-color:#4ade80; box-shadow:0 0 0 3px rgba(74, 222, 128, 0.1); }
+dialog label{ color:#d4d4d4; font-weight:600; display:block; margin-bottom:4px; }
 menu{ display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
-.btn.ghost{ background:transparent; border-color:var(--line); color:var(--txt-inv); }
+.btn.ghost{ background:transparent; border:1px solid #333333; color:#d4d4d4; }
+.btn.ghost:hover{ background:#2f2f2f; border-color:#404040; color:#ffffff; }
 </style>
 
 <script>
@@ -250,4 +262,6 @@ function autoSelectToday(){
 
 loadMonth().then(autoSelectToday);
 </script>
+  </div>
+</div>
 {% endblock %}

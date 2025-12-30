@@ -1,38 +1,41 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="page-pad">
-  <div class="tabs sticky">
-    <a class="tab" href="/calendar.html">kalendář</a>
-    <a class="tab" href="/timesheets.html">výkazy hodin</a>
-    <a class="tab active" href="/?tab=jobs">zakázky</a>
-    <a class="tab" href="/?tab=tasks">úkoly</a>
-    <a class="tab" href="/zamestnanci">zaměstnanci</a>
-    <a class="tab" href="/brigadnici.html">brigádníci</a>
-    <a class="tab" href="/?tab=warehouse">sklad</a>
-    <a class="tab" href="/?tab=users">uživatelé</a>
-  </div>
-
-  <div class="card card-dark">
-    <div class="card-h"><strong>Detail zakázky</strong></div>
-    <div class="card-c" id="jobBox">
-      Načítám…
-    </div>
-  </div>
-
-  <div class="card card-dark">
-    <div class="card-h" style="display:flex;justify-content:space-between;align-items:center">
-      <strong>výkazy pro tuto zakázku</strong>
-      <div>
-        <button id="btnExpCSV" class="ghost small">Export CSV</button>
+<div class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-title">Detail zakázky</div>
+      </div>
+      <div class="card-c" id="jobBox">
+        <div class="loading">
+          <div class="spinner"></div>
+        </div>
       </div>
     </div>
-    <div class="card-c">
-      <table class="tbl">
-        <thead>
-          <tr><th>Datum</th><th>Zaměstnanec</th><th>Hodin</th><th>Místo</th><th>Činnost</th></tr>
-        </thead>
-        <tbody id="tsBody"><tr><td colspan="5" class="muted">Načítám…</td></tr></tbody>
-      </table>
+
+    <div class="card">
+      <div class="card-h" style="display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title">Výkazy pro tuto zakázku</div>
+        <button id="btnExpCSV" class="btn btn-ghost btn-sm">Export CSV</button>
+      </div>
+      <div class="card-c">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Zaměstnanec</th>
+                <th>Hodin</th>
+                <th>Místo</th>
+                <th>Činnost</th>
+              </tr>
+            </thead>
+            <tbody id="tsBody">
+              <tr><td colspan="5" class="text-center text-muted">Načítám…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

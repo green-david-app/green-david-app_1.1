@@ -105,7 +105,7 @@
         return (<div className="card" style={{maxWidth:460, margin:"40px auto"}}><div className="card-h"><div>Přihlášení</div></div><div className="card-c">
           <form onSubmit={submit}><div className="form-row"><input type="email" placeholder="E‑mail" value={email} onChange={e=>setEmail(e.target.value)} required style={{flex:1}}/></div>
           <div className="form-row"><input type="password" placeholder="Heslo" value={pass} onChange={e=>setPass(e.target.value)} required style={{flex:1}}/></div>
-          {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}<div className="form-row" style={{justifyContent:"flex-end"}}><button type="submit">Přihlásit</button></div>
+          {err && <div className="small" style={{color:"#ef4444"}}>{err}</div>}<div className="form-row" style={{justifyContent:"flex-end"}}><button type="submit">Přihlásit</button></div>
           <div className="small">Výchozí admin: <b>admin@greendavid.local</b> / <b>admin123</b>.</div></form></div></div>);
       }
 
@@ -181,7 +181,7 @@
             </div><div className="form-row">
               <input placeholder="Poznámka" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{flex:1}}/>
               <button type="submit">Přidat</button>
-            </div></form>{err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}</div></div>
+            </div></form>{err && <div className="small" style={{color:"#ef4444"}}>{err}</div>}</div></div>
 
           {list.map(z=> (
             <div className="card" key={z.id}>
@@ -449,7 +449,7 @@
               <input type="password" placeholder="Heslo" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/><button type="submit">Vytvořit</button></div></form>
           </div></div>
           <div className="card"><div className="card-h"><div>Uživatelé</div></div><div className="card-c">
-            {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+            {err && <div className="small" style={{color:"#ef4444"}}>{err}</div>}
             <table className="table"><thead><tr><th>ID</th><th>E‑mail</th><th>Jméno</th><th>Role</th><th>Aktivní</th><th></th></tr></thead><tbody>
               {list.map(u=>(<tr key={u.id}><td>{u.id}</td><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td><td>{u.active? "ano":"ne"}</td>
                 <td className="small"><button className="ghost" onClick={()=>setRole(u.id,"worker")}>worker</button>
@@ -518,7 +518,7 @@
               )}
             </div>
             <div className="card-c">
-              {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+              {err && <div className="small" style={{color:"#ef4444"}}>{err}</div>}
               {years.length === 0 && !err && (
                 <div className="small">Zatím žádné dokončené zakázky.</div>
               )}
@@ -654,7 +654,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             <div className="card">
               <div className="card-h"><div>Seznam</div></div>
               <div className="card-c">
-                {err && <div className="small" style={{color:"#ffbcbc"}}>{err}</div>}
+                {err && <div className="small" style={{color:"#ef4444"}}>{err}</div>}
                 <table className="table">
                   <thead><tr><th>ID</th><th>Jméno</th><th>Role</th><th></th></tr></thead>
                   <tbody>
