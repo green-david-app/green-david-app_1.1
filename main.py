@@ -38,34 +38,6 @@ app.config.update(
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 logger.info("🌿 Green David App v2.0 starting...")
 
-# ========== ROUTES PRO NOVÝ REDESIGN v3.0 ==========
-
-@app.route('/')
-def index():
-    """Dashboard - hlavní stránka"""
-    return send_from_directory('.', 'index.html')
-
-@app.route('/jobs')
-def jobs_page():
-    """Stránka zakázek"""
-    return send_from_directory('.', 'jobs.html')
-
-@app.route('/timesheets')
-def timesheets_page():
-    """Výkazy hodin"""
-    return send_from_directory('.', 'timesheets.html')
-
-@app.route('/employees')
-def employees_page():
-    """Zaměstnanci"""
-    return send_from_directory('.', 'employees.html')
-
-@app.route('/calendar')
-def calendar_page():
-    """Kalendář"""
-    return send_from_directory('.', 'calendar.html')
-
-# ========== KONEC NOVÝCH ROUTES ==========
 
 
 @app.route("/archive")
@@ -367,6 +339,22 @@ def _job_title_update_set(params_list, title_value):
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
+
+@app.route("/jobs")
+def jobs_view():
+    """Stránka zakázek"""
+    return send_from_directory(".", "jobs.html")
+
+@app.route("/timesheets")  
+def timesheets_view():
+    """Stránka výkazů hodin"""
+    return send_from_directory(".", "timesheets.html")
+
+@app.route("/calendar")
+def calendar_view():
+    """Stránka kalendáře"""
+    return send_from_directory(".", "calendar.html")
+
 
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
