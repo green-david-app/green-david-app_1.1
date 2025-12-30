@@ -591,6 +591,96 @@ input[type="checkbox"] {
 }
 
 /* ========================================
+   MORE MENU (Expandable)
+   ======================================== */
+
+.more-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 2000;
+  display: none;
+  pointer-events: none;
+}
+
+.more-menu.show {
+  display: block;
+  pointer-events: all;
+}
+
+.more-menu-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.more-menu-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border-top: 0.5px solid var(--border-primary);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.more-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 0.5px solid var(--border-primary);
+}
+
+.more-menu-content {
+  padding: var(--space-md);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.more-menu-item {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 16px;
+  transition: background var(--transition);
+  display: flex;
+  align-items: center;
+}
+
+.more-menu-item:hover {
+  background: var(--bg-panel);
+}
+
+.more-menu-item:active {
+  background: var(--bg-tertiary);
+}
+
+/* ========================================
    TABLE - Dark with Hover States
    ======================================== */
 
