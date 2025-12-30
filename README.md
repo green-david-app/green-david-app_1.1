@@ -1,49 +1,41 @@
-# Green David App - iOS Minimalist Redesign
+# green-david-app – Calendar Buttons Hotfix (DELETE / EDIT / DETAIL)
 
-Kompletně přepracovaná aplikace s novým iOS minimalistickým designem.
+This bundle contains **surgical patches** that fix the calendar buttons without touching layout/CSS.
 
-## Nový Design
+## What’s fixed
 
-- **Dark Theme**: Černé pozadí (#000000) s iOS style
-- **Barvy**: Šedé/antracitové pozadí + mátově zelené akcenty (#4ade80)
-- **Typografie**: Inter font, iOS style velikosti
-- **Komponenty**: Minimalistické, čisté, iOS-inspired
+1) **Wrong path `/gd/api/*` → 404/405**  
+   Adds alias routes so `/gd/api/tasks` works the same as `/api/tasks` (GET, POST, PATCH/PUT, DELETE).
 
-## Struktura
+2) **`POST /api/tasks` 500: `NOT NULL constraint failed: tasks.created_at`**  
+   The insert now sets `created_at` to `CURRENT_TIMESTAMP` so schema changes are not required.
 
-```
-green-david-app-redesigned/
-├── style.css              # Nový iOS minimalist CSS
-├── static/
-│   └── icons.css         # Minimalistické SVG ikony
-├── index.html            # Hlavní React SPA
-├── main.py               # Flask backend
-├── wsgi.py               # WSGI entry point
-├── requirements.txt      # Python závislosti
-└── Procfile             # Render deployment
-```
+3) **PATCH/PUT update for Edit button**  
+   Accepts partial body for fields (`title`, `description`, `status`, `due_date`, `job_id`, `employee_id`).
 
-## Spuštění
+4) **GET detail by `?id=`**  
+   Returns a single task when `id` is provided, keeping current list behaviour otherwise.
 
-```bash
-pip install -r requirements.txt
-python main.py
-```
+## Files in this hotfix
 
-Aplikace poběží na `http://localhost:5000`
+- `patches/api_tasks_patch.py` – drop‑in replacement for your `api_tasks` view function in `main.py`.
+- `patches/gd_api_alias_patch.py` – add once near your Flask routes to expose `/gd/api/tasks` as an alias.
+- `sql/migration.sql` – optional safety migration if you prefer a DB default for `created_at`.
+- `test/http_examples.http` – ready-to-run HTTP examples (Insomnia/VS Code REST Client format).
 
-## Deployment na Render
+## Apply
 
-1. Push do Git repozitáře
-2. Vytvořit nový Web Service na Render
-3. Spojit s repozitářem
-4. Render automaticky detekuje `Procfile`
+1. **Open `main.py`** and replace your existing `api_tasks` function with the one from
+   `patches/api_tasks_patch.py` (it has the same endpoint: `/api/tasks`).
 
-## Změny oproti původní verzi
+2. **Add the alias route** from `patches/gd_api_alias_patch.py` (anywhere after `api_tasks`), so old
+   frontend calls to `/gd/api/tasks` keep working.
 
-- Kompletně nový CSS s iOS style
-- Dark theme s černým pozadím
-- Mátově zelené akcenty místo původních barev
-- Minimalistické ikony
-- Optimalizace pro mobilní zařízení
+3. (Optional) If you want DB-level defaults as well, run `sql/migration.sql` once on your SQLite DB.
 
+4. **Redeploy**. No template/CSS changes required; existing buttons calling
+   `DELETE /gd/api/tasks?id=…`, `PATCH /gd/api/tasks`, etc., will work immediately.
+
+---
+
+**Tip:** If your frontend calls `PUT` instead of `PATCH` for edits, the new handler supports both.
