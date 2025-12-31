@@ -135,7 +135,7 @@
     </div>
 
     <!-- List View (Original) -->
-    <div id="listView" class="ts-list-view">
+    <div id="listView" class="ts-list-view" style="display:block;">
       <div id="weekGrid" class="ts-week-grid"></div>
     </div>
   </div>
@@ -785,7 +785,15 @@
 <script>
 (function(){
   const elWeekGrid = document.getElementById('weekGrid');
-  const elWeekStart = document.getElementById('weekStart');
+  let elWeekStart = document.getElementById('weekStart');
+  // If weekStart doesn't exist, create it
+  if (!elWeekStart) {
+    elWeekStart = document.createElement('input');
+    elWeekStart.type = 'date';
+    elWeekStart.id = 'weekStart';
+    elWeekStart.style.display = 'none';
+    document.body.appendChild(elWeekStart);
+  }
   const elPrev = document.getElementById('prevWeek');
   const elNext = document.getElementById('nextWeek');
   const elFJob = document.getElementById('filterJob');
@@ -1296,7 +1304,21 @@
   // Enhanced renderWeek with heat map and colors
   const originalRenderWeek = renderWeek;
   renderWeek = async function() {
+    // Ensure listView is visible
+    if (elListView) elListView.style.display = 'block';
+    
+    // Call original renderWeek first to show days
     await originalRenderWeek();
+    
+    // Then add enhancements (only if we have weekStart value)
+    if (!elWeekStart || !elWeekStart.value) {
+      // Initialize weekStart if not set
+      const today = new Date();
+      const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+      startMonday.setHours(0,0,0,0);
+      if (elWeekStart) elWeekStart.value = fmtLocal(startMonday);
+    }
+    
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
     const q = new URLSearchParams();
@@ -1304,38 +1326,43 @@
     q.set('to', fmtLocal(end));
     if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
     if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
-    const data = await fetchJSON('/api/timesheets?' + q.toString());
-    const rows = data.rows || [];
-    const byDate = {};
-    rows.forEach(r => {
-      const d = (r.date || '').slice(0, 10);
-      if (!byDate[d]) byDate[d] = [];
-      byDate[d].push(r);
-    });
-    renderHeatMap(byDate);
     
-    // Render project legend
-    const legendEl = document.getElementById('legendItems');
-    if (legendEl) {
-      legendEl.innerHTML = '';
-      const uniqueJobs = [...new Set(rows.map(r => r.job_id).filter(Boolean))];
-      uniqueJobs.forEach(jobId => {
-        const job = jobsList.find(j => j.id === jobId);
-        if (job) {
-          const item = document.createElement('div');
-          item.className = 'ts-legend-item';
-          const color = getProjectColor(jobId);
-          item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${job.title || 'Projekt ' + jobId}</span>`;
-          legendEl.appendChild(item);
-        }
+    try {
+      const data = await fetchJSON('/api/timesheets?' + q.toString());
+      const rows = data.rows || [];
+      const byDate = {};
+      rows.forEach(r => {
+        const d = (r.date || '').slice(0, 10);
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
       });
-    }
-    
-    const totalHours = rows.reduce((sum, r) => sum + (r.hours || 0), 0);
-    const overtime = Math.max(0, totalHours - 40);
-    if (elSummaryOvertime) {
-      elSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
-      elSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+      renderHeatMap(byDate);
+      
+      // Render project legend
+      const legendEl = document.getElementById('legendItems');
+      if (legendEl) {
+        legendEl.innerHTML = '';
+        const uniqueJobs = [...new Set(rows.map(r => r.job_id).filter(Boolean))];
+        uniqueJobs.forEach(jobId => {
+          const job = jobsList.find(j => j.id === jobId);
+          if (job) {
+            const item = document.createElement('div');
+            item.className = 'ts-legend-item';
+            const color = getProjectColor(jobId);
+            item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${job.title || 'Projekt ' + jobId}</span>`;
+            legendEl.appendChild(item);
+          }
+        });
+      }
+      
+      const totalHours = rows.reduce((sum, r) => sum + (r.hours || 0), 0);
+      const overtime = Math.max(0, totalHours - 40);
+      if (elSummaryOvertime) {
+        elSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
+        elSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+      }
+    } catch (e) {
+      console.error('Error in enhanced renderWeek:', e);
     }
   };
   
@@ -1355,10 +1382,26 @@
   }
 
   // Initialize
+  // Ensure listView is visible by default
+  if (elListView) elListView.style.display = 'block';
+  if (elTimelineView) elTimelineView.style.display = 'none';
+  if (elStatsPanel) elStatsPanel.style.display = 'none';
+  
   const today = new Date();
   const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
   startMonday.setHours(0,0,0,0);
-  elWeekStart.value = fmtLocal(startMonday);
+  if (elWeekStart) {
+    elWeekStart.value = fmtLocal(startMonday);
+  } else {
+    // Create hidden weekStart input if it doesn't exist
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'date';
+    hiddenInput.id = 'weekStart';
+    hiddenInput.style.display = 'none';
+    hiddenInput.value = fmtLocal(startMonday);
+    document.body.appendChild(hiddenInput);
+    elWeekStart = hiddenInput;
+  }
   loadFilters().finally(()=>renderWeek().catch(console.error));
 })();
 </script>
