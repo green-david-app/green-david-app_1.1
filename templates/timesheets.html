@@ -31,28 +31,15 @@
       </div>
     </div>
 
-    <!-- Enhanced Filters -->
+    <!-- Filters -->
     <div id="filtersPanel" class="ts-filters-panel" style="display:none;">
       <div class="ts-filter-group">
-        <label>Rychlé filtry:</label>
-        <button class="ts-quick-filter" data-filter="thisWeek">Tento týden</button>
-        <button class="ts-quick-filter" data-filter="lastWeek">Minulý týden</button>
-        <button class="ts-quick-filter" data-filter="thisMonth">Tento měsíc</button>
-        <button class="ts-quick-filter" data-filter="myTime">Můj čas</button>
+        <label>Zaměstnanec:</label>
+        <select id="filterEmployee" class="form-select" style="width:auto;"><option value="">všichni</option></select>
       </div>
       <div class="ts-filter-group">
-        <label>Datum:</label>
-        <input id="dateFrom" type="date" class="form-input"/>
-        <span>—</span>
-        <input id="dateTo" type="date" class="form-input"/>
-      </div>
-      <div class="ts-filter-group">
-        <label>Zaměstnanci (multi-select):</label>
-        <div id="employeeMultiSelect" class="ts-multi-select"></div>
-      </div>
-      <div class="ts-filter-group">
-        <label>Projekty (multi-select):</label>
-        <div id="jobMultiSelect" class="ts-multi-select"></div>
+        <label>Zakázka:</label>
+        <select id="filterJob" class="form-select" style="width:auto;"><option value="">vše</option></select>
       </div>
     </div>
 
@@ -796,9 +783,45 @@
   }
   const elPrev = document.getElementById('prevWeek');
   const elNext = document.getElementById('nextWeek');
-  const elFJob = document.getElementById('filterJob');
-  const elFEmp = document.getElementById('filterEmployee');
+  let elFJob = document.getElementById('filterJob');
+  let elFEmp = document.getElementById('filterEmployee');
   const elWeekLabel = document.getElementById('weekLabel');
+  
+  // Create filter selects if they don't exist
+  if (!elFJob) {
+    const filtersPanel = document.getElementById('filtersPanel');
+    if (filtersPanel) {
+      const jobGroup = filtersPanel.querySelector('.ts-filter-group:last-child');
+      if (jobGroup) {
+        elFJob = document.createElement('select');
+        elFJob.id = 'filterJob';
+        elFJob.className = 'form-select';
+        elFJob.style.width = 'auto';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'vše';
+        elFJob.appendChild(opt);
+        jobGroup.appendChild(elFJob);
+      }
+    }
+  }
+  if (!elFEmp) {
+    const filtersPanel = document.getElementById('filtersPanel');
+    if (filtersPanel) {
+      const empGroup = filtersPanel.querySelector('.ts-filter-group:first-child');
+      if (empGroup) {
+        elFEmp = document.createElement('select');
+        elFEmp.id = 'filterEmployee';
+        elFEmp.className = 'form-select';
+        elFEmp.style.width = 'auto';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'všichni';
+        elFEmp.appendChild(opt);
+        empGroup.appendChild(elFEmp);
+      }
+    }
+  }
   const elSummaryTotal = document.getElementById('summaryTotal');
   const elSummaryAvg = document.getElementById('summaryAvg');
   const elSummaryProjects = document.getElementById('summaryProjects');
@@ -818,7 +841,7 @@
   const elToggleFilters = document.getElementById('toggleFilters');
   
   // Project colors
-  const projectColors = [];
+  const projectColors = {};
   const colorPalette = [
     '#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31',
     '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'
@@ -914,15 +937,24 @@
   }
 
   async function renderWeek(){
+    if (!elWeekStart || !elWeekStart.value) {
+      const today = new Date();
+      const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+      startMonday.setHours(0,0,0,0);
+      if (elWeekStart) {
+        elWeekStart.value = fmtLocal(startMonday);
+      }
+    }
+    
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
-    elWeekLabel.textContent = formatDateRange(start, end);
+    if (elWeekLabel) elWeekLabel.textContent = formatDateRange(start, end);
 
     const q = new URLSearchParams();
     q.set('from', fmtLocal(start));
     q.set('to', fmtLocal(end));
-    if(elFJob.value) q.set('job_id', elFJob.value);
-    if(elFEmp.value) q.set('employee_id', elFEmp.value);
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
 
     const data = await fetchJSON('/api/timesheets?' + q.toString());
     const rows = (data.rows||[]);
@@ -959,9 +991,9 @@
     elSummaryProjects.textContent = projectSet.size;
 
     // Get active employees (those with entries or all if no filter)
-    const activeEmployees = elFEmp.value 
+    const activeEmployees = (elFEmp && elFEmp.value) 
       ? [employeesList.find(e => e.id == elFEmp.value)].filter(Boolean)
-      : employeesList.filter(e => byEmployee[e.id] || !elFEmp.value);
+      : employeesList.filter(e => byEmployee[e.id] || !elFEmp || !elFEmp.value);
     
     // If no employees, show all
     if(activeEmployees.length === 0) activeEmployees.push(...employeesList);
@@ -1158,10 +1190,10 @@
     }
   });
 
-  elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
-  elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
-  elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
-  elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
+  if (elPrev) elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  if (elNext) elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  if (elFJob) elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
+  if (elFEmp) elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
   document.getElementById('exportCsv').addEventListener('click', ()=>{
     const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
     const q = new URLSearchParams(); q.set('from', fmtLocal(d0)); q.set('to', fmtLocal(d6));
@@ -1174,10 +1206,7 @@
     openModal({date: elWeekStart.value});
   });
 
-  // Enhanced Features - Project Colors
-  const projectColors = {};
-  const colorPalette = ['#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31', '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'];
-  
+  // Project Color Function (projectColors and colorPalette already declared above)
   function getProjectColor(jobId) {
     if (!projectColors[jobId]) {
       const index = Object.keys(projectColors).length % colorPalette.length;
@@ -1186,27 +1215,38 @@
     return projectColors[jobId];
   }
   
-  // View Toggle Handlers
-  const elViewList = document.getElementById('viewList');
-  const elViewTimeline = document.getElementById('viewTimeline');
-  const elViewStats = document.getElementById('viewStats');
-  const elListView = document.getElementById('listView');
-  const elTimelineView = document.getElementById('timelineView');
-  const elStatsPanel = document.getElementById('statsPanel');
-  
-  if (elViewList) elViewList.addEventListener('click', () => switchView('list'));
-  if (elViewTimeline) elViewTimeline.addEventListener('click', () => switchView('timeline'));
-  if (elViewStats) elViewStats.addEventListener('click', () => switchView('stats'));
-  
+  // View Toggle Functions
   function switchView(view) {
-    if (elViewList) elViewList.classList.toggle('active', view === 'list');
-    if (elViewTimeline) elViewTimeline.classList.toggle('active', view === 'timeline');
-    if (elViewStats) elViewStats.classList.toggle('active', view === 'stats');
+    currentView = view;
+    
+    // Update button states
+    if (elViewList) {
+      elViewList.classList.remove('active');
+      if (view === 'list') elViewList.classList.add('active');
+    }
+    if (elViewTimeline) {
+      elViewTimeline.classList.remove('active');
+      if (view === 'timeline') elViewTimeline.classList.add('active');
+    }
+    if (elViewStats) {
+      elViewStats.classList.remove('active');
+      if (view === 'stats') elViewStats.classList.add('active');
+    }
+    
+    // Show/hide views
     if (elListView) elListView.style.display = view === 'list' ? 'block' : 'none';
     if (elTimelineView) elTimelineView.style.display = view === 'timeline' ? 'block' : 'none';
     if (elStatsPanel) elStatsPanel.style.display = view === 'stats' ? 'block' : 'none';
-    if (view === 'timeline') renderTimeline();
-    if (view === 'stats') renderStats();
+    
+    // Render specific views
+    if (view === 'timeline') {
+      renderTimeline();
+    } else if (view === 'stats') {
+      renderStats();
+    } else if (view === 'list') {
+      // Ensure week grid is visible
+      if (elWeekGrid) elWeekGrid.style.display = 'block';
+    }
   }
   
   function renderTimeline() {
@@ -1231,14 +1271,10 @@
     if (topEl) topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Top 5 projektů - načítání dat...</div>';
   }
   
-  // Filter Toggle
-  const elToggleFilters = document.getElementById('toggleFilters');
-  const elFiltersPanel = document.getElementById('filtersPanel');
-  if (elToggleFilters && elFiltersPanel) {
-    elToggleFilters.addEventListener('click', () => {
-      elFiltersPanel.style.display = elFiltersPanel.style.display === 'none' ? 'block' : 'none';
-    });
-  }
+  // Attach view toggle listeners (elements already declared above)
+  if (elViewList) elViewList.addEventListener('click', () => switchView('list'));
+  if (elViewTimeline) elViewTimeline.addEventListener('click', () => switchView('timeline'));
+  if (elViewStats) elViewStats.addEventListener('click', () => switchView('stats'));
   
   // Copy Week
   const elCopyWeek = document.getElementById('copyWeek');
@@ -1301,33 +1337,27 @@
     }
   }
   
-  // Enhanced renderWeek with heat map and colors
+  // Enhanced renderWeek with heat map and colors - WRAPPER
   const originalRenderWeek = renderWeek;
   renderWeek = async function() {
-    // Ensure listView is visible
-    if (elListView) elListView.style.display = 'block';
+    // Ensure listView is visible when rendering
+    if (currentView === 'list' && elListView) {
+      elListView.style.display = 'block';
+    }
     
     // Call original renderWeek first to show days
     await originalRenderWeek();
     
-    // Then add enhancements (only if we have weekStart value)
-    if (!elWeekStart || !elWeekStart.value) {
-      // Initialize weekStart if not set
-      const today = new Date();
-      const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
-      startMonday.setHours(0,0,0,0);
-      if (elWeekStart) elWeekStart.value = fmtLocal(startMonday);
-    }
-    
-    const start = monday(parse(elWeekStart.value));
-    const end = addDays(start, 6);
-    const q = new URLSearchParams();
-    q.set('from', fmtLocal(start));
-    q.set('to', fmtLocal(end));
-    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
-    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
-    
+    // Then add enhancements
     try {
+      const start = monday(parse(elWeekStart.value));
+      const end = addDays(start, 6);
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+      
       const data = await fetchJSON('/api/timesheets?' + q.toString());
       const rows = data.rows || [];
       const byDate = {};
@@ -1382,10 +1412,9 @@
   }
 
   // Initialize
-  // Ensure listView is visible by default
-  if (elListView) elListView.style.display = 'block';
-  if (elTimelineView) elTimelineView.style.display = 'none';
-  if (elStatsPanel) elStatsPanel.style.display = 'none';
+  // Set default view to 'list'
+  currentView = 'list';
+  switchView('list');
   
   const today = new Date();
   const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
@@ -1402,7 +1431,28 @@
     document.body.appendChild(hiddenInput);
     elWeekStart = hiddenInput;
   }
-  loadFilters().finally(()=>renderWeek().catch(console.error));
+  
+  // Load filters and render
+  loadFilters().then(() => {
+    // Populate filter selects
+    if (elFJob && jobsList.length > 0) {
+      jobsList.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id;
+        opt.textContent = j.title + (j.code ? (' (' + j.code + ')') : '');
+        elFJob.appendChild(opt);
+      });
+    }
+    if (elFEmp && employeesList.length > 0) {
+      employeesList.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.name;
+        elFEmp.appendChild(opt);
+      });
+    }
+    return renderWeek();
+  }).catch(console.error);
 })();
 </script>
 
