@@ -78,6 +78,15 @@
       localStorage.setItem('appSettings', JSON.stringify(currentSettings));
       showSaveIndicator();
       applySettings();
+      
+      // Dispatch event to notify other pages
+      window.dispatchEvent(new Event('settingsUpdated'));
+      
+      // Also trigger storage event for cross-tab sync
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'appSettings',
+        newValue: JSON.stringify(currentSettings)
+      }));
     } catch (e) {
       console.error('Error saving settings:', e);
       alert('Chyba při ukládání nastavení');
