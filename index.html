@@ -876,9 +876,10 @@
           const barWidth = 280 / data.length;
           return <svg width="100%" height={height} style={{overflow:"visible"}}>
             {data.map((d,i)=>{
-              const barHeight = (d.hours/max)*150;
+              const barHeight = Math.max(0, (d.hours/max)*150);
+              const rectWidth = Math.max(1, barWidth-10);
               return <g key={i}>
-                <rect x={i*barWidth+10} y={height-barHeight-20} width={barWidth-10} height={barHeight} fill={color} opacity={0.8} rx={4}/>
+                <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
                 <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
                 <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
               </g>;
@@ -1086,9 +1087,9 @@
                     <div className="project-progress">
                       <div className="progress-circle" data-progress={progress}>
                         <svg width="60" height="60">
-                          <circle cx="30" cy="30" r="30" strokeDashoffset={188 - (progress/100)*188}></circle>
+                          <circle cx="30" cy="30" r="30" strokeDashoffset={188 - (Math.max(0, Math.min(100, progress))/100)*188}></circle>
                         </svg>
-                        <span>{Math.round(progress)}%</span>
+                        <span>{Math.round(Math.max(0, Math.min(100, progress)))}%</span>
                       </div>
                     </div>
                     {daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 && <div className="project-deadline">
@@ -1305,9 +1306,10 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           const barWidth = 280 / data.length;
           return <svg width="100%" height={height} style={{overflow:"visible"}}>
             {data.map((d,i)=>{
-              const barHeight = (d.hours/max)*150;
+              const barHeight = Math.max(0, (d.hours/max)*150);
+              const rectWidth = Math.max(1, barWidth-10);
               return <g key={i}>
-                <rect x={i*barWidth+10} y={height-barHeight-20} width={barWidth-10} height={barHeight} fill={color} opacity={0.8} rx={4}/>
+                <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
                 <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
                 <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
               </g>;
@@ -1539,16 +1541,16 @@ document.addEventListener('DOMContentLoaded', function(){
       <a href="/timesheets.html" class="more-menu-item">
         <span>výkazy hodin</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/jobs.html" class="more-menu-item">
         <span>zakázky</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('tasks'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/tasks.html" class="more-menu-item">
         <span>úkoly</span>
       </a>
       <a href="/employees.html" class="more-menu-item">
         <span>zaměstnanci</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('warehouse'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/warehouse.html" class="more-menu-item">
         <span>sklad</span>
       </a>
       <a href="/finance.html" class="more-menu-item">
@@ -1560,10 +1562,10 @@ document.addEventListener('DOMContentLoaded', function(){
       <a href="/reports.html" class="more-menu-item">
         <span>📊 reporty</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('archive'); } else { window.location.href='/?tab=archive'; } document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
         <span>archiv zakázek</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('users'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item" id="users-menu-item" style="display:none;">
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('users'); } else { window.location.href='/?tab=users'; } document.getElementById('more-menu').classList.remove('show');" class="more-menu-item" id="users-menu-item" style="display:none;">
         <span>uživatelé</span>
       </a>
       <a href="/settings.html" class="more-menu-item">

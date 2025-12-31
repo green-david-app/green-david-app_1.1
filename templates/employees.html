@@ -804,6 +804,28 @@
     }
   });
 
+  // Load all data
+  async function loadAllData() {
+    try {
+      const [empsRes, jobsRes, tasksRes, timesheetsRes] = await Promise.all([
+        fetchJSON('/api/employees'),
+        fetchJSON('/api/jobs'),
+        fetchJSON('/api/tasks'),
+        fetchJSON('/api/timesheets')
+      ]);
+      
+      employees = empsRes.employees || empsRes || [];
+      jobs = jobsRes.jobs || jobsRes || [];
+      tasks = tasksRes.tasks || tasksRes || [];
+      timesheets = timesheetsRes.rows || timesheetsRes.timesheets || timesheetsRes || [];
+      
+      render();
+    } catch (e) {
+      console.error('Error loading data:', e);
+      showNotification('Chyba při načítání dat: ' + e.message, 'error');
+    }
+  }
+
   // Initialize
   await loadAllData();
 
@@ -867,16 +889,16 @@
       <a href="/timesheets.html" class="more-menu-item">
         <span>výkazy hodin</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/jobs.html" class="more-menu-item">
         <span>zakázky</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('tasks'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/tasks.html" class="more-menu-item">
         <span>úkoly</span>
       </a>
       <a href="/employees.html" class="more-menu-item">
         <span>zaměstnanci</span>
       </a>
-      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('warehouse'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+      <a href="/warehouse.html" class="more-menu-item">
         <span>sklad</span>
       </a>
       <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
