@@ -85,25 +85,20 @@
       <div class="ts-stats-grid">
         <div class="ts-stat-card">
           <div class="ts-stat-title">Rozpad hodin po projektech</div>
-          <div class="ts-chart-container">
-            <canvas id="donutChart"></canvas>
-          </div>
+          <div id="projectBreakdown" class="ts-project-breakdown"></div>
         </div>
         <div class="ts-stat-card">
           <div class="ts-stat-title">Trend hodin (4 týdny)</div>
-          <div class="ts-chart-container">
-            <canvas id="lineChart"></canvas>
-          </div>
+          <div id="trendWeeks" class="ts-trend-weeks"></div>
+          <div id="trendInfo" class="ts-trend-info"></div>
         </div>
         <div class="ts-stat-card">
           <div class="ts-stat-title">Hodiny po dnech</div>
-          <div class="ts-chart-container">
-            <canvas id="dailyBarChart"></canvas>
-          </div>
+          <div id="dailyChart" class="ts-daily-chart"></div>
         </div>
         <div class="ts-stat-card">
           <div class="ts-stat-title">Top projekty tento týden</div>
-          <div id="topProjects" class="ts-top-list"></div>
+          <div id="topProjects" class="ts-top-projects-list"></div>
         </div>
       </div>
     </div>
@@ -649,21 +644,210 @@
     margin-bottom: 12px;
     font-size: 13px;
   }
-  .ts-chart-container {
-    height: 250px;
-    position: relative;
+  /* Project Breakdown */
+  .ts-project-breakdown {
+    padding: 10px 0;
+  }
+  .ts-project-item {
+    margin-bottom: 12px;
+  }
+  .ts-project-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .ts-project-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ts-project-hours {
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .ts-progress-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .ts-progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  /* Trend Weeks */
+  .ts-trend-weeks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .ts-week-stat {
+    text-align: center;
+    padding: 12px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+  }
+  .ts-week-stat.active {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+  .ts-week-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+  }
+  .ts-week-stat.active .ts-week-label {
+    color: var(--text-dark);
+  }
+  .ts-week-hours {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .ts-week-hours.big {
+    font-size: 22px;
+  }
+  .ts-week-stat.active .ts-week-hours {
+    color: var(--text-dark);
+  }
+  .ts-trend-info {
     padding: 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.6;
   }
-  .ts-chart-container canvas {
-    max-height: 100%;
-  }
-  .ts-chart {
+  
+  /* Daily Chart */
+  .ts-daily-chart {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    justify-content: space-around;
     height: 200px;
+    padding: 10px 0;
+  }
+  .ts-day-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .ts-bar-column {
+    width: 100%;
+    max-width: 40px;
+    background: #444;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s ease;
+    min-height: 4px;
+    position: relative;
+  }
+  .ts-bar-column:hover {
+    opacity: 0.8;
+  }
+  .ts-bar-column.low {
+    background: #86efac;
+  }
+  .ts-bar-column.medium {
+    background: #4ade80;
+  }
+  .ts-bar-column.high {
+    background: #16a34a;
+  }
+  .ts-day-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+  }
+  .ts-hours-label {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  
+  /* Top Projects */
+  .ts-top-projects-list {
+    padding: 10px 0;
+  }
+  .ts-top-project-item {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+  }
+  .ts-top-project-item.rank-1 {
+    background: rgba(74, 222, 128, 0.1);
+    border-color: #4ade80;
+  }
+  .ts-rank {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .ts-project-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .ts-project-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .ts-project-bar {
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ts-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 3px;
+  }
+  .ts-hours {
+    font-weight: 700;
+    color: var(--mint);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .ts-no-other-projects {
+    padding: 20px;
+    text-align: center;
     color: var(--text-tertiary);
-    font-size: 12px;
+    font-size: 13px;
+  }
+  
+  /* Empty State */
+  .ts-empty-state {
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .ts-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+  .ts-empty-text {
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    font-size: 14px;
   }
   .ts-top-list {
     display: flex;
@@ -1318,9 +1502,7 @@
     if (view === 'timeline') {
       renderTimeline();
     } else if (view === 'stats') {
-      if (checkChartJS()) {
-        renderStats();
-      }
+      renderStats();
     } else if (view === 'list') {
       // Ensure week grid is visible
       if (elWeekGrid) elWeekGrid.style.display = 'block';
@@ -1435,10 +1617,6 @@
     }
   }
   
-  let donutChart = null;
-  let lineChart = null;
-  let barChart = null;
-  
   async function renderStats() {
     const start = monday(parse(elWeekStart.value));
     const end = addDays(start, 6);
@@ -1452,20 +1630,27 @@
       const data = await fetchJSON('/api/timesheets?' + q.toString());
       const rows = data.rows || [];
       
+      if (rows.length === 0) {
+        renderEmptyState();
+        return;
+      }
+      
       // Calculate project hours
       const projectHours = {};
       const dailyHours = [0, 0, 0, 0, 0, 0, 0];
+      let totalHours = 0;
       
       rows.forEach(row => {
         const hours = row.hours || 0;
+        totalHours += hours;
         const jobId = row.job_id;
         const job = jobsList.find(j => j.id === jobId);
         const jobName = job ? (job.title || 'Projekt ' + jobId) : 'Bez projektu';
         
         if (!projectHours[jobName]) {
-          projectHours[jobName] = 0;
+          projectHours[jobName] = { hours: 0, jobId: jobId };
         }
-        projectHours[jobName] += hours;
+        projectHours[jobName].hours += hours;
         
         // Daily hours
         const date = new Date(row.date);
@@ -1473,193 +1658,215 @@
         dailyHours[dayOfWeek] += hours;
       });
       
-      // Render Donut Chart
-      const donutCtx = document.getElementById('donutChart');
-      if (donutCtx && typeof Chart !== 'undefined') {
-        if (donutChart) donutChart.destroy();
-        const projectLabels = Object.keys(projectHours);
-        const projectData = Object.values(projectHours);
-        
-        if (projectLabels.length === 0) {
-          donutCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Žádná data</div>';
-        } else {
-          donutChart = new Chart(donutCtx, {
-            type: 'doughnut',
-            data: {
-              labels: projectLabels,
-              datasets: [{
-                data: projectData,
-                backgroundColor: [
-                  '#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31',
-                  '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'
-                ],
-                borderWidth: 0
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom',
-                  labels: {
-                    color: '#e8eef2',
-                    font: { size: 11 }
-                  }
-                }
-              }
-            }
-          });
-        }
-      }
+      // Render Project Breakdown
+      renderProjectBreakdown(projectHours, totalHours);
       
-      // Render Line Chart (last 4 weeks)
-      const lineCtx = document.getElementById('lineChart');
-      if (lineCtx && typeof Chart !== 'undefined') {
-        const weeks = [];
-        const weekHours = [];
-        
-        for (let i = 3; i >= 0; i--) {
-          const weekStart = addDays(start, -7 * i);
-          const weekEnd = addDays(weekStart, 6);
-          weeks.push(fmtLocal(weekStart).slice(5, 10));
-          
-          const weekQ = new URLSearchParams();
-          weekQ.set('from', fmtLocal(weekStart));
-          weekQ.set('to', fmtLocal(weekEnd));
-          if(elFJob && elFJob.value) weekQ.set('job_id', elFJob.value);
-          if(elFEmp && elFEmp.value) weekQ.set('employee_id', elFEmp.value);
-          
-          try {
-            const weekData = await fetchJSON('/api/timesheets?' + weekQ.toString());
-            const weekRows = weekData.rows || [];
-            const total = weekRows.reduce((sum, r) => sum + (r.hours || 0), 0);
-            weekHours.push(total);
-          } catch (e) {
-            weekHours.push(0);
-          }
-        }
-        
-        if (lineChart) lineChart.destroy();
-        lineChart = new Chart(lineCtx, {
-          type: 'line',
-          data: {
-            labels: weeks,
-            datasets: [{
-              label: 'Hodiny za týden',
-              data: weekHours,
-              borderColor: '#4ade80',
-              backgroundColor: 'rgba(74, 222, 128, 0.1)',
-              tension: 0.4,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                labels: {
-                  color: '#e8eef2',
-                  font: { size: 11 }
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { color: '#9ca8b3' },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              },
-              x: {
-                ticks: { color: '#9ca8b3' },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              }
-            }
-          }
-        });
-      }
+      // Render Trend (4 weeks)
+      await renderTrend(start);
       
-      // Render Bar Chart (daily hours)
-      const barCtx = document.getElementById('dailyBarChart');
-      if (barCtx && typeof Chart !== 'undefined') {
-        const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
-        if (barChart) barChart.destroy();
-        barChart = new Chart(barCtx, {
-          type: 'bar',
-          data: {
-            labels: dayNames,
-            datasets: [{
-              label: 'Hodiny',
-              data: dailyHours,
-              backgroundColor: '#4ade80',
-              borderRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { color: '#9ca8b3' },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              },
-              x: {
-                ticks: { color: '#9ca8b3' },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              }
-            }
-          }
-        });
-      }
+      // Render Daily Chart
+      renderDailyChart(dailyHours);
       
       // Render Top Projects
-      const topEl = document.getElementById('topProjects');
-      if (topEl) {
-        const sortedProjects = Object.entries(projectHours)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
-        
-        if (sortedProjects.length === 0) {
-          topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Žádné projekty</div>';
-        } else {
-          const maxHours = sortedProjects[0][1];
-          topEl.innerHTML = sortedProjects.map(([name, hours], index) => {
-            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '•';
-            const percent = maxHours > 0 ? (hours / maxHours) * 100 : 0;
-            const color = getProjectColor(jobsList.find(j => j.title === name)?.id || index);
-            return `
-              <div class="ts-top-item">
-                <div style="display:flex;align-items:center;gap:8px;flex:1;">
-                  <span style="font-size:16px;">${medal}</span>
-                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
-                  <span style="font-weight:700;color:${color};">${hours.toFixed(1)}h</span>
-                </div>
-                <div style="margin-top:6px;height:4px;background:var(--bg-tertiary);border-radius:2px;overflow:hidden;">
-                  <div style="height:100%;width:${percent}%;background:${color};transition:width 0.3s;"></div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
+      renderTopProjects(projectHours);
+      
     } catch (e) {
       console.error('Error rendering stats:', e);
-      const donutCtx = document.getElementById('donutChart');
-      const lineCtx = document.getElementById('lineChart');
-      const barCtx = document.getElementById('dailyBarChart');
-      const topEl = document.getElementById('topProjects');
-      if (donutCtx) donutCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
-      if (lineCtx) lineCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
-      if (barCtx) barCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
-      if (topEl) topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
+      renderErrorState();
     }
+  }
+  
+  function renderProjectBreakdown(projectHours, totalHours) {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    if (!breakdownEl) return;
+    
+    if (Object.keys(projectHours).length === 0) {
+      breakdownEl.innerHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Žádné projekty</div></div>';
+      return;
+    }
+    
+    const sorted = Object.entries(projectHours)
+      .sort((a, b) => b[1].hours - a[1].hours);
+    
+    breakdownEl.innerHTML = sorted.map(([name, data]) => {
+      const hours = data.hours;
+      const percent = totalHours > 0 ? (hours / totalHours * 100) : 0;
+      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      
+      return `
+        <div class="ts-project-item">
+          <div class="ts-project-info">
+            <span class="ts-project-name">${name}</span>
+            <span class="ts-project-hours">${hours.toFixed(1)}h (${percent.toFixed(0)}%)</span>
+          </div>
+          <div class="ts-progress-bar">
+            <div class="ts-progress-fill" style="width: ${percent}%; background: ${color}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  async function renderTrend(currentWeekStart) {
+    const trendEl = document.getElementById('trendWeeks');
+    const infoEl = document.getElementById('trendInfo');
+    if (!trendEl || !infoEl) return;
+    
+    const weeks = [];
+    const weekHours = [];
+    const weekLabels = ['Před 3 týdny', 'Před 2 týdny', 'Minulý týden', 'Tento týden'];
+    
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = addDays(currentWeekStart, -7 * i);
+      const weekEnd = addDays(weekStart, 6);
+      weeks.push(weekStart);
+      
+      const weekQ = new URLSearchParams();
+      weekQ.set('from', fmtLocal(weekStart));
+      weekQ.set('to', fmtLocal(weekEnd));
+      if(elFJob && elFJob.value) weekQ.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) weekQ.set('employee_id', elFEmp.value);
+      
+      try {
+        const weekData = await fetchJSON('/api/timesheets?' + weekQ.toString());
+        const weekRows = weekData.rows || [];
+        const total = weekRows.reduce((sum, r) => sum + (r.hours || 0), 0);
+        weekHours.push(total);
+      } catch (e) {
+        weekHours.push(0);
+      }
+    }
+    
+    const maxHours = Math.max(...weekHours, 1);
+    const currentHours = weekHours[3];
+    const lastWeekHours = weekHours[2];
+    const avgHours = weekHours.reduce((a, b) => a + b, 0) / weekHours.length;
+    const diff = currentHours - lastWeekHours;
+    
+    trendEl.innerHTML = weekHours.map((hours, index) => {
+      const isActive = index === 3;
+      return `
+        <div class="ts-week-stat ${isActive ? 'active' : ''}">
+          <div class="ts-week-label">${weekLabels[index]}</div>
+          <div class="ts-week-hours ${isActive ? 'big' : ''}">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+    
+    const trendIcon = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+    const trendText = diff !== 0 
+      ? `${trendIcon} Tento týden: ${Math.abs(diff).toFixed(1)}h ${diff > 0 ? 'více' : 'méně'} oproti minulému`
+      : '→ Stejně jako minulý týden';
+    
+    infoEl.innerHTML = `
+      📊 Průměr: ${avgHours.toFixed(1)}h/týden<br>
+      ${trendText}
+    `;
+  }
+  
+  function renderDailyChart(dailyHours) {
+    const chartEl = document.getElementById('dailyChart');
+    if (!chartEl) return;
+    
+    const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    const maxHours = Math.max(...dailyHours, 8); // Default max 8h
+    
+    chartEl.innerHTML = dailyHours.map((hours, index) => {
+      const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
+      let barClass = 'ts-bar-column';
+      if (hours === 0) barClass += '';
+      else if (hours <= 5) barClass += ' low';
+      else if (hours <= 8) barClass += ' medium';
+      else barClass += ' high';
+      
+      return `
+        <div class="ts-day-bar">
+          <div class="${barClass}" style="height: ${percent}%"></div>
+          <div class="ts-day-label">${dayNames[index]}</div>
+          <div class="ts-hours-label">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  function renderTopProjects(projectHours) {
+    const topEl = document.getElementById('topProjects');
+    if (!topEl) return;
+    
+    const sorted = Object.entries(projectHours)
+      .sort((a, b) => b[1].hours - a[1].hours)
+      .slice(0, 5);
+    
+    if (sorted.length === 0) {
+      topEl.innerHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Žádné projekty</div></div>';
+      return;
+    }
+    
+    const maxHours = sorted[0][1].hours;
+    const medals = ['🥇', '🥈', '🥉'];
+    
+    topEl.innerHTML = sorted.map(([name, data], index) => {
+      const hours = data.hours;
+      const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
+      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      const medal = index < 3 ? medals[index] : '•';
+      const rankClass = index === 0 ? 'rank-1' : '';
+      
+      return `
+        <div class="ts-top-project-item ${rankClass}">
+          <div class="ts-rank">${medal}</div>
+          <div class="ts-project-details">
+            <div class="ts-project-name">${name}</div>
+            <div class="ts-project-bar">
+              <div class="ts-bar-fill" style="width: ${percent}%; background: ${color}"></div>
+            </div>
+          </div>
+          <div class="ts-hours">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+    
+    if (sorted.length === 1) {
+      topEl.innerHTML += '<div class="ts-no-other-projects">💡 Tento týden jen jeden projekt</div>';
+    }
+  }
+  
+  function renderEmptyState() {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    const trendEl = document.getElementById('trendWeeks');
+    const chartEl = document.getElementById('dailyChart');
+    const topEl = document.getElementById('topProjects');
+    const infoEl = document.getElementById('trendInfo');
+    
+    const emptyHTML = `
+      <div class="ts-empty-state">
+        <div class="ts-empty-icon">📊</div>
+        <div class="ts-empty-text">Žádné výkazy tento týden</div>
+        <button class="btn btn-primary" onclick="document.getElementById('addTimesheet').click()">+ Přidat první výkaz</button>
+      </div>
+    `;
+    
+    if (breakdownEl) breakdownEl.innerHTML = emptyHTML;
+    if (trendEl) trendEl.innerHTML = emptyHTML;
+    if (chartEl) chartEl.innerHTML = emptyHTML;
+    if (topEl) topEl.innerHTML = emptyHTML;
+    if (infoEl) infoEl.innerHTML = '';
+  }
+  
+  function renderErrorState() {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    const trendEl = document.getElementById('trendWeeks');
+    const chartEl = document.getElementById('dailyChart');
+    const topEl = document.getElementById('topProjects');
+    const infoEl = document.getElementById('trendInfo');
+    
+    const errorHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Chyba při načítání dat</div></div>';
+    
+    if (breakdownEl) breakdownEl.innerHTML = errorHTML;
+    if (trendEl) trendEl.innerHTML = errorHTML;
+    if (chartEl) chartEl.innerHTML = errorHTML;
+    if (topEl) topEl.innerHTML = errorHTML;
+    if (infoEl) infoEl.innerHTML = '';
   }
   
   // Attach view toggle listeners (elements already declared above)
