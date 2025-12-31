@@ -82,6 +82,43 @@
 
     <!-- Statistics Panel -->
     <div id="statsPanel" class="ts-stats-panel" style="display:none;">
+      <!-- Summary Cards (same as above) -->
+      <div class="ts-summary-bar" style="margin-bottom: 24px;">
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Celkem hodin</div>
+          <div id="statsSummaryTotal" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Průměr na den</div>
+          <div id="statsSummaryAvg" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Aktivních projektů</div>
+          <div id="statsSummaryProjects" class="ts-summary-value">0</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Overtime</div>
+          <div id="statsSummaryOvertime" class="ts-summary-value" style="color:var(--text-secondary);">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">vs. minulý týden</div>
+          <div id="statsSummaryTrend" class="ts-summary-value" style="color:var(--text-secondary);">—</div>
+        </div>
+      </div>
+      
+      <!-- Heat Map -->
+      <div id="statsHeatMapWeek" class="ts-heatmap" style="margin-bottom: 24px;">
+        <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+        <div id="statsHeatMapDays" class="ts-heatmap-days"></div>
+      </div>
+      
+      <!-- Project Legend -->
+      <div id="statsProjectLegend" class="ts-legend" style="margin-bottom: 24px;">
+        <div class="ts-legend-title">Barevné kódování projektů:</div>
+        <div id="statsLegendItems" class="ts-legend-items"></div>
+      </div>
+      
+      <!-- Statistics Grid -->
       <div class="ts-stats-grid">
         <div class="ts-stat-card">
           <div class="ts-stat-title">Rozpad hodin po projektech</div>
@@ -629,8 +666,16 @@
   }
   .ts-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .ts-stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .ts-trend-weeks {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
   .ts-stat-card {
     background: var(--bg-elevated);
@@ -687,7 +732,7 @@
   /* Trend Weeks */
   .ts-trend-weeks {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 8px;
     margin-bottom: 12px;
   }
@@ -697,6 +742,7 @@
     background: var(--bg-tertiary);
     border-radius: 8px;
     border: 1px solid var(--border-primary);
+    min-width: 0;
   }
   .ts-week-stat.active {
     background: var(--mint);
@@ -706,6 +752,10 @@
     font-size: 11px;
     color: var(--text-tertiary);
     margin-bottom: 6px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
   }
   .ts-week-stat.active .ts-week-label {
     color: var(--text-dark);
@@ -714,6 +764,8 @@
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .ts-week-hours.big {
     font-size: 22px;
@@ -729,6 +781,8 @@
     color: var(--text-secondary);
     text-align: center;
     line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   /* Daily Chart */
@@ -1658,11 +1712,40 @@
         dailyHours[dayOfWeek] += hours;
       });
       
+      // Update summary in stats panel
+      const statsSummaryTotal = document.getElementById('statsSummaryTotal');
+      const statsSummaryAvg = document.getElementById('statsSummaryAvg');
+      const statsSummaryProjects = document.getElementById('statsSummaryProjects');
+      const statsSummaryOvertime = document.getElementById('statsSummaryOvertime');
+      const statsSummaryTrend = document.getElementById('statsSummaryTrend');
+      
+      if (statsSummaryTotal) statsSummaryTotal.textContent = totalHours.toFixed(1) + 'h';
+      if (statsSummaryAvg) statsSummaryAvg.textContent = (totalHours / 7).toFixed(1) + 'h';
+      if (statsSummaryProjects) statsSummaryProjects.textContent = Object.keys(projectHours).length;
+      
+      const overtime = Math.max(0, totalHours - 40);
+      if (statsSummaryOvertime) {
+        statsSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
+        statsSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+      }
+      
+      // Render Heat Map for stats
+      const byDate = {};
+      rows.forEach(r => {
+        const d = (r.date || '').slice(0, 10);
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+      renderStatsHeatMap(byDate);
+      
+      // Render Project Legend for stats
+      renderStatsLegend(projectHours);
+      
       // Render Project Breakdown
       renderProjectBreakdown(projectHours, totalHours);
       
       // Render Trend (4 weeks)
-      await renderTrend(start);
+      await renderTrend(start, statsSummaryTrend);
       
       // Render Daily Chart
       renderDailyChart(dailyHours);
@@ -1707,7 +1790,7 @@
     }).join('');
   }
   
-  async function renderTrend(currentWeekStart) {
+  async function renderTrend(currentWeekStart, trendSummaryEl) {
     const trendEl = document.getElementById('trendWeeks');
     const infoEl = document.getElementById('trendInfo');
     if (!trendEl || !infoEl) return;
@@ -1745,9 +1828,10 @@
     
     trendEl.innerHTML = weekHours.map((hours, index) => {
       const isActive = index === 3;
+      const label = weekLabels[index];
       return `
         <div class="ts-week-stat ${isActive ? 'active' : ''}">
-          <div class="ts-week-label">${weekLabels[index]}</div>
+          <div class="ts-week-label" title="${label}">${label}</div>
           <div class="ts-week-hours ${isActive ? 'big' : ''}">${hours.toFixed(1)}h</div>
         </div>
       `;
@@ -1762,6 +1846,59 @@
       📊 Průměr: ${avgHours.toFixed(1)}h/týden<br>
       ${trendText}
     `;
+    
+    // Update summary trend
+    if (trendSummaryEl) {
+      if (diff > 0) {
+        trendSummaryEl.textContent = `+${diff.toFixed(1)}h`;
+        trendSummaryEl.style.color = '#4ade80';
+      } else if (diff < 0) {
+        trendSummaryEl.textContent = `${diff.toFixed(1)}h`;
+        trendSummaryEl.style.color = '#ff4d4d';
+      } else {
+        trendSummaryEl.textContent = '—';
+        trendSummaryEl.style.color = 'var(--text-secondary)';
+      }
+    }
+  }
+  
+  function renderStatsHeatMap(byDate) {
+    const heatMapEl = document.getElementById('statsHeatMapDays');
+    if (!heatMapEl) return;
+    heatMapEl.innerHTML = '';
+    const weekStart = monday(parse(elWeekStart.value));
+    const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i);
+      const dstr = fmtLocal(d);
+      const entries = byDate[dstr] || [];
+      const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const intensity = Math.min((totalHours / 8) * 100, 100);
+      const dayEl = document.createElement('div');
+      dayEl.className = 'ts-heatmap-day';
+      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
+      dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
+      heatMapEl.appendChild(dayEl);
+    }
+  }
+  
+  function renderStatsLegend(projectHours) {
+    const legendEl = document.getElementById('statsLegendItems');
+    if (!legendEl) return;
+    legendEl.innerHTML = '';
+    const projectNames = Object.keys(projectHours);
+    projectNames.forEach(name => {
+      const data = projectHours[name];
+      const job = jobsList.find(j => j.id === data.jobId);
+      if (job || data.jobId) {
+        const item = document.createElement('div');
+        item.className = 'ts-legend-item';
+        const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+        const jobTitle = job ? job.title : name;
+        item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${jobTitle}</span>`;
+        legendEl.appendChild(item);
+      }
+    });
   }
   
   function renderDailyChart(dailyHours) {

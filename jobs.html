@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Zakázky - green david app</title>
+  <link rel="stylesheet" href="/style.css"/>
+  <script src="/app-settings.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0a1628;
+      --bg-secondary: #1a2942;
+      --bg-card: rgba(255,255,255,0.05);
+      --bg-elevated: rgba(255,255,255,0.08);
+      --border-primary: rgba(255,255,255,0.1);
+      --border-medium: rgba(255,255,255,0.15);
+      --text-primary: #e8eef2;
+      --text-secondary: #9ca8b3;
+      --text-tertiary: #6b7580;
+      --mint: #4ade80;
+      --mint-dark: #22c55e;
+      --warning: #fb923c;
+      --danger: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .jobs-page {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .jobs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .jobs-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-view {
+      padding: 10px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .btn-view:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-medium);
+    }
+
+    .btn-view.active {
+      background: var(--mint);
+      border-color: var(--mint);
+      color: #0a0e11;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      padding: 10px 20px;
+      background: var(--mint);
+      border: 1px solid var(--mint);
+      border-radius: 8px;
+      color: #0a0e11;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--mint-dark);
+      border-color: var(--mint-dark);
+    }
+
+    .jobs-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border-primary);
+      transition: all 0.2s;
+    }
+
+    .stat-box:hover {
+      border-color: var(--border-medium);
+      transform: translateY(-2px);
+    }
+
+    .stat-box.warning {
+      border-color: var(--warning);
+      background: rgba(251, 146, 60, 0.1);
+    }
+
+    .stat-box.success {
+      border-color: var(--mint);
+      background: rgba(74, 222, 128, 0.1);
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .filters-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--mint);
+    }
+
+    .filter-select {
+      padding: 10px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--mint);
+    }
+
+    .btn-filter {
+      padding: 10px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-filter:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      overflow-x: auto;
+    }
+
+    .kanban-column {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 500px;
+      border: 1px solid var(--border-primary);
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-primary);
+    }
+
+    .column-header h3 {
+      color: var(--text-primary);
+      font-size: 16px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .column-header .count {
+      background: var(--mint);
+      color: #0a0e11;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 400px;
+    }
+
+    .cards-container.drag-over {
+      background: rgba(74, 222, 128, 0.1);
+      border: 2px dashed var(--mint);
+      border-radius: 8px;
+    }
+
+    .job-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: grab;
+      transition: all 0.3s ease;
+    }
+
+    .job-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-color: var(--mint);
+    }
+
+    .job-card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .job-number {
+      font-size: 12px;
+      color: var(--mint);
+      font-weight: bold;
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .btn-icon:hover {
+      color: var(--text-primary);
+    }
+
+    .job-title {
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    .job-title:hover {
+      color: var(--mint);
+    }
+
+    .job-client, .job-location, .job-deadline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .job-client .icon, .job-location .icon, .job-deadline .icon {
+      width: 16px;
+      text-align: center;
+    }
+
+    .deadline-text {
+      color: var(--warning);
+      font-weight: 500;
+    }
+
+    .job-progress {
+      margin: 16px 0;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--mint-dark));
+      transition: width 0.3s ease;
+    }
+
+    .job-team {
+      margin: 12px 0;
+    }
+
+    .avatars {
+      display: flex;
+      gap: -8px;
+      flex-wrap: wrap;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-primary);
+      background: var(--mint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0a0e11;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .avatar-more {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+      border: 2px solid var(--bg-primary);
+    }
+
+    .job-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-primary);
+    }
+
+    .budget {
+      font-weight: bold;
+      color: var(--mint);
+    }
+
+    .priority {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .priority.high {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+
+    .priority.medium {
+      background: rgba(251, 146, 60, 0.2);
+      color: var(--warning);
+    }
+
+    .priority.low {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--mint);
+    }
+
+    /* Modal */
+    .job-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .job-modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border-primary);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-primary);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--text-primary);
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 32px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-modal:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .detail-section {
+      margin-bottom: 24px;
+    }
+
+    .detail-section h4 {
+      color: var(--text-primary);
+      font-size: 18px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .info-grid > div {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .info-grid strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .finance-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .finance-box {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-primary);
+      text-align: center;
+    }
+
+    .finance-box .label {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .finance-box .amount {
+      color: var(--text-primary);
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .finance-box .amount.warning {
+      color: var(--warning);
+    }
+
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .checklist label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .checklist input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .notes-field {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .notes-field:focus {
+      outline: none;
+      border-color: var(--mint);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 20px;
+      border-top: 1px solid var(--border-primary);
+    }
+
+    .btn-secondary {
+      padding: 10px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-elevated);
+    }
+
+    /* List View */
+    .list-view {
+      display: none;
+    }
+
+    .list-view.active {
+      display: block;
+    }
+
+    .list-view .job-card {
+      margin-bottom: 16px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-tertiary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .kanban-board {
+        grid-template-columns: 1fr;
+      }
+
+      .jobs-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .btn-view {
+        flex: 1;
+      }
+
+      .filters-bar {
+        flex-direction: column;
+      }
+
+      .filter-select {
+        width: 100%;
+      }
+
+      .finance-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(31, 36, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s;
+      border-radius: 8px;
+      min-width: 60px;
+    }
+
+    .nav-item.active {
+      color: var(--mint);
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="jobs-page">
+    <!-- Header -->
+    <div class="jobs-header">
+      <h1>📋 Zakázky</h1>
+      <div class="header-actions">
+        <button class="btn-view active" data-view="kanban">📊 Kanban</button>
+        <button class="btn-view" data-view="list">📝 Seznam</button>
+        <button class="btn-view" data-view="calendar">📅 Timeline</button>
+        <button class="btn-primary" id="btnNewJob">+ Nová zakázka</button>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="jobs-stats">
+      <div class="stat-box">
+        <div class="stat-number" id="statActive">0</div>
+        <div class="stat-label">Aktivní</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="statPlanned">0</div>
+        <div class="stat-label">Plánované</div>
+      </div>
+      <div class="stat-box warning">
+        <div class="stat-number" id="statUrgent">0</div>
+        <div class="stat-label">⚠️ Brzy končí</div>
+      </div>
+      <div class="stat-box success">
+        <div class="stat-number" id="statCompleted">0</div>
+        <div class="stat-label">✅ Dokončené (tento měsíc)</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-box">
+        <input type="search" id="searchInput" placeholder="🔍 Hledat zakázky...">
+      </div>
+      <select class="filter-select" id="filterStatus">
+        <option value="">Všechny zakázky</option>
+        <option value="new">Nové</option>
+        <option value="in-progress">Aktivní</option>
+        <option value="paused">Pozastavené</option>
+        <option value="completed">Dokončené</option>
+      </select>
+      <select class="filter-select" id="filterEmployee">
+        <option value="">Všichni zaměstnanci</option>
+      </select>
+      <select class="filter-select" id="filterPriority">
+        <option value="">Všechny priority</option>
+        <option value="high">🔴 Vysoká</option>
+        <option value="medium">🟡 Střední</option>
+        <option value="low">🟢 Nízká</option>
+      </select>
+      <button class="btn-filter" id="btnResetFilters">Resetovat filtry</button>
+    </div>
+
+    <!-- Kanban Board -->
+    <div id="kanbanView" class="kanban-board">
+      <div class="kanban-column" data-status="new">
+        <div class="column-header">
+          <h3>🆕 Nové</h3>
+          <span class="count" id="count-new">0</span>
+        </div>
+        <div class="cards-container" id="cards-new" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
+      </div>
+
+      <div class="kanban-column" data-status="in-progress">
+        <div class="column-header">
+          <h3>🔨 Aktivní</h3>
+          <span class="count" id="count-in-progress">0</span>
+        </div>
+        <div class="cards-container" id="cards-in-progress" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
+      </div>
+
+      <div class="kanban-column" data-status="paused">
+        <div class="column-header">
+          <h3>⏸️ Pozastavené</h3>
+          <span class="count" id="count-paused">0</span>
+        </div>
+        <div class="cards-container" id="cards-paused" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
+      </div>
+
+      <div class="kanban-column" data-status="completed">
+        <div class="column-header">
+          <h3>✅ Dokončené</h3>
+          <span class="count" id="count-completed">0</span>
+        </div>
+        <div class="cards-container" id="cards-completed" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div id="listView" class="list-view">
+      <div id="listContainer"></div>
+    </div>
+  </div>
+
+  <!-- Job Detail Modal -->
+  <div class="job-modal" id="jobModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Detail zakázky</h2>
+        <button class="close-modal" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Content will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Zavřít</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('dashboard'); } else { window.location.href='/'; }">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="nav-label">Domů</div>
+    </a>
+    <a href="/jobs.html" class="nav-item active">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <div class="nav-label">Zakázky</div>
+    </a>
+    <a href="/timesheets.html" class="nav-item">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="nav-label">Výkazy</div>
+    </a>
+    <a href="/calendar.html" class="nav-item">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="nav-label">Kalendář</div>
+    </a>
+    <a href="#" id="more-menu-btn" class="nav-item" onclick="event.preventDefault(); document.getElementById('more-menu').classList.toggle('show');">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
+      <div class="nav-label">Více</div>
+    </a>
+    <a href="/settings.html" class="nav-item">
+      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
+      <div class="nav-label">Nastavení</div>
+    </a>
+  </nav>
+
+  <script>
+    let jobs = [];
+    let employees = [];
+    let draggedCard = null;
+    let currentView = 'kanban';
+
+    // Status mapping
+    const statusMap = {
+      'Plán': 'new',
+      'Probíhá': 'in-progress',
+      'Pozastaveno': 'paused',
+      'Dokončeno': 'completed'
+    };
+
+    const reverseStatusMap = {
+      'new': 'Plán',
+      'in-progress': 'Probíhá',
+      'paused': 'Pozastaveno',
+      'completed': 'Dokončeno'
+    };
+
+    // Load data
+    async function loadJobs() {
+      try {
+        const res = await fetch('/api/jobs');
+        const data = await res.json();
+        jobs = data.jobs || [];
+        renderJobs();
+        updateStats();
+      } catch (e) {
+        console.error('Error loading jobs:', e);
+      }
+    }
+
+    async function loadEmployees() {
+      try {
+        const res = await fetch('/api/employees');
+        const data = await res.json();
+        employees = data.employees || [];
+        populateEmployeeFilter();
+      } catch (e) {
+        console.error('Error loading employees:', e);
+      }
+    }
+
+    function populateEmployeeFilter() {
+      const select = document.getElementById('filterEmployee');
+      select.innerHTML = '<option value="">Všichni zaměstnanci</option>';
+      employees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = emp.name || `Zaměstnanec ${emp.id}`;
+        select.appendChild(option);
+      });
+    }
+
+    // Render jobs
+    function renderJobs() {
+      const filtered = getFilteredJobs();
+      
+      if (currentView === 'kanban') {
+        renderKanban(filtered);
+      } else if (currentView === 'list') {
+        renderList(filtered);
+      }
+    }
+
+    function getFilteredJobs() {
+      let filtered = [...jobs];
+      
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      if (search) {
+        filtered = filtered.filter(j => 
+          (j.title || '').toLowerCase().includes(search) ||
+          (j.client || '').toLowerCase().includes(search) ||
+          (j.city || '').toLowerCase().includes(search) ||
+          (j.code || '').toLowerCase().includes(search)
+        );
+      }
+
+      const statusFilter = document.getElementById('filterStatus').value;
+      if (statusFilter) {
+        filtered = filtered.filter(j => {
+          const mappedStatus = statusMap[j.status] || 'new';
+          return mappedStatus === statusFilter;
+        });
+      }
+
+      return filtered;
+    }
+
+    function renderKanban(filteredJobs) {
+      const columns = ['new', 'in-progress', 'paused', 'completed'];
+      
+      columns.forEach(status => {
+        const container = document.getElementById(`cards-${status}`);
+        container.innerHTML = '';
+        
+        const columnJobs = filteredJobs.filter(j => {
+          const mappedStatus = statusMap[j.status] || 'new';
+          return mappedStatus === status;
+        });
+
+        columnJobs.forEach(job => {
+          container.appendChild(createJobCard(job));
+        });
+
+        document.getElementById(`count-${status}`).textContent = columnJobs.length;
+      });
+    }
+
+    function renderList(filteredJobs) {
+      const container = document.getElementById('listContainer');
+      container.innerHTML = '';
+      
+      if (filteredJobs.length === 0) {
+        container.innerHTML = '<div class="empty-state">Žádné zakázky</div>';
+        return;
+      }
+
+      filteredJobs.forEach(job => {
+        const card = createJobCard(job);
+        card.style.marginBottom = '16px';
+        container.appendChild(card);
+      });
+    }
+
+    function createJobCard(job) {
+      const card = document.createElement('div');
+      card.className = 'job-card';
+      card.draggable = true;
+      card.dataset.jobId = job.id;
+      
+      const date = job.date ? new Date(job.date).toLocaleDateString('cs-CZ') : '';
+      const daysUntilDeadline = job.date ? Math.ceil((new Date(job.date) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+      const deadlineText = daysUntilDeadline !== null 
+        ? (daysUntilDeadline < 0 ? `Před ${Math.abs(daysUntilDeadline)} dny` : daysUntilDeadline === 0 ? 'Dnes' : `Končí za ${daysUntilDeadline} dní`)
+        : 'Bez termínu';
+
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="job-number">#${job.id}</span>
+          <button class="btn-icon" onclick="event.stopPropagation();">⋮</button>
+        </div>
+        <h4 class="job-title" onclick="openJobDetail(${job.id})">${escapeHtml(job.title || 'Bez názvu')}</h4>
+        ${job.client ? `<div class="job-client"><span class="icon">👤</span><span>${escapeHtml(job.client)}</span></div>` : ''}
+        ${job.city ? `<div class="job-location"><span class="icon">📍</span><span>${escapeHtml(job.city)}</span></div>` : ''}
+        <div class="job-deadline">
+          <span class="icon">📅</span>
+          <span class="deadline-text">${deadlineText}</span>
+        </div>
+        <div class="job-progress">
+          <div class="progress-label">
+            <span>Dokončeno</span>
+            <span>0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="job-meta">
+          <span class="budget">—</span>
+          <span class="priority medium">🟡 Střední</span>
+        </div>
+      `;
+
+      card.addEventListener('dragstart', handleDragStart);
+      card.addEventListener('dragend', handleDragEnd);
+      
+      return card;
+    }
+
+    function updateStats() {
+      const active = jobs.filter(j => statusMap[j.status] === 'in-progress').length;
+      const planned = jobs.filter(j => statusMap[j.status] === 'new').length;
+      const urgent = jobs.filter(j => {
+        if (!j.date) return false;
+        const days = Math.ceil((new Date(j.date) - new Date()) / (1000 * 60 * 60 * 24));
+        return days >= 0 && days <= 7;
+      }).length;
+      const thisMonth = new Date().getMonth();
+      const completed = jobs.filter(j => {
+        if (statusMap[j.status] !== 'completed') return false;
+        if (!j.date) return false;
+        const jobDate = new Date(j.date);
+        return jobDate.getMonth() === thisMonth;
+      }).length;
+
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statPlanned').textContent = planned;
+      document.getElementById('statUrgent').textContent = urgent;
+      document.getElementById('statCompleted').textContent = completed;
+    }
+
+    // Drag & Drop
+    function handleDragStart(e) {
+      draggedCard = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('drag-over'));
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      
+      if (!draggedCard) return;
+      
+      const newStatus = e.currentTarget.closest('.kanban-column').dataset.status;
+      const jobId = parseInt(draggedCard.dataset.jobId);
+      const newStatusLabel = reverseStatusMap[newStatus];
+      
+      // Move card visually
+      e.currentTarget.appendChild(draggedCard);
+      
+      // Update in database
+      updateJobStatus(jobId, newStatusLabel);
+      
+      // Update counts
+      updateColumnCounts();
+      updateStats();
+    }
+
+    async function updateJobStatus(jobId, newStatus) {
+      try {
+        await fetch('/api/jobs', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: jobId, status: newStatus })
+        });
+        
+        // Update local data
+        const job = jobs.find(j => j.id === jobId);
+        if (job) {
+          job.status = newStatus;
+        }
+      } catch (e) {
+        console.error('Error updating job status:', e);
+        alert('Chyba při aktualizaci statusu zakázky');
+      }
+    }
+
+    function updateColumnCounts() {
+      const columns = ['new', 'in-progress', 'paused', 'completed'];
+      columns.forEach(status => {
+        const container = document.getElementById(`cards-${status}`);
+        const count = container.querySelectorAll('.job-card').length;
+        document.getElementById(`count-${status}`).textContent = count;
+      });
+    }
+
+    // View switching
+    document.querySelectorAll('.btn-view').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        currentView = view;
+        
+        document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.getElementById('kanbanView').style.display = view === 'kanban' ? 'grid' : 'none';
+        document.getElementById('listView').classList.toggle('active', view === 'list');
+        
+        renderJobs();
+      });
+    });
+
+    // Filters
+    document.getElementById('searchInput').addEventListener('input', renderJobs);
+    document.getElementById('filterStatus').addEventListener('change', renderJobs);
+    document.getElementById('filterEmployee').addEventListener('change', renderJobs);
+    document.getElementById('filterPriority').addEventListener('change', renderJobs);
+    document.getElementById('btnResetFilters').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterEmployee').value = '';
+      document.getElementById('filterPriority').value = '';
+      renderJobs();
+    });
+
+    // Modal
+    async function openJobDetail(jobId) {
+      const job = jobs.find(j => j.id === jobId);
+      if (!job) {
+        try {
+          const res = await fetch(`/api/jobs/${jobId}`);
+          const data = await res.json();
+          if (data.ok && data.job) {
+            const modal = document.getElementById('jobModal');
+            document.getElementById('modalTitle').textContent = data.job.title || 'Detail zakázky';
+            document.getElementById('modalBody').innerHTML = renderJobDetail(data.job, data.materials || [], data.tools || [], data.assignments || []);
+            modal.classList.add('show');
+          }
+        } catch (e) {
+          console.error('Error loading job detail:', e);
+        }
+        return;
+      }
+
+      const modal = document.getElementById('jobModal');
+      document.getElementById('modalTitle').textContent = job.title || 'Detail zakázky';
+      document.getElementById('modalBody').innerHTML = renderJobDetail(job, [], [], []);
+      modal.classList.add('show');
+    }
+
+    function renderJobDetail(job, materials, tools, assignments) {
+      const date = job.date ? new Date(job.date).toLocaleDateString('cs-CZ') : '';
+      const assignedEmployees = assignments.map(aid => {
+        const emp = employees.find(e => e.id === aid);
+        return emp ? emp.name : `Zaměstnanec ${aid}`;
+      }).join(', ') || 'Žádní';
+
+      return `
+        <div class="detail-section">
+          <h4>📋 Základní info</h4>
+          <div class="info-grid">
+            <div><strong>Číslo zakázky:</strong> #${job.id}</div>
+            <div><strong>Klient:</strong> ${escapeHtml(job.client || '—')}</div>
+            <div><strong>Město:</strong> ${escapeHtml(job.city || '—')}</div>
+            <div><strong>Kód:</strong> ${escapeHtml(job.code || '—')}</div>
+            <div><strong>Datum:</strong> ${date || '—'}</div>
+            <div><strong>Status:</strong> <span class="badge">${escapeHtml(job.status || '—')}</span></div>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h4>👥 Přiřazený tým</h4>
+          <div class="info-grid">
+            <div>${escapeHtml(assignedEmployees)}</div>
+          </div>
+        </div>
+        
+        ${job.note ? `
+        <div class="detail-section">
+          <h4>💬 Poznámky</h4>
+          <div style="color: var(--text-secondary); white-space: pre-wrap;">${escapeHtml(job.note)}</div>
+        </div>
+        ` : ''}
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById('jobModal').classList.remove('show');
+    }
+
+    // New job button
+    document.getElementById('btnNewJob').addEventListener('click', () => {
+      const title = prompt('Název zakázky:');
+      if (!title) return;
+      
+      const client = prompt('Klient:') || '';
+      const city = prompt('Město:') || '';
+      const code = prompt('Kód:') || '';
+      const date = prompt('Datum (DD.MM.RRRR):') || '';
+      
+      createNewJob({ title, client, city, code, date, status: 'Plán' });
+    });
+
+    async function createNewJob(data) {
+      try {
+        const res = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+          await loadJobs();
+          alert('Zakázka vytvořena');
+        } else {
+          alert('Chyba při vytváření zakázky');
+        }
+      } catch (e) {
+        console.error('Error creating job:', e);
+        alert('Chyba při vytváření zakázky');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('jobModal').addEventListener('click', (e) => {
+      if (e.target.id === 'jobModal') {
+        closeModal();
+      }
+    });
+
+    // Initialize
+    loadJobs();
+    loadEmployees();
+  </script>
+</body>
+</html>
+
