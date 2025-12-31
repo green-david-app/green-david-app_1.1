@@ -5,7 +5,14 @@
     <!-- Page Header -->
     <div class="ts-page-header">
       <h1 class="ts-page-title">Výkazy hodin</h1>
-      <p class="ts-page-subtitle">Týdenní přehled - Edituj, přidávej nebo kopíruj záznamy</p>
+      <p class="ts-page-subtitle">Moderní timeline view s barevným kódováním a statistikami</p>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="ts-view-toggle">
+      <button id="viewList" class="ts-view-btn active">📋 Seznam</button>
+      <button id="viewTimeline" class="ts-view-btn">📅 Timeline</button>
+      <button id="viewStats" class="ts-view-btn">📊 Statistiky</button>
     </div>
 
     <!-- Toolbar -->
@@ -16,19 +23,46 @@
         <button id="nextWeek" class="ts-nav-btn">Další →</button>
       </div>
       <div class="ts-actions">
+        <button id="toggleFilters" class="btn btn-secondary">🔍 Filtry</button>
+        <button id="bulkActions" class="btn btn-secondary" style="display:none;">⚙️ Hromadné akce</button>
         <button id="exportCsv" class="btn btn-secondary">📊 Export</button>
+        <button id="copyWeek" class="btn btn-secondary">📋 Kopírovat týden</button>
         <button id="addTimesheet" class="btn btn-primary">+ Přidat výkaz</button>
       </div>
-  </div>
-
-    <!-- Filters (hidden by default, can be shown) -->
-    <div class="ts-filters" style="display:none;">
-      <input id="weekStart" type="date" class="form-input" style="width:auto;"/>
-      <select id="filterJob" class="form-select" style="width:auto;"><option value="">vše</option></select>
-      <select id="filterEmployee" class="form-select" style="width:auto;"><option value="">všichni</option></select>
     </div>
 
-    <!-- Summary Bar -->
+    <!-- Enhanced Filters -->
+    <div id="filtersPanel" class="ts-filters-panel" style="display:none;">
+      <div class="ts-filter-group">
+        <label>Rychlé filtry:</label>
+        <button class="ts-quick-filter" data-filter="thisWeek">Tento týden</button>
+        <button class="ts-quick-filter" data-filter="lastWeek">Minulý týden</button>
+        <button class="ts-quick-filter" data-filter="thisMonth">Tento měsíc</button>
+        <button class="ts-quick-filter" data-filter="myTime">Můj čas</button>
+      </div>
+      <div class="ts-filter-group">
+        <label>Datum:</label>
+        <input id="dateFrom" type="date" class="form-input"/>
+        <span>—</span>
+        <input id="dateTo" type="date" class="form-input"/>
+      </div>
+      <div class="ts-filter-group">
+        <label>Zaměstnanci (multi-select):</label>
+        <div id="employeeMultiSelect" class="ts-multi-select"></div>
+      </div>
+      <div class="ts-filter-group">
+        <label>Projekty (multi-select):</label>
+        <div id="jobMultiSelect" class="ts-multi-select"></div>
+      </div>
+    </div>
+
+    <!-- Project Color Legend -->
+    <div id="projectLegend" class="ts-legend">
+      <div class="ts-legend-title">Barevné kódování projektů:</div>
+      <div id="legendItems" class="ts-legend-items"></div>
+    </div>
+
+    <!-- Enhanced Summary Bar -->
     <div class="ts-summary-bar">
       <div class="ts-summary-item">
         <div class="ts-summary-label">Celkem hodin</div>
@@ -42,12 +76,78 @@
         <div class="ts-summary-label">Aktivních projektů</div>
         <div id="summaryProjects" class="ts-summary-value">0</div>
       </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Overtime</div>
+        <div id="summaryOvertime" class="ts-summary-value" style="color:var(--text-secondary);">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">vs. minulý týden</div>
+        <div id="summaryTrend" class="ts-summary-value" style="color:var(--text-secondary);">—</div>
+      </div>
     </div>
 
-    <!-- Week Grid -->
-    <div id="weekGrid" class="ts-week-grid"></div>
+    <!-- Heat Map Week -->
+    <div id="heatMapWeek" class="ts-heatmap">
+      <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+      <div id="heatMapDays" class="ts-heatmap-days"></div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div id="statsPanel" class="ts-stats-panel" style="display:none;">
+      <div class="ts-stats-grid">
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Rozpad hodin po projektech</div>
+          <div id="donutChart" class="ts-chart"></div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Trend hodin (4 týdny)</div>
+          <div id="lineChart" class="ts-chart"></div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Top 5 projektů tento týden</div>
+          <div id="topProjects" class="ts-top-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div id="timelineView" class="ts-timeline-view" style="display:none;">
+      <div class="ts-timeline-header">
+        <div class="ts-timeline-time-col">Čas</div>
+        <div class="ts-timeline-days">
+          <div class="ts-timeline-day" data-day="0">Po</div>
+          <div class="ts-timeline-day" data-day="1">Út</div>
+          <div class="ts-timeline-day" data-day="2">St</div>
+          <div class="ts-timeline-day" data-day="3">Čt</div>
+          <div class="ts-timeline-day" data-day="4">Pá</div>
+          <div class="ts-timeline-day" data-day="5">So</div>
+          <div class="ts-timeline-day" data-day="6">Ne</div>
+        </div>
+      </div>
+      <div class="ts-timeline-body">
+        <div class="ts-timeline-hours">
+          <!-- Hours 8:00 - 18:00 will be generated -->
+        </div>
+        <div class="ts-timeline-grid">
+          <!-- Timeline blocks will be generated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- List View (Original) -->
+    <div id="listView" class="ts-list-view">
+      <div id="weekGrid" class="ts-week-grid"></div>
+    </div>
   </div>
 </div>
+
+<!-- Floating Action Button (Mobile) -->
+<button id="fabAdd" class="ts-fab" style="display:none;">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+</button>
 
 <!-- Modal -->
 <div id="modal" class="modal-backdrop" style="display:none;">
@@ -86,6 +186,7 @@
     </div>
     <div class="card-f actions">
       <button id="mDelete" class="btn btn-danger" style="margin-right:auto;display:none;">smazat</button>
+      <button id="mCopy" class="btn btn-secondary" style="margin-right:auto;display:none;">📋 Kopírovat</button>
       <button id="mCancel" class="btn btn-ghost">zrušit</button>
       <button id="mSave" class="btn btn-primary">uložit</button>
     </div>
@@ -360,6 +461,325 @@
     border-color: var(--mint);
   }
 
+  /* View Toggle */
+  .ts-view-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .ts-view-btn {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .ts-view-btn:hover {
+    background: var(--bg-elevated);
+    border-color: var(--mint);
+  }
+  .ts-view-btn.active {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+
+  /* Enhanced Filters */
+  .ts-filters-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ts-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .ts-filter-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 120px;
+  }
+  .ts-quick-filter {
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+  .ts-quick-filter:hover {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+  .ts-multi-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ts-multi-select-item {
+    padding: 4px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-multi-select-item.selected {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+
+  /* Project Legend */
+  .ts-legend {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .ts-legend-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .ts-legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ts-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .ts-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* Heat Map */
+  .ts-heatmap {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ts-heatmap-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .ts-heatmap-days {
+    display: flex;
+    gap: 8px;
+  }
+  .ts-heatmap-day {
+    flex: 1;
+    height: 40px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: all 0.2s;
+  }
+
+  /* Statistics Panel */
+  .ts-stats-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .ts-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .ts-stat-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .ts-stat-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .ts-chart {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+  .ts-top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ts-top-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  /* Timeline View */
+  .ts-timeline-view {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .ts-timeline-header {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    background: var(--bg-elevated);
+    border-bottom: 2px solid var(--border-medium);
+  }
+  .ts-timeline-time-col {
+    padding: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 12px;
+    border-right: 1px solid var(--border-medium);
+  }
+  .ts-timeline-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .ts-timeline-day {
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 12px;
+    border-right: 1px solid var(--border-medium);
+  }
+  .ts-timeline-day:last-child {
+    border-right: none;
+  }
+  .ts-timeline-body {
+    position: relative;
+    min-height: 400px;
+  }
+  .ts-timeline-hours {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    border-right: 1px solid var(--border-medium);
+  }
+  .ts-timeline-hour {
+    height: 40px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+  }
+  .ts-timeline-grid {
+    margin-left: 80px;
+    position: relative;
+    min-height: 400px;
+  }
+  .ts-timeline-block {
+    position: absolute;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ts-timeline-block:hover {
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Floating Action Button (Mobile) */
+  .ts-fab {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: var(--text-dark);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.2s;
+  }
+  .ts-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  }
+  @media (min-width: 769px) {
+    .ts-fab {
+      display: none;
+    }
+  }
+
+  /* Bulk Selection */
+  .ts-entry-checkbox {
+    margin-right: 8px;
+  }
+  .ts-bulk-actions-bar {
+    position: fixed;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: var(--mint);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 999;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+  }
+
 </style>
 
 <script>
@@ -374,6 +794,30 @@
   const elSummaryTotal = document.getElementById('summaryTotal');
   const elSummaryAvg = document.getElementById('summaryAvg');
   const elSummaryProjects = document.getElementById('summaryProjects');
+  const elSummaryOvertime = document.getElementById('summaryOvertime');
+  const elSummaryTrend = document.getElementById('summaryTrend');
+  
+  // View elements
+  const elViewList = document.getElementById('viewList');
+  const elViewTimeline = document.getElementById('viewTimeline');
+  const elViewStats = document.getElementById('viewStats');
+  const elListView = document.getElementById('listView');
+  const elTimelineView = document.getElementById('timelineView');
+  const elStatsPanel = document.getElementById('statsPanel');
+  
+  // Filter elements
+  const elFiltersPanel = document.getElementById('filtersPanel');
+  const elToggleFilters = document.getElementById('toggleFilters');
+  
+  // Project colors
+  const projectColors = [];
+  const colorPalette = [
+    '#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31',
+    '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'
+  ];
+  
+  let currentView = 'list';
+  let selectedEntries = new Set();
 
   // modal elems
   const modal = document.getElementById('modal');
@@ -577,6 +1021,7 @@
           entry.style.borderRadius = 'var(--radius-md)';
           entry.style.wordWrap = 'break-word';
           entry.style.overflowWrap = 'break-word';
+          entry.setAttribute('data-job-id', r.job_id || '');
           entry.addEventListener('click', () => {
             openModal({
               id: r.id, employee_id: r.employee_id, job_id: r.job_id, 
@@ -587,9 +1032,12 @@
           const emp = employeesList.find(e => e.id === r.employee_id);
           const empName = (emp ? emp.name : 'Neznámý');
           const jobTitle = (r.job_title || ('Zakázka '+r.job_id));
+          const color = r.job_id ? getProjectColor(r.job_id) : '#4ade80';
+          entry.style.background = color + '33';
+          entry.style.borderColor = color;
           entry.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;gap:8px;">' +
                            '<div style="flex:1;min-width:0;word-wrap:break-word;overflow-wrap:break-word;"><div style="fontWeight:600;color:var(--text-primary);margin-bottom:3px;word-wrap:break-word;overflow-wrap:break-word;font-size:13px;line-height:1.3;">' + empName + '</div>' +
-                           '<div style="fontSize:12px;color:var(--mint);fontWeight:600;">' + (r.hours||0) + 'h</div></div>' +
+                           '<div style="fontSize:12px;color:' + color + ';fontWeight:600;">' + (r.hours||0) + 'h</div></div>' +
                            '</div>' +
                            '<div style="fontSize:11px;color:var(--text-secondary);marginBottom:3px;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;">' + jobTitle + '</div>' +
                            (r.activity ? '<div style="fontSize:10px;color:var(--text-tertiary);word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;">' + r.activity + '</div>' : '');
@@ -718,6 +1166,194 @@
     openModal({date: elWeekStart.value});
   });
 
+  // Enhanced Features - Project Colors
+  const projectColors = {};
+  const colorPalette = ['#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31', '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'];
+  
+  function getProjectColor(jobId) {
+    if (!projectColors[jobId]) {
+      const index = Object.keys(projectColors).length % colorPalette.length;
+      projectColors[jobId] = colorPalette[index];
+    }
+    return projectColors[jobId];
+  }
+  
+  // View Toggle Handlers
+  const elViewList = document.getElementById('viewList');
+  const elViewTimeline = document.getElementById('viewTimeline');
+  const elViewStats = document.getElementById('viewStats');
+  const elListView = document.getElementById('listView');
+  const elTimelineView = document.getElementById('timelineView');
+  const elStatsPanel = document.getElementById('statsPanel');
+  
+  if (elViewList) elViewList.addEventListener('click', () => switchView('list'));
+  if (elViewTimeline) elViewTimeline.addEventListener('click', () => switchView('timeline'));
+  if (elViewStats) elViewStats.addEventListener('click', () => switchView('stats'));
+  
+  function switchView(view) {
+    if (elViewList) elViewList.classList.toggle('active', view === 'list');
+    if (elViewTimeline) elViewTimeline.classList.toggle('active', view === 'timeline');
+    if (elViewStats) elViewStats.classList.toggle('active', view === 'stats');
+    if (elListView) elListView.style.display = view === 'list' ? 'block' : 'none';
+    if (elTimelineView) elTimelineView.style.display = view === 'timeline' ? 'block' : 'none';
+    if (elStatsPanel) elStatsPanel.style.display = view === 'stats' ? 'block' : 'none';
+    if (view === 'timeline') renderTimeline();
+    if (view === 'stats') renderStats();
+  }
+  
+  function renderTimeline() {
+    const timelineGrid = document.querySelector('.ts-timeline-grid');
+    const timelineHours = document.querySelector('.ts-timeline-hours');
+    if (!timelineGrid || !timelineHours) return;
+    timelineHours.innerHTML = '';
+    for (let h = 8; h <= 18; h++) {
+      const hourEl = document.createElement('div');
+      hourEl.className = 'ts-timeline-hour';
+      hourEl.textContent = h + ':00';
+      timelineHours.appendChild(hourEl);
+    }
+  }
+  
+  function renderStats() {
+    const donutEl = document.getElementById('donutChart');
+    const lineEl = document.getElementById('lineChart');
+    const topEl = document.getElementById('topProjects');
+    if (donutEl) donutEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Donut chart - implementace s Chart.js</div>';
+    if (lineEl) lineEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Line chart - implementace s Chart.js</div>';
+    if (topEl) topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Top 5 projektů - načítání dat...</div>';
+  }
+  
+  // Filter Toggle
+  const elToggleFilters = document.getElementById('toggleFilters');
+  const elFiltersPanel = document.getElementById('filtersPanel');
+  if (elToggleFilters && elFiltersPanel) {
+    elToggleFilters.addEventListener('click', () => {
+      elFiltersPanel.style.display = elFiltersPanel.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+  
+  // Copy Week
+  const elCopyWeek = document.getElementById('copyWeek');
+  if (elCopyWeek) {
+    elCopyWeek.addEventListener('click', async () => {
+      if (!confirm('Kopírovat všechny výkazy z tohoto týdne do příštího týdne?')) return;
+      const start = monday(parse(elWeekStart.value));
+      const end = addDays(start, 6);
+      const nextStart = addDays(start, 7);
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      try {
+        const data = await fetchJSON('/api/timesheets?' + q.toString());
+        const rows = data.rows || [];
+        for (const row of rows) {
+          const oldDate = parse(row.date.slice(0, 10));
+          const newDate = addDays(oldDate, 7);
+          const payload = {employee_id: row.employee_id, job_id: row.job_id, date: fmtLocal(newDate), hours: row.hours, place: row.place || '', activity: row.activity || ''};
+          await apiJSON('/api/timesheets', {method: 'POST', body: JSON.stringify(payload)});
+        }
+        alert('Týden úspěšně zkopírován!');
+        elWeekStart.value = fmtLocal(nextStart);
+        renderWeek().catch(console.error);
+      } catch (e) {
+        alert('Chyba při kopírování: ' + e.message);
+      }
+    });
+  }
+  
+  // Copy Entry
+  const elMCopy = document.getElementById('mCopy');
+  if (elMCopy) {
+    elMCopy.addEventListener('click', () => {
+      if (!mId.value) return;
+      mId.value = '';
+      mTitle.textContent = 'nový záznam (kopie)';
+      mDelete.style.display = 'none';
+    });
+  }
+  
+  // Heat Map
+  function renderHeatMap(byDate) {
+    const heatMapEl = document.getElementById('heatMapDays');
+    if (!heatMapEl) return;
+    heatMapEl.innerHTML = '';
+    const weekStart = monday(parse(elWeekStart.value));
+    const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i);
+      const dstr = fmtLocal(d);
+      const entries = byDate[dstr] || [];
+      const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const intensity = Math.min((totalHours / 8) * 100, 100);
+      const dayEl = document.createElement('div');
+      dayEl.className = 'ts-heatmap-day';
+      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
+      dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
+      heatMapEl.appendChild(dayEl);
+    }
+  }
+  
+  // Enhanced renderWeek with heat map and colors
+  const originalRenderWeek = renderWeek;
+  renderWeek = async function() {
+    await originalRenderWeek();
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+    const data = await fetchJSON('/api/timesheets?' + q.toString());
+    const rows = data.rows || [];
+    const byDate = {};
+    rows.forEach(r => {
+      const d = (r.date || '').slice(0, 10);
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(r);
+    });
+    renderHeatMap(byDate);
+    
+    // Render project legend
+    const legendEl = document.getElementById('legendItems');
+    if (legendEl) {
+      legendEl.innerHTML = '';
+      const uniqueJobs = [...new Set(rows.map(r => r.job_id).filter(Boolean))];
+      uniqueJobs.forEach(jobId => {
+        const job = jobsList.find(j => j.id === jobId);
+        if (job) {
+          const item = document.createElement('div');
+          item.className = 'ts-legend-item';
+          const color = getProjectColor(jobId);
+          item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${job.title || 'Projekt ' + jobId}</span>`;
+          legendEl.appendChild(item);
+        }
+      });
+    }
+    
+    const totalHours = rows.reduce((sum, r) => sum + (r.hours || 0), 0);
+    const overtime = Math.max(0, totalHours - 40);
+    if (elSummaryOvertime) {
+      elSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
+      elSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+    }
+  };
+  
+  // FAB Handler
+  const elFab = document.getElementById('fabAdd');
+  if (elFab) {
+    elFab.addEventListener('click', () => {
+      openModal({date: elWeekStart.value});
+    });
+    // Show FAB on mobile
+    if (window.innerWidth < 769) {
+      elFab.style.display = 'flex';
+    }
+    window.addEventListener('resize', () => {
+      elFab.style.display = window.innerWidth < 769 ? 'flex' : 'none';
+    });
+  }
+
   // Initialize
   const today = new Date();
   const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
@@ -733,7 +1369,7 @@
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
     <div class="nav-label">Domů</div>
   </a>
-  <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs');" class="nav-item">
+  <a href="/?tab=jobs" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('jobs'); } else { window.location.href='/?tab=jobs'; }" class="nav-item">
     <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
     <div class="nav-label">Zakázky</div>
   </a>
