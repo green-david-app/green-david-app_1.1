@@ -1200,6 +1200,17 @@
       document.getElementById('modalTitle').textContent = 'Nový úkol';
       document.getElementById('modalBody').innerHTML = renderTaskForm();
       document.getElementById('taskModal').classList.add('show');
+      
+      // Attach recurring checkbox listener
+      const recurringCheckbox = document.getElementById('taskRecurring');
+      if (recurringCheckbox) {
+        recurringCheckbox.addEventListener('change', (e) => {
+          const options = document.getElementById('recurringOptions');
+          if (options) {
+            options.style.display = e.target.checked ? 'block' : 'none';
+          }
+        });
+      }
     }
 
     function openTaskDetail(taskId) {
@@ -1210,6 +1221,11 @@
       document.getElementById('modalTitle').textContent = task.title || 'Detail úkolu';
       document.getElementById('modalBody').innerHTML = renderTaskDetail(task);
       document.getElementById('taskModal').classList.add('show');
+      
+      // Load subtasks for editing
+      const extended = getTaskExtended(taskId) || {};
+      subtasks = extended.subtasks || [];
+      renderSubtasks();
     }
 
     function renderTaskForm() {
@@ -1499,12 +1515,8 @@
       });
     });
 
-    document.getElementById('taskRecurring')?.addEventListener('change', (e) => {
-      const options = document.getElementById('recurringOptions');
-      if (options) {
-        options.style.display = e.target.checked ? 'block' : 'none';
-      }
-    });
+    // Note: taskRecurring element is only available when modal is open
+    // Event listener will be attached when modal opens
 
     // Close modal on backdrop click
     document.getElementById('taskModal').addEventListener('click', (e) => {

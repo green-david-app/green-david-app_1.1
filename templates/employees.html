@@ -3,66 +3,59 @@
 <div class="page">
   <div class="container">
     <!-- Page Header -->
-    <div style="margin-bottom:24px;">
-      <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;color:var(--text-primary);word-wrap:break-word;overflow-wrap:break-word;">Tým</h1>
-      <p style="color:var(--text-tertiary);font-size:14px;word-wrap:break-word;overflow-wrap:break-word;">Správa zaměstnanců a brigádníků</p>
+    <div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1 style="font-size:28px;font-weight:700;margin-bottom:6px;color:var(--text-primary);word-wrap:break-word;overflow-wrap:break-word;">👥 Zaměstnanci</h1>
+        <p style="color:var(--text-tertiary);font-size:14px;word-wrap:break-word;overflow-wrap:break-word;">Moderní HR systém pro správu týmu</p>
+      </div>
+      <button id="btnAddEmployee" class="btn btn-primary" style="padding:10px 20px;">+ Nový zaměstnanec</button>
     </div>
 
-    <!-- Add Employee Card -->
-    <div class="card" style="margin-bottom:var(--space-lg);">
-      <div class="card-h"><strong>Nový zaměstnanec</strong></div>
-      <div class="card-c">
-        <div class="form-row">
-          <input id="newName" type="text" placeholder="Jméno" class="form-input" style="flex:2;" />
-          <select id="newRole" class="form-select" style="flex:2;">
-            <option value="Zahradník">Zahradník</option>
-            <option value="Svářeč">Svářeč</option>
-            <option value="Brigádník">Brigádník</option>
-            <option value="Jiné">Jiné</option>
-          </select>
-          <button id="btnAdd" class="btn btn-primary">Přidat</button>
-        </div>
+    <!-- Filters -->
+    <div style="margin-bottom:24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <div style="flex:1;min-width:200px;">
+        <input type="search" id="searchInput" placeholder="🔍 Hledat zaměstnance..." style="width:100%;padding:10px 16px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+      </div>
+      <div class="chips" style="display:flex;gap:8px;">
+        <button data-scope="all" class="chip chip-on">Všichni</button>
+        <button data-scope="employees" class="chip">Zaměstnanci</button>
+        <button data-scope="brig" class="chip">Brigádníci</button>
       </div>
     </div>
 
-    <!-- List Card -->
-    <div class="card">
-      <div class="card-h">
-        <strong>Seznam</strong>
-        <div class="chips" style="margin-top:8px;display:flex;gap:8px;">
-          <button data-scope="all" class="chip chip-on">Všichni</button>
-          <button data-scope="employees" class="chip">zaměstnanci</button>
-          <button data-scope="brig" class="chip">brigádníci</button>
-        </div>
-      </div>
-      <div class="card-c">
-        <div id="listBody" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
-      </div>
-    </div>
+    <!-- Employee Grid -->
+    <div id="listBody" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-bottom:100px;"></div>
   </div>
 </div>
 
 <style>
+  :root {
+    --mint: #4ade80;
+    --mint-dark: #22c55e;
+    --warning: #fb923c;
+    --danger: #f87171;
+  }
+
   .chips {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
   .chip {
-    padding: 6px 12px;
-    border-radius: var(--radius-md);
-    border: 0.5px solid var(--border-primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
     background: var(--bg-card);
     color: var(--text-secondary);
     font-size: 13px;
     cursor: pointer;
-    transition: all var(--transition);
+    transition: all 0.2s;
     font-weight: 500;
   }
   .chip:hover {
     border-color: var(--mint);
     color: var(--text-primary);
-    background: var(--bg-card-hover);
+    background: var(--bg-elevated);
   }
   .chip.chip-on {
     background: var(--mint);
@@ -70,88 +63,306 @@
     border-color: var(--mint);
     font-weight: 600;
   }
-  .emp-card {
+
+  .employee-card {
     background: var(--bg-card);
-    border: 0.5px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    transition: all var(--transition);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
   }
-  .emp-card:hover {
-    background: var(--bg-card-hover);
-    border-color: var(--mint-border);
-    transform: translateY(-1px);
+  .employee-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-color: var(--mint);
   }
-  .emp-card-header {
+
+  .employee-header {
+    position: relative;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .employee-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--mint);
     display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: var(--space-sm);
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 32px;
+    font-weight: bold;
+    color: #0a0e11;
+    border: 3px solid var(--bg-secondary);
+    position: relative;
   }
-  .emp-card-name {
-    font-size: 17px;
+
+  .status-dot {
+    position: absolute;
+    bottom: 8px;
+    right: calc(50% - 40px + 8px);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-secondary);
+  }
+  .status-dot.online {
+    background: var(--mint);
+  }
+  .status-dot.pause {
+    background: var(--warning);
+  }
+  .status-dot.away {
+    background: var(--danger);
+  }
+  .status-dot.offline {
+    background: #6b7580;
+  }
+
+  .employee-card h3 {
+    font-size: 18px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 4px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    margin: 0 0 4px 0;
+    text-align: center;
   }
-  .emp-card-role {
+
+  .employee-card .role {
     font-size: 14px;
     color: var(--text-secondary);
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    text-align: center;
+    margin: 0 0 16px 0;
   }
-  .emp-card-id {
+
+  .employee-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+  }
+
+  .employee-stats .stat {
+    text-align: center;
+  }
+
+  .employee-stats .label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+
+  .employee-stats .value {
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-primary);
+  }
+
+  .employee-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-primary);
+  }
+
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-icon:hover {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: #0a0e11;
+    transform: scale(1.1);
+  }
+
+  /* Modal */
+  .employee-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .employee-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-primary);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--text-primary);
+  }
+
+  .close-modal {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 32px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+  }
+
+  .close-modal:hover {
+    color: var(--text-primary);
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .detail-section {
+    margin-bottom: 24px;
+  }
+
+  .detail-section h4 {
+    color: var(--text-primary);
+    font-size: 18px;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+  }
+
+  .info-item {
+    padding: 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+  }
+
+  .info-item .label {
     font-size: 12px;
     color: var(--text-tertiary);
-    background: var(--bg-tertiary);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
   }
-  .emp-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: var(--space-sm);
-    padding-top: var(--space-sm);
-    border-top: 0.5px solid var(--border-primary);
+
+  .info-item .value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
   }
-  .emp-actions button {
-    padding: 6px 10px;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+
+  .chart-container {
+    height: 200px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
   }
-  .emp-edit-row {
+
+  .simple-bar-chart {
     display: flex;
-    flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
+    height: 150px;
   }
-  .emp-edit-row input {
-    width: 100%;
-    padding: 6px 10px;
-    font-size: 13px;
+
+  .bar {
+    flex: 1;
+    background: var(--mint);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    position: relative;
   }
+
+  .bar-label {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     #listBody {
       grid-template-columns: 1fr !important;
     }
+    .employee-stats {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
+
+<!-- Employee Detail Modal -->
+<div class="employee-modal" id="employeeModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">Detail zaměstnance</h2>
+      <button class="close-modal" onclick="closeEmployeeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Content will be loaded here -->
+    </div>
+  </div>
+</div>
 
 <script>
 (async function(){
   const listBody = document.getElementById('listBody');
-  const newName = document.getElementById('newName');
-  const newRole = document.getElementById('newRole');
-  const btnAdd = document.getElementById('btnAdd');
+  const searchInput = document.getElementById('searchInput');
+  const btnAddEmployee = document.getElementById('btnAddEmployee');
   const chips = Array.from(document.querySelectorAll('.chips .chip'));
   let scope = 'all';
-  let editId = null;
-  let changeIdFor = null;
+  let employees = [];
+  let jobs = [];
+  let tasks = [];
+  let timesheets = [];
+  let currentEmployeeId = null;
 
   async function fetchJSON(url){ 
     const r = await fetch(url, {credentials: 'same-origin'}); 
@@ -191,22 +402,394 @@
     }
   }
 
-  btnAdd.addEventListener('click', async ()=>{
-    const name = newName.value.trim();
-    const role = newRole.value;
-    if(!name) return;
-    try {
-      await apiJSON('/api/employees', { method:'POST', body: JSON.stringify({ name, role }) });
-      newName.value=''; 
-      await render();
-      showNotification('Zaměstnanec přidán', 'success');
-    } catch(e) {
-      const errorMsg = 'Chyba při přidávání zaměstnance: ' + (e.message || String(e));
-      showNotification(errorMsg, 'error');
-      console.error('Employee add error:', e);
+  async function render(){
+    listBody.innerHTML = '<div class="muted" style="text-align:center;padding:20px;grid-column:1/-1;">Načítám…</div>';
+    
+    let filtered = [...employees];
+    
+    // Filter by scope
+    if(scope==='brig'){
+      filtered = filtered.filter(e => String(e.role||'').toLowerCase()==='brigádník');
+    }else if(scope==='employees'){
+      filtered = filtered.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
     }
-  });
+    
+    // Filter by search
+    const search = searchInput.value.toLowerCase();
+    if(search){
+      filtered = filtered.filter(e => 
+        (e.name || '').toLowerCase().includes(search) ||
+        (e.role || '').toLowerCase().includes(search)
+      );
+    }
+    
+    if(filtered.length===0){
+      listBody.innerHTML = '<div class="muted" style="text-align:center;padding:40px;grid-column:1/-1;">Žádní zaměstnanci</div>';
+      return;
+    }
+    
+    listBody.innerHTML = '';
+    for(const emp of filtered){
+      const card = createEmployeeCard(emp);
+      listBody.appendChild(card);
+    }
+  }
 
+  function createEmployeeCard(emp) {
+    const card = document.createElement('div');
+    card.className = 'employee-card';
+    card.id = `emp-${emp.id}`;
+    
+    const stats = getEmployeeStats(emp.id);
+    const status = getEmployeeStatus(emp.id);
+    const initials = (emp.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+    
+    card.innerHTML = `
+      <div class="employee-header">
+        <div class="employee-avatar">${initials}</div>
+        <div class="status-dot ${status}"></div>
+      </div>
+      <h3>${escapeHtml(emp.name || 'Bez jména')}</h3>
+      <p class="role">${escapeHtml(emp.role || '—')}</p>
+      
+      <div class="employee-stats">
+        <div class="stat">
+          <span class="label">Tento týden</span>
+          <span class="value">${stats.weeklyHours.toFixed(1)}h</span>
+        </div>
+        <div class="stat">
+          <span class="label">Aktivní zakázky</span>
+          <span class="value">${stats.activeJobs}</span>
+        </div>
+        <div class="stat">
+          <span class="label">Úkoly</span>
+          <span class="value">${stats.tasks}</span>
+        </div>
+      </div>
+      
+      <div class="employee-actions">
+        <button class="btn-icon" title="Zavolat" onclick="callEmployee(${emp.id})">📞</button>
+        <button class="btn-icon" title="Email" onclick="emailEmployee(${emp.id})">📧</button>
+        <button class="btn-icon" title="Detail" onclick="openEmployeeDetail(${emp.id})">👤</button>
+      </div>
+    `;
+    
+    return card;
+  }
+
+  function getEmployeeStats(empId) {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weeklyHours = timesheets
+      .filter(ts => ts.employee_id === empId && new Date(ts.date) >= weekStart)
+      .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+    
+    const activeJobs = jobs.filter(j => {
+      const assignments = tasks.filter(t => t.job_id === j.id && t.employee_id === empId);
+      return assignments.length > 0 && j.status !== 'Dokončeno';
+    }).length;
+    
+    const empTasks = tasks.filter(t => t.employee_id === empId && t.status !== 'completed').length;
+    
+    return {
+      weeklyHours,
+      activeJobs,
+      tasks: empTasks
+    };
+  }
+
+  function getEmployeeStatus(empId) {
+    // Simplified status - could be enhanced with real-time data
+    const hasRecentActivity = timesheets.some(ts => {
+      if (ts.employee_id !== empId) return false;
+      const tsDate = new Date(ts.date);
+      const today = new Date();
+      const diff = (today - tsDate) / (1000 * 60 * 60);
+      return diff < 24; // Activity in last 24 hours
+    });
+    
+    return hasRecentActivity ? 'online' : 'offline';
+  }
+
+  function openEmployeeDetail(empId) {
+    currentEmployeeId = empId;
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    
+    document.getElementById('modalTitle').textContent = emp.name || 'Detail zaměstnance';
+    document.getElementById('modalBody').innerHTML = renderEmployeeDetail(emp);
+    document.getElementById('employeeModal').classList.add('show');
+  }
+
+  function renderEmployeeDetail(emp) {
+    const stats = getEmployeeStats(emp.id);
+    const empTimesheets = timesheets.filter(ts => ts.employee_id === emp.id);
+    const empJobs = jobs.filter(j => {
+      const assignments = tasks.filter(t => t.job_id === j.id && t.employee_id === emp.id);
+      return assignments.length > 0;
+    });
+    const empTasks = tasks.filter(t => t.employee_id === emp.id);
+    
+    // Calculate monthly hours
+    const monthlyHours = calculateMonthlyHours(emp.id);
+    
+    const extended = getEmployeeExtended(emp.id) || {};
+    
+    return `
+      <div class="detail-section">
+        <h4>📋 Osobní informace</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Jméno</div>
+            <div class="value">${escapeHtml(emp.name || '—')}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Role</div>
+            <div class="value">${escapeHtml(emp.role || '—')}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Email</div>
+            <div class="value">${escapeHtml(extended.email || '—')}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Telefon</div>
+            <div class="value">${escapeHtml(extended.phone || '—')}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Adresa</div>
+            <div class="value">${escapeHtml(extended.address || '—')}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>💼 Smlouva</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Typ smlouvy</div>
+            <div class="value">${escapeHtml(extended.contractType || 'HPP')}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Začátek</div>
+            <div class="value">${extended.contractStart ? new Date(extended.contractStart).toLocaleDateString('cs-CZ') : '—'}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Sazba</div>
+            <div class="value">${extended.hourlyRate ? extended.hourlyRate + ' Kč/h' : '—'}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>📊 Statistiky</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Tento týden</div>
+            <div class="value">${stats.weeklyHours.toFixed(1)}h</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Aktivní zakázky</div>
+            <div class="value">${stats.activeJobs}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Otevřené úkoly</div>
+            <div class="value">${stats.tasks}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Celkem hodin (měsíc)</div>
+            <div class="value">${monthlyHours.toFixed(1)}h</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>📈 Hodiny za měsíc</h4>
+        <div class="chart-container">
+          <div class="simple-bar-chart">
+            ${renderMonthlyChart(emp.id)}
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>📋 Aktivní zakázky</h4>
+        <div class="info-grid">
+          ${empJobs.slice(0, 5).map(j => `
+            <div class="info-item">
+              <div class="label">${escapeHtml(j.title || 'Zakázka ' + j.id)}</div>
+              <div class="value">${escapeHtml(j.status || '—')}</div>
+            </div>
+          `).join('')}
+          ${empJobs.length === 0 ? '<div class="info-item"><div class="value">Žádné aktivní zakázky</div></div>' : ''}
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>✅ Úkoly</h4>
+        <div class="info-grid">
+          ${empTasks.slice(0, 5).map(t => `
+            <div class="info-item">
+              <div class="label">${escapeHtml(t.title || 'Úkol ' + t.id)}</div>
+              <div class="value">${escapeHtml(t.status || '—')}</div>
+            </div>
+          `).join('')}
+          ${empTasks.length === 0 ? '<div class="info-item"><div class="value">Žádné úkoly</div></div>' : ''}
+        </div>
+      </div>
+      
+      <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="assignToJob(${emp.id})">Přiřadit na zakázku</button>
+        <button class="btn btn-secondary" onclick="sendTask(${emp.id})">Odeslat úkol</button>
+        <button class="btn btn-secondary" onclick="viewTimesheets(${emp.id})">Zobrazit výkazy</button>
+        <button class="btn btn-secondary" onclick="editProfile(${emp.id})">Upravit profil</button>
+      </div>
+    `;
+  }
+
+  function calculateMonthlyHours(empId) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return timesheets
+      .filter(ts => {
+        if (ts.employee_id !== empId) return false;
+        const tsDate = new Date(ts.date);
+        return tsDate >= monthStart;
+      })
+      .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+  }
+
+  function renderMonthlyChart(empId) {
+    const now = new Date();
+    const weeks = [];
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - (now.getDay() + 7 * i));
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      const hours = timesheets
+        .filter(ts => {
+          if (ts.employee_id !== empId) return false;
+          const tsDate = new Date(ts.date);
+          return tsDate >= weekStart && tsDate <= weekEnd;
+        })
+        .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+      
+      weeks.push({ hours, label: `T-${i}` });
+    }
+    
+    const maxHours = Math.max(...weeks.map(w => w.hours), 1);
+    
+    return weeks.map((week, idx) => {
+      const height = (week.hours / maxHours) * 100;
+      return `
+        <div class="bar" style="height: ${height}%;">
+          <div class="bar-label">${week.label}<br>${week.hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function getEmployeeExtended(empId) {
+    const key = `employee_extended_${empId}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  }
+
+  function saveEmployeeExtended(empId, data) {
+    const key = `employee_extended_${empId}`;
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function closeEmployeeModal() {
+    document.getElementById('employeeModal').classList.remove('show');
+    currentEmployeeId = null;
+  }
+
+  function callEmployee(empId) {
+    const emp = employees.find(e => e.id === empId);
+    const extended = getEmployeeExtended(empId) || {};
+    const phone = extended.phone || '';
+    if (phone) {
+      window.location.href = `tel:${phone}`;
+    } else {
+      alert('Telefonní číslo není k dispozici');
+    }
+  }
+
+  function emailEmployee(empId) {
+    const emp = employees.find(e => e.id === empId);
+    const extended = getEmployeeExtended(empId) || {};
+    const email = extended.email || '';
+    if (email) {
+      window.location.href = `mailto:${email}`;
+    } else {
+      alert('Email není k dispozici');
+    }
+  }
+
+  function assignToJob(empId) {
+    if (jobs.length === 0) {
+      alert('Nejsou k dispozici žádné zakázky');
+      return;
+    }
+    const jobOptions = jobs.map(j => `${j.id}: ${j.title || 'Zakázka ' + j.id}`).join('\n');
+    const jobId = prompt(`Vyberte zakázku (ID):\n${jobOptions}`);
+    if (jobId) {
+      // Create task assignment
+      alert(`Přiřazení na zakázku ${jobId} - funkce bude implementována`);
+    }
+  }
+
+  function sendTask(empId) {
+    const title = prompt('Název úkolu:');
+    if (!title) return;
+    // Create task
+    alert(`Odeslání úkolu "${title}" - funkce bude implementována`);
+  }
+
+  function viewTimesheets(empId) {
+    window.location.href = `/timesheets.html?employee=${empId}`;
+  }
+
+  function editProfile(empId) {
+    const emp = employees.find(e => e.id === empId);
+    const extended = getEmployeeExtended(empId) || {};
+    
+    const email = prompt('Email:', extended.email || '');
+    const phone = prompt('Telefon:', extended.phone || '');
+    const address = prompt('Adresa:', extended.address || '');
+    const contractType = prompt('Typ smlouvy (HPP/DPP/DPČ):', extended.contractType || 'HPP');
+    const hourlyRate = prompt('Sazba (Kč/h):', extended.hourlyRate || '');
+    
+    if (email !== null) {
+      saveEmployeeExtended(empId, {
+        ...extended,
+        email: email || '',
+        phone: phone || '',
+        address: address || '',
+        contractType: contractType || 'HPP',
+        hourlyRate: hourlyRate || ''
+      });
+      openEmployeeDetail(empId);
+      showNotification('Profil upraven', 'success');
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Event listeners
+  searchInput.addEventListener('input', render);
+  
   chips.forEach(chip => chip.addEventListener('click', ()=>{
     chips.forEach(c=>c.classList.remove('chip-on'));
     chip.classList.add('chip-on');
@@ -214,160 +797,15 @@
     render();
   }));
 
-  async function startEdit(e){
-    editId = e.id;
-    render();
-  }
+  // Close modal on backdrop click
+  document.getElementById('employeeModal').addEventListener('click', (e) => {
+    if (e.target.id === 'employeeModal') {
+      closeEmployeeModal();
+    }
+  });
 
-  async function cancelEdit(){
-    editId = null;
-    render();
-  }
-
-  async function saveEdit(e){
-    const nameInput = document.getElementById(`edit-name-${e.id}`);
-    const roleInput = document.getElementById(`edit-role-${e.id}`);
-    if(!nameInput || !roleInput) return;
-    const name = nameInput.value.trim();
-    const role = roleInput.value.trim();
-    if(!name || !role) {
-      showNotification('Vyplňte jméno a roli', 'error');
-      return;
-    }
-    try {
-      await apiJSON('/api/employees', {method:'PATCH', body: JSON.stringify({id:e.id, name, role})});
-      editId = null;
-      await render();
-      showNotification('Zaměstnanec upraven', 'success');
-    } catch(err) {
-      showNotification('Chyba při úpravě: ' + err.message, 'error');
-    }
-  }
-
-  async function startChangeId(e){
-    changeIdFor = e.id;
-    render();
-  }
-
-  async function cancelChangeId(){
-    changeIdFor = null;
-    render();
-  }
-
-  async function saveChangeId(e){
-    const newIdInput = document.getElementById(`change-id-${e.id}`);
-    if(!newIdInput) return;
-    const nid = parseInt(newIdInput.value, 10);
-    if(!nid || nid<=0){
-      showNotification('Zadejte platné číslo ID', 'error');
-      return;
-    }
-    try {
-      await apiJSON('/api/employees/reassign_id', {method:'POST', body: JSON.stringify({old_id:e.id,new_id:nid})});
-      changeIdFor = null;
-      await render();
-      showNotification('ID změněno', 'success');
-    } catch(err) {
-      showNotification('Chyba při změně ID: ' + err.message, 'error');
-    }
-  }
-
-  async function del(id){
-    if(!confirm("Smazat zaměstnance?")) return;
-    try {
-      await apiJSON('/api/employees?id='+id, {method:'DELETE'});
-      await render();
-      showNotification('Zaměstnanec smazán', 'success');
-    } catch(err) {
-      showNotification('Chyba při mazání: ' + err.message, 'error');
-    }
-  }
-
-  async function render(){
-    listBody.innerHTML = '<div class="muted" style="text-align:center;padding:20px;grid-column:1/-1;">Načítám…</div>';
-    const data = await fetchJSON('/api/employees');
-    let rows = data.employees || [];
-    if(scope==='brig'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()==='brigádník');
-    }else if(scope==='employees'){
-      rows = rows.filter(e => String(e.role||'').toLowerCase()!=='brigádník');
-    }
-    if(rows.length===0){
-      listBody.innerHTML = '<div class="muted" style="text-align:center;padding:20px;grid-column:1/-1;">Žádné položky</div>';
-      return;
-    }
-    listBody.innerHTML = '';
-    for(const e of rows){
-      const card = document.createElement('div');
-      card.className = 'emp-card';
-      card.id = `emp-${e.id}`;
-      
-      if(editId === e.id){
-        card.innerHTML = `
-          <div class="emp-card-header">
-            <div>
-              <input id="edit-name-${e.id}" type="text" value="${e.name}" class="form-input" style="width:100%;padding:6px 10px;margin-bottom:8px;"/>
-              <input id="edit-role-${e.id}" type="text" value="${e.role||''}" class="form-input" style="width:100%;padding:6px 10px;"/>
-            </div>
-            <span class="emp-card-id">ID: ${e.id}</span>
-          </div>
-          <div class="emp-actions">
-            <button class="btn btn-primary btn-sm" onclick="window.saveEdit(${e.id})">Uložit</button>
-            <button class="btn btn-ghost btn-sm" onclick="window.cancelEdit()">Zrušit</button>
-          </div>
-        `;
-      } else if(changeIdFor === e.id){
-        card.innerHTML = `
-          <div class="emp-card-header">
-            <div>
-              <div class="emp-card-name">${e.name}</div>
-              <div class="emp-card-role">${e.role||''}</div>
-            </div>
-            <span class="emp-card-id">ID: ${e.id}</span>
-          </div>
-          <div class="emp-edit-row">
-            <input id="change-id-${e.id}" type="number" value="${e.id}" placeholder="Nové ID" class="form-input" style="padding:6px 10px;"/>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary btn-sm" onclick="window.saveChangeId(${e.id})" style="flex:1;">Uložit</button>
-              <button class="btn btn-ghost btn-sm" onclick="window.cancelChangeId()" style="flex:1;">Zrušit</button>
-            </div>
-          </div>
-        `;
-      } else {
-        card.innerHTML = `
-          <div class="emp-card-header">
-            <div>
-              <div class="emp-card-name">${e.name}</div>
-              <div class="emp-card-role">${e.role||''}</div>
-            </div>
-            <span class="emp-card-id">ID: ${e.id}</span>
-          </div>
-          <div class="emp-actions">
-            <button class="btn btn-ghost btn-sm" onclick="window.startEdit(${e.id})" title="Upravit">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="window.startChangeId(${e.id})" title="Změnit ID">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="window.del(${e.id})" title="Smazat" style="color:#ff6b6b;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
-        `;
-      }
-      listBody.appendChild(card);
-    }
-    
-    // Store functions globally for onclick handlers
-    window.startEdit = startEdit;
-    window.cancelEdit = cancelEdit;
-    window.saveEdit = saveEdit;
-    window.startChangeId = startChangeId;
-    window.cancelChangeId = cancelChangeId;
-    window.saveChangeId = saveChangeId;
-    window.del = del;
-  }
-  await render();
+  // Initialize
+  await loadAllData();
 
   // If URL contains #emp-<id>, scroll and highlight
   const hash = window.location.hash;
