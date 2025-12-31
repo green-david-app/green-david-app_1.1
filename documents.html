@@ -717,7 +717,7 @@
         <!-- Content will be loaded here -->
       </div>
       <div style="display:flex;justify-content:flex-end;gap:12px;padding:20px;border-top:1px solid var(--border-primary);">
-        <button class="btn-secondary" onclick="closeFileModal()">Zavřít</button>
+        <button class="btn-secondary" onclick="window.closeFileModal()">Zavřít</button>
         <button class="btn-primary" id="btnSaveFile" onclick="saveFileDetails()">Uložit</button>
       </div>
     </div>
@@ -750,6 +750,52 @@
       <div class="nav-label">Nastavení</div>
     </a>
   </nav>
+
+  <!-- More Menu (Expandable) -->
+  <div id="more-menu" class="more-menu">
+    <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+    <div class="more-menu-panel">
+      <div class="more-menu-header">
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+        <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <div class="more-menu-content">
+        <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+          <span>přehled</span>
+        </a>
+        <a href="/calendar.html" class="more-menu-item">
+          <span>kalendář</span>
+        </a>
+        <a href="/timesheets.html" class="more-menu-item">
+          <span>výkazy hodin</span>
+        </a>
+        <a href="/jobs.html" class="more-menu-item">
+          <span>zakázky</span>
+        </a>
+        <a href="/tasks.html" class="more-menu-item">
+          <span>úkoly</span>
+        </a>
+        <a href="/employees.html" class="more-menu-item">
+          <span>zaměstnanci</span>
+        </a>
+        <a href="/warehouse.html" class="more-menu-item">
+          <span>sklad</span>
+        </a>
+        <a href="/finance.html" class="more-menu-item">
+          <span>💰 finance</span>
+        </a>
+        <a href="/documents.html" class="more-menu-item">
+          <span>📁 dokumenty</span>
+        </a>
+        <a href="/reports.html" class="more-menu-item">
+          <span>📊 reporty</span>
+        </a>
+        <a href="/settings.html" class="more-menu-item">
+          <span>⚙️ nastavení</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script>
     let files = [];
@@ -846,11 +892,11 @@
       const tags = (file.tags || []).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
 
       return `
-        <div class="file-card" data-file-id="${file.id}" onclick="openFileDetail(${file.id})">
+        <div class="file-card" data-file-id="${file.id}" onclick="window.openFileDetail(${file.id})">
           <div class="file-actions">
-            <button class="file-action-btn" onclick="event.stopPropagation(); openFilePreview(${file.id})" title="Náhled">👁️</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); shareFile(${file.id})" title="Sdílet">🔗</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); deleteFile(${file.id})" title="Smazat">🗑️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})" title="Náhled">👁️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})" title="Sdílet">🔗</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})" title="Smazat">🗑️</button>
           </div>
           <div class="file-icon">${icon}</div>
           <h4>${escapeHtml(file.name)}</h4>
@@ -866,7 +912,7 @@
       const date = formatDate(file.created_at || file.uploaded_at);
 
       return `
-        <div class="file-list-item" data-file-id="${file.id}" onclick="openFileDetail(${file.id})" ondblclick="openFilePreview(${file.id})">
+        <div class="file-list-item" data-file-id="${file.id}" onclick="window.openFileDetail(${file.id})" ondblclick="window.openFilePreview(${file.id})">
           <div class="file-list-icon">${icon}</div>
           <div>
             <div style="font-weight:600;color:var(--text-primary);">${escapeHtml(file.name)}</div>
@@ -875,9 +921,9 @@
           <div style="color:var(--text-secondary);font-size:12px;">${size}</div>
           <div style="color:var(--text-secondary);font-size:12px;">${date}</div>
           <div style="display:flex;gap:4px;">
-            <button class="file-action-btn" onclick="event.stopPropagation(); openFilePreview(${file.id})">👁️</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); shareFile(${file.id})">🔗</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); deleteFile(${file.id})">🗑️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})">👁️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})">🔗</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})">🗑️</button>
           </div>
         </div>
       `;
@@ -951,7 +997,7 @@
       }
     }
 
-    function openFilePreview(fileId) {
+    window.openFilePreview = function(fileId) {
       const file = typeof fileId === 'object' ? fileId : files.find(f => f.id === fileId);
       if (!file) return;
 
@@ -974,7 +1020,7 @@
       document.getElementById('previewModal').classList.remove('show');
     }
 
-    function openFileDetail(fileId) {
+    window.openFileDetail = function(fileId) {
       currentFileId = fileId;
       const file = files.find(f => f.id === fileId);
       if (!file) return;
@@ -1047,7 +1093,7 @@
       closeFileModal();
     }
 
-    function shareFile(fileId) {
+    window.shareFile = function(fileId) {
       const file = files.find(f => f.id === fileId);
       if (!file) return;
 
@@ -1103,10 +1149,10 @@
       }
     }
 
-    function closeFileModal() {
+    window.closeFileModal = function() {
       document.getElementById('fileModal').classList.remove('show');
       currentFileId = null;
-    }
+    };
 
     function escapeHtml(text) {
       const div = document.createElement('div');

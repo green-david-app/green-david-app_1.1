@@ -821,13 +821,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle">Detail zakázky</h2>
-        <button class="close-modal" onclick="closeModal()">×</button>
+        <button class="close-modal" onclick="window.closeModal()">×</button>
       </div>
       <div class="modal-body" id="modalBody">
         <!-- Content will be loaded here -->
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal()">Zavřít</button>
+        <button class="btn-secondary" onclick="window.closeModal()">Zavřít</button>
       </div>
     </div>
   </div>
@@ -859,6 +859,52 @@
       <div class="nav-label">Nastavení</div>
     </a>
   </nav>
+
+  <!-- More Menu (Expandable) -->
+  <div id="more-menu" class="more-menu">
+    <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+    <div class="more-menu-panel">
+      <div class="more-menu-header">
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+        <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <div class="more-menu-content">
+        <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+          <span>přehled</span>
+        </a>
+        <a href="/calendar.html" class="more-menu-item">
+          <span>kalendář</span>
+        </a>
+        <a href="/timesheets.html" class="more-menu-item">
+          <span>výkazy hodin</span>
+        </a>
+        <a href="/jobs.html" class="more-menu-item">
+          <span>zakázky</span>
+        </a>
+        <a href="/tasks.html" class="more-menu-item">
+          <span>úkoly</span>
+        </a>
+        <a href="/employees.html" class="more-menu-item">
+          <span>zaměstnanci</span>
+        </a>
+        <a href="/warehouse.html" class="more-menu-item">
+          <span>sklad</span>
+        </a>
+        <a href="/finance.html" class="more-menu-item">
+          <span>💰 finance</span>
+        </a>
+        <a href="/documents.html" class="more-menu-item">
+          <span>📁 dokumenty</span>
+        </a>
+        <a href="/reports.html" class="more-menu-item">
+          <span>📊 reporty</span>
+        </a>
+        <a href="/settings.html" class="more-menu-item">
+          <span>⚙️ nastavení</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script>
     let jobs = [];
@@ -1004,7 +1050,7 @@
           <span class="job-number">#${job.id}</span>
           <button class="btn-icon" onclick="event.stopPropagation();">⋮</button>
         </div>
-        <h4 class="job-title" onclick="openJobDetail(${job.id})">${escapeHtml(job.title || 'Bez názvu')}</h4>
+        <h4 class="job-title" onclick="window.openJobDetail(${job.id})">${escapeHtml(job.title || 'Bez názvu')}</h4>
         ${job.client ? `<div class="job-client"><span class="icon">👤</span><span>${escapeHtml(job.client)}</span></div>` : ''}
         ${job.city ? `<div class="job-location"><span class="icon">📍</span><span>${escapeHtml(job.city)}</span></div>` : ''}
         <div class="job-deadline">
@@ -1130,8 +1176,10 @@
         document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
-        document.getElementById('kanbanView').style.display = view === 'kanban' ? 'grid' : 'none';
-        document.getElementById('listView').classList.toggle('active', view === 'list');
+        const kanbanEl = document.getElementById('kanbanView');
+        const listEl = document.getElementById('listView');
+        if (kanbanEl) kanbanEl.style.display = view === 'kanban' ? 'grid' : 'none';
+        if (listEl) listEl.style.display = view === 'list' ? 'block' : 'none';
         
         renderJobs();
       });
@@ -1151,7 +1199,7 @@
     });
 
     // Modal
-    async function openJobDetail(jobId) {
+    window.openJobDetail = async function(jobId) {
       const job = jobs.find(j => j.id === jobId);
       if (!job) {
         try {
@@ -1173,7 +1221,7 @@
       document.getElementById('modalTitle').textContent = job.title || 'Detail zakázky';
       document.getElementById('modalBody').innerHTML = renderJobDetail(job, [], [], []);
       modal.classList.add('show');
-    }
+    };
 
     function renderJobDetail(job, materials, tools, assignments) {
       const date = job.date ? new Date(job.date).toLocaleDateString('cs-CZ') : '';
@@ -1211,9 +1259,10 @@
       `;
     }
 
-    function closeModal() {
+    window.closeModal = function() {
       document.getElementById('jobModal').classList.remove('show');
-    }
+      currentJobId = null;
+    };
 
     // New job button
     document.getElementById('btnNewJob').addEventListener('click', () => {
@@ -1261,6 +1310,10 @@
       }
     });
 
+    // Initialize view
+    document.getElementById('kanbanView').style.display = 'grid';
+    document.getElementById('listView').style.display = 'none';
+    
     // Initialize
     loadJobs();
     loadEmployees();

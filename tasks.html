@@ -753,21 +753,21 @@
   </div>
 
   <!-- FAB -->
-  <button class="fab" id="fabAdd" onclick="openNewTaskModal()">+</button>
+  <button class="fab" id="fabAdd" onclick="window.openNewTaskModal()">+</button>
 
   <!-- Task Modal -->
   <div class="task-modal" id="taskModal">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle">Nový úkol</h2>
-        <button class="close-modal" onclick="closeModal()">×</button>
+        <button class="close-modal" onclick="window.closeModal()">×</button>
       </div>
       <div class="modal-body" id="modalBody">
         <!-- Content will be loaded here -->
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal()">Zavřít</button>
-        <button class="btn-primary" id="btnSaveTask" onclick="saveTask()">Uložit</button>
+        <button class="btn-secondary" onclick="window.closeModal()">Zavřít</button>
+        <button class="btn-primary" id="btnSaveTask" onclick="window.saveTask()">Uložit</button>
       </div>
     </div>
   </div>
@@ -799,6 +799,52 @@
       <div class="nav-label">Nastavení</div>
     </a>
   </nav>
+
+  <!-- More Menu (Expandable) -->
+  <div id="more-menu" class="more-menu">
+    <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+    <div class="more-menu-panel">
+      <div class="more-menu-header">
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+        <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <div class="more-menu-content">
+        <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+          <span>přehled</span>
+        </a>
+        <a href="/calendar.html" class="more-menu-item">
+          <span>kalendář</span>
+        </a>
+        <a href="/timesheets.html" class="more-menu-item">
+          <span>výkazy hodin</span>
+        </a>
+        <a href="/jobs.html" class="more-menu-item">
+          <span>zakázky</span>
+        </a>
+        <a href="/tasks.html" class="more-menu-item">
+          <span>úkoly</span>
+        </a>
+        <a href="/employees.html" class="more-menu-item">
+          <span>zaměstnanci</span>
+        </a>
+        <a href="/warehouse.html" class="more-menu-item">
+          <span>sklad</span>
+        </a>
+        <a href="/finance.html" class="more-menu-item">
+          <span>💰 finance</span>
+        </a>
+        <a href="/documents.html" class="more-menu-item">
+          <span>📁 dokumenty</span>
+        </a>
+        <a href="/reports.html" class="more-menu-item">
+          <span>📊 reporty</span>
+        </a>
+        <a href="/settings.html" class="more-menu-item">
+          <span>⚙️ nastavení</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script>
     let tasks = [];
@@ -994,10 +1040,10 @@
       card.innerHTML = `
         <div class="task-priority ${priority}">${priorityEmoji}</div>
         <div class="task-checkbox">
-          <input type="checkbox" ${task.status === 'completed' ? 'checked' : ''} onchange="toggleTaskComplete(${task.id}, this.checked)">
+          <input type="checkbox" ${task.status === 'completed' ? 'checked' : ''} onchange="window.toggleTaskComplete(${task.id}, this.checked)">
         </div>
         <div class="task-content">
-          <h4 onclick="openTaskDetail(${task.id})">${escapeHtml(task.title || 'Bez názvu')}</h4>
+          <h4 onclick="window.openTaskDetail(${task.id})">${escapeHtml(task.title || 'Bez názvu')}</h4>
           <div class="task-meta">
             ${job ? `<span class="task-project">📋 ${escapeHtml(job.title || 'Projekt ' + job.id)}</span>` : ''}
             ${dueDate ? `<span class="task-deadline ${deadlineClass}">⏰ ${deadlineText}</span>` : ''}
@@ -1100,24 +1146,24 @@
     }
 
     // Drag & Drop
-    function handleDragStart(e) {
+    window.handleDragStart = function(e) {
       draggedCard = this;
       this.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
-    }
+    };
 
-    function handleDragEnd(e) {
+    window.handleDragEnd = function(e) {
       this.classList.remove('dragging');
       document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('drag-over'));
-    }
+    };
 
-    function handleDragOver(e) {
+    window.handleDragOver = function(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       e.currentTarget.classList.add('drag-over');
-    }
+    };
 
-    function handleDrop(e) {
+    window.handleDrop = function(e) {
       e.preventDefault();
       e.currentTarget.classList.remove('drag-over');
       
@@ -1135,7 +1181,7 @@
       // Update counts
       updateColumnCounts();
       updateStats();
-    }
+    };
 
     async function updateTaskStatus(taskId, newStatus) {
       try {
@@ -1171,7 +1217,7 @@
       });
     }
 
-    async function toggleTaskComplete(taskId, completed) {
+    window.toggleTaskComplete = async function(taskId, completed) {
       const newStatus = completed ? 'completed' : 'open';
       await updateTaskStatus(taskId, newStatus);
       
@@ -1195,7 +1241,7 @@
     }
 
     // Modal
-    function openNewTaskModal() {
+    window.openNewTaskModal = function() {
       currentTaskId = null;
       document.getElementById('modalTitle').textContent = 'Nový úkol';
       document.getElementById('modalBody').innerHTML = renderTaskForm();
@@ -1211,9 +1257,9 @@
           }
         });
       }
-    }
+    };
 
-    function openTaskDetail(taskId) {
+    window.openTaskDetail = function(taskId) {
       currentTaskId = taskId;
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
@@ -1226,7 +1272,7 @@
       const extended = getTaskExtended(taskId) || {};
       subtasks = extended.subtasks || [];
       renderSubtasks();
-    }
+    };
 
     function renderTaskForm() {
       return `
@@ -1284,7 +1330,7 @@
           <div class="form-group">
             <label>Subtasks</label>
             <div id="subtasksList" class="subtasks-list"></div>
-            <button type="button" class="btn-secondary" onclick="addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
+            <button type="button" class="btn-secondary" onclick="window.addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
           </div>
         </form>
       `;
@@ -1336,19 +1382,19 @@
           <label>Kategorie</label>
           <input type="text" id="taskCategory" value="${escapeHtml(extended.category || '')}" placeholder="Např. 📦 Objednávky">
         </div>
-        <div class="form-group">
-          <label>Subtasks</label>
-          <div id="subtasksList" class="subtasks-list">
-            ${subtasks.map((st, idx) => `
-              <div class="subtask-item">
-                <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="toggleSubtask(${idx}, this.checked)">
-                <input type="text" value="${escapeHtml(st.text)}" onchange="updateSubtask(${idx}, this.value)">
-                <button type="button" class="btn-icon-small" onclick="removeSubtask(${idx})">×</button>
-              </div>
-            `).join('')}
+          <div class="form-group">
+            <label>Subtasks</label>
+            <div id="subtasksList" class="subtasks-list">
+              ${subtasks.map((st, idx) => `
+                <div class="subtask-item">
+                  <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="window.toggleSubtask(${idx}, this.checked)">
+                  <input type="text" value="${escapeHtml(st.text)}" onchange="window.updateSubtask(${idx}, this.value)">
+                  <button type="button" class="btn-icon-small" onclick="window.removeSubtask(${idx})">×</button>
+                </div>
+              `).join('')}
+            </div>
+            <button type="button" class="btn-secondary" onclick="window.addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
           </div>
-          <button type="button" class="btn-secondary" onclick="addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
-        </div>
         <div class="comments-section">
           <h4 style="color: var(--text-primary); margin-bottom: 12px;">Komentáře</h4>
           <div id="commentsList">
@@ -1364,43 +1410,43 @@
           </div>
           <div class="add-comment">
             <input type="text" id="newComment" placeholder="Přidat komentář...">
-            <button onclick="addComment()">Odeslat</button>
+            <button onclick="window.addComment()">Odeslat</button>
           </div>
         </div>
       `;
     }
 
     let subtasks = [];
-    function addSubtask() {
+    window.addSubtask = function() {
       subtasks.push({ text: '', completed: false });
       renderSubtasks();
-    }
+    };
 
-    function removeSubtask(idx) {
+    window.removeSubtask = function(idx) {
       subtasks.splice(idx, 1);
       renderSubtasks();
-    }
+    };
 
-    function updateSubtask(idx, text) {
+    window.updateSubtask = function(idx, text) {
       if (subtasks[idx]) {
         subtasks[idx].text = text;
       }
-    }
+    };
 
-    function toggleSubtask(idx, completed) {
+    window.toggleSubtask = function(idx, completed) {
       if (subtasks[idx]) {
         subtasks[idx].completed = completed;
       }
-    }
+    };
 
     function renderSubtasks() {
       const container = document.getElementById('subtasksList');
       if (!container) return;
       container.innerHTML = subtasks.map((st, idx) => `
         <div class="subtask-item">
-          <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="toggleSubtask(${idx}, this.checked)">
-          <input type="text" value="${escapeHtml(st.text)}" placeholder="Název subtasku" onchange="updateSubtask(${idx}, this.value)">
-          <button type="button" class="btn-icon-small" onclick="removeSubtask(${idx})">×</button>
+          <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="window.toggleSubtask(${idx}, this.checked)">
+          <input type="text" value="${escapeHtml(st.text)}" placeholder="Název subtasku" onchange="window.updateSubtask(${idx}, this.value)">
+          <button type="button" class="btn-icon-small" onclick="window.removeSubtask(${idx})">×</button>
         </div>
       `).join('');
     }
@@ -1422,7 +1468,7 @@
       openTaskDetail(currentTaskId);
     }
 
-    async function saveTask() {
+    window.saveTask = async function() {
       const title = document.getElementById('taskTitle').value.trim();
       if (!title) {
         alert('Název úkolu je povinný');
@@ -1480,7 +1526,7 @@
         console.error('Error saving task:', e);
         alert('Chyba při ukládání úkolu');
       }
-    }
+    };
 
     // localStorage helpers for extended data
     function getTaskExtended(taskId) {
@@ -1494,11 +1540,11 @@
       localStorage.setItem(key, JSON.stringify(data));
     }
 
-    function closeModal() {
+    window.closeModal = function() {
       document.getElementById('taskModal').classList.remove('show');
       currentTaskId = null;
       subtasks = [];
-    }
+    };
 
     // Filters
     document.getElementById('searchInput').addEventListener('input', renderTasks);
@@ -1521,7 +1567,7 @@
     // Close modal on backdrop click
     document.getElementById('taskModal').addEventListener('click', (e) => {
       if (e.target.id === 'taskModal') {
-        closeModal();
+        window.closeModal();
       }
     });
 

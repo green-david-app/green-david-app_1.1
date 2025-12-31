@@ -696,14 +696,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle">Nová položka</h2>
-        <button class="close-modal" onclick="closeModal()">×</button>
+        <button class="close-modal" onclick="window.closeModal()">×</button>
       </div>
       <div class="modal-body" id="modalBody">
         <!-- Content will be loaded here -->
       </div>
       <div style="display:flex;justify-content:flex-end;gap:12px;padding:20px;border-top:1px solid var(--border-primary);">
-        <button class="btn-secondary" onclick="closeModal()">Zavřít</button>
-        <button class="btn-primary" id="btnSaveItem" onclick="saveItem()">Uložit</button>
+        <button class="btn-secondary" onclick="window.closeModal()">Zavřít</button>
+        <button class="btn-primary" id="btnSaveItem" onclick="window.saveItem()">Uložit</button>
       </div>
     </div>
   </div>
@@ -735,6 +735,52 @@
       <div class="nav-label">Nastavení</div>
     </a>
   </nav>
+
+  <!-- More Menu (Expandable) -->
+  <div id="more-menu" class="more-menu">
+    <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+    <div class="more-menu-panel">
+      <div class="more-menu-header">
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+        <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <div class="more-menu-content">
+        <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+          <span>přehled</span>
+        </a>
+        <a href="/calendar.html" class="more-menu-item">
+          <span>kalendář</span>
+        </a>
+        <a href="/timesheets.html" class="more-menu-item">
+          <span>výkazy hodin</span>
+        </a>
+        <a href="/jobs.html" class="more-menu-item">
+          <span>zakázky</span>
+        </a>
+        <a href="/tasks.html" class="more-menu-item">
+          <span>úkoly</span>
+        </a>
+        <a href="/employees.html" class="more-menu-item">
+          <span>zaměstnanci</span>
+        </a>
+        <a href="/warehouse.html" class="more-menu-item">
+          <span>sklad</span>
+        </a>
+        <a href="/finance.html" class="more-menu-item">
+          <span>💰 finance</span>
+        </a>
+        <a href="/documents.html" class="more-menu-item">
+          <span>📁 dokumenty</span>
+        </a>
+        <a href="/reports.html" class="more-menu-item">
+          <span>📊 reporty</span>
+        </a>
+        <a href="/settings.html" class="more-menu-item">
+          <span>⚙️ nastavení</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script>
     let items = [];
@@ -848,7 +894,7 @@
             ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(item.name)}" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>${initials}</div>'">` : `<div class="placeholder">${initials}</div>`}
           </div>
           <div class="item-info">
-            <h4 onclick="openItemDetail(${item.id})" style="cursor:pointer;">${escapeHtml(item.name || 'Bez názvu')}</h4>
+            <h4 onclick="window.openItemDetail(${item.id})" style="cursor:pointer;">${escapeHtml(item.name || 'Bez názvu')}</h4>
             <p class="item-code">SKU: ${escapeHtml(item.sku || '—')}</p>
           </div>
           <div class="item-quantity">
@@ -889,7 +935,7 @@
       document.getElementById('statOutOfStock').textContent = outOfStock;
     }
 
-    async function adjustQuantity(itemId, delta) {
+    window.adjustQuantity = async function(itemId, delta) {
       const item = items.find(i => i.id === itemId);
       if (!item) return;
       
@@ -1054,7 +1100,7 @@
       document.getElementById('itemModal').classList.add('show');
     }
 
-    function openItemDetail(itemId) {
+    window.openItemDetail = function(itemId) {
       currentItemId = itemId;
       const item = items.find(i => i.id === itemId);
       if (!item) return;
@@ -1062,7 +1108,7 @@
       document.getElementById('modalTitle').textContent = item.name || 'Detail položky';
       document.getElementById('modalBody').innerHTML = renderItemForm(item);
       document.getElementById('itemModal').classList.add('show');
-    }
+    };
 
     function renderItemForm(item = null) {
       return `
@@ -1109,7 +1155,7 @@
       `;
     }
 
-    async function saveItem() {
+    window.saveItem = async function() {
       const name = document.getElementById('itemName').value.trim();
       if (!name) {
         alert('Název položky je povinný');
@@ -1164,7 +1210,7 @@
         }
 
         await loadItems();
-        closeModal();
+        window.closeModal();
       } catch (e) {
         console.error('Error saving item:', e);
         alert('Chyba při ukládání položky');
@@ -1181,10 +1227,10 @@
       return data ? JSON.parse(data) : null;
     }
 
-    function closeModal() {
+    window.closeModal = function() {
       document.getElementById('itemModal').classList.remove('show');
       currentItemId = null;
-    }
+    };
 
     function exportData() {
       const csv = [
