@@ -1,1587 +1,655 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Úkoly - green david app</title>
-  <link rel="stylesheet" href="/style.css"/>
-  <script src="/app-settings.js"></script>
-  <style>
-    :root {
-      --bg-primary: #0a1628;
-      --bg-secondary: #1a2942;
-      --bg-card: rgba(255,255,255,0.05);
-      --bg-elevated: rgba(255,255,255,0.08);
-      --border-primary: rgba(255,255,255,0.1);
-      --border-medium: rgba(255,255,255,0.15);
-      --text-primary: #e8eef2;
-      --text-secondary: #9ca8b3;
-      --text-tertiary: #6b7580;
-      --mint: #4ade80;
-      --mint-dark: #22c55e;
-      --warning: #fb923c;
-      --danger: #f87171;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-      color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
-
-    .tasks-page {
-      max-width: 1600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .tasks-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .tasks-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .btn-filter {
-      padding: 10px 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      color: var(--text-primary);
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-
-    .btn-filter:hover {
-      background: var(--bg-elevated);
-    }
-
-    .btn-filter.active {
-      background: var(--mint);
-      border-color: var(--mint);
-      color: #0a0e11;
-    }
-
-    .tasks-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .stat-box {
-      background: var(--bg-card);
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border-primary);
-      text-align: center;
-    }
-
-    .stat-number {
-      font-size: 28px;
-      font-weight: bold;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .filters-bar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .search-box {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 10px 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--mint);
-    }
-
-    .filter-select {
-      padding: 10px 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .filter-select:focus {
-      outline: none;
-      border-color: var(--mint);
-    }
-
-    .kanban-board {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 100px;
-    }
-
-    .kanban-column {
-      background: var(--bg-card);
-      border-radius: 12px;
-      padding: 16px;
-      min-height: 500px;
-      border: 1px solid var(--border-primary);
-    }
-
-    .column-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-primary);
-    }
-
-    .column-header h3 {
-      color: var(--text-primary);
-      font-size: 16px;
-      margin: 0;
-      font-weight: 600;
-    }
-
-    .column-header .count {
-      background: var(--mint);
-      color: #0a0e11;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .cards-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-height: 400px;
-    }
-
-    .cards-container.drag-over {
-      background: rgba(74, 222, 128, 0.1);
-      border: 2px dashed var(--mint);
-      border-radius: 8px;
-    }
-
-    .task-card {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-primary);
-      border-radius: 12px;
-      padding: 16px;
-      cursor: grab;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .task-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      border-color: var(--mint);
-    }
-
-    .task-card.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-
-    .task-card.completed {
-      opacity: 0.6;
-    }
-
-    .task-card.completed .task-content h4 {
-      text-decoration: line-through;
-      color: var(--text-tertiary);
-    }
-
-    .task-checkbox {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-    }
-
-    .task-checkbox input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      accent-color: var(--mint);
-    }
-
-    .task-content {
-      padding-right: 32px;
-    }
-
-    .task-content h4 {
-      color: var(--text-primary);
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0 0 12px 0;
-      cursor: pointer;
-    }
-
-    .task-content h4:hover {
-      color: var(--mint);
-    }
-
-    .task-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .task-project, .task-deadline, .task-assignee {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .task-deadline.urgent {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    .task-deadline.soon {
-      color: var(--warning);
-    }
-
-    .task-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-
-    .tag {
-      padding: 4px 8px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 6px;
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    .task-priority {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      font-size: 16px;
-    }
-
-    .task-priority.high {
-      color: var(--danger);
-    }
-
-    .task-priority.medium {
-      color: var(--warning);
-    }
-
-    .task-priority.low {
-      color: var(--mint);
-    }
-
-    .task-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-primary);
-    }
-
-    .btn-icon-small {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 4px;
-      transition: all 0.2s;
-    }
-
-    .btn-icon-small:hover {
-      color: var(--text-primary);
-    }
-
-    /* FAB */
-    .fab {
-      position: fixed;
-      bottom: 100px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: var(--mint);
-      border: none;
-      color: #0a0e11;
-      font-size: 24px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: all 0.3s;
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .fab:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-    }
-
-    /* Modal */
-    .task-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      overflow-y: auto;
-      padding: 20px;
-    }
-
-    .task-modal.show {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      max-width: 700px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      border: 1px solid var(--border-primary);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      border-bottom: 1px solid var(--border-primary);
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 24px;
-      color: var(--text-primary);
-    }
-
-    .close-modal {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 32px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-    }
-
-    .close-modal:hover {
-      color: var(--text-primary);
-    }
-
-    .modal-body {
-      padding: 20px;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 14px;
-      font-family: inherit;
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 100px;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: var(--mint);
-    }
-
-    .subtasks-list {
-      margin-top: 12px;
-    }
-
-    .subtask-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      background: var(--bg-card);
-      border-radius: 6px;
-      margin-bottom: 6px;
-    }
-
-    .subtask-item input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-    }
-
-    .subtask-item input[type="text"] {
-      flex: 1;
-      padding: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .subtask-item input[type="text"]:focus {
-      outline: none;
-    }
-
-    .comments-section {
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border-primary);
-    }
-
-    .comment-item {
-      padding: 12px;
-      background: var(--bg-card);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .comment-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .comment-text {
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .add-comment {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .add-comment input {
-      flex: 1;
-      padding: 8px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 6px;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .add-comment button {
-      padding: 8px 16px;
-      background: var(--mint);
-      border: none;
-      border-radius: 6px;
-      color: #0a0e11;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      padding: 20px;
-      border-top: 1px solid var(--border-primary);
-    }
-
-    .btn-primary {
-      padding: 10px 20px;
-      background: var(--mint);
-      border: 1px solid var(--mint);
-      border-radius: 8px;
-      color: #0a0e11;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .btn-secondary {
-      padding: 10px 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      color: var(--text-primary);
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-tertiary);
-      font-size: 14px;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .kanban-board {
-        grid-template-columns: 1fr;
-      }
-
-      .tasks-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .filters-bar {
-        flex-direction: column;
-      }
-
-      .filter-select {
-        width: 100%;
-      }
-
-      .fab {
-        bottom: 90px;
-        right: 16px;
-      }
-    }
-
-    /* Bottom Navigation */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(31, 36, 40, 0.95);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 0;
-      z-index: 100;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all 0.2s;
-      border-radius: 8px;
-      min-width: 60px;
-    }
-
-    .nav-item.active {
-      color: var(--mint);
-    }
-
-    .nav-icon {
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .nav-label {
-      font-size: 11px;
-      font-weight: 500;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Úkoly - Green David</title>
+    <link rel="stylesheet" href="/style.css"/>
+    <script src="/app-settings.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a1628;
+            --bg-secondary: #1a2942;
+            --bg-card: rgba(255,255,255,0.05);
+            --bg-elevated: rgba(255,255,255,0.08);
+            --border-primary: rgba(255,255,255,0.1);
+            --border-medium: rgba(255,255,255,0.15);
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #4ade80;
+            --mint-dark: #22c55e;
+            --warning: #fb923c;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--mint);
+            border: 1px solid var(--mint);
+            border-radius: 8px;
+            color: #0a0e11;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--mint-dark);
+            transform: translateY(-2px);
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .filter-btn.active {
+            background: #4ade80;
+            color: #000;
+            border-color: #4ade80;
+        }
+
+        .tasks-kanban {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .tasks-kanban {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .task-column {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 400px;
+        }
+
+        .task-column h3 {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-column .count {
+            background: #4ade80;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            border-color: #4ade80;
+            transform: translateX(4px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item h4 {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .task-item.completed h4 {
+            text-decoration: line-through;
+        }
+
+        .task-item .task-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-header h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-body input,
+        .modal-body select,
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .modal-body input:focus,
+        .modal-body select:focus,
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: var(--mint);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
-  <div class="tasks-page">
-    <!-- Header -->
-    <div class="tasks-header">
-      <h1>✅ Úkoly</h1>
-      <div class="header-actions">
-        <button class="btn-filter active" data-filter="all">Všechny</button>
-        <button class="btn-filter" data-filter="my">Moje úkoly</button>
-        <button class="btn-filter" data-filter="assigned">Přiřazené mně</button>
-      </div>
-    </div>
+    <div class="page">
+        <header class="page-header">
+            <h1>✅ Úkoly</h1>
+            <button class="btn-primary" id="btn-new-task">+ Nový úkol</button>
+        </header>
 
-    <!-- Statistics -->
-    <div class="tasks-stats">
-      <div class="stat-box">
-        <div class="stat-number" id="statTotal">0</div>
-        <div class="stat-label">Celkem úkolů</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="statToday">0</div>
-        <div class="stat-label">Dokončeno dnes</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="statWeek">0</div>
-        <div class="stat-label">Dokončeno tento týden</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="statProductivity">0%</div>
-        <div class="stat-label">Produktivita</div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters-bar">
-      <div class="search-box">
-        <input type="search" id="searchInput" placeholder="🔍 Hledat úkoly...">
-      </div>
-      <select class="filter-select" id="filterPriority">
-        <option value="">Všechny priority</option>
-        <option value="high">🔴 Vysoká</option>
-        <option value="medium">🟡 Střední</option>
-        <option value="low">🟢 Nízká</option>
-      </select>
-      <select class="filter-select" id="filterProject">
-        <option value="">Všechny projekty</option>
-      </select>
-      <select class="filter-select" id="filterAssignee">
-        <option value="">Všichni zaměstnanci</option>
-      </select>
-      <select class="filter-select" id="filterDeadline">
-        <option value="">Všechny termíny</option>
-        <option value="today">Dnes</option>
-        <option value="tomorrow">Zítra</option>
-        <option value="week">Tento týden</option>
-        <option value="overdue">Přes termín</option>
-      </select>
-    </div>
-
-    <!-- Kanban Board -->
-    <div class="kanban-board">
-      <div class="kanban-column" data-status="open">
-        <div class="column-header">
-          <h3>📋 K dodělání</h3>
-          <span class="count" id="count-open">0</span>
+        <!-- Filtry -->
+        <div class="filters-bar">
+            <button class="filter-btn active" data-filter="all">Všechny</button>
+            <button class="filter-btn" data-filter="my">Moje úkoly</button>
+            <button class="filter-btn" data-filter="high">🔴 Vysoká priorita</button>
+            <button class="filter-btn" data-filter="today">Dnes</button>
         </div>
-        <div class="cards-container" id="cards-open" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
-      </div>
 
-      <div class="kanban-column" data-status="in-progress">
-        <div class="column-header">
-          <h3>🔨 Probíhá</h3>
-          <span class="count" id="count-in-progress">0</span>
-        </div>
-        <div class="cards-container" id="cards-in-progress" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
-      </div>
-
-      <div class="kanban-column" data-status="completed">
-        <div class="column-header">
-          <h3>✅ Hotovo</h3>
-          <span class="count" id="count-completed">0</span>
-        </div>
-        <div class="cards-container" id="cards-completed" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FAB -->
-  <button class="fab" id="fabAdd" onclick="window.openNewTaskModal()">+</button>
-
-  <!-- Task Modal -->
-  <div class="task-modal" id="taskModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Nový úkol</h2>
-        <button class="close-modal" onclick="window.closeModal()">×</button>
-      </div>
-      <div class="modal-body" id="modalBody">
-        <!-- Content will be loaded here -->
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="window.closeModal()">Zavřít</button>
-        <button class="btn-primary" id="btnSaveTask" onclick="window.saveTask()">Uložit</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('dashboard'); } else { window.location.href='/'; }">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <div class="nav-label">Domů</div>
-    </a>
-    <a href="/jobs.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <div class="nav-label">Zakázky</div>
-    </a>
-    <a href="/timesheets.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="nav-label">Výkazy</div>
-    </a>
-    <a href="/calendar.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div class="nav-label">Kalendář</div>
-    </a>
-    <a href="#" id="more-menu-btn" class="nav-item" onclick="event.preventDefault(); document.getElementById('more-menu').classList.toggle('show');">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
-      <div class="nav-label">Více</div>
-    </a>
-    <a href="/settings.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
-      <div class="nav-label">Nastavení</div>
-    </a>
-  </nav>
-
-  <!-- More Menu (Expandable) -->
-  <div id="more-menu" class="more-menu">
-    <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
-    <div class="more-menu-panel">
-      <div class="more-menu-header">
-        <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
-        <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
-      </div>
-      <div class="more-menu-content">
-        <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
-          <span>přehled</span>
-        </a>
-        <a href="/calendar.html" class="more-menu-item">
-          <span>kalendář</span>
-        </a>
-        <a href="/timesheets.html" class="more-menu-item">
-          <span>výkazy hodin</span>
-        </a>
-        <a href="/jobs.html" class="more-menu-item">
-          <span>zakázky</span>
-        </a>
-        <a href="/tasks.html" class="more-menu-item">
-          <span>úkoly</span>
-        </a>
-        <a href="/employees.html" class="more-menu-item">
-          <span>zaměstnanci</span>
-        </a>
-        <a href="/warehouse.html" class="more-menu-item">
-          <span>sklad</span>
-        </a>
-        <a href="/finance.html" class="more-menu-item">
-          <span>💰 finance</span>
-        </a>
-        <a href="/documents.html" class="more-menu-item">
-          <span>📁 dokumenty</span>
-        </a>
-        <a href="/reports.html" class="more-menu-item">
-          <span>📊 reporty</span>
-        </a>
-        <a href="/settings.html" class="more-menu-item">
-          <span>⚙️ nastavení</span>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let tasks = [];
-    let jobs = [];
-    let employees = [];
-    let currentTaskId = null;
-    let draggedCard = null;
-
-    // Status mapping
-    const statusMap = {
-      'open': 'open',
-      'in-progress': 'in-progress',
-      'completed': 'completed'
-    };
-
-    const reverseStatusMap = {
-      'open': 'open',
-      'in-progress': 'in-progress',
-      'completed': 'completed'
-    };
-
-    // Load data
-    async function loadTasks() {
-      try {
-        const res = await fetch('/api/tasks');
-        const data = await res.json();
-        tasks = data.tasks || [];
-        
-        // Load extended data from localStorage
-        tasks.forEach(task => {
-          const extended = getTaskExtended(task.id);
-          if (extended) {
-            Object.assign(task, extended);
-          }
-        });
-        
-        renderTasks();
-        updateStats();
-      } catch (e) {
-        console.error('Error loading tasks:', e);
-      }
-    }
-
-    async function loadJobs() {
-      try {
-        const res = await fetch('/api/jobs');
-        const data = await res.json();
-        jobs = data.jobs || [];
-        populateProjectFilter();
-      } catch (e) {
-        console.error('Error loading jobs:', e);
-      }
-    }
-
-    async function loadEmployees() {
-      try {
-        const res = await fetch('/api/employees');
-        const data = await res.json();
-        employees = data.employees || [];
-        populateAssigneeFilter();
-      } catch (e) {
-        console.error('Error loading employees:', e);
-      }
-    }
-
-    function populateProjectFilter() {
-      const select = document.getElementById('filterProject');
-      select.innerHTML = '<option value="">Všechny projekty</option>';
-      jobs.forEach(job => {
-        const option = document.createElement('option');
-        option.value = job.id;
-        option.textContent = job.title || `Projekt ${job.id}`;
-        select.appendChild(option);
-      });
-    }
-
-    function populateAssigneeFilter() {
-      const select = document.getElementById('filterAssignee');
-      select.innerHTML = '<option value="">Všichni zaměstnanci</option>';
-      employees.forEach(emp => {
-        const option = document.createElement('option');
-        option.value = emp.id;
-        option.textContent = emp.name || `Zaměstnanec ${emp.id}`;
-        select.appendChild(option);
-      });
-    }
-
-    // Render tasks
-    function renderTasks() {
-      const filtered = getFilteredTasks();
-      const columns = ['open', 'in-progress', 'completed'];
-      
-      columns.forEach(status => {
-        const container = document.getElementById(`cards-${status}`);
-        container.innerHTML = '';
-        
-        const columnTasks = filtered.filter(t => {
-          const taskStatus = t.status || 'open';
-          return taskStatus === status;
-        });
-
-        if (columnTasks.length === 0) {
-          container.innerHTML = '<div class="empty-state">Žádné úkoly</div>';
-        } else {
-          columnTasks.forEach(task => {
-            container.appendChild(createTaskCard(task));
-          });
-        }
-
-        document.getElementById(`count-${status}`).textContent = columnTasks.length;
-      });
-    }
-
-    function getFilteredTasks() {
-      let filtered = [...tasks];
-      
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      if (search) {
-        filtered = filtered.filter(t => 
-          (t.title || '').toLowerCase().includes(search) ||
-          (t.description || '').toLowerCase().includes(search)
-        );
-      }
-
-      const priorityFilter = document.getElementById('filterPriority').value;
-      if (priorityFilter) {
-        filtered = filtered.filter(t => {
-          const priority = getTaskPriority(t);
-          return priority === priorityFilter;
-        });
-      }
-
-      const projectFilter = document.getElementById('filterProject').value;
-      if (projectFilter) {
-        filtered = filtered.filter(t => t.job_id == projectFilter);
-      }
-
-      const assigneeFilter = document.getElementById('filterAssignee').value;
-      if (assigneeFilter) {
-        filtered = filtered.filter(t => t.employee_id == assigneeFilter);
-      }
-
-      const deadlineFilter = document.getElementById('filterDeadline').value;
-      if (deadlineFilter) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        filtered = filtered.filter(t => {
-          if (!t.due_date) return false;
-          const due = new Date(t.due_date);
-          due.setHours(0, 0, 0, 0);
-          const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-          
-          if (deadlineFilter === 'today') return diff === 0;
-          if (deadlineFilter === 'tomorrow') return diff === 1;
-          if (deadlineFilter === 'week') return diff >= 0 && diff <= 7;
-          if (deadlineFilter === 'overdue') return diff < 0;
-          return true;
-        });
-      }
-
-      const activeFilter = document.querySelector('.btn-filter.active')?.dataset.filter;
-      if (activeFilter === 'my') {
-        // Filter by current user (simplified - would need auth)
-        filtered = filtered.filter(t => t.employee_id);
-      } else if (activeFilter === 'assigned') {
-        filtered = filtered.filter(t => t.employee_id);
-      }
-
-      return filtered;
-    }
-
-    function createTaskCard(task) {
-      const card = document.createElement('div');
-      card.className = 'task-card';
-      if (task.status === 'completed') {
-        card.classList.add('completed');
-      }
-      card.draggable = true;
-      card.dataset.taskId = task.id;
-      
-      const priority = getTaskPriority(task);
-      const priorityEmoji = priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢';
-      
-      const job = jobs.find(j => j.id === task.job_id);
-      const assignee = employees.find(e => e.id === task.employee_id);
-      
-      const dueDate = task.due_date ? new Date(task.due_date) : null;
-      const deadlineText = getDeadlineText(dueDate);
-      const deadlineClass = getDeadlineClass(dueDate);
-
-      const tags = getTaskTags(task);
-
-      card.innerHTML = `
-        <div class="task-priority ${priority}">${priorityEmoji}</div>
-        <div class="task-checkbox">
-          <input type="checkbox" ${task.status === 'completed' ? 'checked' : ''} onchange="window.toggleTaskComplete(${task.id}, this.checked)">
-        </div>
-        <div class="task-content">
-          <h4 onclick="window.openTaskDetail(${task.id})">${escapeHtml(task.title || 'Bez názvu')}</h4>
-          <div class="task-meta">
-            ${job ? `<span class="task-project">📋 ${escapeHtml(job.title || 'Projekt ' + job.id)}</span>` : ''}
-            ${dueDate ? `<span class="task-deadline ${deadlineClass}">⏰ ${deadlineText}</span>` : ''}
-            ${assignee ? `<span class="task-assignee">👤 ${escapeHtml(assignee.name || 'Zaměstnanec ' + assignee.id)}</span>` : ''}
-          </div>
-          ${tags.length > 0 ? `<div class="task-tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-        </div>
-      `;
-
-      card.addEventListener('dragstart', handleDragStart);
-      card.addEventListener('dragend', handleDragEnd);
-      
-      return card;
-    }
-
-    function getTaskPriority(task) {
-      const extended = getTaskExtended(task.id);
-      return extended?.priority || 'medium';
-    }
-
-    function getTaskTags(task) {
-      const extended = getTaskExtended(task.id);
-      const tags = [];
-      
-      if (extended?.category) {
-        tags.push(extended.category);
-      }
-      
-      const priority = getTaskPriority(task);
-      if (priority === 'high') {
-        tags.push('⚡ Urgentní');
-      }
-      
-      if (extended?.recurring) {
-        tags.push('🔄 Opakující se');
-      }
-      
-      return tags;
-    }
-
-    function getDeadlineText(dueDate) {
-      if (!dueDate) return '';
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const due = new Date(dueDate);
-      due.setHours(0, 0, 0, 0);
-      const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-      
-      if (diff < 0) return `Před ${Math.abs(diff)} dny`;
-      if (diff === 0) return 'Dnes';
-      if (diff === 1) return 'Zítra';
-      return `Za ${diff} dní`;
-    }
-
-    function getDeadlineClass(dueDate) {
-      if (!dueDate) return '';
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const due = new Date(dueDate);
-      due.setHours(0, 0, 0, 0);
-      const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-      
-      if (diff < 0) return 'urgent';
-      if (diff <= 1) return 'urgent';
-      if (diff <= 3) return 'soon';
-      return '';
-    }
-
-    function updateStats() {
-      const total = tasks.length;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      
-      const completedToday = tasks.filter(t => {
-        if (t.status !== 'completed') return false;
-        const extended = getTaskExtended(t.id);
-        if (!extended?.completed_at) return false;
-        const completed = new Date(extended.completed_at);
-        completed.setHours(0, 0, 0, 0);
-        return completed.getTime() === today.getTime();
-      }).length;
-
-      const completedWeek = tasks.filter(t => {
-        if (t.status !== 'completed') return false;
-        const extended = getTaskExtended(t.id);
-        if (!extended?.completed_at) return false;
-        const completed = new Date(extended.completed_at);
-        return completed >= weekStart;
-      }).length;
-
-      const completed = tasks.filter(t => t.status === 'completed').length;
-      const productivity = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-      document.getElementById('statTotal').textContent = total;
-      document.getElementById('statToday').textContent = completedToday;
-      document.getElementById('statWeek').textContent = completedWeek;
-      document.getElementById('statProductivity').textContent = productivity + '%';
-    }
-
-    // Drag & Drop
-    window.handleDragStart = function(e) {
-      draggedCard = this;
-      this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    };
-
-    window.handleDragEnd = function(e) {
-      this.classList.remove('dragging');
-      document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('drag-over'));
-    };
-
-    window.handleDragOver = function(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      e.currentTarget.classList.add('drag-over');
-    };
-
-    window.handleDrop = function(e) {
-      e.preventDefault();
-      e.currentTarget.classList.remove('drag-over');
-      
-      if (!draggedCard) return;
-      
-      const newStatus = e.currentTarget.closest('.kanban-column').dataset.status;
-      const taskId = parseInt(draggedCard.dataset.taskId);
-      
-      // Move card visually
-      e.currentTarget.appendChild(draggedCard);
-      
-      // Update in database
-      updateTaskStatus(taskId, newStatus);
-      
-      // Update counts
-      updateColumnCounts();
-      updateStats();
-    };
-
-    async function updateTaskStatus(taskId, newStatus) {
-      try {
-        await fetch('/api/tasks', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: taskId, status: newStatus })
-        });
-        
-        // Update local data
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-          task.status = newStatus;
-          
-          if (newStatus === 'completed') {
-            const extended = getTaskExtended(taskId) || {};
-            extended.completed_at = new Date().toISOString();
-            saveTaskExtended(taskId, extended);
-          }
-        }
-      } catch (e) {
-        console.error('Error updating task status:', e);
-        alert('Chyba při aktualizaci statusu úkolu');
-      }
-    }
-
-    function updateColumnCounts() {
-      const columns = ['open', 'in-progress', 'completed'];
-      columns.forEach(status => {
-        const container = document.getElementById(`cards-${status}`);
-        const count = container.querySelectorAll('.task-card').length;
-        document.getElementById(`count-${status}`).textContent = count;
-      });
-    }
-
-    window.toggleTaskComplete = async function(taskId, completed) {
-      const newStatus = completed ? 'completed' : 'open';
-      await updateTaskStatus(taskId, newStatus);
-      
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        const card = document.querySelector(`[data-task-id="${taskId}"]`);
-        if (card) {
-          if (completed) {
-            card.classList.add('completed');
-            const extended = getTaskExtended(taskId) || {};
-            extended.completed_at = new Date().toISOString();
-            saveTaskExtended(taskId, extended);
-          } else {
-            card.classList.remove('completed');
-          }
-        }
-      }
-      
-      renderTasks();
-      updateStats();
-    }
-
-    // Modal
-    window.openNewTaskModal = function() {
-      currentTaskId = null;
-      document.getElementById('modalTitle').textContent = 'Nový úkol';
-      document.getElementById('modalBody').innerHTML = renderTaskForm();
-      document.getElementById('taskModal').classList.add('show');
-      
-      // Attach recurring checkbox listener
-      const recurringCheckbox = document.getElementById('taskRecurring');
-      if (recurringCheckbox) {
-        recurringCheckbox.addEventListener('change', (e) => {
-          const options = document.getElementById('recurringOptions');
-          if (options) {
-            options.style.display = e.target.checked ? 'block' : 'none';
-          }
-        });
-      }
-    };
-
-    window.openTaskDetail = function(taskId) {
-      currentTaskId = taskId;
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-      
-      document.getElementById('modalTitle').textContent = task.title || 'Detail úkolu';
-      document.getElementById('modalBody').innerHTML = renderTaskDetail(task);
-      document.getElementById('taskModal').classList.add('show');
-      
-      // Load subtasks for editing
-      const extended = getTaskExtended(taskId) || {};
-      subtasks = extended.subtasks || [];
-      renderSubtasks();
-    };
-
-    function renderTaskForm() {
-      return `
-        <form id="taskForm">
-          <div class="form-group">
-            <label>Název úkolu *</label>
-            <input type="text" id="taskTitle" required placeholder="Např. Objednat materiál">
-          </div>
-          <div class="form-group">
-            <label>Popis</label>
-            <textarea id="taskDescription" placeholder="Detailní popis úkolu..."></textarea>
-          </div>
-          <div class="form-group">
-            <label>Projekt</label>
-            <select id="taskProject">
-              <option value="">Žádný projekt</option>
-              ${jobs.map(j => `<option value="${j.id}">${escapeHtml(j.title || 'Projekt ' + j.id)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Přiřadit</label>
-            <select id="taskAssignee">
-              <option value="">Nikomu</option>
-              ${employees.map(e => `<option value="${e.id}">${escapeHtml(e.name || 'Zaměstnanec ' + e.id)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Priorita</label>
-            <select id="taskPriority">
-              <option value="low">🟢 Nízká</option>
-              <option value="medium" selected>🟡 Střední</option>
-              <option value="high">🔴 Vysoká</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Termín</label>
-            <input type="date" id="taskDueDate">
-          </div>
-          <div class="form-group">
-            <label>Kategorie</label>
-            <input type="text" id="taskCategory" placeholder="Např. 📦 Objednávky">
-          </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="taskRecurring"> Opakující se úkol
-            </label>
-            <div id="recurringOptions" style="margin-top: 8px; display: none;">
-              <select id="taskRecurringType">
-                <option value="daily">Denně</option>
-                <option value="weekly">Týdně</option>
-                <option value="monthly">Měsíčně</option>
-              </select>
+        <!-- Kanban -->
+        <div class="tasks-kanban">
+            <div class="task-column">
+                <h3>📝 K dokončení <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-todo"></div>
             </div>
-          </div>
-          <div class="form-group">
-            <label>Subtasks</label>
-            <div id="subtasksList" class="subtasks-list"></div>
-            <button type="button" class="btn-secondary" onclick="window.addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
-          </div>
-        </form>
-      `;
-    }
 
-    function renderTaskDetail(task) {
-      const extended = getTaskExtended(task.id) || {};
-      const job = jobs.find(j => j.id === task.job_id);
-      const assignee = employees.find(e => e.id === task.employee_id);
-      const comments = extended.comments || [];
-      const subtasks = extended.subtasks || [];
-      
-      return `
-        <div class="form-group">
-          <label>Název úkolu</label>
-          <input type="text" id="taskTitle" value="${escapeHtml(task.title || '')}">
-        </div>
-        <div class="form-group">
-          <label>Popis</label>
-          <textarea id="taskDescription">${escapeHtml(task.description || '')}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Projekt</label>
-          <select id="taskProject">
-            <option value="">Žádný projekt</option>
-            ${jobs.map(j => `<option value="${j.id}" ${j.id === task.job_id ? 'selected' : ''}>${escapeHtml(j.title || 'Projekt ' + j.id)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Přiřadit</label>
-          <select id="taskAssignee">
-            <option value="">Nikomu</option>
-            ${employees.map(e => `<option value="${e.id}" ${e.id === task.employee_id ? 'selected' : ''}>${escapeHtml(e.name || 'Zaměstnanec ' + e.id)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Priorita</label>
-          <select id="taskPriority">
-            <option value="low" ${extended.priority === 'low' ? 'selected' : ''}>🟢 Nízká</option>
-            <option value="medium" ${(!extended.priority || extended.priority === 'medium') ? 'selected' : ''}>🟡 Střední</option>
-            <option value="high" ${extended.priority === 'high' ? 'selected' : ''}>🔴 Vysoká</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Termín</label>
-          <input type="date" id="taskDueDate" value="${task.due_date ? task.due_date.split('T')[0] : ''}">
-        </div>
-        <div class="form-group">
-          <label>Kategorie</label>
-          <input type="text" id="taskCategory" value="${escapeHtml(extended.category || '')}" placeholder="Např. 📦 Objednávky">
-        </div>
-          <div class="form-group">
-            <label>Subtasks</label>
-            <div id="subtasksList" class="subtasks-list">
-              ${subtasks.map((st, idx) => `
-                <div class="subtask-item">
-                  <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="window.toggleSubtask(${idx}, this.checked)">
-                  <input type="text" value="${escapeHtml(st.text)}" onchange="window.updateSubtask(${idx}, this.value)">
-                  <button type="button" class="btn-icon-small" onclick="window.removeSubtask(${idx})">×</button>
-                </div>
-              `).join('')}
+            <div class="task-column">
+                <h3>🔄 Probíhá <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-progress"></div>
             </div>
-            <button type="button" class="btn-secondary" onclick="window.addSubtask()" style="margin-top: 8px;">+ Přidat subtask</button>
-          </div>
-        <div class="comments-section">
-          <h4 style="color: var(--text-primary); margin-bottom: 12px;">Komentáře</h4>
-          <div id="commentsList">
-            ${comments.map(c => `
-              <div class="comment-item">
-                <div class="comment-header">
-                  <span>${escapeHtml(c.author || 'Uživatel')}</span>
-                  <span>${new Date(c.date).toLocaleString('cs-CZ')}</span>
+
+            <div class="task-column">
+                <h3>✅ Hotovo <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-done"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nový úkol</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <input type="text" id="task-title" placeholder="Název úkolu" required>
+                    <textarea id="task-desc" placeholder="Popis" rows="3"></textarea>
+                    <input type="date" id="task-deadline" placeholder="Deadline">
+                    <select id="task-priority">
+                        <option value="low">🟢 Nízká</option>
+                        <option value="medium" selected>🟡 Střední</option>
+                        <option value="high">🔴 Vysoká</option>
+                    </select>
+                    <select id="task-assignee">
+                        <option value="">Vyberte zaměstnance</option>
+                        <option>Petr Novák</option>
+                        <option>Jana Svobodová</option>
+                        <option>Martin Dvořák</option>
+                    </select>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal">Zrušit</button>
+                <button class="btn-primary" id="btn-save-task">Vytvořit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/" class="nav-item" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('dashboard'); } else { window.location.href='/'; }">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="nav-label">Domů</div>
+        </a>
+        <a href="/jobs.html" class="nav-item">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <div class="nav-label">Zakázky</div>
+        </a>
+        <a href="/timesheets.html" class="nav-item">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="nav-label">Výkazy</div>
+        </a>
+        <a href="/calendar.html" class="nav-item">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="nav-label">Kalendář</div>
+        </a>
+        <a href="/tasks.html" class="nav-item active">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg></div>
+            <div class="nav-label">Úkoly</div>
+        </a>
+        <a href="/settings.html" class="nav-item">
+            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
+            <div class="nav-label">Nastavení</div>
+        </a>
+    </nav>
+
+    <script src="/static/toast.js"></script>
+    <script src="/static/loading.js"></script>
+    <script>
+        const mockTasks = [
+            {
+                id: 1,
+                title: "Objednat materiál na Třebonice",
+                description: "Obklady, lepidlo, spárovací hmota",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-15",
+                assignee: "Petr Novák"
+            },
+            {
+                id: 2,
+                title: "Kontrola elektroinstalace",
+                status: "progress",
+                priority: "medium",
+                deadline: "2026-01-20",
+                assignee: "Jana Svobodová"
+            },
+            {
+                id: 3,
+                title: "Zavolat klientovi",
+                status: "done",
+                priority: "low",
+                deadline: "2026-01-10",
+                assignee: "Martin Dvořák"
+            },
+            {
+                id: 4,
+                title: "Připravit fakturu",
+                description: "Faktura za dokončenou zakázku",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-18",
+                assignee: "Eva Nováková"
+            },
+            {
+                id: 5,
+                title: "Aktualizovat web",
+                status: "progress",
+                priority: "low",
+                deadline: null,
+                assignee: null
+            }
+        ];
+
+        let tasks = [];
+        let currentFilter = 'all';
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                if (res.ok) {
+                    const data = await res.json();
+                    tasks = data.tasks || [];
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (e) {
+                console.warn('API not available, using mock data:', e);
+                tasks = [...mockTasks];
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const statusMap = {
+                todo: 'tasks-todo',
+                progress: 'tasks-progress',
+                done: 'tasks-done'
+            };
+
+            Object.keys(statusMap).forEach(status => {
+                const container = document.getElementById(statusMap[status]);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                let filteredTasks = tasks.filter(t => {
+                    if (t.status !== status) return false;
+                    
+                    // Apply filters
+                    if (currentFilter === 'my') {
+                        // Mock - would check current user
+                        return t.assignee !== null;
+                    }
+                    if (currentFilter === 'high') {
+                        return t.priority === 'high';
+                    }
+                    if (currentFilter === 'today') {
+                        if (!t.deadline) return false;
+                        const today = new Date().toISOString().slice(0, 10);
+                        return t.deadline === today;
+                    }
+                    return true;
+                });
+                
+                filteredTasks.forEach(task => {
+                    const item = createTaskItem(task);
+                    container.appendChild(item);
+                });
+                
+                // Update count
+                const column = container.closest('.task-column');
+                if (column) {
+                    column.querySelector('.count').textContent = filteredTasks.length;
+                }
+            });
+        }
+
+        function createTaskItem(task) {
+            const item = document.createElement('div');
+            item.className = `task-item ${task.status === 'done' ? 'completed' : ''}`;
+            item.dataset.taskId = task.id;
+            
+            const priorityIcon = {
+                high: '🔴',
+                medium: '🟡',
+                low: '🟢'
+            }[task.priority] || '🟡';
+            
+            item.innerHTML = `
+                <h4>${escapeHtml(task.title)}</h4>
+                ${task.description ? `<p style="color: rgba(255,255,255,0.6); font-size: 12px; margin: 4px 0;">${escapeHtml(task.description)}</p>` : ''}
+                <div class="task-meta">
+                    <span>${priorityIcon}</span>
+                    ${task.deadline ? `<span>📅 ${task.deadline}</span>` : ''}
+                    ${task.assignee ? `<span>👤 ${escapeHtml(task.assignee)}</span>` : ''}
                 </div>
-                <div class="comment-text">${escapeHtml(c.text)}</div>
-              </div>
-            `).join('')}
-          </div>
-          <div class="add-comment">
-            <input type="text" id="newComment" placeholder="Přidat komentář...">
-            <button onclick="window.addComment()">Odeslat</button>
-          </div>
-        </div>
-      `;
-    }
+            `;
+            
+            // Click to change status
+            item.addEventListener('click', () => {
+                if (task.status === 'todo') task.status = 'progress';
+                else if (task.status === 'progress') task.status = 'done';
+                else task.status = 'todo';
+                renderTasks();
+                showToast('Status úkolu změněn', 'success');
+            });
+            
+            return item;
+        }
 
-    let subtasks = [];
-    window.addSubtask = function() {
-      subtasks.push({ text: '', completed: false });
-      renderSubtasks();
-    };
+        // Modal
+        document.getElementById('btn-new-task')?.addEventListener('click', () => {
+            document.getElementById('task-modal').classList.add('active');
+        });
 
-    window.removeSubtask = function(idx) {
-      subtasks.splice(idx, 1);
-      renderSubtasks();
-    };
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('task-modal').classList.remove('active');
+            });
+        });
 
-    window.updateSubtask = function(idx, text) {
-      if (subtasks[idx]) {
-        subtasks[idx].text = text;
-      }
-    };
+        document.getElementById('btn-save-task')?.addEventListener('click', () => {
+            const title = document.getElementById('task-title').value.trim();
+            if (!title) {
+                showToast('Vyplňte název úkolu', 'warning');
+                return;
+            }
+            
+            const newTask = {
+                id: Math.max(...tasks.map(t => t.id), 0) + 1,
+                title: title,
+                description: document.getElementById('task-desc').value.trim(),
+                status: 'todo',
+                priority: document.getElementById('task-priority').value,
+                deadline: document.getElementById('task-deadline').value || null,
+                assignee: document.getElementById('task-assignee').value || null
+            };
+            
+            tasks.push(newTask);
+            renderTasks();
+            document.getElementById('task-modal').classList.remove('active');
+            document.getElementById('task-form').reset();
+            showToast('Úkol vytvořen', 'success');
+        });
 
-    window.toggleSubtask = function(idx, completed) {
-      if (subtasks[idx]) {
-        subtasks[idx].completed = completed;
-      }
-    };
+        // Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderTasks();
+            });
+        });
 
-    function renderSubtasks() {
-      const container = document.getElementById('subtasksList');
-      if (!container) return;
-      container.innerHTML = subtasks.map((st, idx) => `
-        <div class="subtask-item">
-          <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="window.toggleSubtask(${idx}, this.checked)">
-          <input type="text" value="${escapeHtml(st.text)}" placeholder="Název subtasku" onchange="window.updateSubtask(${idx}, this.value)">
-          <button type="button" class="btn-icon-small" onclick="window.removeSubtask(${idx})">×</button>
-        </div>
-      `).join('');
-    }
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-    function addComment() {
-      const input = document.getElementById('newComment');
-      const text = input.value.trim();
-      if (!text) return;
-      
-      const extended = getTaskExtended(currentTaskId) || {};
-      if (!extended.comments) extended.comments = [];
-      extended.comments.push({
-        text: text,
-        author: 'Já', // Would get from auth
-        date: new Date().toISOString()
-      });
-      saveTaskExtended(currentTaskId, extended);
-      input.value = '';
-      openTaskDetail(currentTaskId);
-    }
-
-    window.saveTask = async function() {
-      const title = document.getElementById('taskTitle').value.trim();
-      if (!title) {
-        alert('Název úkolu je povinný');
-        return;
-      }
-
-      const taskData = {
-        title: title,
-        description: document.getElementById('taskDescription').value.trim(),
-        job_id: document.getElementById('taskProject').value || null,
-        employee_id: document.getElementById('taskAssignee').value || null,
-        due_date: document.getElementById('taskDueDate').value || null,
-        status: currentTaskId ? tasks.find(t => t.id === currentTaskId)?.status || 'open' : 'open'
-      };
-
-      try {
-        let taskId = currentTaskId;
-        
-        if (!currentTaskId) {
-          // Create new task
-          const res = await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(taskData)
-          });
-          const data = await res.json();
-          if (data.ok) {
-            taskId = data.id || data.row?.id;
-          }
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                loadTasks();
+            });
         } else {
-          // Update existing task
-          taskData.id = currentTaskId;
-          await fetch('/api/tasks', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(taskData)
-          });
+            loadTasks();
         }
-
-        // Save extended data
-        if (taskId) {
-          const extended = {
-            priority: document.getElementById('taskPriority').value,
-            category: document.getElementById('taskCategory').value.trim(),
-            recurring: document.getElementById('taskRecurring')?.checked || false,
-            recurringType: document.getElementById('taskRecurringType')?.value,
-            subtasks: subtasks
-          };
-          saveTaskExtended(taskId, extended);
-        }
-
-        await loadTasks();
-        closeModal();
-      } catch (e) {
-        console.error('Error saving task:', e);
-        alert('Chyba při ukládání úkolu');
-      }
-    };
-
-    // localStorage helpers for extended data
-    function getTaskExtended(taskId) {
-      const key = `task_extended_${taskId}`;
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
-    }
-
-    function saveTaskExtended(taskId, data) {
-      const key = `task_extended_${taskId}`;
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    window.closeModal = function() {
-      document.getElementById('taskModal').classList.remove('show');
-      currentTaskId = null;
-      subtasks = [];
-    };
-
-    // Filters
-    document.getElementById('searchInput').addEventListener('input', renderTasks);
-    document.getElementById('filterPriority').addEventListener('change', renderTasks);
-    document.getElementById('filterProject').addEventListener('change', renderTasks);
-    document.getElementById('filterAssignee').addEventListener('change', renderTasks);
-    document.getElementById('filterDeadline').addEventListener('change', renderTasks);
-
-    document.querySelectorAll('.btn-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderTasks();
-      });
-    });
-
-    // Note: taskRecurring element is only available when modal is open
-    // Event listener will be attached when modal opens
-
-    // Close modal on backdrop click
-    document.getElementById('taskModal').addEventListener('click', (e) => {
-      if (e.target.id === 'taskModal') {
-        window.closeModal();
-      }
-    });
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // Initialize
-    loadTasks();
-    loadJobs();
-    loadEmployees();
-  </script>
+    </script>
 </body>
 </html>
-
