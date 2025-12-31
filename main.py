@@ -314,6 +314,11 @@ def _job_title_update_set(params_list, title_value):
 def index():
     return send_from_directory(".", "index.html")
 
+@app.route("/static/<path:filename>")
+def static_files(filename):
+    """Serve static files from static/ directory"""
+    return send_from_directory("static", filename)
+
 @app.route("/uploads/<path:name>")
 def uploaded_file(name):
     safe = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
@@ -704,6 +709,42 @@ def api_timesheets_export():
 def page_timesheets():
     return render_template("timesheets.html")
 
+# ----------------- Standalone HTML routes -----------------
+@app.route("/jobs.html")
+def page_jobs():
+    return send_from_directory(".", "jobs.html")
+
+@app.route("/tasks.html")
+def page_tasks():
+    return send_from_directory(".", "tasks.html")
+
+@app.route("/employees.html")
+def page_employees():
+    return send_from_directory(".", "employees.html")
+
+@app.route("/calendar.html")
+def page_calendar():
+    return send_from_directory(".", "calendar.html")
+
+@app.route("/settings.html")
+def page_settings():
+    return send_from_directory(".", "settings.html")
+
+@app.route("/warehouse.html")
+def page_warehouse():
+    return send_from_directory(".", "warehouse.html")
+
+@app.route("/finance.html")
+def page_finance():
+    return send_from_directory(".", "finance.html")
+
+@app.route("/documents.html")
+def page_documents():
+    return send_from_directory(".", "documents.html")
+
+@app.route("/reports.html")
+def page_reports():
+    return send_from_directory(".", "reports.html")
 
 # ----------------- Job detail UI routes -----------------
 @app.route("/jobs/<int:job_id>")
