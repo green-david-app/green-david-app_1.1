@@ -712,28 +712,69 @@
               const fmt = (d)=>d.toISOString().slice(0,10);
               
               // Get jobs
-              const jobs = await api("/api/jobs");
+              let jobs = {jobs:[]};
+              try {
+                jobs = await api("/api/jobs");
+              } catch(e) {
+                console.warn("Failed to load jobs:", e);
+              }
               const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán");
               const activeCount = active.length;
               setActiveJobs(active.slice(0,5));
               
               // Get employees
-              const emps = await api("/api/employees");
+              let emps = {employees:[]};
+              try {
+                emps = await api("/api/employees");
+              } catch(e) {
+                console.warn("Failed to load employees:", e);
+              }
               const empCount = (emps.employees||[]).length;
-              const onlineCount = Math.floor(empCount * 0.75); // Mock online
+              
+              // Calculate online employees based on recent activity
+              let onlineCount = 0;
+              try {
+                const timesheetsWeek = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+                const recentEmpIds = new Set();
+                (timesheetsWeek.rows||[]).forEach(ts=>{
+                  if(ts.employee_id && ts.date){
+                    const tsDate = new Date(ts.date);
+                    const diff = (today - tsDate) / (1000 * 60 * 60);
+                    if(diff < 24) recentEmpIds.add(ts.employee_id);
+                  }
+                });
+                onlineCount = recentEmpIds.size;
+              } catch(e) {
+                console.warn("Failed to calculate online employees:", e);
+                onlineCount = Math.floor(empCount * 0.5); // Fallback
+              }
               
               // Get tasks
-              const tasks = await api("/api/tasks");
+              let tasks = {tasks:[]};
+              try {
+                tasks = await api("/api/tasks");
+              } catch(e) {
+                console.warn("Failed to load tasks:", e);
+              }
               const taskList = tasks.tasks||[];
               const pending = taskList.filter(t=>(t.status||'open')!=='completed').length;
               const urgent = taskList.filter(t=>{
                 if(!t.due_date) return false;
-                const due = new Date(t.due_date);
-                return due.toDateString()===today.toDateString();
+                try {
+                  const due = new Date(t.due_date);
+                  return due.toDateString()===today.toDateString();
+                } catch(e) {
+                  return false;
+                }
               }).length;
               
               // Get timesheets
-              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              let timesheets = {rows:[]};
+              try {
+                timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              } catch(e) {
+                console.warn("Failed to load timesheets:", e);
+              }
               const weeklyHours = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
               
               // Calculate monthly chart (last 30 days)
@@ -757,14 +798,24 @@
               const events = [];
               active.forEach(j=>{
                 if(j.date){
-                  const due = new Date(j.date);
-                  if(due.toDateString()===today.toDateString()){
-                    events.push({time:'09:00',title:`⚠️ Deadline - ${j.title||'Zakázka'}`,description:'Dokončení prací',urgent:true});
+                  try {
+                    const due = new Date(j.date);
+                    if(due.toDateString()===today.toDateString()){
+                      events.push({time:'09:00',title:`⚠️ Deadline - ${j.title||'Zakázka'}`,description:'Dokončení prací',urgent:true});
+                    }
+                  } catch(e) {
+                    // Skip invalid dates
                   }
                 }
               });
-              taskList.filter(t=>t.due_date && new Date(t.due_date).toDateString()===today.toDateString()).forEach(t=>{
-                events.push({time:'14:00',title:`✅ Úkol: ${t.title}`,description:'Deadline dnes',urgent:false});
+              taskList.filter(t=>t.due_date).forEach(t=>{
+                try {
+                  if(new Date(t.due_date).toDateString()===today.toDateString()){
+                    events.push({time:'14:00',title:`✅ Úkol: ${t.title}`,description:'Deadline dnes',urgent:false});
+                  }
+                } catch(e) {
+                  // Skip invalid dates
+                }
               });
               
               setStats({
@@ -779,13 +830,63 @@
               });
               setTodayEvents(events);
               setChartData({monthly:monthlyData,breakdown:breakdownData});
-            }catch(e){console.error(e);}
+            }catch(e){
+              console.error("Dashboard error:", e);
+              // Set default values on error
+              setStats({
+                activeJobs:0,employees:0,tasks:0,weeklyHours:0,pendingTasks:0,urgentTasks:0,onlineEmployees:0,totalEmployees:0
+              });
+            }
           })();
         },[]);
         
         const weekGoal = 200;
         const weekProgress = stats.totalEmployees > 0 ? (stats.weeklyHours / weekGoal) * 100 : 0;
         const todayStr = new Date().toLocaleDateString('cs-CZ', {day: 'numeric', month: 'long'});
+        
+        // Simple chart components for Dashboard
+        const SimpleBarChart = ({data,height=200,color="#3ea76a"})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const max = Math.max(...data.map(d=>d.hours||0),1);
+          const barWidth = 280 / Math.max(data.length,1);
+          return <svg width="100%" height={height} style={{overflow:"visible"}}>
+            {data.map((d,i)=>{
+              const barHeight = Math.max(0, ((d.hours||0)/max)*150);
+              const rectWidth = Math.max(1, barWidth-10);
+              return <g key={i}>
+                <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
+                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{String(d.name||'').substring(0,8)}</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{(d.hours||0).toFixed(1)}h</text>
+              </g>;
+            })}
+          </svg>;
+        };
+        
+        const SimplePieChart = ({data,size=200})=>{
+          if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const total = data.reduce((s,d)=>s+(d.value||0),0);
+          if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
+          const colors = ["#3ea76a","#4bb878","#2d8f55"];
+          let currentAngle = -90;
+          const center = size/2;
+          const radius = size/2-20;
+          return <svg width={size} height={size} style={{margin:"0 auto",display:"block"}}>
+            {data.map((d,i)=>{
+              const angle = ((d.value||0)/total)*360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + angle;
+              currentAngle += angle;
+              const x1 = center + radius*Math.cos(startAngle*Math.PI/180);
+              const y1 = center + radius*Math.sin(startAngle*Math.PI/180);
+              const x2 = center + radius*Math.cos(endAngle*Math.PI/180);
+              const y2 = center + radius*Math.sin(endAngle*Math.PI/180);
+              const largeArc = angle>180?1:0;
+              return <path key={i} d={`M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`} fill={colors[i%colors.length]} opacity={0.8} stroke="#0a0e11" strokeWidth="2"/>
+            })}
+            <text x={center} y={center+5} fontSize="14" fill="#e8eef2" textAnchor="middle" fontWeight="600">{total}%</text>
+            <text x={center} y={center+20} fontSize="11" fill="#9ca8b3" textAnchor="middle">Celkem</text>
+          </svg>;
+        };
         
         return (<div style={{paddingBottom:100,padding:"20px",maxWidth:"1600px",margin:"0 auto"}}>
           <style>{`
@@ -854,7 +955,7 @@
             <div className="metric-card success">
               <div className="metric-icon">⏱️</div>
               <div className="metric-data">
-                <h2>{stats.weeklyHours.toFixed(0)}h</h2>
+                <h2>{(stats.weeklyHours||0).toFixed(0)}h</h2>
                 <p>Hodiny tento týden</p>
                 <div className="progress-mini">
                   <div className="fill" style={{width: `${Math.min(weekProgress, 100)}%`}}></div>
@@ -950,13 +1051,21 @@
               {/* Monthly Performance Chart */}
               <div className="dashboard-chart">
                 <h3>📈 Výkon za měsíc</h3>
-                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={200} color="#3ea76a"/>
+                {chartData.monthly && chartData.monthly.length > 0 ? (
+                  <SimpleBarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={200} color="#3ea76a"/>
+                ) : (
+                  <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>
+                )}
               </div>
               
               {/* Time Breakdown Chart */}
               <div className="dashboard-chart">
                 <h3>⏱️ Rozložení času</h3>
-                <PieChart data={chartData.breakdown} size={200}/>
+                {chartData.breakdown && chartData.breakdown.length > 0 ? (
+                  <SimplePieChart data={chartData.breakdown} size={200}/>
+                ) : (
+                  <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>
+                )}
               </div>
             </div>
           </div>
@@ -1101,13 +1210,23 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               const sunday = new Date(monday);
               sunday.setDate(monday.getDate() + 6);
               const fmt = (d)=>d.toISOString().slice(0,10);
-              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              let timesheets = {rows:[]};
+              try {
+                timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              } catch(e) {
+                console.warn("Failed to load timesheets:", e);
+              }
               const totalHWeek = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
               
               // Get this month's timesheets
               const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
               const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-              const timesheetsMonth = await api(`/api/timesheets?from=${fmt(monthStart)}&to=${fmt(monthEnd)}`);
+              let timesheetsMonth = {rows:[]};
+              try {
+                timesheetsMonth = await api(`/api/timesheets?from=${fmt(monthStart)}&to=${fmt(monthEnd)}`);
+              } catch(e) {
+                console.warn("Failed to load monthly timesheets:", e);
+              }
               const totalHMonth = (timesheetsMonth.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
               
               // Get jobs
@@ -1116,11 +1235,21 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               const activeList = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").slice(0,5);
               
               // Get employees
-              const emps = await api("/api/employees");
+              let emps = {employees:[]};
+              try {
+                emps = await api("/api/employees");
+              } catch(e) {
+                console.warn("Failed to load employees:", e);
+              }
               const empCount = (emps.employees||[]).length;
               
               // Get tasks
-              const tasks = await api("/api/tasks");
+              let tasks = {tasks:[]};
+              try {
+                tasks = await api("/api/tasks");
+              } catch(e) {
+                console.warn("Failed to load tasks:", e);
+              }
               const taskCount = (tasks.tasks||[]).length;
               const pending = (tasks.tasks||[]).filter(t=>t.status==="open"||t.status==="in-progress").length;
               const todayDate = today.toISOString().slice(0,10);
@@ -1133,7 +1262,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                 events.push({time:"09:00",type:"deadline",title:`⚠️ Deadline - ${t.title}`,description:"Dokončení prací",urgent:true});
               });
               
-              // Get team status (simplified - based on recent activity)
+              // Get team status - show ALL employees, not just those with recent activity
               const empStatus = [];
               (emps.employees||[]).forEach(emp=>{
                 const empTimesheets = (timesheets.rows||[]).filter(ts=>ts.employee_id===emp.id);
@@ -1142,21 +1271,23 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                   const diff = (today - tsDate) / (1000 * 60 * 60);
                   return diff < 24;
                 });
-                if(hasRecentActivity){
-                  const jobHours = {};
-                  empTimesheets.forEach(ts=>{
-                    const job = (jobs.jobs||[]).find(j=>j.id===ts.job_id);
-                    if(job) jobHours[job.title||`Zakázka ${job.id}`] = (jobHours[job.title||`Zakázka ${job.id}`]||0) + (ts.hours||0);
-                  });
-                  const currentJob = Object.entries(jobHours).sort((a,b)=>b[1]-a[1])[0];
-                  empStatus.push({
-                    id:emp.id,
-                    name:emp.name,
-                    status:hasRecentActivity?'online':'offline',
-                    currentWork:currentJob ? `📋 ${currentJob[0]}` : '☕ Pauza',
-                    hours:currentJob ? currentJob[1].toFixed(1) : '0'
-                  });
-                }
+                
+                // Show all employees, mark status based on activity
+                const jobHours = {};
+                empTimesheets.forEach(ts=>{
+                  const job = (jobs.jobs||[]).find(j=>j.id===ts.job_id);
+                  if(job) jobHours[job.title||`Zakázka ${job.id}`] = (jobHours[job.title||`Zakázka ${job.id}`]||0) + (ts.hours||0);
+                });
+                const currentJob = Object.entries(jobHours).sort((a,b)=>b[1]-a[1])[0];
+                const weekHours = empTimesheets.reduce((s,r)=>s+(r.hours||0),0);
+                
+                empStatus.push({
+                  id:emp.id,
+                  name:emp.name || `Zaměstnanec ${emp.id}`,
+                  status:hasRecentActivity?'online':'offline',
+                  currentWork:currentJob ? `📋 ${currentJob[0]}` : '☕ Pauza',
+                  hours:weekHours > 0 ? weekHours.toFixed(1) : '0'
+                });
               });
               
               // Calculate online employees
@@ -1231,7 +1362,17 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               setTeamStatus(empStatus);
               setNotifications(notifs);
               setChartData({monthly:monthlyData,breakdown:breakdownData,employees:empChartData,jobs:jobChartData});
-            }catch(e){console.error(e);}
+            }catch(e){
+              console.error("ReportsTab error:", e);
+              // Set default values on error
+              setStats({
+                activeJobs:0,employees:0,tasks:0,
+                totalHoursWeek:0,totalHoursMonth:0,
+                topEmployee:null,upcomingTasks:0,
+                pendingTasks:0,urgentTasks:0,
+                onlineEmployees:0,totalEmployees:0
+              });
+            }
           })();
         },[]);
         
