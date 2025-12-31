@@ -92,41 +92,74 @@
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: var(--space-sm);
-    background: var(--bg-primary);
+    gap: 8px;
+    background: #1a1a1a;
     padding: var(--space-md);
     border-radius: var(--radius-lg);
     border: 0.5px solid var(--border-primary);
+    transition: all 300ms ease;
   }
   .cal-cell {
-    background: #e8eef2;
-    border: 0.5px solid #d0d7de;
+    background: #2d4a3a;
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
     padding: var(--space-sm);
     min-height: 68px;
     position: relative;
     cursor: pointer;
-    transition: all var(--transition);
+    transition: all 300ms ease;
   }
   .cal-cell:hover {
     transform: translateY(-1px);
-    border-color: var(--mint);
-    background: #f0f4f7;
-    box-shadow: 0 2px 8px rgba(62, 167, 106, 0.15);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: #234530;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   .cal-cell.muted {
-    opacity: 0.6;
-    background: #d8dfe5;
+    opacity: 0.4;
+    background: #1a2a1a;
+    border-color: rgba(255, 255, 255, 0.05);
   }
   .cal-cell.muted:hover {
-    opacity: 0.8;
-    background: #e0e7ed;
+    opacity: 0.6;
+    background: #1a2a1a;
+  }
+  .cal-cell.weekend {
+    background: #2d4a3a;
+  }
+  .cal-cell.weekend:hover {
+    background: #234530;
+  }
+  .cal-cell.today {
+    background: #3d5a4a;
+    border: 2px solid #4ade80;
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+  }
+  .cal-cell.today:hover {
+    background: #3d5a4a;
+    border-color: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+  }
+  .cal-cell.has-events::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(74, 222, 128, 0.6);
   }
   .cal-date {
     font-weight: 700;
     font-size: 13px;
-    color: #0a0e11;
+    color: #ffffff;
     margin-bottom: 4px;
+  }
+  .cal-cell.today .cal-date {
+    color: #ffffff;
+    font-weight: 800;
   }
   .cal-events {
     display: flex;
@@ -174,14 +207,21 @@
   .cal-cell.selected {
     outline: 2px solid var(--mint);
     outline-offset: 2px;
-    background: #f0f4f7;
+    background: #234530;
+  }
+  .cal-cell.today.selected {
+    background: #3d5a4a;
+    border-color: #4ade80;
   }
   .month-label {
     font-weight: 700;
     font-size: 22px;
-    color: var(--text-primary);
+    color: #ffffff;
     flex: 1;
     text-align: center;
+    background: #1a1a1a;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
   }
   .cal-controls {
     background: var(--bg-card);
@@ -191,16 +231,16 @@
   .cal-header {
     text-align: center;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #ffffff;
     font-size: 11px;
     padding: 8px 4px;
     text-transform: uppercase;
-    background: var(--bg-primary);
+    background: #1a1a1a;
   }
   
   @media (max-width: 768px) {
     .calendar-grid {
-      gap: var(--space-xs);
+      gap: 6px;
       padding: var(--space-sm);
     }
     .cal-cell {
@@ -281,6 +321,10 @@ function ymd(d){
 }
 
 async function loadMonth() {
+  // Smooth transition
+  grid.style.opacity = '0.5';
+  grid.style.transform = 'translateY(10px)';
+  
   label.textContent = fmtMonth(cur);
   grid.innerHTML = "";
   dayDetail.classList.add('hidden');
@@ -288,6 +332,8 @@ async function loadMonth() {
 
   const first = new Date(cur); const startDow = (first.getDay()+6)%7; // Mon=0
   first.setDate(1-startDow);
+  const today = new Date(); today.setHours(0,0,0,0);
+  
   // Add day headers
   const dayNames = ['P', 'Ú', 'S', 'Č', 'P', 'S', 'N'];
   for(let i=0; i<7; i++){
@@ -299,8 +345,14 @@ async function loadMonth() {
   // Add day cells
   for (let i=0;i<42;i++){
     const day = new Date(first); day.setDate(first.getDate()+i);
+    day.setHours(0,0,0,0);
     const cell = document.createElement("div");
-    cell.className = "cal-cell"+(day.getMonth()==cur.getMonth()?"":" muted");
+    let className = "cal-cell";
+    if(day.getMonth()!==cur.getMonth()) className += " muted";
+    const dayOfWeek = day.getDay();
+    if(dayOfWeek === 0 || dayOfWeek === 6) className += " weekend"; // Sunday or Saturday
+    if(+day === +today) className += " today";
+    cell.className = className;
     cell.innerHTML = `<div class="cal-date">${day.getDate()}.</div><div class="cal-events"></div>`;
     cell.dataset.date = ymd(day);
     cell.addEventListener("click", ()=>selectDay(ymd(day), cell));
@@ -313,14 +365,31 @@ async function loadMonth() {
   const data = await resp.json();
   monthItems = Array.isArray(data) ? data : (data && (data.items||data.events) ? (data.items||data.events) : []);
   renderEvents(monthItems);
+  
+  // Restore opacity with smooth transition
+  setTimeout(() => {
+    grid.style.transition = 'opacity 300ms ease, transform 300ms ease';
+    grid.style.opacity = '1';
+    grid.style.transform = 'translateY(0)';
+  }, 50);
 }
 
 function renderEvents(items){
-  // clear event pills
+  // clear event pills and has-events class
   grid.querySelectorAll(".cal-events").forEach(e=>e.innerHTML="");
+  grid.querySelectorAll(".cal-cell").forEach(c=>c.classList.remove("has-events"));
+  
+  // Track which days have events
+  const daysWithEvents = new Set();
+  
   for (const ev of items){
-    const container = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-events`);
+    const dateStr = ev.date;
+    daysWithEvents.add(dateStr);
+    const container = grid.querySelector(`.cal-cell[data-date="${dateStr}"] .cal-events`);
     if (!container) continue;
+    const cell = container.closest('.cal-cell');
+    if (cell) cell.classList.add('has-events');
+    
     const pill = document.createElement("div");
     const kind = ev.kind || ev.type || 'note';
     pill.className = "badge " + (kind=='task'?'task':(kind=='job'?'job':''));
