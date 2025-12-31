@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <div class="page">
   <div class="container">
     <!-- Page Header -->
@@ -84,14 +85,24 @@
       <div class="ts-stats-grid">
         <div class="ts-stat-card">
           <div class="ts-stat-title">Rozpad hodin po projektech</div>
-          <div id="donutChart" class="ts-chart"></div>
+          <div class="ts-chart-container">
+            <canvas id="donutChart"></canvas>
+          </div>
         </div>
         <div class="ts-stat-card">
           <div class="ts-stat-title">Trend hodin (4 týdny)</div>
-          <div id="lineChart" class="ts-chart"></div>
+          <div class="ts-chart-container">
+            <canvas id="lineChart"></canvas>
+          </div>
         </div>
         <div class="ts-stat-card">
-          <div class="ts-stat-title">Top 5 projektů tento týden</div>
+          <div class="ts-stat-title">Hodiny po dnech</div>
+          <div class="ts-chart-container">
+            <canvas id="dailyBarChart"></canvas>
+          </div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Top projekty tento týden</div>
           <div id="topProjects" class="ts-top-list"></div>
         </div>
       </div>
@@ -99,24 +110,32 @@
 
     <!-- Timeline View -->
     <div id="timelineView" class="ts-timeline-view" style="display:none;">
-      <div class="ts-timeline-header">
-        <div class="ts-timeline-time-col">Čas</div>
-        <div class="ts-timeline-days">
-          <div class="ts-timeline-day" data-day="0">Po</div>
-          <div class="ts-timeline-day" data-day="1">Út</div>
-          <div class="ts-timeline-day" data-day="2">St</div>
-          <div class="ts-timeline-day" data-day="3">Čt</div>
-          <div class="ts-timeline-day" data-day="4">Pá</div>
-          <div class="ts-timeline-day" data-day="5">So</div>
-          <div class="ts-timeline-day" data-day="6">Ne</div>
+      <div class="ts-timeline-container">
+        <div class="ts-timeline-header">
+          <div class="ts-timeline-time-col">Čas</div>
+          <div class="ts-timeline-days">
+            <div class="ts-timeline-day" data-day="0">Po</div>
+            <div class="ts-timeline-day" data-day="1">Út</div>
+            <div class="ts-timeline-day" data-day="2">St</div>
+            <div class="ts-timeline-day" data-day="3">Čt</div>
+            <div class="ts-timeline-day" data-day="4">Pá</div>
+            <div class="ts-timeline-day" data-day="5">So</div>
+            <div class="ts-timeline-day" data-day="6">Ne</div>
+          </div>
         </div>
-      </div>
-      <div class="ts-timeline-body">
-        <div class="ts-timeline-hours">
-          <!-- Hours 8:00 - 18:00 will be generated -->
-        </div>
-        <div class="ts-timeline-grid">
-          <!-- Timeline blocks will be generated here -->
+        <div class="ts-timeline-body">
+          <div class="ts-timeline-time-labels">
+            <!-- Hours 8:00 - 18:00 will be generated -->
+          </div>
+          <div class="ts-timeline-grid">
+            <div class="ts-timeline-day-column" data-day="0"></div>
+            <div class="ts-timeline-day-column" data-day="1"></div>
+            <div class="ts-timeline-day-column" data-day="2"></div>
+            <div class="ts-timeline-day-column" data-day="3"></div>
+            <div class="ts-timeline-day-column" data-day="4"></div>
+            <div class="ts-timeline-day-column" data-day="5"></div>
+            <div class="ts-timeline-day-column" data-day="6"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -243,6 +262,17 @@
   .ts-actions {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ts-actions .btn-primary {
+    background: var(--mint) !important;
+    color: #0a0e11 !important;
+    border-color: var(--mint) !important;
+    font-weight: 600 !important;
+  }
+  .ts-actions .btn-primary:hover {
+    background: var(--mint-light) !important;
+    color: #0a0e11 !important;
   }
 
   /* Summary Bar */
@@ -619,6 +649,14 @@
     margin-bottom: 12px;
     font-size: 13px;
   }
+  .ts-chart-container {
+    height: 250px;
+    position: relative;
+    padding: 10px;
+  }
+  .ts-chart-container canvas {
+    max-height: 100%;
+  }
   .ts-chart {
     height: 200px;
     display: flex;
@@ -650,9 +688,13 @@
     overflow: hidden;
     margin-bottom: 16px;
   }
+  .ts-timeline-container {
+    display: flex;
+    flex-direction: column;
+  }
   .ts-timeline-header {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 80px repeat(7, 1fr);
     background: var(--bg-elevated);
     border-bottom: 2px solid var(--border-medium);
   }
@@ -662,6 +704,7 @@
     color: var(--text-primary);
     font-size: 12px;
     border-right: 1px solid var(--border-medium);
+    text-align: center;
   }
   .ts-timeline-days {
     display: grid;
@@ -679,45 +722,78 @@
     border-right: none;
   }
   .ts-timeline-body {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
     position: relative;
-    min-height: 400px;
+    min-height: 600px;
+    background: var(--bg-primary);
   }
-  .ts-timeline-hours {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 80px;
+  .ts-timeline-time-labels {
+    display: flex;
+    flex-direction: column;
     border-right: 1px solid var(--border-medium);
+    background: var(--bg-elevated);
   }
   .ts-timeline-hour {
-    height: 40px;
+    height: 60px;
     padding: 4px 8px;
     font-size: 11px;
     color: var(--text-tertiary);
     border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .ts-timeline-grid {
-    margin-left: 80px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     position: relative;
-    min-height: 400px;
+  }
+  .ts-timeline-day-column {
+    position: relative;
+    min-height: 600px;
+    border-right: 1px solid var(--border-primary);
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--bg-card) 0px,
+      var(--bg-card) 59px,
+      var(--border-primary) 59px,
+      var(--border-primary) 60px
+    );
+  }
+  .ts-timeline-day-column:last-child {
+    border-right: none;
   }
   .ts-timeline-block {
     position: absolute;
-    border-radius: 4px;
-    padding: 4px 6px;
+    left: 4px;
+    right: 4px;
+    border-radius: 6px;
+    padding: 6px 8px;
     font-size: 11px;
     color: var(--text-dark);
     cursor: pointer;
     transition: all 0.2s;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.1);
   }
   .ts-timeline-block:hover {
-    transform: scale(1.05);
+    transform: scale(1.02);
     z-index: 10;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .ts-timeline-block-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ts-timeline-block-hours {
+    font-size: 10px;
+    opacity: 0.9;
   }
 
   /* Floating Action Button (Mobile) */
@@ -1242,33 +1318,348 @@
     if (view === 'timeline') {
       renderTimeline();
     } else if (view === 'stats') {
-      renderStats();
+      if (checkChartJS()) {
+        renderStats();
+      }
     } else if (view === 'list') {
       // Ensure week grid is visible
       if (elWeekGrid) elWeekGrid.style.display = 'block';
     }
   }
   
-  function renderTimeline() {
+  async function renderTimeline() {
+    const timeLabels = document.querySelector('.ts-timeline-time-labels');
     const timelineGrid = document.querySelector('.ts-timeline-grid');
-    const timelineHours = document.querySelector('.ts-timeline-hours');
-    if (!timelineGrid || !timelineHours) return;
-    timelineHours.innerHTML = '';
+    if (!timeLabels || !timelineGrid) return;
+    
+    // Generate time labels (8:00 - 18:00)
+    timeLabels.innerHTML = '';
     for (let h = 8; h <= 18; h++) {
       const hourEl = document.createElement('div');
       hourEl.className = 'ts-timeline-hour';
       hourEl.textContent = h + ':00';
-      timelineHours.appendChild(hourEl);
+      timeLabels.appendChild(hourEl);
+    }
+    
+    // Clear existing blocks
+    document.querySelectorAll('.ts-timeline-day-column').forEach(col => {
+      col.innerHTML = '';
+    });
+    
+    // Load and render timesheet data
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+    
+    try {
+      const data = await fetchJSON('/api/timesheets?' + q.toString());
+      const rows = data.rows || [];
+      
+      // Group by day
+      const byDay = {};
+      rows.forEach(row => {
+        const date = new Date(row.date);
+        const dayOfWeek = (date.getDay() + 6) % 7; // Monday = 0
+        if (!byDay[dayOfWeek]) byDay[dayOfWeek] = [];
+        byDay[dayOfWeek].push(row);
+      });
+      
+      // Render blocks for each day
+      for (let day = 0; day < 7; day++) {
+        const dayCol = document.querySelector(`.ts-timeline-day-column[data-day="${day}"]`);
+        if (!dayCol) continue;
+        
+        const dayEntries = byDay[day] || [];
+        dayEntries.forEach(entry => {
+          // Parse time from entry (if available) or use default
+          const startHour = 9; // Default start
+          const hours = entry.hours || 0;
+          const color = entry.job_id ? getProjectColor(entry.job_id) : '#4ade80';
+          
+          // Calculate position (each hour = 60px)
+          const top = (startHour - 8) * 60;
+          const height = Math.max(hours * 60, 30); // Min height 30px
+          
+          const block = document.createElement('div');
+          block.className = 'ts-timeline-block';
+          block.style.top = top + 'px';
+          block.style.height = height + 'px';
+          block.style.background = color;
+          block.style.borderColor = color;
+          
+          const job = jobsList.find(j => j.id === entry.job_id);
+          const jobTitle = job ? (job.title || 'Projekt ' + entry.job_id) : 'Bez projektu';
+          const emp = employeesList.find(e => e.id === entry.employee_id);
+          const empName = emp ? emp.name : 'Neznámý';
+          
+          block.innerHTML = `
+            <div class="ts-timeline-block-title">${jobTitle}</div>
+            <div class="ts-timeline-block-hours">${hours}h</div>
+            <div class="ts-timeline-block-hours" style="font-size:9px;opacity:0.7;">${empName}</div>
+          `;
+          
+          block.title = `${jobTitle} - ${hours}h - ${empName}${entry.activity ? ' - ' + entry.activity : ''}`;
+          block.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openModal({
+              id: entry.id,
+              employee_id: entry.employee_id,
+              job_id: entry.job_id,
+              date: entry.date,
+              hours: entry.hours,
+              place: entry.place,
+              activity: entry.activity
+            });
+          });
+          
+          dayCol.appendChild(block);
+        });
+        
+        // Add click handler for empty slots
+        dayCol.addEventListener('click', (e) => {
+          if (e.target === dayCol || e.target.classList.contains('ts-timeline-day-column')) {
+            const rect = dayCol.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            const clickedHour = Math.min(Math.max(Math.floor(clickY / 60) + 8, 8), 18);
+            const clickedDate = addDays(start, day);
+            openModal({date: fmtLocal(clickedDate)});
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Error rendering timeline:', e);
     }
   }
   
-  function renderStats() {
-    const donutEl = document.getElementById('donutChart');
-    const lineEl = document.getElementById('lineChart');
-    const topEl = document.getElementById('topProjects');
-    if (donutEl) donutEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Donut chart - implementace s Chart.js</div>';
-    if (lineEl) lineEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Line chart - implementace s Chart.js</div>';
-    if (topEl) topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Top 5 projektů - načítání dat...</div>';
+  let donutChart = null;
+  let lineChart = null;
+  let barChart = null;
+  
+  async function renderStats() {
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+    
+    try {
+      const data = await fetchJSON('/api/timesheets?' + q.toString());
+      const rows = data.rows || [];
+      
+      // Calculate project hours
+      const projectHours = {};
+      const dailyHours = [0, 0, 0, 0, 0, 0, 0];
+      
+      rows.forEach(row => {
+        const hours = row.hours || 0;
+        const jobId = row.job_id;
+        const job = jobsList.find(j => j.id === jobId);
+        const jobName = job ? (job.title || 'Projekt ' + jobId) : 'Bez projektu';
+        
+        if (!projectHours[jobName]) {
+          projectHours[jobName] = 0;
+        }
+        projectHours[jobName] += hours;
+        
+        // Daily hours
+        const date = new Date(row.date);
+        const dayOfWeek = (date.getDay() + 6) % 7; // Monday = 0
+        dailyHours[dayOfWeek] += hours;
+      });
+      
+      // Render Donut Chart
+      const donutCtx = document.getElementById('donutChart');
+      if (donutCtx && typeof Chart !== 'undefined') {
+        if (donutChart) donutChart.destroy();
+        const projectLabels = Object.keys(projectHours);
+        const projectData = Object.values(projectHours);
+        
+        if (projectLabels.length === 0) {
+          donutCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Žádná data</div>';
+        } else {
+          donutChart = new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+              labels: projectLabels,
+              datasets: [{
+                data: projectData,
+                backgroundColor: [
+                  '#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31',
+                  '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'
+                ],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    color: '#e8eef2',
+                    font: { size: 11 }
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+      
+      // Render Line Chart (last 4 weeks)
+      const lineCtx = document.getElementById('lineChart');
+      if (lineCtx && typeof Chart !== 'undefined') {
+        const weeks = [];
+        const weekHours = [];
+        
+        for (let i = 3; i >= 0; i--) {
+          const weekStart = addDays(start, -7 * i);
+          const weekEnd = addDays(weekStart, 6);
+          weeks.push(fmtLocal(weekStart).slice(5, 10));
+          
+          const weekQ = new URLSearchParams();
+          weekQ.set('from', fmtLocal(weekStart));
+          weekQ.set('to', fmtLocal(weekEnd));
+          if(elFJob && elFJob.value) weekQ.set('job_id', elFJob.value);
+          if(elFEmp && elFEmp.value) weekQ.set('employee_id', elFEmp.value);
+          
+          try {
+            const weekData = await fetchJSON('/api/timesheets?' + weekQ.toString());
+            const weekRows = weekData.rows || [];
+            const total = weekRows.reduce((sum, r) => sum + (r.hours || 0), 0);
+            weekHours.push(total);
+          } catch (e) {
+            weekHours.push(0);
+          }
+        }
+        
+        if (lineChart) lineChart.destroy();
+        lineChart = new Chart(lineCtx, {
+          type: 'line',
+          data: {
+            labels: weeks,
+            datasets: [{
+              label: 'Hodiny za týden',
+              data: weekHours,
+              borderColor: '#4ade80',
+              backgroundColor: 'rgba(74, 222, 128, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#e8eef2',
+                  font: { size: 11 }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#9ca8b3' },
+                grid: { color: 'rgba(255,255,255,0.1)' }
+              },
+              x: {
+                ticks: { color: '#9ca8b3' },
+                grid: { color: 'rgba(255,255,255,0.1)' }
+              }
+            }
+          }
+        });
+      }
+      
+      // Render Bar Chart (daily hours)
+      const barCtx = document.getElementById('dailyBarChart');
+      if (barCtx && typeof Chart !== 'undefined') {
+        const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        if (barChart) barChart.destroy();
+        barChart = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: dayNames,
+            datasets: [{
+              label: 'Hodiny',
+              data: dailyHours,
+              backgroundColor: '#4ade80',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#9ca8b3' },
+                grid: { color: 'rgba(255,255,255,0.1)' }
+              },
+              x: {
+                ticks: { color: '#9ca8b3' },
+                grid: { color: 'rgba(255,255,255,0.1)' }
+              }
+            }
+          }
+        });
+      }
+      
+      // Render Top Projects
+      const topEl = document.getElementById('topProjects');
+      if (topEl) {
+        const sortedProjects = Object.entries(projectHours)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        
+        if (sortedProjects.length === 0) {
+          topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Žádné projekty</div>';
+        } else {
+          const maxHours = sortedProjects[0][1];
+          topEl.innerHTML = sortedProjects.map(([name, hours], index) => {
+            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '•';
+            const percent = maxHours > 0 ? (hours / maxHours) * 100 : 0;
+            const color = getProjectColor(jobsList.find(j => j.title === name)?.id || index);
+            return `
+              <div class="ts-top-item">
+                <div style="display:flex;align-items:center;gap:8px;flex:1;">
+                  <span style="font-size:16px;">${medal}</span>
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+                  <span style="font-weight:700;color:${color};">${hours.toFixed(1)}h</span>
+                </div>
+                <div style="margin-top:6px;height:4px;background:var(--bg-tertiary);border-radius:2px;overflow:hidden;">
+                  <div style="height:100%;width:${percent}%;background:${color};transition:width 0.3s;"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    } catch (e) {
+      console.error('Error rendering stats:', e);
+      const donutCtx = document.getElementById('donutChart');
+      const lineCtx = document.getElementById('lineChart');
+      const barCtx = document.getElementById('dailyBarChart');
+      const topEl = document.getElementById('topProjects');
+      if (donutCtx) donutCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
+      if (lineCtx) lineCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
+      if (barCtx) barCtx.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
+      if (topEl) topEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Chyba při načítání dat</div>';
+    }
   }
   
   // Attach view toggle listeners (elements already declared above)
