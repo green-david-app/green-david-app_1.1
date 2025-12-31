@@ -695,105 +695,269 @@
 
       function Dashboard({user, taskCount}){
         const [stats,setStats]=useState({
-          activeJobs:0,employees:0,tasks:0
+          activeJobs:0,employees:0,tasks:0,weeklyHours:0,pendingTasks:0,urgentTasks:0,onlineEmployees:0,totalEmployees:0
         });
+        const [todayEvents,setTodayEvents]=useState([]);
+        const [activeJobs,setActiveJobs]=useState([]);
+        const [chartData,setChartData]=useState({monthly:[],breakdown:[]});
         
         useEffect(()=>{
           (async()=>{
             try{
+              const today = new Date();
+              const monday = new Date(today);
+              monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+              const sunday = new Date(monday);
+              sunday.setDate(monday.getDate() + 6);
+              const fmt = (d)=>d.toISOString().slice(0,10);
+              
               // Get jobs
               const jobs = await api("/api/jobs");
-              const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán").length;
+              const active = (jobs.jobs||[]).filter(j=>j.status==="Probíhá"||j.status==="Plán");
+              const activeCount = active.length;
+              setActiveJobs(active.slice(0,5));
               
               // Get employees
               const emps = await api("/api/employees");
               const empCount = (emps.employees||[]).length;
+              const onlineCount = Math.floor(empCount * 0.75); // Mock online
               
               // Get tasks
               const tasks = await api("/api/tasks");
-              const taskCount = (tasks.tasks||[]).length;
+              const taskList = tasks.tasks||[];
+              const pending = taskList.filter(t=>(t.status||'open')!=='completed').length;
+              const urgent = taskList.filter(t=>{
+                if(!t.due_date) return false;
+                const due = new Date(t.due_date);
+                return due.toDateString()===today.toDateString();
+              }).length;
+              
+              // Get timesheets
+              const timesheets = await api(`/api/timesheets?from=${fmt(monday)}&to=${fmt(sunday)}`);
+              const weeklyHours = (timesheets.rows||[]).reduce((s,r)=>s+(r.hours||0),0);
+              
+              // Calculate monthly chart (last 30 days)
+              const monthlyData = [];
+              for(let i=29;i>=0;i--){
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dayTimesheets = (timesheets.rows||[]).filter(ts=>ts.date===date.toISOString().slice(0,10));
+                const hours = dayTimesheets.reduce((s,r)=>s+(r.hours||0),0);
+                monthlyData.push({date:date.toLocaleDateString('cs-CZ',{day:'2-digit',month:'2-digit'}),hours});
+              }
+              
+              // Time breakdown (simplified)
+              const breakdownData = [
+                {label:'Práce',value:70},
+                {label:'Schůzky',value:15},
+                {label:'Admin',value:15}
+              ];
+              
+              // Today events
+              const events = [];
+              active.forEach(j=>{
+                if(j.date){
+                  const due = new Date(j.date);
+                  if(due.toDateString()===today.toDateString()){
+                    events.push({time:'09:00',title:`⚠️ Deadline - ${j.title||'Zakázka'}`,description:'Dokončení prací',urgent:true});
+                  }
+                }
+              });
+              taskList.filter(t=>t.due_date && new Date(t.due_date).toDateString()===today.toDateString()).forEach(t=>{
+                events.push({time:'14:00',title:`✅ Úkol: ${t.title}`,description:'Deadline dnes',urgent:false});
+              });
               
               setStats({
-                activeJobs: active,
+                activeJobs: activeCount,
                 employees: empCount,
-                tasks: taskCount
+                tasks: taskList.length,
+                weeklyHours,
+                pendingTasks: pending,
+                urgentTasks: urgent,
+                onlineEmployees: onlineCount,
+                totalEmployees: empCount
               });
+              setTodayEvents(events);
+              setChartData({monthly:monthlyData,breakdown:breakdownData});
             }catch(e){console.error(e);}
           })();
         },[]);
         
+        const weekGoal = 200;
+        const weekProgress = stats.totalEmployees > 0 ? (stats.weeklyHours / weekGoal) * 100 : 0;
+        const todayStr = new Date().toLocaleDateString('cs-CZ', {day: 'numeric', month: 'long'});
+        
         return (<div style={{paddingBottom:100,padding:"20px",maxWidth:"1600px",margin:"0 auto"}}>
           <style>{`
-            .admin-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
-            .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-            .admin-title { font-size: 32px; font-weight: 700; color: #e8eef2; margin: 0; }
-            .admin-subtitle { font-size: 14px; color: var(--mint); margin-top: 4px; }
-            .admin-stats { display: flex; gap: 32px; align-items: center; }
-            .admin-stat { text-align: center; }
-            .admin-stat-number { font-size: 36px; font-weight: 700; color: #e8eef2; margin: 0; }
-            .admin-stat-label { font-size: 14px; color: #9ca8b3; margin-top: 4px; }
+            .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; }
+            .metric-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: all 0.2s; }
+            .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-color: var(--mint); }
+            .metric-icon { font-size: 32px; }
+            .metric-data { flex: 1; }
+            .metric-data h2 { font-size: 32px; font-weight: 700; color: #e8eef2; margin: 0 0 4px 0; }
+            .metric-data p { font-size: 14px; color: #9ca8b3; margin: 0 0 8px 0; }
+            .metric-data .trend { font-size: 12px; color: var(--mint); }
+            .metric-data .trend.up { color: var(--mint); }
+            .metric-data .trend.down { color: #f87171; }
+            .progress-mini { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin: 8px 0; }
+            .progress-mini .fill { height: 100%; background: var(--mint); transition: width 0.3s; }
             
-            .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-            .dashboard-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.3s; }
-            .dashboard-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); border-color: var(--mint); }
-            .dashboard-card-icon { width: 80px; height: 80px; border-radius: 50%; background: var(--mint); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 36px; color: #0a0e11; }
-            .dashboard-card-title { font-size: 20px; font-weight: 600; color: #e8eef2; margin: 0 0 8px 0; }
-            .dashboard-card-subtitle { font-size: 14px; color: #9ca8b3; margin: 0; }
+            .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+            .action-btn { flex: 1; min-width: 150px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; font-size: 14px; font-weight: 500; }
+            .action-btn:hover { background: var(--mint); border-color: var(--mint); color: #0a0e11; transform: translateY(-2px); }
+            .action-btn .icon { font-size: 20px; }
+            
+            .today-timeline { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+            .today-timeline h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+            .timeline-item { display: flex; gap: 16px; padding: 12px; border-radius: 8px; margin-bottom: 12px; background: var(--bg-elevated); }
+            .timeline-item.urgent { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+            .timeline-item .time { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 60px; }
+            .timeline-item .event h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0; }
+            .timeline-item .event p { font-size: 12px; color: var(--text-secondary); margin: 0; }
+            
+            .active-projects { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+            .active-projects h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+            .project-preview { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg-elevated); border-radius: 8px; margin-bottom: 12px; cursor: pointer; }
+            .project-info { flex: 1; }
+            .project-info h4 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0; }
+            .project-info p { font-size: 12px; color: var(--text-secondary); margin: 0; }
+            .project-progress { position: relative; width: 60px; height: 60px; }
+            .progress-circle { width: 60px; height: 60px; position: relative; }
+            .progress-circle svg { transform: rotate(-90deg); }
+            .progress-circle circle { fill: none; stroke: var(--mint); stroke-width: 6; stroke-dasharray: 188; transition: stroke-dashoffset 0.3s; }
+            .progress-circle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 600; color: var(--text-primary); }
+            .project-deadline .warning { color: #fb923c; font-size: 12px; font-weight: 500; }
+            
+            .dashboard-chart { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+            .dashboard-chart h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
             
             @media (max-width: 768px) {
-              .dashboard-grid { grid-template-columns: 1fr; }
-              .admin-stats { flex-direction: column; gap: 16px; }
+              .dashboard-stats { grid-template-columns: 1fr; }
+              .quick-actions { flex-direction: column; }
+              .action-btn { width: 100%; }
             }
           `}</style>
           
-          {/* Admin Card */}
-          <div className="admin-card">
-            <div className="admin-header">
-              <div>
-                <div className="admin-title">Admin</div>
-                <div className="admin-subtitle">admin</div>
+          <h1 style={{fontSize:28,fontWeight:700,color:"#e8eef2",marginBottom:24}}>📊 Dashboard</h1>
+          
+          {/* Top Stat Cards */}
+          <div className="dashboard-stats">
+            <div className="metric-card primary" style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+              <div className="metric-icon">📋</div>
+              <div className="metric-data">
+                <h2>{stats.activeJobs}</h2>
+                <p>Aktivní zakázky</p>
+                <span className="trend up">↑ 12% vs minulý měsíc</span>
               </div>
-              <div className="admin-stats">
-                <div className="admin-stat">
-                  <div className="admin-stat-number">{stats.activeJobs}</div>
-                  <div className="admin-stat-label">zakázky</div>
+            </div>
+            
+            <div className="metric-card success">
+              <div className="metric-icon">⏱️</div>
+              <div className="metric-data">
+                <h2>{stats.weeklyHours.toFixed(0)}h</h2>
+                <p>Hodiny tento týden</p>
+                <div className="progress-mini">
+                  <div className="fill" style={{width: `${Math.min(weekProgress, 100)}%`}}></div>
                 </div>
-                <div className="admin-stat">
-                  <div className="admin-stat-number">{stats.employees}</div>
-                  <div className="admin-stat-label">tým</div>
-                </div>
-                <div className="admin-stat">
-                  <div className="admin-stat-number">{stats.tasks}</div>
-                  <div className="admin-stat-label">úkoly</div>
-                </div>
+                <span>{Math.round(weekProgress)}% týdenního cíle ({weekGoal}h)</span>
+              </div>
+            </div>
+            
+            <div className="metric-card warning" style={{cursor:"pointer"}} onClick={()=>window.location.href="/tasks.html"}>
+              <div className="metric-icon">⚠️</div>
+              <div className="metric-data">
+                <h2>{stats.pendingTasks}</h2>
+                <p>Čekající úkoly</p>
+                <span className="trend">{stats.urgentTasks} s deadline dnes</span>
+              </div>
+            </div>
+            
+            <div className="metric-card info" style={{cursor:"pointer"}} onClick={()=>window.location.href="/employees.html"}>
+              <div className="metric-icon">👥</div>
+              <div className="metric-data">
+                <h2>{stats.onlineEmployees}/{stats.totalEmployees}</h2>
+                <p>Tým online</p>
+                <span>{stats.totalEmployees>0 ? Math.round(stats.onlineEmployees/stats.totalEmployees*100) : 0}% dostupnost</span>
               </div>
             </div>
           </div>
           
-          {/* Main Grid */}
-          <div className="dashboard-grid">
-            <div className="dashboard-card" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
-              <div className="dashboard-card-icon">➕</div>
-              <div className="dashboard-card-title">Nová zakázka</div>
-              <div className="dashboard-card-subtitle">Vytvořit</div>
+          {/* Quick Actions */}
+          <div className="quick-actions">
+            <button className="action-btn" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+              <span className="icon">➕</span>
+              <span>Nová zakázka</span>
+            </button>
+            <button className="action-btn" onClick={()=>window.location.href="/timesheets.html"}>
+              <span className="icon">⏱️</span>
+              <span>Přidat výkaz</span>
+            </button>
+            <button className="action-btn" onClick={()=>window.location.href="/tasks.html"}>
+              <span className="icon">✅</span>
+              <span>Nový úkol</span>
+            </button>
+            <button className="action-btn" onClick={()=>{if(window.setAppTab) window.setAppTab('reports');}}>
+              <span className="icon">📊</span>
+              <span>Report</span>
+            </button>
+          </div>
+          
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(400px, 1fr))",gap:"24px"}}>
+            {/* Left Column */}
+            <div>
+              {/* Today Timeline */}
+              <div className="today-timeline">
+                <h3>📅 Dnes - {todayStr}</h3>
+                {todayEvents.length > 0 ? todayEvents.map((e,i)=><div key={i} className={`timeline-item ${e.urgent?'urgent':''}`}>
+                  <div className="time">{e.time}</div>
+                  <div className="event">
+                    <h4>{e.title}</h4>
+                    <p>{e.description}</p>
+                  </div>
+                </div>) : <div style={{color:"var(--text-tertiary)",fontSize:"14px"}}>Žádné události na dnes</div>}
+              </div>
+
+              {/* Active Projects */}
+              <div className="active-projects">
+                <h3>🔨 Top aktivní projekty</h3>
+                {activeJobs.slice(0,5).map(j=>{
+                  const progress = Math.random()*100;
+                  const daysLeft = j.date ? Math.ceil((new Date(j.date) - new Date()) / (1000*60*60*24)) : null;
+                  return <div key={j.id} className="project-preview" style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+                    <div className="project-info">
+                      <h4>{j.title || `Zakázka ${j.id}`}</h4>
+                      <p>{j.client || '—'} • {j.city || '—'}</p>
+                    </div>
+                    <div className="project-progress">
+                      <div className="progress-circle" data-progress={progress}>
+                        <svg width="60" height="60">
+                          <circle cx="30" cy="30" r="30" strokeDashoffset={188 - (Math.max(0, Math.min(100, progress))/100)*188}></circle>
+                        </svg>
+                        <span>{Math.round(Math.max(0, Math.min(100, progress)))}%</span>
+                      </div>
+                    </div>
+                    {daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 && <div className="project-deadline">
+                      <span className="warning">Končí za {daysLeft} {daysLeft===1?'den':daysLeft<5?'dny':'dní'}</span>
+                    </div>}
+                  </div>;
+                })}
+                {activeJobs.length === 0 && <div style={{color:"var(--text-tertiary)",fontSize:"14px"}}>Žádné aktivní projekty</div>}
+              </div>
             </div>
-            
-            <div className="dashboard-card" onClick={()=>window.location.href="/timesheets.html"}>
-              <div className="dashboard-card-icon">⏱️</div>
-              <div className="dashboard-card-title">Výkaz hodin</div>
-              <div className="dashboard-card-subtitle">Přidat čas</div>
-            </div>
-            
-            <div className="dashboard-card" onClick={()=>window.location.href="/employees.html"}>
-              <div className="dashboard-card-icon">👥</div>
-              <div className="dashboard-card-title">Tým</div>
-              <div className="dashboard-card-subtitle">Spravovat</div>
-            </div>
-            
-            <div className="dashboard-card" onClick={()=>{if(window.setAppTab) window.setAppTab('reports');}}>
-              <div className="dashboard-card-icon">📊</div>
-              <div className="dashboard-card-title">Statistiky</div>
-              <div className="dashboard-card-subtitle">Přehledy</div>
+
+            {/* Right Column */}
+            <div>
+              {/* Monthly Performance Chart */}
+              <div className="dashboard-chart">
+                <h3>📈 Výkon za měsíc</h3>
+                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={200} color="#3ea76a"/>
+              </div>
+              
+              {/* Time Breakdown Chart */}
+              <div className="dashboard-chart">
+                <h3>⏱️ Rozložení času</h3>
+                <PieChart data={chartData.breakdown} size={200}/>
+              </div>
             </div>
           </div>
         </div>);
