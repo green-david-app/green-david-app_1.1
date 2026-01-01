@@ -45,7 +45,7 @@
         .page {
             max-width: 1800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px;
         }
 
         /* Header */
@@ -53,9 +53,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 12px;
+            padding: 12px 0;
         }
 
         .page-header h1 {
@@ -70,12 +71,12 @@
 
         .header-actions {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .btn-view {
-            padding: 10px 20px;
+            padding: 8px 16px;
             background: transparent;
             border: 1px solid #4a4a4a;
             border-radius: 8px;
@@ -161,30 +162,43 @@
             margin-bottom: 24px;
         }
 
+        .jobs-dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
         .dashboard-card {
             background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.1);
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .dashboard-card h3 {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin: 0 0 12px 0;
+            font-size: 12px;
+            color: #9ca3af;
+            margin: 0 0 4px 0;
             font-weight: 500;
         }
 
         .dashboard-card .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+            line-height: 1.2;
         }
 
         .dashboard-card .subtitle {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 0;
         }
 
         .dashboard-card.success { border-color: var(--mint); }
@@ -195,8 +209,8 @@
         .filters-section {
             background: rgba(255,255,255,0.03);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
+            padding: 16px;
+            margin-bottom: 16px;
             display: none;
         }
 
@@ -715,16 +729,13 @@
             background: rgba(255,255,255,0.05);
         }
 
-        /* Timeline View (Gantt Chart) */
+        /* Timeline View (Gantt Chart) - REDESIGN */
         .timeline-view {
             display: none;
             overflow-x: auto;
             overflow-y: auto;
+            min-height: 500px;
             max-height: calc(100vh - 400px);
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border-primary);
         }
 
         .timeline-view.active {
@@ -734,7 +745,7 @@
         .timeline-header {
             display: flex;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             align-items: center;
         }
 
@@ -759,50 +770,111 @@
         .timeline-controls button:hover,
         .timeline-zoom-button:hover {
             background: rgba(159, 212, 161, 0.15);
+            border-color: #9FD4A1;
         }
 
         .timeline-zoom-button.active {
             background: #9FD4A1;
             border-color: #9FD4A1;
             color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        /* Gantt Chart Container */
+        .timeline-container {
+            background: #1a2332;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2a3a4a;
         }
 
         .timeline-grid {
             display: flex;
             flex-direction: column;
-            border: 1px solid var(--border-primary);
-            border-radius: 8px;
-            overflow: hidden;
         }
         
+        /* Timeline Header - Časová osa */
         .timeline-header-row {
             display: grid;
             grid-template-columns: 200px 1fr;
-            border-bottom: 1px solid var(--border-primary);
+            background: #1f2937;
+            border-bottom: 1px solid #2a3a4a;
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
         
         .timeline-sidebar-header {
-            padding: 12px;
-            background: var(--bg-elevated);
+            padding: 12px 16px;
+            background: #1f2937;
             font-weight: 600;
             font-size: 12px;
-            color: var(--text-secondary);
+            color: #9ca3af;
             text-transform: uppercase;
+            border-right: 1px solid #2a3a4a;
         }
         
         .timeline-chart-header {
             display: flex;
-            background: var(--bg-elevated);
-            padding: 12px 0;
+            background: #1f2937;
+            padding: 0;
+            height: 40px;
+            align-items: center;
+        }
+
+        .timeline-month {
+            padding: 0 12px;
+            border-right: 1px solid #2a3a4a;
+            font-weight: 600;
+            font-size: 12px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .timeline-days {
+            display: flex;
+            border-bottom: 1px solid #2a3a4a;
+            background: #1f2937;
+        }
+
+        .timeline-day {
+            padding: 4px;
+            border-right: 1px solid #2a3a4a;
+            font-size: 10px;
+            color: #6b7280;
+            text-align: center;
+            min-width: 30px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-day.weekend {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .timeline-day.today {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* Timeline Body - Řádky zakázek */
+        .timeline-body {
+            background: #1a2332;
         }
 
         .timeline-row {
             display: grid;
             grid-template-columns: 200px 1fr;
             height: 48px;
-            border-bottom: 1px solid var(--border-primary);
+            border-bottom: 1px solid #2a3a4a;
             align-items: center;
-            transition: background 0.2s;
+            transition: background 0.2s ease;
         }
         
         .timeline-row:hover {
@@ -813,28 +885,34 @@
             border-bottom: none;
         }
 
-        .timeline-task-name {
-            padding: 0 12px;
-            font-weight: 600;
-            color: var(--text-primary);
+        .timeline-task-info {
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+        }
+
+        .task-name {
             font-size: 14px;
+            color: #ffffff;
+            font-weight: 500;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            max-width: 140px;
         }
-        
-        .timeline-task-name .progress-badge {
+
+        .task-progress {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: #9ca3af;
             font-weight: 400;
         }
 
         .timeline-bars-container {
             position: relative;
-            height: 100%;
+            height: 48px;
+            padding: 8px 0;
             overflow: visible;
         }
         
@@ -845,67 +923,111 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            padding: 0 8px;
-            transition: all 0.2s;
+            padding: 0 12px;
+            transition: all 0.2s ease;
+            top: 8px;
+        }
+        
+        /* Barvy podle progress */
+        .timeline-bar.progress-low {
+            background: #ef4444;
+            opacity: 0.85;
+        }
+        
+        .timeline-bar.progress-medium {
+            background: #f59e0b;
+            opacity: 0.85;
+        }
+        
+        .timeline-bar.progress-high {
+            background: #9FD4A1;
+            opacity: 0.85;
         }
         
         .timeline-bar:hover {
-            opacity: 1.0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
             z-index: 10;
         }
         
-        .timeline-bar-text {
-            color: #ffffff;
+        .bar-label {
             font-size: 13px;
+            color: #ffffff;
             font-weight: 500;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
             width: 100%;
         }
 
-        .timeline-chart {
-            background: var(--bg-secondary);
-            position: relative;
-            overflow-x: auto;
-            min-height: 400px;
-        }
-
-        .timeline-chart-header {
-            display: flex;
-            border-bottom: 2px solid var(--border-primary);
-            background: var(--bg-elevated);
-            position: sticky;
-            top: 0;
+        /* DNES marker */
+        .timeline-today-marker {
+            position: absolute;
+            width: 2px;
+            background: #ef4444;
             z-index: 10;
+            pointer-events: none;
         }
 
-        .timeline-month {
-            padding: 12px;
-            border-right: 1px solid var(--border-primary);
+        .timeline-today-label {
+            position: absolute;
+            background: #ef4444;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
             font-weight: 600;
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            min-width: 200px;
+            z-index: 11;
+            pointer-events: none;
+            top: 0;
         }
 
-        .timeline-days {
-            display: flex;
-            border-bottom: 1px solid var(--border-primary);
+        /* Tooltip */
+        .timeline-tooltip {
+            position: fixed;
+            background: #2a2a2a;
+            border: 1px solid #4a4a4a;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            pointer-events: none;
+            white-space: nowrap;
         }
 
-        .timeline-day {
-            padding: 8px 4px;
-            border-right: 1px solid var(--border-primary);
-            font-size: 11px;
-            color: var(--text-tertiary);
-            text-align: center;
-            min-width: 30px;
+        .timeline-tooltip strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #9FD4A1;
         }
 
-        .timeline-day.weekend {
+        .timeline-tooltip div {
+            margin-bottom: 4px;
+        }
+
+        /* Custom scrollbar */
+        .timeline-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .timeline-container::-webkit-scrollbar-track {
+            background: #3a3a3a;
+            border-radius: 4px;
+        }
+
+        .timeline-container::-webkit-scrollbar-thumb {
+            background: #9FD4A1;
+            border-radius: 4px;
+        }
+
+        .timeline-container::-webkit-scrollbar-thumb:hover {
+            background: #7EBC82;
+        }
             background: rgba(255,255,255,0.02);
         }
 
@@ -2174,21 +2296,22 @@
                 }
             });
 
-            // Vytvoř HTML strukturu
-            let html = '<div class="timeline-grid" style="position: relative; overflow-x: auto;">';
+            // Vytvoř HTML strukturu - Gantt Chart styl
+            let html = '<div class="timeline-container">';
+            html += '<div class="timeline-grid">';
             
-            // Header řádek
+            // Header - Časová osa
             html += '<div class="timeline-header-row">';
-            html += '<div class="timeline-sidebar-header">Zakázka</div>';
-            html += '<div class="timeline-chart-header" style="width: ' + totalWidth + 'px; overflow-x: auto;">';
+            html += '<div class="timeline-sidebar-header">ZAKÁZKA</div>';
+            html += '<div class="timeline-chart-header" style="width: ' + totalWidth + 'px;">';
             
-            // Header s měsíci (zkratky: Led, Úno, Bře, atd.)
-            const monthNames = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čer', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro'];
+            // Měsíce (zkratky: ŘÍJ, LIS, PRO, atd.)
+            const monthNames = ['LED', 'ÚNO', 'BŘE', 'DUB', 'KVĚ', 'ČER', 'ČVC', 'SRP', 'ZÁŘ', 'ŘÍJ', 'LIS', 'PRO'];
             months.forEach(month => {
                 const monthDays = days.filter(d => d.getFullYear() === month.date.getFullYear() && d.getMonth() === month.date.getMonth()).length;
                 const monthName = monthNames[month.date.getMonth()];
                 const year = month.date.getFullYear();
-                html += `<div class="timeline-month" style="width: ${monthDays * dayWidth}px; font-size: 13px; font-weight: 600;">${monthName} ${year}</div>`;
+                html += `<div class="timeline-month" style="width: ${monthDays * dayWidth}px;">${monthName} ${year}</div>`;
             });
             html += '</div>';
             html += '</div>';
@@ -2196,98 +2319,129 @@
             // Dny řádek
             html += '<div class="timeline-header-row">';
             html += '<div></div>'; // Prázdný prostor pro sidebar
-            html += '<div class="timeline-days" style="display: flex; width: ' + totalWidth + 'px;">';
+            html += '<div class="timeline-days" style="width: ' + totalWidth + 'px;">';
             days.forEach((day, dayIndex) => {
                 const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 const isToday = day.toDateString() === today.toDateString();
-                const showDayNumber = (dayIndex + 1) % 5 === 0; // Každý 5. den
-                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px; font-size: 11px; font-weight: 400; text-align: center; border-right: ${showDayNumber ? '1px solid #3a3a3a' : 'none'}; background: ${isWeekend ? 'rgba(255,255,255,0.03)' : 'transparent'};">${showDayNumber ? day.getDate() : ''}</div>`;
+                const showDayNumber = (dayIndex + 1) % 5 === 0; // Každý 5. den (5, 10, 15, 20, 25, 30)
+                const borderRight = showDayNumber ? '1px solid #2a3a4a' : 'none';
+                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px; border-right: ${borderRight};">${showDayNumber ? day.getDate() : ''}</div>`;
             });
             html += '</div>';
             html += '</div>';
             
-            // Dnes čára (absolutně pozicovaná)
+            // Timeline Body
+            html += '<div class="timeline-body">';
+            
+            // DNES marker (vypočítáme později v CSS)
             const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-            if (todayOffset >= 0 && todayOffset < days.length) {
-                html += `<div style="position: absolute; left: ${200 + todayOffset * dayWidth}px; top: 96px; width: 2px; height: calc(100% - 96px); background: #ef4444; z-index: 10; pointer-events: none;"></div>`;
-                html += `<div style="position: absolute; left: ${200 + todayOffset * dayWidth - 20}px; top: 48px; background: #ef4444; color: #fff; padding: 2px 6px; font-size: 10px; font-weight: 600; border-radius: 2px; z-index: 11;">DNES</div>`;
-            }
-
-            // Progress bars
-            // Řádky pro každou zakázku (každá zakázka = jeden řádek)
-            filteredJobs.forEach((job, index) => {
-                if (!job.deadline) return;
-                
-                const deadline = new Date(job.deadline);
-                // Použij start_date pokud existuje, jinak created_date, jinak 30 dní před deadline
-                const start = job.start_date ? new Date(job.start_date) : 
-                             (job.created_date ? new Date(job.created_date) : 
-                              new Date(deadline.getTime() - 30 * 24 * 60 * 60 * 1000));
-                
-                // Vypočítej pozici
-                const startOffset = Math.max(0, Math.floor((start - startDate) / (1000 * 60 * 60 * 24)) * dayWidth);
-                const deadlineOffset = Math.floor((deadline - startDate) / (1000 * 60 * 60 * 24)) * dayWidth;
-                const width = Math.max(dayWidth * 2, deadlineOffset - startOffset);
-                
+            const todayLeft = todayOffset * dayWidth;
+            
+            // Řádky pro každou zakázku
+            jobsWithDates.forEach((jobData, index) => {
+                const job = jobData.job;
                 const progress = job.progress || 0;
                 
                 // Barva podle progressu
-                let blockColor = '#ef4444'; // červená 0-30%
+                let progressClass = 'progress-low'; // 0-30%
                 if (progress >= 71) {
-                    blockColor = '#9FD4A1'; // pastelová zelená 71-100%
+                    progressClass = 'progress-high'; // 71-100%
                 } else if (progress >= 31) {
-                    blockColor = '#f59e0b'; // oranžová 31-70%
+                    progressClass = 'progress-medium'; // 31-70%
                 }
                 
-                // Odstraněno - použijeme řádky místo top pozice
+                // Vypočítej pozici a šířku bloku
+                const left = jobData.startOffset * dayWidth;
+                const width = Math.max(dayWidth * 2, (jobData.endOffset - jobData.startOffset) * dayWidth);
+                
                 const jobTitle = escapeHtml(job.title || `Zakázka ${job.id}`);
                 const jobClient = escapeHtml(job.client || '—');
-                const startDateStr = start.toLocaleDateString('cs-CZ');
-                const deadlineStr = deadline.toLocaleDateString('cs-CZ');
+                const startDateStr = jobData.start.toLocaleDateString('cs-CZ');
+                const deadlineStr = jobData.end.toLocaleDateString('cs-CZ');
+                const daysRemaining = Math.ceil((jobData.end - today) / (1000 * 60 * 60 * 24));
                 
                 // Zkrať název pokud je příliš dlouhý
-                const shortTitle = jobTitle.length > 20 ? jobTitle.substring(0, 17) + '...' : jobTitle;
+                const shortTitle = jobTitle.length > 25 ? jobTitle.substring(0, 22) + '...' : jobTitle;
                 
                 html += `
                     <div class="timeline-row">
-                        <div class="timeline-task-name" title="${jobTitle}">
-                            ${jobTitle}
-                            <span class="progress-badge">${progress}%</span>
+                        <div class="timeline-task-info">
+                            <span class="task-name" title="${jobTitle}">${jobTitle}</span>
+                            <span class="task-progress">${progress}%</span>
                         </div>
-                        <div class="timeline-bars-container" style="position: relative; width: ${totalWidth}px;">
-                            <div class="timeline-bar" 
-                                 style="left: ${startOffset}px; width: ${width}px; background: ${blockColor}; opacity: 0.85;"
+                        <div class="timeline-bars-container" style="width: ${totalWidth}px;">
+                            <div class="timeline-bar ${progressClass}" 
+                                 style="left: ${left}px; width: ${width}px;"
                                  onclick="showJobDetail(${job.id})"
-                                 data-tooltip="${jobTitle}|Klient: ${jobClient}|Začátek: ${startDateStr}|Deadline: ${deadlineStr}|Progress: ${progress}%">
-                                <div class="timeline-bar-text">${shortTitle}</div>
+                                 data-job-id="${job.id}"
+                                 data-job-title="${jobTitle}"
+                                 data-job-client="${jobClient}"
+                                 data-start-date="${startDateStr}"
+                                 data-deadline="${deadlineStr}"
+                                 data-progress="${progress}"
+                                 data-days-remaining="${daysRemaining}">
+                                <span class="bar-label">${shortTitle}</span>
                             </div>
                         </div>
                     </div>
                 `;
             });
             
-            html += '</div>';
+            html += '</div>'; // timeline-body
+            html += '</div>'; // timeline-grid
+            
+            // DNES marker (absolutně pozicovaný)
+            if (todayOffset >= 0 && todayOffset < days.length) {
+                html += `<div class="timeline-today-marker" style="left: ${200 + todayLeft}px; top: 80px; height: calc(100% - 80px);"></div>`;
+                html += `<div class="timeline-today-label" style="left: ${200 + todayLeft - 18}px; top: 40px;">DNES</div>`;
+            }
+            
+            html += '</div>'; // timeline-container
 
             container.innerHTML = html;
             
-            // Přidej tooltipy pro timeline bloky
-            container.querySelectorAll('.timeline-bar[data-tooltip]').forEach(bar => {
-                const tooltipData = bar.getAttribute('data-tooltip').split('|');
+            // Přidej tooltipy pro timeline bloky (nový styl)
+            container.querySelectorAll('.timeline-bar[data-job-id]').forEach(bar => {
+                let tooltip = null;
+                
                 bar.addEventListener('mouseenter', (e) => {
-                    const tooltip = document.createElement('div');
+                    const jobTitle = bar.dataset.jobTitle;
+                    const jobClient = bar.dataset.jobClient;
+                    const startDate = bar.dataset.startDate;
+                    const deadline = bar.dataset.deadline;
+                    const progress = bar.dataset.progress;
+                    const daysRemaining = bar.dataset.daysRemaining;
+                    
+                    tooltip = document.createElement('div');
                     tooltip.className = 'timeline-tooltip';
-                    tooltip.style.cssText = 'position: absolute; background: #2a2a2a; border: 1px solid #4a4a4a; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; color: #ffffff; pointer-events: none; white-space: nowrap;';
-                    tooltip.innerHTML = tooltipData.map(line => `<div>${escapeHtml(line)}</div>`).join('');
+                    tooltip.innerHTML = `
+                        <strong>${escapeHtml(jobTitle)}</strong>
+                        <div>Klient: ${escapeHtml(jobClient)}</div>
+                        <div>Začátek: ${escapeHtml(startDate)}</div>
+                        <div>Deadline: ${escapeHtml(deadline)}</div>
+                        <div>Progress: ${progress}%</div>
+                        <div>Zbývá: ${daysRemaining} dní</div>
+                    `;
                     document.body.appendChild(tooltip);
+                    
                     const rect = bar.getBoundingClientRect();
                     tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
                     tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + 'px';
                     bar._tooltip = tooltip;
                 });
+                
                 bar.addEventListener('mouseleave', () => {
                     if (bar._tooltip) {
                         bar._tooltip.remove();
                         bar._tooltip = null;
+                    }
+                });
+                
+                bar.addEventListener('mousemove', (e) => {
+                    if (bar._tooltip) {
+                        const rect = bar.getBoundingClientRect();
+                        bar._tooltip.style.left = (rect.left + rect.width / 2 - bar._tooltip.offsetWidth / 2) + 'px';
+                        bar._tooltip.style.top = (rect.top - bar._tooltip.offsetHeight - 8) + 'px';
                     }
                 });
             });
