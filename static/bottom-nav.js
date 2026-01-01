@@ -20,7 +20,7 @@ function createBottomNav() {
             href: '/timesheets.html',
             icon: `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
             label: 'Výkazy',
-            paths: ['/timesheets.html']
+            paths: ['/timesheets.html', '/templates/timesheets.html']
         },
         {
             href: '/calendar.html',
@@ -69,7 +69,7 @@ function createBottomNav() {
 }
 
 // Inicializuj bottom nav při načtení stránky
-document.addEventListener('DOMContentLoaded', () => {
+function initBottomNav() {
     // Najdi existující bottom nav a nahraď ji
     const existingNav = document.querySelector('.bottom-nav');
     if (existingNav) {
@@ -87,4 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Vytvoř novou navigation
     const nav = createBottomNav();
     container.appendChild(nav);
-});
+}
+
+// Zkus inicializovat okamžitě (pro případy, kdy je DOM už připravený)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBottomNav);
+} else {
+    // DOM je už připravený
+    initBottomNav();
+}
+
+// Také zkus po malém zpoždění (pro Flask templates a dynamické načítání)
+setTimeout(initBottomNav, 100);

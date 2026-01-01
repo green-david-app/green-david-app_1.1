@@ -312,27 +312,68 @@
     </div>
 
 
+    <!-- Employee Detail Modal -->
+    <div id="employeeModal" class="employee-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;overflow-y:auto;padding:20px;align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:var(--bg-secondary);border-radius:16px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border-primary);">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--border-primary);">
+                <h2 id="modalTitle" style="margin:0;font-size:24px;color:var(--text-primary);">Detail zaměstnance</h2>
+                <button class="close-modal" onclick="closeEmployeeModal()" style="background:none;border:none;color:var(--text-secondary);font-size:32px;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">×</button>
+            </div>
+            <div class="modal-body" id="modalBody" style="padding:20px;">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <script src="/static/toast.js"></script>
     <script src="/static/loading.js"></script>
     <script src="/static/global-search.js"></script>
     <script src="/static/keyboard-shortcuts.js"></script>
     <script>
+        // Globální proměnná pro zaměstnance
+        let allEmployees = [];
+        let allJobs = [];
+        let allTasks = [];
+        let allTimesheets = [];
+
         // Načti REÁLNÁ data z API
         async function loadEmployees() {
             try {
                 if (window.showLoading) window.showLoading('Načítám zaměstnance...');
                 
-                const response = await fetch('/api/employees');
-                if (!response.ok) {
+                // Načti všechna potřebná data
+                const [employeesRes, jobsRes, tasksRes, timesheetsRes] = await Promise.all([
+                    fetch('/api/employees'),
+                    fetch('/api/jobs'),
+                    fetch('/api/tasks').catch(() => ({ok: false})),
+                    fetch('/api/timesheets').catch(() => ({ok: false}))
+                ]);
+                
+                if (!employeesRes.ok) {
                     throw new Error('Failed to load employees');
                 }
                 
-                const data = await response.json();
-                const employees = data.employees || [];
+                const employeesData = await employeesRes.json();
+                allEmployees = employeesData.employees || [];
+                
+                if (jobsRes.ok) {
+                    const jobsData = await jobsRes.json();
+                    allJobs = jobsData.jobs || jobsData || [];
+                }
+                
+                if (tasksRes.ok) {
+                    const tasksData = await tasksRes.json();
+                    allTasks = tasksData.tasks || tasksData || [];
+                }
+                
+                if (timesheetsRes.ok) {
+                    const timesheetsData = await timesheetsRes.json();
+                    allTimesheets = timesheetsData.timesheets || timesheetsData || [];
+                }
                 
                 if (window.hideLoading) window.hideLoading();
                 
-                renderEmployees(employees);
+                renderEmployees(allEmployees);
                 
             } catch (error) {
                 console.error('Error loading employees:', error);
@@ -360,7 +401,7 @@
                 const status = emp.status || 'offline';
                 
                 return `
-                <div class="employee-card" onclick="window.location.href='/employee-detail.html?id=${emp.id}'">
+                <div class="employee-card" onclick="showEmployeeDetail(${emp.id})">
                     <div class="employee-avatar">
                         ${initials}
                         <div class="status-dot ${status}"></div>
@@ -443,25 +484,172 @@
         }
 
         function callEmployee(id) {
-            const emp = mockEmployees.find(e => e.id === id);
+            const emp = allEmployees.find(e => e.id === id);
             if (emp) {
-                showToast(`Volám ${emp.name}...`, 'info');
+                if (window.showToast) {
+                    window.showToast(`Volám ${emp.name}...`, 'info');
+                }
+                // Můžeš přidat skutečné volání: window.location.href = `tel:${emp.phone}`;
             }
         }
 
         function emailEmployee(id) {
-            const emp = mockEmployees.find(e => e.id === id);
+            const emp = allEmployees.find(e => e.id === id);
             if (emp) {
-                showToast(`Otevírám email pro ${emp.name}...`, 'info');
+                if (window.showToast) {
+                    window.showToast(`Otevírám email pro ${emp.name}...`, 'info');
+                }
+                // Můžeš přidat skutečný email: window.location.href = `mailto:${emp.email}`;
             }
         }
 
         function showEmployeeDetail(id) {
-            const emp = mockEmployees.find(e => e.id === id);
-            if (emp) {
-                showToast(`Detail ${emp.name} bude implementován`, 'info');
+            const emp = allEmployees.find(e => e.id === id);
+            if (!emp) {
+                if (window.showToast) {
+                    window.showToast('Zaměstnanec nenalezen', 'error');
+                }
+                return;
+            }
+            
+            const modal = document.getElementById('employeeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            if (!modal || !modalTitle || !modalBody) return;
+            
+            modalTitle.textContent = emp.name || 'Detail zaměstnance';
+            
+            // Vypočítej statistiky
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weeklyHours = allTimesheets
+                .filter(ts => ts.employee_id === id && new Date(ts.date) >= weekStart)
+                .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            
+            const activeJobs = allJobs.filter(j => {
+                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+                return assignments.length > 0 && j.status !== 'completed' && j.status !== 'Dokončeno';
+            }).length;
+            
+            const empTasks = allTasks.filter(t => t.employee_id === id && t.status !== 'completed').length;
+            
+            // Měsíční hodiny
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthlyHours = allTimesheets
+                .filter(ts => ts.employee_id === id && new Date(ts.date) >= monthStart)
+                .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            
+            // Aktivní zakázky
+            const empJobs = allJobs.filter(j => {
+                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+                return assignments.length > 0;
+            });
+            
+            modalBody.innerHTML = `
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Osobní informace
+                    </h4>
+                    <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Jméno</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">${escapeHtml(emp.name || '—')}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Role</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">${escapeHtml(emp.role || '—')}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Status</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">
+                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${emp.status === 'online' ? '#B2FBA5' : '#6b7280'};margin-right:6px;"></span>
+                                ${emp.status === 'online' ? 'Online' : 'Offline'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Statistiky
+                    </h4>
+                    <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Tento týden</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${weeklyHours.toFixed(1)}h</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Tento měsíc</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${monthlyHours.toFixed(1)}h</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Aktivní zakázky</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${activeJobs}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Otevřené úkoly</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${empTasks}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${empJobs.length > 0 ? `
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            <path d="M9 12h6"/>
+                            <path d="M9 16h6"/>
+                        </svg>
+                        Aktivní zakázky
+                    </h4>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        ${empJobs.slice(0, 5).map(job => `
+                            <div style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                                <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">${escapeHtml(job.title || job.název || 'Bez názvu')}</div>
+                                <div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(job.client || job.klient || '—')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeEmployeeModal() {
+            const modal = document.getElementById('employeeModal');
+            if (modal) {
+                modal.style.display = 'none';
             }
         }
+
+        // Zavři modal při kliknutí na pozadí
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('employeeModal');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeEmployeeModal();
+                    }
+                });
+            }
+        });
 
         function escapeHtml(text) {
             if (!text) return '';
