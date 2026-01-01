@@ -11,9 +11,32 @@
 
     <!-- View Toggle -->
     <div class="ts-view-toggle">
-      <button id="viewList" class="ts-view-btn active">📋 Seznam</button>
-      <button id="viewTimeline" class="ts-view-btn">📅 Timeline</button>
-      <button id="viewStats" class="ts-view-btn">📊 Statistiky</button>
+      <button id="viewList" class="ts-view-btn active">
+        <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <path d="M9 12h6"/>
+          <path d="M9 16h6"/>
+        </svg>
+        Seznam
+      </button>
+      <button id="viewTimeline" class="ts-view-btn">
+        <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Timeline
+      </button>
+      <button id="viewStats" class="ts-view-btn">
+        <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Statistiky
+      </button>
     </div>
 
     <!-- Toolbar -->
@@ -24,11 +47,42 @@
         <button id="nextWeek" class="ts-nav-btn">Další →</button>
       </div>
       <div class="ts-actions">
-        <button id="toggleFilters" class="btn btn-secondary">🔍 Filtry</button>
-        <button id="bulkActions" class="btn btn-secondary" style="display:none;">⚙️ Hromadné akce</button>
-        <button id="exportCsv" class="btn btn-secondary">📊 Export</button>
-        <button id="copyWeek" class="btn btn-secondary">📋 Kopírovat týden</button>
-        <button id="addTimesheet" class="btn btn-primary">+ Přidat výkaz</button>
+        <button id="toggleFilters" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          Filtry
+        </button>
+        <button id="bulkActions" class="btn btn-secondary" style="display:none;">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+          </svg>
+          Hromadné akce
+        </button>
+        <button id="exportCsv" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Export
+        </button>
+        <button id="copyWeek" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+          Kopírovat týden
+        </button>
+        <button id="addTimesheet" class="btn btn-primary">
+          <svg style="width:18px;height:18px;stroke:#0a0e11;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Přidat výkaz
+        </button>
       </div>
     </div>
 
@@ -410,7 +464,7 @@
     border-bottom: none;
   }
   .ts-grid-row:hover {
-    background: rgba(176, 251, 165, 0.05);
+    background: rgba(178, 251, 165, 0.05);
   }
   .ts-employee-cell {
     display: table-cell;
@@ -429,7 +483,7 @@
     width: 32px;
     height: 32px;
     border-radius: 6px;
-    background: linear-gradient(135deg, var(--mint) 0%, #b0fba5 100%);
+    background: linear-gradient(135deg, var(--mint) 0%, #B2FBA5 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -459,8 +513,8 @@
     border-right: none;
   }
   .ts-time-entry {
-    background: rgba(176, 251, 165, 0.15);
-    border: 1px solid rgba(176, 251, 165, 0.3);
+    background: rgba(178, 251, 165, 0.15);
+    border: 1px solid rgba(178, 251, 165, 0.3);
     border-radius: 6px;
     padding: 6px 8px;
     margin-bottom: 6px;
@@ -473,7 +527,7 @@
     overflow-wrap: break-word;
   }
   .ts-time-entry:hover {
-    background: rgba(176, 251, 165, 0.25);
+    background: rgba(178, 251, 165, 0.25);
     border-color: var(--mint);
   }
   .ts-entry-hours {
@@ -495,8 +549,8 @@
   .ts-add-btn {
     width: 100%;
     padding: 6px 8px;
-    background: rgba(176, 251, 165, 0.1);
-    border: 1px dashed rgba(176, 251, 165, 0.4);
+    background: rgba(178, 251, 165, 0.1);
+    border: 1px dashed rgba(178, 251, 165, 0.4);
     border-radius: 6px;
     color: var(--mint);
     cursor: pointer;
@@ -506,7 +560,7 @@
     overflow-wrap: break-word;
   }
   .ts-add-btn:hover {
-    background: rgba(176, 251, 165, 0.2);
+    background: rgba(178, 251, 165, 0.2);
     border-color: var(--mint);
   }
 
@@ -817,7 +871,7 @@
     background: #86efac;
   }
   .ts-bar-column.medium {
-    background: #b0fba5;
+    background: #B2FBA5;
   }
   .ts-bar-column.high {
     background: #16a34a;
@@ -848,8 +902,8 @@
     border: 1px solid var(--border-primary);
   }
   .ts-top-project-item.rank-1 {
-    background: rgba(176, 251, 165, 0.1);
-    border-color: #b0fba5;
+    background: rgba(178, 251, 165, 0.1);
+    border-color: #B2FBA5;
   }
   .ts-rank {
     font-size: 20px;
@@ -1157,8 +1211,8 @@
   // Project colors
   const projectColors = {};
   const colorPalette = [
-    '#b0fba5', '#b0fba5', '#b0fba5', '#b0fba5', '#b0fba5',
-    '#b0fba5', '#b0fba5', '#7cc5ff', '#60a5fa', '#4a90e2'
+    '#B2FBA5', '#B2FBA5', '#B2FBA5', '#B2FBA5', '#B2FBA5',
+    '#B2FBA5', '#B2FBA5', '#7cc5ff', '#60a5fa', '#4a90e2'
   ];
   
   let currentView = 'list';
@@ -1386,7 +1440,7 @@
           const emp = employeesList.find(e => e.id === r.employee_id);
           const empName = (emp ? emp.name : 'Neznámý');
           const jobTitle = (r.job_title || ('Zakázka '+r.job_id));
-          const color = r.job_id ? getProjectColor(r.job_id) : '#b0fba5';
+          const color = r.job_id ? getProjectColor(r.job_id) : '#B2FBA5';
           entry.style.background = color + '33';
           entry.style.borderColor = color;
           entry.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;gap:8px;">' +
@@ -1508,7 +1562,48 @@
   if (elNext) elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
   if (elFJob) elFJob.addEventListener('change', ()=>renderWeek().catch(console.error));
   if (elFEmp) elFEmp.addEventListener('change', ()=>renderWeek().catch(console.error));
-  document.getElementById('exportCsv').addEventListener('click', ()=>{
+  document.getElementById('exportCsv').addEventListener('click', async ()=>{
+    // Use export utility if available
+    if (window.exportTimesheetsToExcel) {
+      const filters = {
+        employeeIds: elFEmp?.value ? [parseInt(elFEmp.value)] : [],
+        projectIds: elFJob?.value ? [parseInt(elFJob.value)] : [],
+        dateFrom: elWeekStart?.value || '',
+        dateTo: elWeekStart?.value ? (() => {
+          const start = new Date(elWeekStart.value);
+          start.setDate(start.getDate() + 6);
+          return start.toISOString().split('T')[0];
+        })() : ''
+      };
+      
+      try {
+        const res = await fetch('/api/timesheets?' + new URLSearchParams({
+          from: filters.dateFrom,
+          to: filters.dateTo
+        }));
+        const data = await res.json();
+        const timesheets = (data.rows || []).map(row => ({
+          ...row,
+          employee_name: employeesList.find(e => e.id === row.employee_id)?.name || 'Neznámý',
+          project_name: jobsList.find(j => j.id === row.job_id)?.title || 'Bez projektu'
+        }));
+        window.exportTimesheetsToExcel(timesheets, filters);
+      } catch (e) {
+        console.error('Export error:', e);
+        // Fallback to original export
+        const q = new URLSearchParams();
+        if (elWeekStart?.value) q.set('from', elWeekStart.value);
+        if (elWeekStart?.value) {
+          const start = new Date(elWeekStart.value);
+          start.setDate(start.getDate() + 6);
+          q.set('to', start.toISOString().split('T')[0]);
+        }
+        window.location.href = '/api/timesheets/export?' + q.toString();
+      }
+      return;
+    }
+    
+    // Original export
     const d0 = monday(parse(elWeekStart.value)); const d6 = addDays(d0,6);
     const q = new URLSearchParams(); q.set('from', fmtLocal(d0)); q.set('to', fmtLocal(d6));
     const fj = elFJob.value;
@@ -1614,7 +1709,7 @@
           // Parse time from entry (if available) or use default
           const startHour = 9; // Default start
           const hours = entry.hours || 0;
-          const color = entry.job_id ? getProjectColor(entry.job_id) : '#b0fba5';
+          const color = entry.job_id ? getProjectColor(entry.job_id) : '#B2FBA5';
           
           // Calculate position (each hour = 60px)
           const top = (startHour - 8) * 60;
@@ -1774,7 +1869,7 @@
     breakdownEl.innerHTML = sorted.map(([name, data]) => {
       const hours = data.hours;
       const percent = totalHours > 0 ? (hours / totalHours * 100) : 0;
-      const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
+      const color = data.jobId ? getProjectColor(data.jobId) : '#B2FBA5';
       
       return `
         <div class="ts-project-item">
@@ -1843,7 +1938,7 @@
       : '→ Stejně jako minulý týden';
     
     infoEl.innerHTML = `
-      📊 Průměr: ${avgHours.toFixed(1)}h/týden<br>
+      Průměr: ${avgHours.toFixed(1)}h/týden<br>
       ${trendText}
     `;
     
@@ -1851,7 +1946,7 @@
     if (trendSummaryEl) {
       if (diff > 0) {
         trendSummaryEl.textContent = `+${diff.toFixed(1)}h`;
-        trendSummaryEl.style.color = '#b0fba5';
+        trendSummaryEl.style.color = '#B2FBA5';
       } else if (diff < 0) {
         trendSummaryEl.textContent = `${diff.toFixed(1)}h`;
         trendSummaryEl.style.color = '#ff4d4d';
@@ -1876,7 +1971,7 @@
       const intensity = Math.min((totalHours / 8) * 100, 100);
       const dayEl = document.createElement('div');
       dayEl.className = 'ts-heatmap-day';
-      dayEl.style.background = `rgba(176, 251, 165, ${intensity / 100})`;
+      dayEl.style.background = `rgba(178, 251, 165, ${intensity / 100})`;
       dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
       heatMapEl.appendChild(dayEl);
     }
@@ -1893,7 +1988,7 @@
       if (job || data.jobId) {
         const item = document.createElement('div');
         item.className = 'ts-legend-item';
-        const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
+        const color = data.jobId ? getProjectColor(data.jobId) : '#B2FBA5';
         const jobTitle = job ? job.title : name;
         item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${jobTitle}</span>`;
         legendEl.appendChild(item);
@@ -1945,7 +2040,7 @@
     topEl.innerHTML = sorted.map(([name, data], index) => {
       const hours = data.hours;
       const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
-      const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
+      const color = data.jobId ? getProjectColor(data.jobId) : '#B2FBA5';
       const medal = index < 3 ? medals[index] : '•';
       const rankClass = index === 0 ? 'rank-1' : '';
       
@@ -2066,7 +2161,7 @@
       const intensity = Math.min((totalHours / 8) * 100, 100);
       const dayEl = document.createElement('div');
       dayEl.className = 'ts-heatmap-day';
-      dayEl.style.background = `rgba(176, 251, 165, ${intensity / 100})`;
+      dayEl.style.background = `rgba(178, 251, 165, ${intensity / 100})`;
       dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
       heatMapEl.appendChild(dayEl);
     }
@@ -2191,7 +2286,8 @@
 })();
 </script>
 
-<!-- Bottom Navigation - Universal (loaded via bottom-nav.js) -->
+<!-- Bottom Navigation Container -->
+<div id="bottom-nav-container"></div>
 
 <!-- More Menu (Expandable) -->
 <div id="more-menu" class="more-menu">

@@ -76,7 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
         existingNav.remove();
     }
     
+    // Zkontroluj, jestli existuje container
+    let container = document.getElementById('bottom-nav-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'bottom-nav-container';
+        document.body.appendChild(container);
+    }
+    
     // Vytvoř novou navigation
     const nav = createBottomNav();
-    document.body.appendChild(nav);
+    container.appendChild(nav);
 });
