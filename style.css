@@ -987,6 +987,48 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
   body {
     font-size: 14px;
+    padding-bottom: 90px; /* Space for bottom nav on mobile */
+  }
+  
+  /* Improve touch targets */
+  .btn, button, .nav-item, .action-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing on mobile */
+  .container, main {
+    padding: 12px;
+  }
+  
+  /* Stack elements vertically on mobile */
+  .header-actions, .filters-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Full width buttons on mobile */
+  .btn-primary, .btn-secondary {
+    width: 100%;
+  }
+  
+  /* Bottom nav adjustments */
+  .bottom-nav {
+    padding: 8px 4px;
+  }
+  
+  .bottom-nav .nav-item {
+    min-width: 60px;
+    padding: 6px 4px;
+  }
+  
+  .bottom-nav .nav-item span {
+    font-size: 10px;
+  }
+  
+  .bottom-nav .nav-item .icon {
+    width: 20px;
+    height: 20px;
   }
   
   h1 { font-size: 24px; }
