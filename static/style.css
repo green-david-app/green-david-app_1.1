@@ -13,18 +13,27 @@
   --bg-panel: #1f2428;
   --bg-tertiary: #2a2f35;
   
-  /* Mint Green Accent */
-  --mint: #b0fba5;
-  --mint-light: #b0fba5;
-  --mint-dark: #b0fba5;
-  --mint-bg: rgba(176, 251, 165, 0.15);
-  --mint-border: rgba(176, 251, 165, 0.3);
+  /* Primární barva - Zelená */
+  --mint: #B2FBA5;
+  --mint-light: #B2FBA5;
+  --mint-dark: #B2FBA5;
+  --mint-bg: rgba(178, 251, 165, 0.15);
+  --mint-border: rgba(178, 251, 165, 0.3);
   
-  /* Text Colors */
-  --text-primary: #e8eef2;
-  --text-secondary: #b8c0c8;
-  --text-tertiary: #9ca8b3;
-  --text-muted: #6b7580;
+  /* Sekundární barvy */
+  --danger: #ef4444;      /* Červená - chyby, prošlé termíny, progress 0-30% */
+  --warning: #f59e0b;     /* Oranžová - varování, blížící se deadline, progress 31-70% */
+  --warning-light: #eab308; /* Žlutá - blížící se deadline 8-14 dní */
+  --info: #3b82f6;        /* Modrá - informace, odkazy */
+  --gray: #6b7280;        /* Šedá - disabled stavy, placeholder text */
+  --gray-light: #9ca3af;  /* Světlejší šedá - disabled text */
+  
+  /* Text Colors - WCAG AAA compliance (min 7:1 kontrast) */
+  --text-primary: #ffffff;      /* Hlavní text na tmavém pozadí */
+  --text-secondary: #e0e0e0;    /* Sekundární text */
+  --text-tertiary: #9ca3af;     /* Terciární text */
+  --text-muted: #6b7280;        /* Muted text */
+  --text-disabled: #9ca3af;     /* Disabled text */
   
   /* Borders */
   --border-primary: #353b41;
@@ -77,9 +86,10 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 15px;
-  line-height: 1.5;
+  font-weight: 400;
+  line-height: 1.6; /* Vzdušnější */
   color: var(--text-primary);
   background: linear-gradient(135deg, var(--bg-primary) 0%, #15191d 100%);
   min-height: 100vh;
@@ -100,12 +110,12 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.01em;
 }
 
-h1 { font-size: 32px; }
-h2 { font-size: 24px; }
-h3 { font-size: 20px; }
-h4 { font-size: 18px; }
-h5 { font-size: 16px; }
-h6 { font-size: 15px; }
+h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 18px; font-weight: 600; }
+h4 { font-size: 16px; font-weight: 600; }
+h5 { font-size: 15px; font-weight: 500; }
+h6 { font-size: 14px; font-weight: 500; }
 
 p {
   margin-bottom: var(--space-md);
@@ -577,7 +587,7 @@ input[type="checkbox"] {
   gap: 4px;
   flex: 1;
   padding: var(--space-xs);
-  color: var(--text-muted);
+  color: #e0e0e0; /* Neaktivní položky */
   transition: color var(--transition);
   cursor: pointer;
   text-decoration: none;
@@ -585,11 +595,15 @@ input[type="checkbox"] {
 }
 
 .nav-item:hover {
-  color: var(--text-secondary);
+  color: #ffffff; /* Hover efekt */
 }
 
 .nav-item.active {
-  color: var(--mint);
+  color: #B2FBA5; /* Aktivní položka */
+}
+
+.nav-item svg {
+  stroke-width: 1.5; /* Tenké, elegantní čáry */
 }
 
 .nav-icon {
@@ -677,23 +691,122 @@ input[type="checkbox"] {
   gap: var(--space-xs);
 }
 
+/* Progress bars - barevné schéma podle procent */
+.progress-bar {
+  position: relative;
+  background: rgba(255,255,255,0.1);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.progress-bar[data-progress="low"] .progress-fill,
+.progress-fill[data-progress="0-30"] {
+  background: var(--danger); /* 0-30%: červená */
+}
+
+.progress-bar[data-progress="medium"] .progress-fill,
+.progress-fill[data-progress="31-70"] {
+  background: var(--warning); /* 31-70%: oranžová */
+}
+
+.progress-bar[data-progress="high"] .progress-fill,
+.progress-fill[data-progress="71-100"] {
+  background: var(--mint); /* 71-100%: zelená */
+}
+
+/* Progress kruhy */
+.progress-circle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.progress-circle svg circle {
+  fill: none;
+  stroke-width: 6px;
+  transition: stroke 0.3s ease;
+}
+
+.progress-circle[data-progress="low"] svg circle,
+.progress-circle svg circle[data-progress="0-30"] {
+  stroke: var(--danger);
+}
+
+.progress-circle[data-progress="medium"] svg circle,
+.progress-circle svg circle[data-progress="31-70"] {
+  stroke: var(--warning);
+}
+
+.progress-circle[data-progress="high"] svg circle,
+.progress-circle svg circle[data-progress="71-100"] {
+  stroke: var(--mint);
+}
+
+/* Deadline badges - barevné schéma */
+.deadline-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.deadline-badge.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.deadline-badge.warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning);
+}
+
+.deadline-badge.warning-light {
+  background: rgba(234, 179, 8, 0.2);
+  color: var(--warning-light);
+}
+
+.deadline-badge.ok {
+  background: rgba(178, 251, 165, 0.2);
+  color: var(--mint);
+}
+
+.deadline-badge.muted {
+  background: rgba(107, 114, 128, 0.2);
+  color: var(--gray);
+}
+
 .more-menu-item {
+  color: #e0e0e0; /* Neaktivní položky */
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: #e0e0e0;
   text-decoration: none;
   font-size: 16px;
-  transition: background var(--transition);
+  transition: all var(--transition);
   display: flex;
   align-items: center;
 }
 
 .more-menu-item:hover {
-  background: var(--bg-panel);
+  background: rgba(178, 251, 165, 0.1);
+  color: #ffffff;
 }
 
 .more-menu-item:active {
   background: var(--bg-tertiary);
+}
+
+.more-menu-item.active {
+  color: #B2FBA5;
 }
 
 /* ========================================

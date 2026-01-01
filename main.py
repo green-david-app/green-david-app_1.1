@@ -168,7 +168,10 @@ def ensure_schema():
     CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'worker'
+        role TEXT NOT NULL DEFAULT 'worker',
+        phone TEXT DEFAULT '',
+        email TEXT DEFAULT '',
+        address TEXT DEFAULT ''
     );
     -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
     CREATE TABLE IF NOT EXISTS jobs (
@@ -232,6 +235,19 @@ def ensure_schema():
         color TEXT DEFAULT '#2e7d32'
     );
     """)
+    # Migrace: přidání sloupců phone, email, address do employees (pokud neexistují)
+    try:
+        db.execute("ALTER TABLE employees ADD COLUMN phone TEXT DEFAULT ''")
+    except Exception:
+        pass  # Sloupec už existuje
+    try:
+        db.execute("ALTER TABLE employees ADD COLUMN email TEXT DEFAULT ''")
+    except Exception:
+        pass  # Sloupec už existuje
+    try:
+        db.execute("ALTER TABLE employees ADD COLUMN address TEXT DEFAULT ''")
+    except Exception:
+        pass  # Sloupec už existuje
     db.commit()
 
 def seed_admin():
@@ -373,7 +389,7 @@ def api_logout():
     return jsonify({"ok": True})
 
 # employees
-@app.route("/api/employees", methods=["GET","POST","DELETE"])
+@app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
 def api_employees():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
@@ -425,8 +441,27 @@ def api_employees():
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role") or "worker"
+        phone = data.get("phone") or ""
+        email = data.get("email") or ""
+        address = data.get("address") or ""
         if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
-        db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
+        db.execute("INSERT INTO employees(name,role,phone,email,address) VALUES (?,?,?,?,?)", (name, role, phone, email, address))
+        db.commit()
+        return jsonify({"ok": True})
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        eid = data.get("id") or request.args.get("id", type=int)
+        if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        updates = []
+        params = []
+        allowed = ["name", "role", "phone", "email", "address"]
+        for k in allowed:
+            if k in data:
+                updates.append(f"{k}=?")
+                params.append(data[k])
+        if not updates: return jsonify({"ok": False, "error":"no_updates"}), 400
+        params.append(eid)
+        db.execute(f"UPDATE employees SET {', '.join(updates)} WHERE id=?", tuple(params))
         db.commit()
         return jsonify({"ok": True})
     if request.method == "DELETE":

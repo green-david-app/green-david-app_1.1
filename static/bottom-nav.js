@@ -47,11 +47,27 @@ function createBottomNav() {
     nav.className = 'bottom-nav';
     
     nav.innerHTML = navItems.map(item => {
-        const isActive = item.paths.some(path => 
-            currentPath === path || 
-            currentPath.includes(path.replace('/', '')) ||
-            (currentSearch && currentSearch.includes(path.replace('/', '')))
-        );
+        // Lepší detekce aktivní stránky
+        let isActive = false;
+        if (item.paths.length > 0) {
+            isActive = item.paths.some(path => {
+                // Přesná shoda cesty
+                if (currentPath === path) return true;
+                // Shoda s query parametrem
+                if (path.startsWith('/?') && currentSearch) {
+                    const pathParams = new URLSearchParams(path.substring(2));
+                    const currentParams = new URLSearchParams(currentSearch.substring(1));
+                    for (const [key, value] of pathParams.entries()) {
+                        if (currentParams.get(key) === value) return true;
+                    }
+                }
+                // Pro standalone stránky - přesná shoda nebo začátek cesty
+                if (path.startsWith('/') && !path.startsWith('/?')) {
+                    if (currentPath === path || currentPath.startsWith(path + '/')) return true;
+                }
+                return false;
+            });
+        }
         
         const onclickAttr = item.isMoreMenu ? `onclick="event.preventDefault(); const menu = document.getElementById('more-menu'); if (menu) menu.classList.toggle('show');"` : '';
         
@@ -87,6 +103,11 @@ function initBottomNav() {
     // Vytvoř novou navigation
     const nav = createBottomNav();
     container.appendChild(nav);
+    
+    // Inicializuj Lucide ikony
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // Zkus inicializovat okamžitě (pro případy, kdy je DOM už připravený)

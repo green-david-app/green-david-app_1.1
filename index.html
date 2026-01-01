@@ -1199,13 +1199,28 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           const barWidth = mobile ? (280 / Math.max(data.length, 1)) : (280 / data.length);
           const fontSize = mobile ? 9 : 10;
           const valueFontSize = mobile ? 10 : 11;
+          // Zobraz každé 3. datum nebo otoč labely o 45°
+          const showEveryNth = data.length > 15 ? 3 : 1;
           return <svg width="100%" height={height} style={{overflow:"visible"}}>
             {data.map((d,i)=>{
               const barHeight = Math.max(0, (d.hours/max)*(mobile ? 120 : 150));
               const rectWidth = Math.max(1, barWidth-10);
+              const showLabel = i % showEveryNth === 0 || i === data.length - 1;
               return <g key={i}>
                 <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
-                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize={fontSize} fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,mobile ? 6 : 8)}</text>
+                {showLabel && (
+                  <text 
+                    x={i*barWidth+barWidth/2+5} 
+                    y={height-5} 
+                    fontSize={fontSize} 
+                    fill="#9ca8b3" 
+                    textAnchor="middle"
+                    transform={`rotate(-45 ${i*barWidth+barWidth/2+5} ${height-5})`}
+                    style={{transformOrigin: `${i*barWidth+barWidth/2+5}px ${height-5}px`}}
+                  >
+                    {d.name}
+                  </text>
+                )}
                 <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize={valueFontSize} fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
               </g>;
             })}
@@ -1285,8 +1300,12 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             .project-progress { position: relative; width: 60px; height: 60px; }
             .progress-circle { width: 60px; height: 60px; position: relative; }
             .progress-circle svg { transform: rotate(-90deg); }
-            .progress-circle circle { fill: none; stroke: var(--mint); stroke-width: 6; stroke-dasharray: 188; stroke-dashoffset: 47; transition: stroke-dashoffset 0.3s; }
+            .progress-circle circle { fill: none; stroke-width: 6; stroke-dasharray: 188; stroke-dashoffset: 47; transition: stroke-dashoffset 0.3s, stroke 0.3s; }
             .progress-circle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 600; color: var(--text-primary); }
+            /* Barvy podle procent - nastaví se dynamicky přes JavaScript */
+            .progress-circle.progress-red circle { stroke: #ef4444; }
+            .progress-circle.progress-orange circle { stroke: #f59e0b; }
+            .progress-circle.progress-green circle { stroke: #B2FBA5; }
             .project-deadline .warning { color: #fb923c; font-size: 12px; font-weight: 500; }
             
             .team-status { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
@@ -1493,7 +1512,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                       <p>{j.client || '—'} • {j.city || '—'}</p>
                     </div>
                     <div className="project-progress">
-                      <div className="progress-circle" data-progress={progress}>
+                      <div className={`progress-circle ${progress <= 30 ? 'progress-red' : progress <= 70 ? 'progress-orange' : 'progress-green'}`} data-progress={progress}>
                         <svg width="60" height="60">
                           <circle cx="30" cy="30" r="30" strokeDashoffset={188 - (Math.max(0, Math.min(100, progress))/100)*188}></circle>
                         </svg>

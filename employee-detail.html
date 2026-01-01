@@ -239,16 +239,21 @@
 
                 // Kontaktní info
                 const contactInfo = document.getElementById('contactInfo');
-                if (employee.phone || employee.email) {
-                    contactInfo.innerHTML = '';
-                    if (employee.phone) {
-                        contactInfo.innerHTML += `<a href="tel:${employee.phone}">📞 ${employee.phone}</a>`;
-                    }
-                    if (employee.email) {
-                        contactInfo.innerHTML += `<a href="mailto:${employee.email}">✉️ ${employee.email}</a>`;
-                    }
+                contactInfo.innerHTML = '';
+                if (employee.phone && employee.phone.trim()) {
+                    contactInfo.innerHTML += `<a href="tel:${employee.phone}">📞 ${employee.phone}</a>`;
                 } else {
-                    contactInfo.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Kontaktní údaje nejsou k dispozici</p>';
+                    contactInfo.innerHTML += `<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: 8px; color: var(--text-secondary);">📞 <span>Zatím žádná data</span></div>`;
+                }
+                if (employee.email && employee.email.trim()) {
+                    contactInfo.innerHTML += `<a href="mailto:${employee.email}">✉️ ${employee.email}</a>`;
+                } else {
+                    contactInfo.innerHTML += `<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: 8px; color: var(--text-secondary);">✉️ <span>Zatím žádná data</span></div>`;
+                }
+                if (employee.address && employee.address.trim()) {
+                    contactInfo.innerHTML += `<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: 8px; color: var(--text-primary);">📍 ${employee.address}</div>`;
+                } else {
+                    contactInfo.innerHTML += `<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: 8px; color: var(--text-secondary);">📍 <span>Zatím žádná data</span></div>`;
                 }
 
                 // Statistiky
@@ -292,25 +297,34 @@
                 document.getElementById('stat-jobs').textContent = activeJobs;
                 document.getElementById('stat-tasks').textContent = completedTasks;
 
-                // Poslední výkazy
-                const empTimesheets = timesheets
-                    .filter(ts => ts.employee_id === employeeId)
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                    .slice(0, 5);
+                // Poslední výkazy - načti skutečná data z API
+                const timesheetsRes2 = await fetch(`/api/timesheets?employee_id=${employeeId}`);
+                let recentTimesheets = [];
+                if (timesheetsRes2.ok) {
+                    const timesheetsData2 = await timesheetsRes2.json();
+                    const allTimesheets = timesheetsData2.rows || timesheetsData2.timesheets || [];
+                    recentTimesheets = allTimesheets
+                        .filter(ts => ts.employee_id === employeeId)
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .slice(0, 5);
+                }
 
                 const recentContainer = document.getElementById('recentTimesheets');
-                if (empTimesheets.length > 0) {
-                    recentContainer.innerHTML = empTimesheets.map(ts => `
+                if (recentTimesheets.length > 0) {
+                    recentContainer.innerHTML = recentTimesheets.map(ts => {
+                        const jobTitle = jobs.find(j => j.id === ts.job_id)?.title || ts.job_title || 'Neznámá zakázka';
+                        return `
                         <div class="activity-item">
                             <div style="display: flex; justify-content: space-between;">
                                 <span>${new Date(ts.date).toLocaleDateString('cs-CZ')}</span>
                                 <strong style="color: var(--mint);">${ts.hours || 0}h</strong>
                             </div>
-                            ${ts.project_name ? `<div style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">${ts.project_name}</div>` : ''}
+                            <div style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">${jobTitle}</div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 } else {
-                    recentContainer.innerHTML = '<p style="color: var(--text-secondary);">Žádné výkazy</p>';
+                    recentContainer.innerHTML = '<p style="color: var(--text-secondary);">Zatím žádná data</p>';
                 }
 
             } catch (error) {
@@ -328,6 +342,7 @@
     </script>
 </body>
 </html>
+
 
 
 

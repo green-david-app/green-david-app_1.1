@@ -732,20 +732,25 @@ input[type="checkbox"] {
 .more-menu-item {
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: #e0e0e0;
   text-decoration: none;
   font-size: 16px;
-  transition: background var(--transition);
+  transition: all var(--transition);
   display: flex;
   align-items: center;
 }
 
 .more-menu-item:hover {
   background: var(--bg-panel);
+  color: #ffffff;
 }
 
 .more-menu-item:active {
   background: var(--bg-tertiary);
+}
+
+.more-menu-item.active {
+  color: #B2FBA5;
 }
 
 /* ========================================
