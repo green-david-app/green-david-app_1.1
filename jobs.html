@@ -392,14 +392,15 @@
 
         /* Job Card */
         .job-card {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
             border-left: 4px solid transparent;
             border-radius: 12px;
             padding: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         /* Barevný pruh vlevo podle statusu */
@@ -465,8 +466,9 @@
             color: #ffffff;
             margin: 0;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             flex: 1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
         .job-type-icon {
@@ -488,7 +490,8 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            color: #e0e0e0;
+            color: #f0f0f0;
+            font-weight: 500;
         }
 
         .job-info-item svg {
@@ -505,9 +508,9 @@
             font-weight: 500;
         }
 
-        .deadline-badge.ok { background: rgba(159, 212, 161, 0.2); color: #9FD4A1; } /* Budoucí (>14 dní) - pastelová zelená */
-        .deadline-badge.warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; } /* Blížící se (7-14 dní) - oranžová */
-        .deadline-badge.danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; } /* Prošlý termín - červená */
+        .deadline-badge.ok { background: rgba(159, 212, 161, 0.25); color: #7EBC82; font-weight: 600; } /* Budoucí (>14 dní) - pastelová zelená */
+        .deadline-badge.warning { background: rgba(245, 158, 11, 0.25); color: #f59e0b; font-weight: 600; } /* Blížící se (7-14 dní) - oranžová */
+        .deadline-badge.danger { background: rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: 700; } /* Prošlý termín - červená */
 
         .progress-container {
             position: relative;
@@ -532,10 +535,11 @@
 
         .progress-text {
             font-size: 12px;
-            color: var(--mint);
-            font-weight: bold;
+            color: #7EBC82;
+            font-weight: 700;
             white-space: nowrap;
             flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .job-card-metrics {
@@ -569,18 +573,21 @@
         }
 
         .priority-badge.high {
-            background: rgba(248, 113, 113, 0.2);
-            color: #f87171;
+            background: rgba(239, 68, 68, 0.25);
+            color: #ef4444;
+            font-weight: 600;
         }
 
         .priority-badge.medium {
-            background: rgba(251, 146, 60, 0.2);
-            color: #fb923c;
+            background: rgba(245, 158, 11, 0.25);
+            color: #f59e0b;
+            font-weight: 600;
         }
 
         .priority-badge.low {
-            background: rgba(178, 251, 165, 0.2);
-            color: var(--mint);
+            background: rgba(159, 212, 161, 0.25);
+            color: #7EBC82;
+            font-weight: 600;
         }
 
         .quick-actions {
@@ -599,29 +606,32 @@
             width: 32px;
             height: 32px;
             background: #9FD4A1;
-            border: none;
+            border: 1px solid rgba(0,0,0,0.15);
             border-radius: 6px;
-            color: #1a1a1a;
+            color: #000000;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
             position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
 
         .quick-action-btn:hover {
             background: #7EBC82;
-            transform: scale(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            border-color: rgba(0,0,0,0.25);
         }
 
         .quick-action-btn svg,
         .quick-action-btn i[data-lucide] {
             width: 18px;
             height: 18px;
-            stroke: #1a1a1a;
-            color: #1a1a1a;
-            stroke-width: 1.5;
+            stroke: #000000;
+            color: #000000;
+            stroke-width: 2;
         }
         
         /* Tooltip */
@@ -1607,7 +1617,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary close-modal">Zavřít</button>
-                <button class="btn-primary" id="btn-edit-job" onclick="if(currentJobId) openEditJobModal(currentJobId)">Upravit</button>
+                <button class="btn-primary" id="btn-edit-job" onclick="if(currentJobId) openEditJobModal(currentJobId)" style="background:#9FD4A1;color:#1a1a1a;font-size:15px;font-weight:500;padding:10px 20px;">Upravit</button>
             </div>
         </div>
     </div>
@@ -2165,29 +2175,15 @@
             });
 
             // Vytvoř HTML strukturu
-            let html = '<div class="timeline-grid">';
+            let html = '<div class="timeline-grid" style="position: relative; overflow-x: auto;">';
             
-            // Sidebar s názvy zakázek (fixed width 200px, ellipsis, tooltip)
-            html += '<div class="timeline-sidebar">';
+            // Header řádek
+            html += '<div class="timeline-header-row">';
             html += '<div class="timeline-sidebar-header">Zakázka</div>';
-            filteredJobs.forEach((job, index) => {
-                const progress = job.progress || 0;
-                const jobTitle = escapeHtml(job.title || `Zakázka ${job.id}`);
-                html += `
-                    <div class="timeline-item-label" data-job-id="${job.id}" style="height: 40px;">
-                        <div class="timeline-item-name" style="width: 200px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${jobTitle}">${jobTitle}</div>
-                        <div class="timeline-item-progress" style="font-size: 12px; color: var(--text-secondary);">${progress}%</div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-
-            // Chart area
-            html += '<div class="timeline-chart" style="width: ' + totalWidth + 'px;">';
+            html += '<div class="timeline-chart-header" style="width: ' + totalWidth + 'px; overflow-x: auto;">';
             
             // Header s měsíci (zkratky: Led, Úno, Bře, atd.)
             const monthNames = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čer', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro'];
-            html += '<div class="timeline-chart-header">';
             months.forEach(month => {
                 const monthDays = days.filter(d => d.getFullYear() === month.date.getFullYear() && d.getMonth() === month.date.getMonth()).length;
                 const monthName = monthNames[month.date.getMonth()];
@@ -2195,18 +2191,30 @@
                 html += `<div class="timeline-month" style="width: ${monthDays * dayWidth}px; font-size: 13px; font-weight: 600;">${monthName} ${year}</div>`;
             });
             html += '</div>';
-
-            // Dny pod měsíci (menší font)
-            html += '<div class="timeline-days">';
-            days.forEach(day => {
+            html += '</div>';
+            
+            // Dny řádek
+            html += '<div class="timeline-header-row">';
+            html += '<div></div>'; // Prázdný prostor pro sidebar
+            html += '<div class="timeline-days" style="display: flex; width: ' + totalWidth + 'px;">';
+            days.forEach((day, dayIndex) => {
                 const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 const isToday = day.toDateString() === today.toDateString();
-                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px; font-size: 11px; font-weight: 400;">${day.getDate()}</div>`;
+                const showDayNumber = (dayIndex + 1) % 5 === 0; // Každý 5. den
+                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px; font-size: 11px; font-weight: 400; text-align: center; border-right: ${showDayNumber ? '1px solid #3a3a3a' : 'none'}; background: ${isWeekend ? 'rgba(255,255,255,0.03)' : 'transparent'};">${showDayNumber ? day.getDate() : ''}</div>`;
             });
             html += '</div>';
+            html += '</div>';
+            
+            // Dnes čára (absolutně pozicovaná)
+            const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+            if (todayOffset >= 0 && todayOffset < days.length) {
+                html += `<div style="position: absolute; left: ${200 + todayOffset * dayWidth}px; top: 96px; width: 2px; height: calc(100% - 96px); background: #ef4444; z-index: 10; pointer-events: none;"></div>`;
+                html += `<div style="position: absolute; left: ${200 + todayOffset * dayWidth - 20}px; top: 48px; background: #ef4444; color: #fff; padding: 2px 6px; font-size: 10px; font-weight: 600; border-radius: 2px; z-index: 11;">DNES</div>`;
+            }
 
             // Progress bars
-            html += '<div class="timeline-bars" style="height: ' + (filteredJobs.length * 40) + 'px;">';
+            // Řádky pro každou zakázku (každá zakázka = jeden řádek)
             filteredJobs.forEach((job, index) => {
                 if (!job.deadline) return;
                 
@@ -2231,7 +2239,7 @@
                     blockColor = '#f59e0b'; // oranžová 31-70%
                 }
                 
-                const top = index * 40 + 4;
+                // Odstraněno - použijeme řádky místo top pozice
                 const jobTitle = escapeHtml(job.title || `Zakázka ${job.id}`);
                 const jobClient = escapeHtml(job.client || '—');
                 const startDateStr = start.toLocaleDateString('cs-CZ');
@@ -2241,25 +2249,46 @@
                 const shortTitle = jobTitle.length > 20 ? jobTitle.substring(0, 17) + '...' : jobTitle;
                 
                 html += `
-                    <div class="timeline-bar" 
-                         style="left: ${startOffset}px; top: ${top}px; width: ${width}px; height: 32px; background: ${blockColor}; opacity: 0.9; border-radius: 4px;"
-                         onclick="showJobDetail(${job.id})"
-                         title="${jobTitle}\nKlient: ${jobClient}\nZačátek: ${startDateStr}\nDeadline: ${deadlineStr}\nProgress: ${progress}%">
-                        <div class="timeline-bar-text" style="color: #1a1a1a; padding: 4px 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${shortTitle}</div>
+                    <div class="timeline-row">
+                        <div class="timeline-task-name" title="${jobTitle}">
+                            ${jobTitle}
+                            <span class="progress-badge">${progress}%</span>
+                        </div>
+                        <div class="timeline-bars-container" style="position: relative; width: ${totalWidth}px;">
+                            <div class="timeline-bar" 
+                                 style="left: ${startOffset}px; width: ${width}px; background: ${blockColor}; opacity: 0.85;"
+                                 onclick="showJobDetail(${job.id})"
+                                 data-tooltip="${jobTitle}|Klient: ${jobClient}|Začátek: ${startDateStr}|Deadline: ${deadlineStr}|Progress: ${progress}%">
+                                <div class="timeline-bar-text">${shortTitle}</div>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
-            html += '</div>';
-            html += '</div>';
+            
             html += '</div>';
 
             container.innerHTML = html;
-
-            // Přidej event listenery pro kliknutí na label
-            container.querySelectorAll('.timeline-item-label').forEach(label => {
-                label.addEventListener('click', () => {
-                    const jobId = parseInt(label.dataset.jobId);
-                    showJobDetail(jobId);
+            
+            // Přidej tooltipy pro timeline bloky
+            container.querySelectorAll('.timeline-bar[data-tooltip]').forEach(bar => {
+                const tooltipData = bar.getAttribute('data-tooltip').split('|');
+                bar.addEventListener('mouseenter', (e) => {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'timeline-tooltip';
+                    tooltip.style.cssText = 'position: absolute; background: #2a2a2a; border: 1px solid #4a4a4a; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; color: #ffffff; pointer-events: none; white-space: nowrap;';
+                    tooltip.innerHTML = tooltipData.map(line => `<div>${escapeHtml(line)}</div>`).join('');
+                    document.body.appendChild(tooltip);
+                    const rect = bar.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + 'px';
+                    bar._tooltip = tooltip;
+                });
+                bar.addEventListener('mouseleave', () => {
+                    if (bar._tooltip) {
+                        bar._tooltip.remove();
+                        bar._tooltip = null;
+                    }
                 });
             });
         }
