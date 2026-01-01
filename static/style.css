@@ -1137,3 +1137,110 @@ input[type="checkbox"] {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ========================================
+   TIMELINE - Nová struktura s řádky
+   ======================================== */
+
+.timeline-header-row {
+    display: flex;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.timeline-sidebar-header {
+    width: 200px;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+    border-right: 1px solid var(--border-primary);
+    flex-shrink: 0;
+}
+
+.timeline-row {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background 0.2s;
+}
+
+.timeline-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.timeline-task-name {
+    width: 200px;
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-badge {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.timeline-bars-container {
+    position: relative;
+    height: 100%;
+    overflow: visible;
+    flex-grow: 1;
+}
+
+.timeline-bar {
+    position: absolute;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    transition: all 0.2s;
+    opacity: 0.85;
+}
+
+.timeline-bar:hover {
+    opacity: 1.0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.timeline-bar-text {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* Custom scrollbar pro timeline */
+.timeline-grid::-webkit-scrollbar {
+    height: 8px;
+}
+
+.timeline-grid::-webkit-scrollbar-track {
+    background: #3a3a3a;
+    border-radius: 4px;
+}
+
+.timeline-grid::-webkit-scrollbar-thumb {
+    background: #9FD4A1;
+    border-radius: 4px;
+}
+
+.timeline-grid::-webkit-scrollbar-thumb:hover {
+    background: #7EBC82;
+}

@@ -28,7 +28,7 @@
           </div>
         </div>
         <div id="userbox" style="display:flex;align-items:center;gap:12px;font-size:14px;color:#9ca8b3;">
-          <a href="/settings.html" style="display:flex;align-items:center;gap:8px;color:#9ca8b3;text-decoration:none;padding:8px 12px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(178,251,165,0.1)';this.style.color='#B2FBA5';" onmouseout="this.style.background='transparent';this.style.color='#9ca8b3';" title="Nastavení">
+          <a href="/settings.html" style="display:flex;align-items:center;gap:8px;color:#9ca8b3;text-decoration:none;padding:8px 12px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(178,251,165,0.1)';this.style.color='#9FD4A1';" onmouseout="this.style.background='transparent';this.style.color='#9ca8b3';" title="Nastavení">
             <svg style="width:20px;height:20px;stroke:currentColor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
@@ -92,7 +92,7 @@
           document.body.appendChild(notificationContainer);
         }
         const notif = document.createElement('div');
-        const colors = {success:'#B2FBA5',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
+        const colors = {success:'#9FD4A1',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
         notif.style.cssText = `padding:12px 16px;background:${colors[type]||colors.info}20;border:1px solid ${colors[type]||colors.info}40;border-radius:12px;color:#e8eef2;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;`;
         notif.textContent = message;
         notificationContainer.appendChild(notif);
@@ -205,7 +205,7 @@
         
         const columns = [
           {id:"Plán",label:"Plán",color:"#3b82f6"},
-          {id:"Probíhá",label:"Probíhá",color:"#B2FBA5"},
+          {id:"Probíhá",label:"Probíhá",color:"#9FD4A1"},
           {id:"Dokončeno",label:"Dokončeno",color:"#6b7580"}
         ];
 
@@ -303,7 +303,7 @@
 
               <div className="card-c">
                 <div className="kv small">
-                  <svg style={{width:"16px",height:"16px",display:"inline-block",verticalAlign:"middle",marginRight:"4px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"16px",height:"16px",display:"inline-block",verticalAlign:"middle",marginRight:"4px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <line x1="16" y1="2" x2="16" y2="6"/>
                     <line x1="8" y1="2" x2="8" y2="6"/>
@@ -445,7 +445,7 @@
           <button className="ghost" onClick={onBack}>← Zpět na seznam</button>
           <div className="card"><div className="card-h"><div><div style={{fontWeight:800,fontSize:18}}>{j.title}</div><div className="small">{j.client} • {j.city} • {j.code}</div></div><span className="badge">{j.status}</span></div>
             <div className="card-c"><div className="kv small" style={{display:"flex",alignItems:"center",gap:"6px"}}>
-              <svg style={{width:"14px",height:"14px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg style={{width:"14px",height:"14px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
@@ -1193,7 +1193,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
         },[]);
         
         // Simple SVG Bar Chart Component
-        const BarChart = ({data,height=200,color="#B2FBA5",mobile=false})=>{
+        const BarChart = ({data,height=200,color="#9FD4A1",mobile=false})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
           const barWidth = mobile ? (280 / Math.max(data.length, 1)) : (280 / data.length);
@@ -1228,7 +1228,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
         };
         
         // Simple SVG Pie Chart Component
-        const PieChart = ({data,size=200,colors=["#B2FBA5","#B2FBA5","#B2FBA5","#B2FBA5","#B2FBA5"]})=>{
+        const PieChart = ({data,size=200,colors=["#9FD4A1","#9FD4A1","#9FD4A1","#9FD4A1","#9FD4A1"]})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const total = data.reduce((s,d)=>s+d.hours,0);
           if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
@@ -1264,18 +1264,18 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             .metric-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; display: flex; gap: 16px; align-items: center; transition: all 0.3s; }
             .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-color: var(--mint); }
             .metric-card.primary { border-left: 4px solid #3b82f6; }
-            .metric-card.success { border-left: 4px solid #B2FBA5; }
+            .metric-card.success { border-left: 4px solid #9FD4A1; }
             .metric-card.warning { border-left: 4px solid #fb923c; }
             .metric-card.info { border-left: 4px solid #60a5fa; }
             .metric-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
-            .metric-icon svg { width: 48px; height: 48px; stroke: #B2FBA5; fill: none; stroke-width: 2; }
+            .metric-icon svg { width: 48px; height: 48px; stroke: #9FD4A1; fill: none; stroke-width: 2; }
             .metric-data { flex: 1; }
             .metric-data h2 { font-size: 32px; font-weight: 700; color: #e8eef2; margin: 0 0 4px 0; }
             .metric-data p { font-size: 14px; color: #9ca8b3; margin: 0 0 8px 0; }
             .trend { font-size: 12px; color: #9ca8b3; }
-            .trend.up { color: #B2FBA5; }
+            .trend.up { color: #9FD4A1; }
             .progress-mini { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 8px 0 4px 0; }
-            .progress-mini .fill { height: 100%; background: linear-gradient(90deg, #B2FBA5, #B2FBA5); transition: width 0.3s; }
+            .progress-mini .fill { height: 100%; background: linear-gradient(90deg, #9FD4A1, #9FD4A1); transition: width 0.3s; }
             
             .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
             .action-btn { flex: 1; min-width: 150px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; font-size: 14px; font-weight: 500; }
@@ -1305,7 +1305,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             /* Barvy podle procent - nastaví se dynamicky přes JavaScript */
             .progress-circle.progress-red circle { stroke: #ef4444; }
             .progress-circle.progress-orange circle { stroke: #f59e0b; }
-            .progress-circle.progress-green circle { stroke: #B2FBA5; }
+            .progress-circle.progress-green circle { stroke: #9FD4A1; }
             .project-deadline .warning { color: #fb923c; font-size: 12px; font-weight: 500; }
             
             .team-status { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
@@ -1356,7 +1356,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           `}</style>
           
           <h1 style={{fontSize:28,fontWeight:700,color:"#e8eef2",marginBottom:24,display:"flex",alignItems:"center",gap:"12px"}}>
-            <svg style={{width:"32px",height:"32px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg style={{width:"32px",height:"32px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="20" x2="18" y2="10"/>
               <line x1="12" y1="20" x2="12" y2="4"/>
               <line x1="6" y1="20" x2="6" y2="14"/>
@@ -1478,7 +1478,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Today Timeline */}
               <div className="today-timeline">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <line x1="16" y1="2" x2="16" y2="6"/>
                     <line x1="8" y1="2" x2="8" y2="6"/>
@@ -1498,7 +1498,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Active Projects */}
               <div className="active-projects">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
                   </svg>
                   Top aktivní projekty
@@ -1533,7 +1533,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Team Status */}
               <div className="team-status">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                     <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
@@ -1559,19 +1559,19 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Monthly Performance Chart */}
               <div className="dashboard-chart">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                     <polyline points="17 6 23 6 23 12"/>
                   </svg>
                   Výkon za měsíc
                 </h3>
-                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={window.innerWidth <= 768 ? 250 : 200} color="#B2FBA5" mobile={window.innerWidth <= 768}/>
+                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={window.innerWidth <= 768 ? 250 : 200} color="#9FD4A1" mobile={window.innerWidth <= 768}/>
               </div>
               
               {/* Time Breakdown Chart */}
               <div className="dashboard-chart">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
@@ -1583,7 +1583,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Notifications */}
               <div className="notifications-widget">
                 <h3 style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <svg style={{width:"20px",height:"20px",stroke:"#B2FBA5"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg style={{width:"20px",height:"20px",stroke:"#9FD4A1"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 01-3.46 0"/>
                   </svg>
@@ -1648,7 +1648,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           })();
         },[]);
         
-        const BarChart = ({data,height=200,color="#B2FBA5",mobile=false})=>{
+        const BarChart = ({data,height=200,color="#9FD4A1",mobile=false})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
           const barWidth = mobile ? (280 / Math.max(data.length, 1)) : (280 / data.length);
@@ -1667,7 +1667,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           </svg>;
         };
         
-        const PieChart = ({data,size=200,colors=["#B2FBA5","#B2FBA5","#B2FBA5","#B2FBA5","#B2FBA5"]})=>{
+        const PieChart = ({data,size=200,colors=["#9FD4A1","#9FD4A1","#9FD4A1","#9FD4A1","#9FD4A1"]})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const total = data.reduce((s,d)=>s+d.hours,0);
           if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
@@ -1704,7 +1704,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                   <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(178, 251, 165, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
                 </div>
               </div>
-              <BarChart data={chartData.employees} height={isMobile ? 250 : 200} color="#B2FBA5" mobile={isMobile}/>
+              <BarChart data={chartData.employees} height={isMobile ? 250 : 200} color="#9FD4A1" mobile={isMobile}/>
             </div>
             <div className="card" style={{padding:20}}>
               <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>

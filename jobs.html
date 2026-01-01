@@ -118,26 +118,39 @@
             transform: translateY(-2px);
         }
         
-        .btn-primary svg {
+        .btn-primary svg,
+        .btn-primary i[data-lucide] {
             stroke: #1a1a1a;
             color: #1a1a1a;
+            width: 18px;
+            height: 18px;
         }
 
         .btn-secondary {
-            padding: 10px 20px;
+            padding: 10px 16px;
             background: transparent;
             border: 1px solid #4a4a4a;
-            border-radius: 8px;
+            border-radius: 6px;
             color: #e0e0e0;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 15px;
         }
 
         .btn-secondary:hover {
             background: rgba(159, 212, 161, 0.15);
+            border-color: #9FD4A1;
+        }
+        
+        .btn-secondary svg,
+        .btn-secondary i[data-lucide] {
+            stroke: #e0e0e0;
+            color: #e0e0e0;
+            width: 18px;
+            height: 18px;
         }
 
         /* Dashboard Stats */
@@ -583,28 +596,56 @@
         }
 
         .quick-action-btn {
-            width: 28px;
-            height: 28px;
-            background: rgba(0,0,0,0.6);
+            width: 32px;
+            height: 32px;
+            background: #9FD4A1;
             border: none;
             border-radius: 6px;
-            color: #fff;
+            color: #1a1a1a;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            position: relative;
         }
 
         .quick-action-btn:hover {
-            background: rgba(0,0,0,0.8);
+            background: #7EBC82;
             transform: scale(1.1);
         }
 
-        .quick-action-btn svg {
-            width: 16px;
-            height: 16px;
-            stroke: #fff;
+        .quick-action-btn svg,
+        .quick-action-btn i[data-lucide] {
+            width: 18px;
+            height: 18px;
+            stroke: #1a1a1a;
+            color: #1a1a1a;
+            stroke-width: 1.5;
+        }
+        
+        /* Tooltip */
+        .quick-action-btn::after {
+            content: attr(title);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2a2a;
+            color: #ffffff;
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        
+        .quick-action-btn:hover::after {
+            opacity: 1;
+            transition-delay: 0.5s;
         }
 
         /* List View */
@@ -717,57 +758,101 @@
         }
 
         .timeline-grid {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 0;
+            display: flex;
+            flex-direction: column;
             border: 1px solid var(--border-primary);
             border-radius: 8px;
             overflow: hidden;
         }
-
-        .timeline-sidebar {
-            background: var(--bg-card);
-            border-right: 1px solid var(--border-primary);
+        
+        .timeline-header-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            border-bottom: 1px solid var(--border-primary);
         }
-
+        
         .timeline-sidebar-header {
             padding: 12px;
             background: var(--bg-elevated);
-            border-bottom: 1px solid var(--border-primary);
             font-weight: 600;
             font-size: 12px;
             color: var(--text-secondary);
             text-transform: uppercase;
         }
-
-        .timeline-item-label {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-primary);
+        
+        .timeline-chart-header {
             display: flex;
+            background: var(--bg-elevated);
+            padding: 12px 0;
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            height: 48px;
+            border-bottom: 1px solid var(--border-primary);
             align-items: center;
-            gap: 8px;
-            cursor: pointer;
             transition: background 0.2s;
         }
-
-        .timeline-item-label:hover {
-            background: var(--bg-elevated);
+        
+        .timeline-row:hover {
+            background: rgba(255, 255, 255, 0.02);
         }
-
-        .timeline-item-label:last-child {
+        
+        .timeline-row:last-child {
             border-bottom: none;
         }
 
-        .timeline-item-name {
+        .timeline-task-name {
+            padding: 0 12px;
             font-weight: 600;
             color: var(--text-primary);
             font-size: 14px;
-            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .timeline-task-name .progress-badge {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
         }
 
-        .timeline-item-progress {
-            font-size: 11px;
-            color: var(--text-secondary);
+        .timeline-bars-container {
+            position: relative;
+            height: 100%;
+            overflow: visible;
+        }
+        
+        .timeline-bar {
+            position: absolute;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            transition: all 0.2s;
+        }
+        
+        .timeline-bar:hover {
+            opacity: 1.0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        .timeline-bar-text {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
         }
 
         .timeline-chart {
@@ -815,9 +900,28 @@
         }
 
         .timeline-day.today {
-            background: rgba(178, 251, 165, 0.1);
-            color: var(--mint);
+            background: rgba(159, 212, 161, 0.1);
+            color: #9FD4A1;
             font-weight: 600;
+        }
+        
+        /* Custom scrollbar pro timeline */
+        .timeline-grid::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .timeline-grid::-webkit-scrollbar-track {
+            background: #3a3a3a;
+            border-radius: 4px;
+        }
+        
+        .timeline-grid::-webkit-scrollbar-thumb {
+            background: #9FD4A1;
+            border-radius: 4px;
+        }
+        
+        .timeline-grid::-webkit-scrollbar-thumb:hover {
+            background: #7EBC82;
         }
 
         .timeline-bars {
@@ -1204,7 +1308,7 @@
         <!-- Header -->
         <header class="page-header">
             <h1>
-                <svg style="width:32px;height:32px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg style="width:32px;height:32px;stroke:#9FD4A1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
                     <line x1="16" y1="13" x2="8" y2="13"/>
@@ -1241,25 +1345,16 @@
                     Timeline
                 </button>
                 <button class="btn-secondary" id="btn-filters">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                    </svg>
+                    <i data-lucide="filter" style="width:18px;height:18px;stroke:#e0e0e0;"></i>
                     Filtry
                 </button>
                 <button class="btn-secondary" id="btn-export" onclick="openExportModal()">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
+                    <i data-lucide="download" style="width:18px;height:18px;stroke:#e0e0e0;"></i>
                     Export
                 </button>
                 <button class="btn-primary" id="btn-new-job">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Nová zakázka
+                    <i data-lucide="plus" style="width:18px;height:18px;stroke:#1a1a1a;"></i>
+                    + Přidat
                 </button>
             </div>
         </header>
@@ -1575,7 +1670,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('edit-job-modal').classList.remove('active')">Zrušit</button>
-                <button class="btn-primary" onclick="saveJobEdit()" style="background:#9FD4A1;color:#1a1a1a;font-size:15px;font-weight:500;">Uložit změny</button>
+                <button class="btn-primary" onclick="saveJobEdit()" style="background:#9FD4A1;color:#1a1a1a;font-size:15px;font-weight:500;padding:10px 20px;">Uložit změny</button>
             </div>
         </div>
     </div>
@@ -1752,7 +1847,7 @@
             if (days < 0) return 'danger'; // Prošlý termín (minulost) - červená #ef4444
             if (days <= 7) return 'danger'; // Blíží se (0-7 dní) - červená #ef4444
             if (days <= 14) return 'warning'; // Blíží se (8-14 dní) - oranžová #f59e0b
-            if (days <= 30) return 'ok'; // Budoucí (15-30 dní) - zelená #B2FBA5
+            if (days <= 30) return 'ok'; // Budoucí (15-30 dní) - zelená #9FD4A1
             return 'muted'; // Daleko (>30 dní) - šedá #6b7280
         }
 
@@ -1843,39 +1938,20 @@
                     ${job.progress !== undefined ? `<span style="color: var(--mint); font-weight: bold; font-size: 12px;">${job.progress}%</span>` : ''}
                 </div>
                 <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Přiřadit zaměstnance">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                            <circle cx="8.5" cy="7" r="4"/>
-                            <line x1="20" y1="8" x2="20" y2="14"/>
-                            <line x1="23" y1="11" x2="17" y2="11"/>
-                        </svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Přidat zaměstnance">
+                        <i data-lucide="user-plus" style="width:18px;height:18px;stroke:#1a1a1a;stroke-width:1.5;"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); changePriority(${job.id})" title="Změnit prioritu">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
+                        <i data-lucide="message-square" style="width:18px;height:18px;stroke:#1a1a1a;stroke-width:1.5;"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Přidat poznámku">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"/>
-                            <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
+                        <i data-lucide="paperclip" style="width:18px;height:18px;stroke:#1a1a1a;stroke-width:1.5;"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); shareJob(${job.id})" title="Sdílet">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="18" cy="5" r="3"/>
-                            <circle cx="6" cy="12" r="3"/>
-                            <circle cx="18" cy="19" r="3"/>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                        </svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Naplánovat">
+                        <i data-lucide="calendar-clock" style="width:18px;height:18px;stroke:#1a1a1a;stroke-width:1.5;"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); deleteJob(${job.id})" title="Smazat" style="color: var(--danger);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                        </svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Detail zakázky">
+                        <i data-lucide="info" style="width:18px;height:18px;stroke:#1a1a1a;stroke-width:1.5;"></i>
                     </button>
                 </div>
             `;
@@ -1980,7 +2056,7 @@
             updateColumnCounts();
         }
 
-        let timelineZoomLevel = 'quarter'; // 'month', 'quarter', 'year'
+        let timelineZoomLevel = 'month'; // 'month', 'quarter', 'year'
 
         function timelineZoom(level) {
             timelineZoomLevel = level;
@@ -2043,6 +2119,50 @@
             // Vypočítej šířku jednoho dne v pixelech
             const dayWidth = timelineZoomLevel === 'month' ? 20 : timelineZoomLevel === 'quarter' ? 8 : 2;
             const totalWidth = days.length * dayWidth;
+            
+            // Algoritmus pro tracks - aby se bloky nepřekrývaly
+            const tracks = []; // Každý track = pole časových rozsahů [{start, end}]
+            
+            // Připrav zakázky s časovými rozsahy
+            const jobsWithDates = filteredJobs.map(job => {
+                if (!job.deadline) return null;
+                
+                const deadline = new Date(job.deadline);
+                const start = job.start_date ? new Date(job.start_date) : 
+                             (job.created_date ? new Date(job.created_date) : 
+                              new Date(deadline.getTime() - 30 * 24 * 60 * 60 * 1000));
+                
+                return {
+                    job: job,
+                    start: start,
+                    end: deadline,
+                    startOffset: Math.max(0, Math.floor((start - startDate) / (1000 * 60 * 60 * 24))),
+                    endOffset: Math.floor((deadline - startDate) / (1000 * 60 * 60 * 24))
+                };
+            }).filter(j => j !== null);
+            
+            // Najdi track pro každou zakázku
+            jobsWithDates.forEach(jobData => {
+                let trackIndex = 0;
+                while (trackIndex < tracks.length) {
+                    const track = tracks[trackIndex];
+                    // Zkontroluj zda se nepřekrývá s existujícími bloky v tracku
+                    const overlaps = track.some(range => {
+                        return !(jobData.endOffset < range.start || jobData.startOffset > range.end);
+                    });
+                    if (!overlaps) {
+                        track.push({ start: jobData.startOffset, end: jobData.endOffset });
+                        jobData.trackIndex = trackIndex;
+                        break;
+                    }
+                    trackIndex++;
+                }
+                if (trackIndex === tracks.length) {
+                    // Vytvoř nový track
+                    tracks.push([{ start: jobData.startOffset, end: jobData.endOffset }]);
+                    jobData.trackIndex = trackIndex;
+                }
+            });
 
             // Vytvoř HTML strukturu
             let html = '<div class="timeline-grid">';
@@ -2738,6 +2858,14 @@
         function addNote(jobId) {
             if (window.showToast) window.showToast('Přidání poznámky bude implementováno', 'info');
         }
+        
+        function attachFile(jobId) {
+            if (window.showToast) window.showToast('Funkce přidávání příloh bude implementována', 'info');
+        }
+        
+        function scheduleJob(jobId) {
+            if (window.showToast) window.showToast('Funkce plánování bude implementována', 'info');
+        }
 
         function shareJob(jobId) {
             if (window.showToast) window.showToast('Sdílení bude implementováno', 'info');
@@ -3008,16 +3136,21 @@
         }
     </script>
 
-    <div id="bottom-nav-container"></div>
-    <script src="/static/bottom-nav.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
       // Inicializuj Lucide Icons po načtení DOM
-      if (typeof lucide !== 'undefined') {
-        document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
           lucide.createIcons();
-        });
-        setTimeout(() => lucide.createIcons(), 500);
-      }
+        }
+      });
+      setTimeout(() => {
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }, 500);
     </script>
+    <div id="bottom-nav-container"></div>
+    <script src="/static/bottom-nav.js"></script>
 </body>
 </html>
