@@ -18,14 +18,16 @@
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
             --text-tertiary: #6b7580;
-            --mint: #B2FBA5;
-            --mint-dark: #B2FBA5;
+            --mint: #9FD4A1;
+            --mint-light: #BDDEBF;
+            --mint-dark: #7EBC82;
+            --mint-background: #E5F2E6;
             --warning: #fb923c;
             --danger: #f87171;
-            --status-new: #4A90E2;
-            --status-active: #F5A623;
-            --status-paused: #fb923c;
-            --status-completed: #B2FBA5;
+            --status-new: #3b82f6;
+            --status-active: #9FD4A1;
+            --status-paused: #f59e0b;
+            --status-completed: #6b7280;
         }
 
         * { box-sizing: border-box; }
@@ -74,10 +76,10 @@
 
         .btn-view {
             padding: 10px 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
+            background: transparent;
+            border: 1px solid #4a4a4a;
             border-radius: 8px;
-            color: var(--text-primary);
+            color: #e0e0e0;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
@@ -87,24 +89,24 @@
         }
 
         .btn-view:hover {
-            background: var(--bg-elevated);
+            background: rgba(159, 212, 161, 0.15);
         }
 
         .btn-view.active {
-            background: var(--mint);
-            border-color: var(--mint);
-            color: #0a0e11;
+            background: #9FD4A1;
+            border-color: #9FD4A1;
+            color: #1a1a1a;
         }
 
         .btn-primary {
             padding: 10px 20px;
-            background: var(--mint);
-            border: 1px solid var(--mint);
-            border-radius: 8px;
-            color: #0a0e11;
+            background: #9FD4A1;
+            border: 1px solid #9FD4A1;
+            border-radius: 6px;
+            color: #1a1a1a;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 500;
             transition: all 0.2s;
             display: flex;
             align-items: center;
@@ -112,27 +114,30 @@
         }
 
         .btn-primary:hover {
-            background: var(--mint-dark);
+            background: #7EBC82;
             transform: translateY(-2px);
         }
         
         .btn-primary svg {
-            stroke: #0a0e11;
-            color: #0a0e11;
+            stroke: #1a1a1a;
+            color: #1a1a1a;
         }
 
         .btn-secondary {
             padding: 10px 20px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            border: 1px solid #4a4a4a;
             border-radius: 8px;
-            color: #fff;
+            color: #e0e0e0;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(159, 212, 161, 0.15);
         }
 
         /* Dashboard Stats */
@@ -444,9 +449,9 @@
         }
 
         .job-card h4 {
-            color: #fff;
+            color: #ffffff;
             margin: 0;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
             flex: 1;
         }
@@ -469,8 +474,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 14px;
+            color: #e0e0e0;
         }
 
         .job-info-item svg {
@@ -487,7 +492,7 @@
             font-weight: 500;
         }
 
-        .deadline-badge.ok { background: rgba(178, 251, 165, 0.2); color: #B2FBA5; } /* Budoucí (>14 dní) - zelená */
+        .deadline-badge.ok { background: rgba(159, 212, 161, 0.2); color: #9FD4A1; } /* Budoucí (>14 dní) - pastelová zelená */
         .deadline-badge.warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; } /* Blížící se (7-14 dní) - oranžová */
         .deadline-badge.danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; } /* Prošlý termín - červená */
 
@@ -688,19 +693,27 @@
             margin-left: auto;
         }
 
-        .timeline-controls button {
+        .timeline-controls button,
+        .timeline-zoom-button {
             padding: 6px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
+            background: transparent;
+            border: 1px solid #4a4a4a;
             border-radius: 6px;
-            color: var(--text-primary);
+            color: #e0e0e0;
             cursor: pointer;
             font-size: 12px;
+            transition: all 0.2s;
         }
 
-        .timeline-controls button:hover {
-            background: var(--bg-elevated);
-            border-color: var(--mint);
+        .timeline-controls button:hover,
+        .timeline-zoom-button:hover {
+            background: rgba(159, 212, 161, 0.15);
+        }
+
+        .timeline-zoom-button.active {
+            background: #9FD4A1;
+            border-color: #9FD4A1;
+            color: #1a1a1a;
         }
 
         .timeline-grid {
@@ -1439,9 +1452,9 @@
             <div class="timeline-header">
                 <h3 style="margin:0;color:var(--text-primary);">Timeline zobrazení</h3>
                 <div class="timeline-controls">
-                    <button onclick="timelineZoom('month')">Měsíc</button>
-                    <button onclick="timelineZoom('quarter')">Čtvrtletí</button>
-                    <button onclick="timelineZoom('year')">Rok</button>
+                    <button class="timeline-zoom-button" onclick="timelineZoom('month')" id="zoom-month">Měsíc</button>
+                    <button class="timeline-zoom-button" onclick="timelineZoom('quarter')" id="zoom-quarter">Čtvrtletí</button>
+                    <button class="timeline-zoom-button" onclick="timelineZoom('year')" id="zoom-year">Rok</button>
                 </div>
             </div>
             <div id="timeline-container"></div>
@@ -1526,11 +1539,21 @@
                     <label>Adresa/Lokace</label>
                     <input type="text" id="edit-address" class="form-input">
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                    <div class="form-group">
+                        <label>Datum zadání</label>
+                        <input type="date" id="edit-created-date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Datum zahájení</label>
+                        <input type="date" id="edit-start-date" class="form-input">
+                    </div>
                     <div class="form-group">
                         <label>Deadline</label>
                         <input type="date" id="edit-deadline" class="form-input">
                     </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr;gap:16px;">
                     <div class="form-group">
                         <label>Status</label>
                         <select id="edit-status" class="form-select">
@@ -1552,7 +1575,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('edit-job-modal').classList.remove('active')">Zrušit</button>
-                <button class="btn-primary" onclick="saveJobEdit()">Uložit změny</button>
+                <button class="btn-primary" onclick="saveJobEdit()" style="background:#9FD4A1;color:#1a1a1a;font-size:15px;font-weight:500;">Uložit změny</button>
             </div>
         </div>
     </div>
@@ -1936,7 +1959,19 @@
             
             filteredJobs.forEach(job => {
                 const card = createJobCard(job);
-                const container = document.getElementById(`cards-${job.status}`);
+                // Normalizuj status pro správné zařazení
+                let statusKey = 'new';
+                const statusLower = (job.status || '').toLowerCase();
+                if (statusLower === 'aktivní' || statusLower === 'active' || statusLower === 'probíhá') {
+                    statusKey = 'active';
+                } else if (statusLower === 'pozastavené' || statusLower === 'paused') {
+                    statusKey = 'paused';
+                } else if (statusLower === 'dokončeno' || statusLower === 'completed' || statusLower === 'dokončené') {
+                    statusKey = 'completed';
+                } else {
+                    statusKey = 'new';
+                }
+                const container = document.getElementById(`cards-${statusKey}`);
                 if (container) {
                     container.appendChild(card);
                 }
@@ -1949,6 +1984,12 @@
 
         function timelineZoom(level) {
             timelineZoomLevel = level;
+            // Aktualizuj aktivní tlačítko
+            document.querySelectorAll('.timeline-zoom-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`zoom-${level}`);
+            if (activeBtn) activeBtn.classList.add('active');
             renderTimeline();
         }
 
@@ -2006,15 +2047,16 @@
             // Vytvoř HTML strukturu
             let html = '<div class="timeline-grid">';
             
-            // Sidebar s názvy zakázek
+            // Sidebar s názvy zakázek (fixed width 200px, ellipsis, tooltip)
             html += '<div class="timeline-sidebar">';
             html += '<div class="timeline-sidebar-header">Zakázka</div>';
             filteredJobs.forEach((job, index) => {
                 const progress = job.progress || 0;
+                const jobTitle = escapeHtml(job.title || `Zakázka ${job.id}`);
                 html += `
                     <div class="timeline-item-label" data-job-id="${job.id}" style="height: 40px;">
-                        <div class="timeline-item-name">${escapeHtml(job.title || `Zakázka ${job.id}`)}</div>
-                        <div class="timeline-item-progress">${progress}%</div>
+                        <div class="timeline-item-name" style="width: 200px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${jobTitle}">${jobTitle}</div>
+                        <div class="timeline-item-progress" style="font-size: 12px; color: var(--text-secondary);">${progress}%</div>
                     </div>
                 `;
             });
@@ -2023,20 +2065,23 @@
             // Chart area
             html += '<div class="timeline-chart" style="width: ' + totalWidth + 'px;">';
             
-            // Header s měsíci
+            // Header s měsíci (zkratky: Led, Úno, Bře, atd.)
+            const monthNames = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čer', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro'];
             html += '<div class="timeline-chart-header">';
             months.forEach(month => {
                 const monthDays = days.filter(d => d.getFullYear() === month.date.getFullYear() && d.getMonth() === month.date.getMonth()).length;
-                html += `<div class="timeline-month" style="width: ${monthDays * dayWidth}px;">${month.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>`;
+                const monthName = monthNames[month.date.getMonth()];
+                const year = month.date.getFullYear();
+                html += `<div class="timeline-month" style="width: ${monthDays * dayWidth}px; font-size: 13px; font-weight: 600;">${monthName} ${year}</div>`;
             });
             html += '</div>';
 
-            // Dny
+            // Dny pod měsíci (menší font)
             html += '<div class="timeline-days">';
             days.forEach(day => {
                 const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                 const isToday = day.toDateString() === today.toDateString();
-                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px;">${day.getDate()}</div>`;
+                html += `<div class="timeline-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}" style="width: ${dayWidth}px; font-size: 11px; font-weight: 400;">${day.getDate()}</div>`;
             });
             html += '</div>';
 
@@ -2046,7 +2091,10 @@
                 if (!job.deadline) return;
                 
                 const deadline = new Date(job.deadline);
-                const start = job.date ? new Date(job.date) : new Date(deadline.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 dní před deadline pokud není start date
+                // Použij start_date pokud existuje, jinak created_date, jinak 30 dní před deadline
+                const start = job.start_date ? new Date(job.start_date) : 
+                             (job.created_date ? new Date(job.created_date) : 
+                              new Date(deadline.getTime() - 30 * 24 * 60 * 60 * 1000));
                 
                 // Vypočítej pozici
                 const startOffset = Math.max(0, Math.floor((start - startDate) / (1000 * 60 * 60 * 24)) * dayWidth);
@@ -2054,18 +2102,30 @@
                 const width = Math.max(dayWidth * 2, deadlineOffset - startOffset);
                 
                 const progress = job.progress || 0;
-                const progressWidth = (width * progress) / 100;
+                
+                // Barva podle progressu
+                let blockColor = '#ef4444'; // červená 0-30%
+                if (progress >= 71) {
+                    blockColor = '#9FD4A1'; // pastelová zelená 71-100%
+                } else if (progress >= 31) {
+                    blockColor = '#f59e0b'; // oranžová 31-70%
+                }
                 
                 const top = index * 40 + 4;
-                const statusClass = job.status || 'new';
+                const jobTitle = escapeHtml(job.title || `Zakázka ${job.id}`);
+                const jobClient = escapeHtml(job.client || '—');
+                const startDateStr = start.toLocaleDateString('cs-CZ');
+                const deadlineStr = deadline.toLocaleDateString('cs-CZ');
+                
+                // Zkrať název pokud je příliš dlouhý
+                const shortTitle = jobTitle.length > 20 ? jobTitle.substring(0, 17) + '...' : jobTitle;
                 
                 html += `
-                    <div class="timeline-bar status-${statusClass}" 
-                         style="left: ${startOffset}px; top: ${top}px; width: ${width}px;"
+                    <div class="timeline-bar" 
+                         style="left: ${startOffset}px; top: ${top}px; width: ${width}px; height: 32px; background: ${blockColor}; opacity: 0.9; border-radius: 4px;"
                          onclick="showJobDetail(${job.id})"
-                         title="${escapeHtml(job.title || `Zakázka ${job.id}`)} - ${progress}%">
-                        <div class="timeline-bar-text">${escapeHtml(job.title || `Zakázka ${job.id}`)}</div>
-                        ${progressWidth > 50 ? `<div style="position:absolute;left:0;top:0;height:100%;width:${progressWidth}px;background:rgba(0,0,0,0.2);border-radius:4px;"></div>` : ''}
+                         title="${jobTitle}\nKlient: ${jobClient}\nZačátek: ${startDateStr}\nDeadline: ${deadlineStr}\nProgress: ${progress}%">
+                        <div class="timeline-bar-text" style="color: #1a1a1a; padding: 4px 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${shortTitle}</div>
                     </div>
                 `;
             });
@@ -2264,6 +2324,11 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 renderView();
+                // Nastav aktivní tlačítko pro timeline zoom
+                setTimeout(() => {
+                    const activeBtn = document.getElementById(`zoom-${timelineZoomLevel}`);
+                    if (activeBtn) activeBtn.classList.add('active');
+                }, 100);
             });
         } else {
             renderView();
@@ -2538,6 +2603,8 @@
             document.getElementById('edit-client').value = job.client || '';
             document.getElementById('edit-address').value = job.address || '';
             document.getElementById('edit-deadline').value = job.deadline ? job.deadline.split('T')[0] : '';
+            document.getElementById('edit-created-date').value = job.created_date ? job.created_date.split('T')[0] : '';
+            document.getElementById('edit-start-date').value = job.start_date ? job.start_date.split('T')[0] : '';
             document.getElementById('edit-status').value = statusMap[job.status] || 'Plán';
             document.getElementById('edit-progress').value = job.progress || 0;
             document.getElementById('edit-notes').value = job.notes || '';
@@ -2566,13 +2633,36 @@
                 'Dokončeno': 'completed'
             };
             
+            // Validace dat
+            const createdDate = document.getElementById('edit-created-date').value;
+            const startDate = document.getElementById('edit-start-date').value;
+            const deadline = document.getElementById('edit-deadline').value;
+            
+            if (createdDate && startDate) {
+                if (new Date(startDate) < new Date(createdDate)) {
+                    if (window.showToast) window.showToast('Datum zahájení musí být po datu zadání', 'error');
+                    document.getElementById('edit-start-date').focus();
+                    return;
+                }
+            }
+            
+            if (startDate && deadline) {
+                if (new Date(deadline) < new Date(startDate)) {
+                    if (window.showToast) window.showToast('Deadline musí být po datu zahájení', 'error');
+                    document.getElementById('edit-deadline').focus();
+                    return;
+                }
+            }
+            
             const statusValue = document.getElementById('edit-status').value;
             const updateData = {
                 id: currentJobId,
                 title: title,
                 client: document.getElementById('edit-client').value.trim(),
                 city: document.getElementById('edit-address').value.trim(),
-                date: document.getElementById('edit-deadline').value,
+                date: deadline,
+                created_date: createdDate || null,
+                start_date: startDate || null,
                 status: statusValue, // Použij přímo hodnotu z selectu (Plán, Aktivní, atd.)
                 note: document.getElementById('edit-notes').value.trim()
             };

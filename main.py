@@ -24,6 +24,12 @@ def _migrate_completed_at():
         if "completed_at" not in cols:
             db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
             db.commit()
+        if "created_date" not in cols:
+            db.execute("ALTER TABLE jobs ADD COLUMN created_date TEXT")
+            db.commit()
+        if "start_date" not in cols:
+            db.execute("ALTER TABLE jobs ADD COLUMN start_date TEXT")
+            db.commit()
     except Exception:
         pass
 
@@ -300,11 +306,13 @@ def _job_title_col():
 
 def _job_select_all():
     info = _jobs_info()
+    base_cols = "id, client, status, city, code, date, note"
+    date_cols = ", created_date, start_date" if "created_date" in _jobs_info() else ""
     if "title" in info:
-        return "SELECT id, title, client, status, city, code, date, note FROM jobs"
+        return f"SELECT title, {base_cols}{date_cols} FROM jobs"
     if "name" in info:
-        return "SELECT id, name AS title, client, status, city, code, date, note FROM jobs"
-    return "SELECT id, '' AS title, client, status, city, code, date, note FROM jobs"
+        return f"SELECT name AS title, {base_cols}{date_cols} FROM jobs"
+    return f"SELECT '' AS title, {base_cols}{date_cols} FROM jobs"
 
 def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=None):
     info = _jobs_info()

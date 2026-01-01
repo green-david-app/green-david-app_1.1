@@ -13,12 +13,13 @@
   --bg-panel: #1f2428;
   --bg-tertiary: #2a2f35;
   
-  /* Primární barva - Zelená */
-  --mint: #B2FBA5;
-  --mint-light: #B2FBA5;
-  --mint-dark: #B2FBA5;
-  --mint-bg: rgba(178, 251, 165, 0.15);
-  --mint-border: rgba(178, 251, 165, 0.3);
+  /* Primární barva - Pastelová zelená */
+  --mint: #9FD4A1;
+  --mint-light: #BDDEBF;
+  --mint-dark: #7EBC82;
+  --mint-bg: rgba(159, 212, 161, 0.15);
+  --mint-border: rgba(126, 188, 130, 0.3);
+  --mint-background: #E5F2E6;
   
   /* Sekundární barvy */
   --danger: #ef4444;      /* Červená - chyby, prošlé termíny, progress 0-30% */
@@ -599,7 +600,7 @@ input[type="checkbox"] {
 }
 
 .nav-item.active {
-  color: #B2FBA5; /* Aktivní položka */
+  color: #9FD4A1; /* Aktivní položka */
 }
 
 .nav-item svg {
@@ -718,7 +719,7 @@ input[type="checkbox"] {
 
 .progress-bar[data-progress="high"] .progress-fill,
 .progress-fill[data-progress="71-100"] {
-  background: var(--mint); /* 71-100%: zelená */
+  background: var(--mint); /* 71-100%: pastelová zelená */
 }
 
 /* Progress kruhy */
@@ -775,7 +776,7 @@ input[type="checkbox"] {
 }
 
 .deadline-badge.ok {
-  background: rgba(178, 251, 165, 0.2);
+  background: rgba(159, 212, 161, 0.2);
   color: var(--mint);
 }
 
@@ -806,7 +807,7 @@ input[type="checkbox"] {
 }
 
 .more-menu-item.active {
-  color: #B2FBA5;
+  color: #9FD4A1;
 }
 
 /* ========================================
