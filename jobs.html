@@ -384,10 +384,27 @@
             position: relative;
         }
 
+        /* Barevný pruh vlevo podle statusu */
         .job-card.status-new { border-left-color: var(--status-new); }
         .job-card.status-active { border-left-color: var(--status-active); }
         .job-card.status-paused { border-left-color: var(--status-paused); }
         .job-card.status-completed { border-left-color: var(--status-completed); }
+        
+        /* Status bar jako samostatný prvek (pro lepší viditelnost) */
+        .job-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 12px 0 0 12px;
+        }
+        
+        .job-card.status-new::before { background: var(--status-new); }
+        .job-card.status-active::before { background: var(--status-active); }
+        .job-card.status-paused::before { background: var(--status-paused); }
+        .job-card.status-completed::before { background: var(--status-completed); }
 
         .job-card:hover {
             transform: translateY(-2px);
@@ -474,19 +491,29 @@
         .deadline-badge.warning { background: rgba(251, 146, 60, 0.2); color: var(--warning); }
         .deadline-badge.danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
 
-        .progress-bar {
-            height: 8px;
+        .progress-container {
+            position: relative;
             background: rgba(255,255,255,0.1);
+            height: 8px;
             border-radius: 4px;
-            overflow: hidden;
             margin: 12px 0;
+            overflow: hidden;
         }
 
-        .progress-fill {
+        .progress-bar {
             height: 100%;
-            background: var(--mint);
-            transition: width 0.3s;
+            background: linear-gradient(90deg, var(--mint), #9DE88B);
+            transition: width 0.3s ease;
             border-radius: 4px;
+        }
+
+        .progress-text {
+            position: absolute;
+            right: 4px;
+            top: -20px;
+            font-size: 12px;
+            color: var(--mint);
+            font-weight: bold;
         }
 
         .job-card-metrics {
@@ -714,6 +741,22 @@
             gap: 16px;
         }
 
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-row.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        /* Desktop - Form */
+        .modal-body form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
         .modal-body input,
         .modal-body select,
         .modal-body textarea {
@@ -742,7 +785,7 @@
         }
 
         /* Mobile */
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             .page {
                 padding: 12px;
             }
@@ -770,9 +813,90 @@
                 font-size: 12px;
             }
 
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .modal {
+                padding: 0;
+            }
+
+            .modal-content {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+                margin: 0;
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .modal-header {
+                padding: 16px;
+                position: relative;
+            }
+
+            .modal-header h2 {
+                font-size: 20px;
+            }
+
+            .close-modal {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                font-size: 32px;
+                width: 44px;
+                height: 44px;
+            }
+
+            .modal-body {
+                padding: 16px;
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .modal-body form {
+                max-width: 100%;
+                gap: 12px;
+            }
+
+            .modal-body input,
+            .modal-body select,
+            .modal-body textarea {
+                padding: 14px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .modal-footer {
+                flex-direction: column-reverse;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            .modal-footer button {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+                min-height: 44px; /* Touch-friendly */
+            }
+
             .list-table th,
             .list-table td {
                 padding: 8px;
+            }
+
+            .job-card {
+                padding: 12px;
+            }
+
+            .job-card h4 {
+                font-size: 14px;
+            }
+
+            .kanban-column {
+                min-width: 280px;
             }
             
             .modal {
@@ -917,6 +1041,14 @@
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                     </svg>
                     Filtry
+                </button>
+                <button class="btn-secondary" id="btn-export" onclick="openExportModal()">
+                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
                 </button>
                 <button class="btn-primary" id="btn-new-job">
                     <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1131,7 +1263,7 @@
                     <input type="text" id="job-title" placeholder="Název zakázky *" required>
                     <input type="text" id="job-client" placeholder="Klient">
                     <input type="text" id="job-address" placeholder="Adresa / Lokace">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-row">
                         <input type="date" id="job-deadline" placeholder="Deadline">
                         <select id="job-priority">
                             <option value="medium">Střední priorita</option>
@@ -1410,8 +1542,9 @@
                     </div>
                 </div>
                 ${job.progress !== undefined ? `
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${job.progress}%"></div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${job.progress}%"></div>
+                        <span class="progress-text">${job.progress}%</span>
                     </div>
                 ` : ''}
                 <div class="job-card-metrics">
@@ -1555,23 +1688,44 @@
 
         function renderList() {
             const tbody = document.getElementById('list-tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
+            
+            if (filteredJobs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary);">Žádné zakázky</td></tr>';
+                return;
+            }
             
             filteredJobs.forEach(job => {
                 const tr = document.createElement('tr');
                 const daysUntil = getDaysUntilDeadline(job.deadline);
                 const deadlineClass = getDeadlineBadgeClass(daysUntil);
+                const progress = job.progress || 0;
+                
+                const statusLabels = {
+                    new: 'Nové',
+                    active: 'Aktivní',
+                    paused: 'Pozastavené',
+                    completed: 'Dokončené'
+                };
+                
+                const priorityLabels = {
+                    high: 'Vysoká',
+                    medium: 'Střední',
+                    low: 'Nízká'
+                };
                 
                 tr.innerHTML = `
                     <td>${job.id}</td>
-                    <td>${escapeHtml(job.title)}</td>
-                    <td>${escapeHtml(job.client)}</td>
-                    <td><span class="priority-badge ${job.status}">${job.status}</span></td>
-                    <td><span class="priority-badge ${job.priority}">${job.priority}</span></td>
+                    <td>${escapeHtml(job.title || 'Bez názvu')}</td>
+                    <td>${escapeHtml(job.client || '—')}</td>
+                    <td><span class="priority-badge ${job.status}">${statusLabels[job.status] || job.status}</span></td>
+                    <td><span class="priority-badge ${job.priority || 'medium'}">${priorityLabels[job.priority || 'medium']}</span></td>
                     <td><span class="deadline-badge ${deadlineClass}">${formatDate(job.deadline)}</span></td>
                     <td>
-                        <div class="progress-bar" style="width:100px;margin:0;">
-                            <div class="progress-fill" style="width: ${job.progress}%"></div>
+                        <div class="progress-container" style="width:100px;margin:0;">
+                            <div class="progress-bar" style="width: ${progress}%"></div>
+                            <span class="progress-text">${progress}%</span>
                         </div>
                     </td>
                     <td>
@@ -1702,6 +1856,15 @@
                 renderView();
             });
         });
+
+        // Inicializuj view při načtení
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                renderView();
+            });
+        } else {
+            renderView();
+        }
 
         // Filters
         document.getElementById('btn-filters')?.addEventListener('click', () => {
@@ -1852,6 +2015,30 @@
             return div.innerHTML;
         }
 
+        // Export Modal
+        function openExportModal() {
+            document.getElementById('exportModal').style.display = 'flex';
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        function doExport() {
+            const format = document.getElementById('exportFormat').value;
+            const period = document.getElementById('exportPeriod').value;
+            const employee = document.getElementById('employeeFilter').value;
+            const project = document.getElementById('projectFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            // TODO: Implementovat skutečný export
+            if (window.showToast) {
+                window.showToast(`Export: ${format}, ${period}, zaměstnanec: ${employee}, projekt: ${project}`, 'info');
+            }
+            closeExportModal();
+        }
+
         // Initialize
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -1861,6 +2048,77 @@
             loadJobs();
         }
     </script>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:10000;align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:var(--bg-secondary);border-radius:16px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;border:1px solid var(--border-primary);padding:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                <h2 style="margin:0;font-size:24px;color:var(--text-primary);">Export dat</h2>
+                <button onclick="closeExportModal()" style="background:none;border:none;color:var(--text-secondary);font-size:32px;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">×</button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:20px;">
+                <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Formát:</label>
+                <select id="exportFormat" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    <option value="excel">Excel (.xlsx)</option>
+                    <option value="csv">CSV</option>
+                    <option value="pdf">PDF</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:20px;">
+                <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Časové období:</label>
+                <select id="exportPeriod" onchange="toggleCustomDateRange()" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    <option value="today">Dnes</option>
+                    <option value="this-week">Tento týden</option>
+                    <option value="this-month">Tento měsíc</option>
+                    <option value="last-month">Minulý měsíc</option>
+                    <option value="custom">Vlastní rozsah</option>
+                </select>
+            </div>
+            
+            <div id="customDateRange" style="display:none;margin-bottom:20px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Od:</label>
+                        <input type="date" id="dateFrom" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Do:</label>
+                        <input type="date" id="dateTo" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:20px;">
+                <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Zaměstnanec:</label>
+                <select id="employeeFilter" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    <option value="all">Všichni</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:24px;">
+                <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Projekt:</label>
+                <select id="projectFilter" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                    <option value="all">Všechny</option>
+                </select>
+            </div>
+            
+            <div style="display:flex;gap:12px;">
+                <button onclick="closeExportModal()" class="btn-secondary" style="flex:1;padding:14px;border-radius:8px;font-size:16px;cursor:pointer;">Zrušit</button>
+                <button onclick="doExport()" class="btn-primary" style="flex:1;padding:14px;border-radius:8px;font-size:16px;cursor:pointer;background:var(--mint);color:#0a0e11;border:none;font-weight:bold;">Exportovat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCustomDateRange() {
+            const period = document.getElementById('exportPeriod').value;
+            const customRange = document.getElementById('customDateRange');
+            customRange.style.display = period === 'custom' ? 'block' : 'none';
+        }
+    </script>
+
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
 </body>

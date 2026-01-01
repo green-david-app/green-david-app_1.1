@@ -17,7 +17,7 @@
   --cal-cell-bg: #3d5a4a;
   --cal-cell-hover: #4a6a5a;
   --cal-cell-muted: #2d4a3a;
-  --cal-cell-today: #b0fba5;
+  --cal-cell-today: #B2FBA5;
   --cal-cell-weekend: #3d5a4a;
   
   /* Text Colors */
@@ -27,14 +27,14 @@
   --text-tertiary: #9ca8b3;
   --text-muted: #6b7580;
   
-  /* Accent Colors */
-  --accent-green: #b0fba5;
-  --accent-green-hover: #b0fba5;
-  --mint: #b0fba5;
-  --mint-light: #b0fba5;
-  --mint-dark: #b0fba5;
-  --mint-bg: rgba(176, 251, 165, 0.15);
-  --mint-border: rgba(176, 251, 165, 0.3);
+  /* Accent Colors - Standardized to #B2FBA5 */
+  --accent-green: #B2FBA5;
+  --accent-green-hover: #B2FBA5;
+  --mint: #B2FBA5;
+  --mint-light: #C5FDB8;
+  --mint-dark: #9FE892;
+  --mint-bg: rgba(178, 251, 165, 0.15);
+  --mint-border: rgba(178, 251, 165, 0.3);
   
   /* Borders */
   --border-primary: #353b41;
@@ -48,9 +48,9 @@
   --badge-border: rgba(255, 255, 255, 0.2);
   
   /* Buttons */
-  --btn-primary-bg: #b0fba5;
+  --btn-primary-bg: #B2FBA5;
   --btn-primary-text: #0a0e11;
-  --btn-primary-hover: #b0fba5;
+  --btn-primary-hover: #B2FBA5;
   --btn-secondary-bg: #2d4a3a;
   --btn-secondary-text: #ffffff;
   
@@ -58,7 +58,7 @@
   --input-bg: #2a2f35;
   --input-text: #ffffff;
   --input-border: #353b41;
-  --input-border-focus: #b0fba5;
+  --input-border-focus: #B2FBA5;
   
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);

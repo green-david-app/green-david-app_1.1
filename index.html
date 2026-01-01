@@ -1193,18 +1193,20 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
         },[]);
         
         // Simple SVG Bar Chart Component
-        const BarChart = ({data,height=200,color="#B2FBA5"})=>{
+        const BarChart = ({data,height=200,color="#B2FBA5",mobile=false})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
-          const barWidth = 280 / data.length;
+          const barWidth = mobile ? (280 / Math.max(data.length, 1)) : (280 / data.length);
+          const fontSize = mobile ? 9 : 10;
+          const valueFontSize = mobile ? 10 : 11;
           return <svg width="100%" height={height} style={{overflow:"visible"}}>
             {data.map((d,i)=>{
-              const barHeight = Math.max(0, (d.hours/max)*150);
+              const barHeight = Math.max(0, (d.hours/max)*(mobile ? 120 : 150));
               const rectWidth = Math.max(1, barWidth-10);
               return <g key={i}>
                 <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
-                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
-                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize={fontSize} fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,mobile ? 6 : 8)}</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize={valueFontSize} fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
               </g>;
             })}
           </svg>;
@@ -1544,7 +1546,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                   </svg>
                   Výkon za měsíc
                 </h3>
-                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={window.innerWidth <= 768 ? 250 : 200} color="#B2FBA5"/>
+                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={window.innerWidth <= 768 ? 250 : 200} color="#B2FBA5" mobile={window.innerWidth <= 768}/>
               </div>
               
               {/* Time Breakdown Chart */}
@@ -1627,18 +1629,20 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           })();
         },[]);
         
-        const BarChart = ({data,height=200,color="#B2FBA5"})=>{
+        const BarChart = ({data,height=200,color="#B2FBA5",mobile=false})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
-          const barWidth = 280 / data.length;
+          const barWidth = mobile ? (280 / Math.max(data.length, 1)) : (280 / data.length);
+          const fontSize = mobile ? 9 : 10;
+          const valueFontSize = mobile ? 10 : 11;
           return <svg width="100%" height={height} style={{overflow:"visible"}}>
             {data.map((d,i)=>{
-              const barHeight = Math.max(0, (d.hours/max)*150);
+              const barHeight = Math.max(0, (d.hours/max)*(mobile ? 120 : 150));
               const rectWidth = Math.max(1, barWidth-10);
               return <g key={i}>
                 <rect x={i*barWidth+10} y={height-barHeight-20} width={rectWidth} height={barHeight} fill={color} opacity={0.8} rx={4}/>
-                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize="10" fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,8)}</text>
-                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize="11" fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-5} fontSize={fontSize} fill="#9ca8b3" textAnchor="middle">{d.name.substring(0,mobile ? 6 : 8)}</text>
+                <text x={i*barWidth+barWidth/2+5} y={height-barHeight-25} fontSize={valueFontSize} fill="#e8eef2" textAnchor="middle" fontWeight="600">{d.hours.toFixed(1)}h</text>
               </g>;
             })}
           </svg>;
@@ -1669,9 +1673,10 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           </svg>;
         };
         
+        const isMobile = window.innerWidth <= 768;
         return (<div style={{paddingBottom:100,padding:"16px"}}>
           <h1 style={{fontSize:24,fontWeight:700,color:"#e8eef2",marginBottom:24}}>Statistiky</h1>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,margin:"0 0 24px 0"}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile ? "1fr" : "1fr 1fr",gap:16,margin:"0 0 24px 0"}}>
             <div className="card" style={{padding:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                 <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>Hodiny per zaměstnanec</div>
@@ -1680,7 +1685,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                   <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(178, 251, 165, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
                 </div>
               </div>
-              <BarChart data={chartData.employees} height={window.innerWidth <= 768 ? 250 : 200} color="#B2FBA5"/>
+              <BarChart data={chartData.employees} height={isMobile ? 250 : 200} color="#B2FBA5" mobile={isMobile}/>
             </div>
             <div className="card" style={{padding:20}}>
               <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>

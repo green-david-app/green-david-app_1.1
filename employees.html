@@ -78,39 +78,45 @@
 
         .employees-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
+            padding: 20px;
         }
 
         .employee-card {
-            background: rgba(255,255,255,0.05);
+            background: #2d3748;
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            padding: 16px;
+            padding: 20px;
             text-align: center;
             transition: all 0.3s;
             cursor: pointer;
-            max-height: 120px;
+            height: auto;
+            max-height: 180px;
             overflow: hidden;
         }
 
         .employee-card:hover {
             transform: translateY(-4px);
             border-color: #B2FBA5;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(178, 251, 165, 0.2);
+        }
+
+        .employee-card:active {
+            transform: translateY(-2px);
         }
 
         .employee-avatar {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #B2FBA5, #B2FBA5);
+            background: #B2FBA5;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
             font-weight: bold;
-            color: #000;
+            color: #1a1a1a;
             margin: 0 auto 12px;
             position: relative;
         }
@@ -135,15 +141,15 @@
 
         .employee-name {
             color: #fff;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin: 8px 0 4px;
         }
 
         .employee-role {
-            color: rgba(255,255,255,0.6);
+            color: #a0aec0;
             font-size: 14px;
-            margin-bottom: 20px;
+            margin: 0 0 12px;
         }
 
         .employee-stats {
@@ -401,7 +407,7 @@
                 const status = emp.status || 'offline';
                 
                 return `
-                <div class="employee-card" onclick="showEmployeeDetail(${emp.id})">
+                <div class="employee-card" onclick="window.location.href='/employee-detail.html?id=${emp.id}'">
                     <div class="employee-avatar">
                         ${initials}
                         <div class="status-dot ${status}"></div>

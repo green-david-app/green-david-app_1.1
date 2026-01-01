@@ -730,6 +730,29 @@
     .ts-trend-weeks {
       grid-template-columns: repeat(2, 1fr);
     }
+    .ts-stat-card {
+      padding: 12px;
+      font-size: 14px;
+    }
+    .ts-stat-title {
+      font-size: 12px;
+    }
+    .ts-daily-chart {
+      height: 250px !important;
+    }
+    .ts-project-breakdown,
+    .ts-trend-weeks {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .ts-summary-bar {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .ts-summary-item {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 120px;
+    }
   }
   .ts-stat-card {
     background: var(--bg-elevated);
