@@ -628,6 +628,33 @@
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       }
     }
+    @media (max-width: 768px) {
+      .documents-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .documents-header h1 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .header-actions .btn {
+        width: 100%;
+      }
+      .file-browser {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        margin-bottom: 16px;
+      }
+      .files-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -636,7 +663,13 @@
     <div class="documents-header">
       <h1>📁 Dokumenty</h1>
       <div class="header-actions">
-        <button class="btn-secondary" onclick="clearTrash()">🗑️ Vysypat koš</button>
+        <button class="btn-secondary" onclick="clearTrash()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          </svg>
+          Vysypat koš
+        </button>
         <button class="btn-primary" onclick="document.getElementById('fileInput').click()">+ Nahrát soubor</button>
       </div>
     </div>
@@ -647,22 +680,42 @@
       <div class="sidebar">
         <h3>Kategorie</h3>
         <div class="folder active" data-folder="all" onclick="switchFolder('all')">
-          📁 Všechny soubory
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Všechny soubory
         </div>
         <div class="folder" data-folder="projects" onclick="switchFolder('projects')">
-          📂 Projekty
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          Projekty
         </div>
         <div class="folder" data-folder="contracts" onclick="switchFolder('contracts')">
-          📂 Smlouvy
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          Smlouvy
         </div>
         <div class="folder" data-folder="invoices" onclick="switchFolder('invoices')">
-          📂 Faktury
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          Faktury
         </div>
         <div class="folder" data-folder="photos" onclick="switchFolder('photos')">
-          📂 Fotky
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          Fotky
         </div>
         <div class="folder" data-folder="trash" onclick="switchFolder('trash')">
-          🗑️ Koš
+          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          </svg>
+          Koš
         </div>
       </div>
 
@@ -670,14 +723,26 @@
       <div class="files-section">
         <div class="files-toolbar">
           <div class="search-box">
-            <input type="search" id="fileSearch" placeholder="🔍 Hledat soubory...">
+            <input type="search" id="fileSearch" placeholder="Hledat soubory...">
           </div>
           <div class="view-toggle">
             <button class="view-btn active" data-view="grid" onclick="switchView('grid')" title="Grid">
-              ⬜
+              <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
             </button>
             <button class="view-btn" data-view="list" onclick="switchView('list')" title="Seznam">
-              ☰
+              <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -782,16 +847,16 @@
           <span>sklad</span>
         </a>
         <a href="/finance.html" class="more-menu-item">
-          <span>💰 finance</span>
+          <span>finance</span>
         </a>
         <a href="/documents.html" class="more-menu-item">
-          <span>📁 dokumenty</span>
+          <span>dokumenty</span>
         </a>
         <a href="/reports.html" class="more-menu-item">
-          <span>📊 reporty</span>
+          <span>reporty</span>
         </a>
         <a href="/settings.html" class="more-menu-item">
-          <span>⚙️ nastavení</span>
+          <span>nastavení</span>
         </a>
       </div>
     </div>
@@ -864,7 +929,7 @@
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">📁</div><div>Žádné soubory</div></div>';
+        container.innerHTML = '<div class="empty-state"><div class="icon"><svg style="width:48px;height:48px;stroke:#b0fba5;opacity:0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div>Žádné soubory</div></div>';
         return;
       }
 
@@ -894,9 +959,27 @@
       return `
         <div class="file-card" data-file-id="${file.id}" onclick="window.openFileDetail(${file.id})">
           <div class="file-actions">
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})" title="Náhled">👁️</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})" title="Sdílet">🔗</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})" title="Smazat">🗑️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})" title="Náhled">
+              <svg style="width:18px;height:18px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})" title="Sdílet">
+              <svg style="width:18px;height:18px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})" title="Smazat">
+              <svg style="width:18px;height:18px;stroke:#f87171" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
           </div>
           <div class="file-icon">${icon}</div>
           <h4>${escapeHtml(file.name)}</h4>
@@ -1194,6 +1277,8 @@
     // Initialize
     loadFiles();
   </script>
+  <script src="/static/bottom-nav.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
 </body>
 </html>
 

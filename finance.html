@@ -607,6 +607,32 @@
       .invoices-table td {
         padding: 8px;
       }
+      
+      .finance-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .finance-header h1 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .header-actions .btn {
+        width: 100%;
+      }
+      .finance-overview {
+        grid-template-columns: 1fr;
+      }
+      .finance-tabs {
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        flex: 1;
+        min-width: 100px;
+      }
     }
   </style>
 </head>
@@ -616,7 +642,14 @@
     <div class="finance-header">
       <h1>💰 Finance</h1>
       <div class="header-actions">
-        <button class="btn-secondary" onclick="exportData()">📊 Export</button>
+        <button class="btn-secondary" onclick="exportData()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Export
+        </button>
         <button class="btn-primary" onclick="openNewInvoiceModal()">+ Nová faktura</button>
       </div>
     </div>
@@ -624,13 +657,25 @@
     <!-- Finance Overview -->
     <div class="finance-overview">
       <div class="finance-card">
-        <h3>💰 Příjmy tento měsíc</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+          Příjmy tento měsíc
+        </h3>
         <h2 id="incomeAmount">0 Kč</h2>
         <span class="trend up" id="incomeTrend">↑ 0% vs minulý měsíc</span>
       </div>
       
       <div class="finance-card">
-        <h3>💸 Náklady</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;stroke:#f87171" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+          Náklady
+        </h3>
         <h2 id="expensesAmount">0 Kč</h2>
         <div class="breakdown" id="expensesBreakdown">
           <span>Mzdy: 0k</span>
@@ -640,13 +685,27 @@
       </div>
       
       <div class="finance-card success">
-        <h3>📊 Zisk</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Zisk
+        </h3>
         <h2 id="profitAmount">0 Kč</h2>
         <span id="profitMargin">Marže: 0%</span>
       </div>
       
       <div class="finance-card warning">
-        <h3>⚠️ Nezaplacené faktury</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;stroke:#fb923c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Nezaplacené faktury
+        </h3>
         <h2 id="unpaidAmount">0 Kč</h2>
         <span id="unpaidCount">0 faktur po splatnosti</span>
       </div>
@@ -668,7 +727,7 @@
 
         <div class="filters-bar">
           <div class="search-box">
-            <input type="search" id="invoiceSearch" placeholder="🔍 Hledat faktury...">
+            <input type="search" id="invoiceSearch" placeholder="Hledat faktury...">
           </div>
           <select class="filter-select" id="filterType">
             <option value="">Všechny typy</option>
@@ -706,7 +765,13 @@
     <div id="tab-profit" class="tab-content" style="display:none;">
       <div class="charts-section">
         <div class="chart-card">
-          <h3>📈 Příjmy vs Výdaje (6 měsíců)</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;">
+            <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            Příjmy vs Výdaje (6 měsíců)
+          </h3>
           <div class="chart-container">
             <div class="simple-chart" id="incomeExpensesChart">
               <!-- Chart will be rendered here -->
@@ -715,7 +780,13 @@
         </div>
 
         <div class="chart-card">
-          <h3>💰 Cashflow projekce</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;">
+            <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+            Cashflow projekce
+          </h3>
           <div class="chart-container">
             <div class="simple-chart" id="cashflowChart">
               <!-- Chart will be rendered here -->
@@ -846,7 +917,7 @@
           <span>sklad</span>
         </a>
         <a href="/finance.html" class="more-menu-item">
-          <span>💰 finance</span>
+          <span>finance</span>
         </a>
         <a href="/documents.html" class="more-menu-item">
           <span>📁 dokumenty</span>
@@ -1440,6 +1511,8 @@
     // Initialize
     loadData();
   </script>
+  <script src="/static/bottom-nav.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
 </body>
 </html>
 

@@ -453,6 +453,29 @@
         padding: 20px;
       }
     }
+    @media (max-width: 768px) {
+      .reports-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .reports-header h1 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .header-actions .btn {
+        width: 100%;
+      }
+      .report-types {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -461,7 +484,15 @@
     <div class="reports-header">
       <h1>📊 Reporty</h1>
       <div class="header-actions">
-        <button class="btn-secondary" onclick="showScheduledReports()">📅 Plánované</button>
+        <button class="btn-secondary" onclick="showScheduledReports()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Plánované
+        </button>
       </div>
     </div>
 
@@ -481,7 +512,12 @@
       </div>
 
       <div class="report-type-card" onclick="openReportGenerator('monthly')">
-        <div class="icon">📈</div>
+        <div class="icon">
+          <svg style="width:48px;height:48px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+        </div>
         <h3>Měsíční report</h3>
         <p>Finanční přehled a produktivita za měsíc</p>
         <ul class="report-features">
@@ -493,7 +529,14 @@
       </div>
 
       <div class="report-type-card" onclick="openReportGenerator('project')">
-        <div class="icon">📋</div>
+        <div class="icon">
+          <svg style="width:48px;height:48px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="M9 12h6"/>
+            <path d="M9 16h6"/>
+          </svg>
+        </div>
         <h3>Projektový report</h3>
         <p>Detailní analýza jednoho projektu</p>
         <ul class="report-features">
@@ -563,13 +606,40 @@
       </div>
 
       <div style="display:flex;gap:12px;margin-top:24px;">
-        <button class="btn-secondary" onclick="previewReport()">👁️ Náhled</button>
-        <button class="btn-primary" onclick="generateReport()">📄 Generovat PDF</button>
-        <button class="btn-secondary" onclick="emailReport()">📧 Odeslat emailem</button>
+        <button class="btn-secondary" onclick="previewReport()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Náhled
+        </button>
+        <button class="btn-primary" onclick="generateReport()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#0a0e11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Generovat PDF
+        </button>
+        <button class="btn-secondary" onclick="emailReport()">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Odeslat emailem
+        </button>
       </div>
       
       <div style="display:flex;gap:12px;margin-top:12px;">
-        <button class="btn-secondary" id="btnSaveScheduled" onclick="saveScheduledReport()" style="display:none;">💾 Uložit plánovaný report</button>
+        <button class="btn-secondary" id="btnSaveScheduled" onclick="saveScheduledReport()" style="display:none;">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Uložit plánovaný report
+        </button>
       </div>
 
       <!-- Preview -->
@@ -580,7 +650,15 @@
 
     <!-- Scheduled Reports -->
     <div class="scheduled-reports" id="scheduledReports" style="display:none;">
-      <h2>📅 Plánované reporty</h2>
+      <h2 style="display:flex;align-items:center;gap:8px;">
+        <svg style="width:24px;height:24px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Plánované reporty
+      </h2>
       <div id="scheduledList"></div>
     </div>
   </div>
@@ -644,10 +722,10 @@
           <span>sklad</span>
         </a>
         <a href="/finance.html" class="more-menu-item">
-          <span>💰 finance</span>
+          <span>finance</span>
         </a>
         <a href="/documents.html" class="more-menu-item">
-          <span>📁 dokumenty</span>
+          <span>dokumenty</span>
         </a>
         <a href="/reports.html" class="more-menu-item">
           <span>📊 reporty</span>
@@ -1191,6 +1269,8 @@
     // Initialize
     loadData();
   </script>
+  <script src="/static/bottom-nav.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
 </body>
 </html>
 
