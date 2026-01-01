@@ -11,12 +11,12 @@
   
   const defaultSettings = {
     theme: 'dark',
-    accentColor: '#4ade80',
+    accentColor: '#b0fba5',
     fontSize: 'medium',
     viewMode: 'cards',
     companyName: 'green david',
     companySlogan: 'interní systém',
-    brandColor: '#4ade80',
+    brandColor: '#b0fba5',
     userName: '',
     userEmail: '',
     userPhone: '',
@@ -167,7 +167,7 @@
     
     if (nameInput) nameInput.value = currentSettings.companyName || '';
     if (sloganInput) sloganInput.value = currentSettings.companySlogan || '';
-    if (brandColorInput) brandColorInput.value = currentSettings.brandColor || '#4ade80';
+    if (brandColorInput) brandColorInput.value = currentSettings.brandColor || '#b0fba5';
     
     // Apply to page title
     if (currentSettings.companyName) {
