@@ -18,8 +18,8 @@
       --text-primary: #e8eef2;
       --text-secondary: #9ca8b3;
       --text-tertiary: #6b7580;
-      --mint: #b0fba5;
-      --mint-dark: #b0fba5;
+      --mint: #B2FBA5;
+      --mint-dark: #B2FBA5;
       --warning: #fb923c;
       --danger: #f87171;
     }
@@ -482,10 +482,17 @@
   <div class="reports-page">
     <!-- Header -->
     <div class="reports-header">
-      <h1>📊 Reporty</h1>
+      <h1>
+        <svg style="width:32px;height:32px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Reporty
+      </h1>
       <div class="header-actions">
         <button class="btn-secondary" onclick="showScheduledReports()">
-          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
             <line x1="16" y1="2" x2="16" y2="6"/>
             <line x1="8" y1="2" x2="8" y2="6"/>
@@ -499,7 +506,14 @@
     <!-- Report Types -->
     <div class="report-types">
       <div class="report-type-card" onclick="openReportGenerator('weekly')">
-        <div class="icon">📅</div>
+        <div class="icon">
+          <svg style="width:24px;height:24px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
         <h3>Týdenní report</h3>
         <p>Přehled hodin, projektů a úkolů za týden</p>
         <ul class="report-features">
@@ -513,7 +527,7 @@
 
       <div class="report-type-card" onclick="openReportGenerator('monthly')">
         <div class="icon">
-          <svg style="width:48px;height:48px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:48px;height:48px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
             <polyline points="17 6 23 6 23 12"/>
           </svg>
@@ -530,7 +544,7 @@
 
       <div class="report-type-card" onclick="openReportGenerator('project')">
         <div class="icon">
-          <svg style="width:48px;height:48px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:48px;height:48px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <path d="M9 12h6"/>
@@ -607,7 +621,7 @@
 
       <div style="display:flex;gap:12px;margin-top:24px;">
         <button class="btn-secondary" onclick="previewReport()">
-          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
@@ -623,7 +637,7 @@
           Generovat PDF
         </button>
         <button class="btn-secondary" onclick="emailReport()">
-          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
             <polyline points="22,6 12,13 2,6"/>
           </svg>
@@ -633,7 +647,7 @@
       
       <div style="display:flex;gap:12px;margin-top:12px;">
         <button class="btn-secondary" id="btnSaveScheduled" onclick="saveScheduledReport()" style="display:none;">
-          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/>
             <polyline points="7 3 7 8 15 8"/>
@@ -651,7 +665,7 @@
     <!-- Scheduled Reports -->
     <div class="scheduled-reports" id="scheduledReports" style="display:none;">
       <h2 style="display:flex;align-items:center;gap:8px;">
-        <svg style="width:24px;height:24px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg style="width:24px;height:24px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
           <line x1="8" y1="2" x2="8" y2="6"/>
@@ -731,7 +745,7 @@
           <span>📊 reporty</span>
         </a>
         <a href="/settings.html" class="more-menu-item">
-          <span>⚙️ nastavení</span>
+          <span>nastavení</span>
         </a>
       </div>
     </div>
@@ -1269,6 +1283,7 @@
     // Initialize
     loadData();
   </script>
+  <div id="bottom-nav-container"></div>
   <script src="/static/bottom-nav.js"></script>
   <link rel="stylesheet" href="/static/icons.css">
 </body>

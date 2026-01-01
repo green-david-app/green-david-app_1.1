@@ -86,9 +86,12 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            padding: 24px;
+            padding: 16px;
             text-align: center;
             transition: all 0.3s;
+            cursor: pointer;
+            max-height: 120px;
+            overflow: hidden;
         }
 
         .employee-card:hover {
@@ -98,17 +101,17 @@
         }
 
         .employee-avatar {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: linear-gradient(135deg, #B2FBA5, #B2FBA5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
             color: #000;
-            margin: 0 auto 16px;
+            margin: 0 auto 12px;
             position: relative;
         }
 
@@ -232,6 +235,61 @@
             font-size: 11px;
             font-weight: 500;
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 767px) {
+            .page {
+                padding: 12px;
+            }
+
+            .employees-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .employee-card {
+                max-width: 100%;
+                padding: 16px;
+            }
+
+            .employee-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .employee-name {
+                font-size: 16px;
+            }
+
+            .employee-role {
+                font-size: 12px;
+            }
+
+            .employee-stats {
+                gap: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+
+            .employee-stat .value {
+                font-size: 16px;
+            }
+
+            .employee-stat .label {
+                font-size: 10px;
+            }
+
+            .employee-actions {
+                margin-top: 12px;
+            }
+
+            .employee-actions button {
+                padding: 6px 10px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -253,37 +311,6 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <a href="/" class="nav-item" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('dashboard'); } else { window.location.href='/'; }">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-            <div class="nav-label">Domů</div>
-        </a>
-        <a href="/jobs.html" class="nav-item">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-            <div class="nav-label">Zakázky</div>
-        </a>
-        <a href="/timesheets.html" class="nav-item">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-            <div class="nav-label">Výkazy</div>
-        </a>
-        <a href="/calendar.html" class="nav-item">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-            <div class="nav-label">Kalendář</div>
-        </a>
-        <a href="/tasks.html" class="nav-item">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg></div>
-            <div class="nav-label">Úkoly</div>
-        </a>
-        <a href="/employees.html" class="nav-item active">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div class="nav-label">Zaměstnanci</div>
-        </a>
-        <a href="/settings.html" class="nav-item">
-            <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
-            <div class="nav-label">Nastavení</div>
-        </a>
-    </nav>
 
     <script src="/static/toast.js"></script>
     <script src="/static/loading.js"></script>
@@ -333,7 +360,7 @@
                 const status = emp.status || 'offline';
                 
                 return `
-                <div class="employee-card">
+                <div class="employee-card" onclick="window.location.href='/employee-detail.html?id=${emp.id}'">
                     <div class="employee-avatar">
                         ${initials}
                         <div class="status-dot ${status}"></div>
@@ -356,7 +383,7 @@
                         </div>
                     </div>
                     
-                    <div class="employee-actions">
+                    <div class="employee-actions" onclick="event.stopPropagation()">
                         <button title="Zavolat" onclick="callEmployee(${emp.id})">
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
@@ -448,6 +475,7 @@
             loadEmployees();
         });
     </script>
+    <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
     <link rel="stylesheet" href="/static/icons.css">
 </body>

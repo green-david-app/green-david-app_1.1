@@ -17,8 +17,8 @@
       --text-primary: #e8eef2;
       --text-secondary: #9ca8b3;
       --text-tertiary: #6b7580;
-      --mint: #b0fba5;
-      --mint-dark: #b0fba5;
+      --mint: #B2FBA5;
+      --mint-dark: #B2FBA5;
       --warning: #fb923c;
       --danger: #f87171;
     }
@@ -227,7 +227,7 @@
 
     .file-card.selected {
       border-color: var(--mint);
-      background: rgba(176, 251, 165, 0.1);
+      background: rgba(178, 251, 165, 0.1);
     }
 
     .file-icon {
@@ -325,7 +325,7 @@
     }
 
     .file-list-item:hover {
-      background: rgba(176, 251, 165, 0.05);
+      background: rgba(178, 251, 165, 0.05);
       border-color: var(--mint);
     }
 
@@ -348,7 +348,7 @@
     .upload-area:hover,
     .upload-area.drag-over {
       border-color: var(--mint);
-      background: rgba(176, 251, 165, 0.05);
+      background: rgba(178, 251, 165, 0.05);
     }
 
     .upload-area input[type="file"] {
@@ -661,10 +661,19 @@
   <div class="documents-page">
     <!-- Header -->
     <div class="documents-header">
-      <h1>📁 Dokumenty</h1>
+      <h1>
+        <svg style="width:32px;height:32px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Dokumenty
+      </h1>
       <div class="header-actions">
         <button class="btn-secondary" onclick="clearTrash()">
-          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
           </svg>
@@ -680,38 +689,38 @@
       <div class="sidebar">
         <h3>Kategorie</h3>
         <div class="folder active" data-folder="all" onclick="switchFolder('all')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
           Všechny soubory
         </div>
         <div class="folder" data-folder="projects" onclick="switchFolder('projects')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
           Projekty
         </div>
         <div class="folder" data-folder="contracts" onclick="switchFolder('contracts')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
           Smlouvy
         </div>
         <div class="folder" data-folder="invoices" onclick="switchFolder('invoices')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
           Faktury
         </div>
         <div class="folder" data-folder="photos" onclick="switchFolder('photos')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
           Fotky
         </div>
         <div class="folder" data-folder="trash" onclick="switchFolder('trash')">
-          <svg style="width:18px;height:18px;stroke:#b0fba5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
           </svg>
@@ -727,7 +736,7 @@
           </div>
           <div class="view-toggle">
             <button class="view-btn active" data-view="grid" onclick="switchView('grid')" title="Grid">
-              <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7"/>
                 <rect x="14" y="3" width="7" height="7"/>
                 <rect x="14" y="14" width="7" height="7"/>
@@ -735,7 +744,7 @@
               </svg>
             </button>
             <button class="view-btn" data-view="list" onclick="switchView('list')" title="Seznam">
-              <svg style="width:20px;height:20px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"/>
                 <line x1="8" y1="12" x2="21" y2="12"/>
                 <line x1="8" y1="18" x2="21" y2="18"/>
@@ -788,33 +797,6 @@
     </div>
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('dashboard'); } else { window.location.href='/'; }">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <div class="nav-label">Domů</div>
-    </a>
-    <a href="/jobs.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <div class="nav-label">Zakázky</div>
-    </a>
-    <a href="/timesheets.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="nav-label">Výkazy</div>
-    </a>
-    <a href="/calendar.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div class="nav-label">Kalendář</div>
-    </a>
-    <a href="#" id="more-menu-btn" class="nav-item" onclick="event.preventDefault(); document.getElementById('more-menu').classList.toggle('show');">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
-      <div class="nav-label">Více</div>
-    </a>
-    <a href="/settings.html" class="nav-item">
-      <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
-      <div class="nav-label">Nastavení</div>
-    </a>
-  </nav>
 
   <!-- More Menu (Expandable) -->
   <div id="more-menu" class="more-menu">
@@ -929,7 +911,7 @@
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon"><svg style="width:48px;height:48px;stroke:#b0fba5;opacity:0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div>Žádné soubory</div></div>';
+        container.innerHTML = '<div class="empty-state"><div class="icon"><svg style="width:48px;height:48px;stroke:#B2FBA5;opacity:0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div>Žádné soubory</div></div>';
         return;
       }
 
@@ -960,13 +942,13 @@
         <div class="file-card" data-file-id="${file.id}" onclick="window.openFileDetail(${file.id})">
           <div class="file-actions">
             <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})" title="Náhled">
-              <svg style="width:18px;height:18px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg style="width:18px;height:18px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
             <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})" title="Sdílet">
-              <svg style="width:18px;height:18px;stroke:#b0fba5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg style="width:18px;height:18px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="18" cy="5" r="3"/>
                 <circle cx="6" cy="12" r="3"/>
                 <circle cx="18" cy="19" r="3"/>
@@ -1004,9 +986,27 @@
           <div style="color:var(--text-secondary);font-size:12px;">${size}</div>
           <div style="color:var(--text-secondary);font-size:12px;">${date}</div>
           <div style="display:flex;gap:4px;">
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})">👁️</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})">🔗</button>
-            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})">🗑️</button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.openFilePreview(${file.id})" title="Náhled">
+              <svg style="width:18px;height:18px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.shareFile(${file.id})" title="Sdílet">
+              <svg style="width:18px;height:18px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+            <button class="file-action-btn" onclick="event.stopPropagation(); window.deleteFile(${file.id})" title="Smazat">
+              <svg style="width:18px;height:18px;stroke:#f87171" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
           </div>
         </div>
       `;
@@ -1014,14 +1014,24 @@
 
     function getFileIcon(filename, type) {
       const ext = filename.split('.').pop()?.toLowerCase();
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️';
-      if (['pdf'].includes(ext)) return '📄';
-      if (['doc', 'docx'].includes(ext)) return '📝';
-      if (['xls', 'xlsx'].includes(ext)) return '📊';
-      if (['zip', 'rar', '7z'].includes(ext)) return '📦';
-      if (type && type.startsWith('image/')) return '🖼️';
-      if (type && type.startsWith('application/pdf')) return '📄';
-      return '📄';
+      const svgStyle = 'style="width:24px;height:24px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+      
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || (type && type.startsWith('image/'))) {
+        return `<svg ${svgStyle}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+      }
+      if (['pdf'].includes(ext) || (type && type.startsWith('application/pdf'))) {
+        return `<svg ${svgStyle}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+      }
+      if (['doc', 'docx'].includes(ext)) {
+        return `<svg ${svgStyle}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`;
+      }
+      if (['xls', 'xlsx'].includes(ext)) {
+        return `<svg ${svgStyle}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+      }
+      if (['zip', 'rar', '7z'].includes(ext)) {
+        return `<svg ${svgStyle}><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`;
+      }
+      return `<svg ${svgStyle}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
     }
 
     function formatFileSize(bytes) {
@@ -1277,6 +1287,7 @@
     // Initialize
     loadFiles();
   </script>
+  <div id="bottom-nav-container"></div>
   <script src="/static/bottom-nav.js"></script>
   <link rel="stylesheet" href="/static/icons.css">
 </body>

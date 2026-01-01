@@ -29,17 +29,17 @@ function createBottomNav() {
             paths: ['/calendar.html']
         },
         {
+            href: '/reports.html',
+            icon: `<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
+            label: 'Přehledy',
+            paths: ['/reports.html', '/?tab=reports']
+        },
+        {
             href: '#',
             icon: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`,
             label: 'Více',
             paths: [],
             isMoreMenu: true
-        },
-        {
-            href: '/settings.html',
-            icon: `<circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>`,
-            label: 'Nastavení',
-            paths: ['/settings.html']
         }
     ];
     
