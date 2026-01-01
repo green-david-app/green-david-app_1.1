@@ -616,6 +616,18 @@ input[type="checkbox"] {
   stroke: #b0fba5;
 }
 
+.bottom-nav .nav-item .icon {
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+.bottom-nav .nav-item.active .icon {
+  stroke: #b0fba5;
+}
+
+.bottom-nav .nav-item:hover .icon {
+  stroke: #b0fba5;
+}
+
 /* Legacy nav-item (pro kompatibilitu) */
 .nav-item {
   display: flex;

@@ -33,13 +33,7 @@ function createBottomNav() {
             icon: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`,
             label: 'Více',
             paths: [],
-            onclick: (e) => {
-                e.preventDefault();
-                const menu = document.getElementById('more-menu');
-                if (menu) {
-                    menu.classList.toggle('show');
-                }
-            }
+            isMoreMenu: true
         },
         {
             href: '/settings.html',
@@ -59,7 +53,7 @@ function createBottomNav() {
             (currentSearch && currentSearch.includes(path.replace('/', '')))
         );
         
-        const onclickAttr = item.onclick ? `onclick="event.preventDefault(); (${item.onclick.toString()})(event);"` : '';
+        const onclickAttr = item.isMoreMenu ? `onclick="event.preventDefault(); const menu = document.getElementById('more-menu'); if (menu) menu.classList.toggle('show');"` : '';
         
         return `
             <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" ${onclickAttr}>
@@ -86,4 +80,3 @@ document.addEventListener('DOMContentLoaded', () => {
     const nav = createBottomNav();
     document.body.appendChild(nav);
 });
-
