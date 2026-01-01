@@ -14,11 +14,11 @@
   --bg-tertiary: #2a2f35;
   
   /* Mint Green Accent */
-  --mint: #3ea76a;
-  --mint-light: #4bb878;
-  --mint-dark: #2d8f55;
-  --mint-bg: rgba(62, 167, 106, 0.15);
-  --mint-border: rgba(62, 167, 106, 0.3);
+  --mint: #b0fba5;
+  --mint-light: #b0fba5;
+  --mint-dark: #b0fba5;
+  --mint-bg: rgba(176, 251, 165, 0.15);
+  --mint-border: rgba(176, 251, 165, 0.3);
   
   /* Text Colors */
   --text-primary: #e8eef2;
@@ -552,24 +552,71 @@ input[type="checkbox"] {
    BOTTOM NAVIGATION - Fixed 83px
    ======================================== */
 
+/* ===== UNIVERSAL BOTTOM NAVIGATION ===== */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 83px;
-  background: rgba(31, 36, 40, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 0.5px solid var(--border-primary);
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 0;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: var(--space-sm) 0 max(env(safe-area-inset-bottom), var(--space-sm)) 0;
   z-index: 1000;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* Universal bottom nav styles */
+.bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  min-width: 70px;
+  flex: 1;
+  max-width: 80px;
+}
+
+.bottom-nav .nav-item .icon {
+  width: 24px;
+  height: 24px;
+  stroke: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.bottom-nav .nav-item span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.bottom-nav .nav-item:hover {
+  background: rgba(176, 251, 165, 0.1);
+  color: #b0fba5;
+}
+
+.bottom-nav .nav-item:hover .icon {
+  stroke: #b0fba5;
+  transform: translateY(-2px);
+}
+
+.bottom-nav .nav-item.active {
+  background: rgba(176, 251, 165, 0.15);
+  color: #b0fba5;
+}
+
+.bottom-nav .nav-item.active .icon {
+  stroke: #b0fba5;
+}
+
+/* Legacy nav-item (pro kompatibilitu) */
 .nav-item {
   display: flex;
   flex-direction: column;

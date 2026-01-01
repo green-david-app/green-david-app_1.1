@@ -86,7 +86,7 @@
           document.body.appendChild(notificationContainer);
         }
         const notif = document.createElement('div');
-        const colors = {success:'#3ea76a',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
+        const colors = {success:'#b0fba5',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
         notif.style.cssText = `padding:12px 16px;background:${colors[type]||colors.info}20;border:1px solid ${colors[type]||colors.info}40;border-radius:12px;color:#e8eef2;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;`;
         notif.textContent = message;
         notificationContainer.appendChild(notif);
@@ -199,7 +199,7 @@
         
         const columns = [
           {id:"Plán",label:"Plán",color:"#3b82f6"},
-          {id:"Probíhá",label:"Probíhá",color:"#3ea76a"},
+          {id:"Probíhá",label:"Probíhá",color:"#b0fba5"},
           {id:"Dokončeno",label:"Dokončeno",color:"#6b7580"}
         ];
 
@@ -236,8 +236,8 @@
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <h2 style={{fontSize:22,fontWeight:700,color:"#e8eef2"}}>Zakázky</h2>
             <div style={{display:"flex",gap:8}}>
-              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="kanban"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setViewMode("kanban")}>Kanban</button>
-              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="list"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setViewMode("list")}>Seznam</button>
+              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="kanban"?"rgba(176, 251, 165, 0.15)":"transparent"}} onClick={()=>setViewMode("kanban")}>Kanban</button>
+              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,background:viewMode==="list"?"rgba(176, 251, 165, 0.15)":"transparent"}} onClick={()=>setViewMode("list")}>Seznam</button>
             </div>
           </div>
           
@@ -745,20 +745,27 @@
             .admin-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
             .admin-card .admin-title { font-size: 36px; font-weight: 700; color: #e8eef2; margin: 0; }
             .admin-card .admin-role { font-size: 16px; color: var(--mint); margin-top: 4px; }
-            .admin-card .admin-stats { display: flex; gap: 32px; flex: 1; justify-content: flex-end; }
-            .admin-stat { text-align: center; }
+            .admin-card .admin-search { flex: 1; max-width: 300px; }
+            .admin-card .admin-search input { width: 100%; padding: 12px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; }
+            .admin-card .admin-search input:focus { outline: none; border-color: var(--mint); }
+            .admin-card .admin-search input::placeholder { color: #6b7580; }
+            .admin-card .admin-stats { display: flex; gap: 32px; }
+            .admin-stat { text-align: center; cursor: pointer; transition: opacity 0.2s; }
+            .admin-stat:hover { opacity: 0.8; }
             .admin-stat .value { font-size: 32px; font-weight: 700; color: #e8eef2; display: block; }
             .admin-stat .label { font-size: 14px; color: #9ca8b3; margin-top: 4px; }
             
             .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
             .action-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
             .action-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.3); border-color: var(--mint); }
-            .action-card .icon-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--mint); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+            .action-card .icon-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--mint); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+            .action-card .icon-circle svg { width: 32px; height: 32px; stroke: #0a0e11; }
             .action-card h3 { font-size: 18px; font-weight: 600; color: #e8eef2; margin: 0 0 8px 0; }
             .action-card p { font-size: 14px; color: #9ca8b3; margin: 0; }
             
             @media (max-width: 768px) {
               .admin-card { flex-direction: column; text-align: center; }
+              .admin-card .admin-search { max-width: 100%; width: 100%; }
               .admin-card .admin-stats { justify-content: center; flex-wrap: wrap; }
               .action-grid { grid-template-columns: repeat(2, 1fr); }
             }
@@ -770,16 +777,19 @@
               <div className="admin-title">Admin</div>
               <div className="admin-role">admin</div>
             </div>
+            <div className="admin-search">
+              <input type="search" placeholder="🔍 Vyhledávat..." />
+            </div>
             <div className="admin-stats">
-              <div className="admin-stat">
+              <div className="admin-stat" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
                 <span className="value">{stats.jobs}</span>
                 <span className="label">zakázky</span>
               </div>
-              <div className="admin-stat">
+              <div className="admin-stat" onClick={()=>window.location.href="/employees.html"}>
                 <span className="value">{stats.employees}</span>
                 <span className="label">tým</span>
               </div>
-              <div className="admin-stat">
+              <div className="admin-stat" onClick={()=>window.location.href="/tasks.html"}>
                 <span className="value">{stats.tasks}</span>
                 <span className="label">úkoly</span>
               </div>
@@ -789,22 +799,66 @@
           {/* Action Cards */}
           <div className="action-grid">
             <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
-              <div className="icon-circle">➕</div>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
               <h3>Nová zakázka</h3>
               <p>Vytvořit</p>
             </div>
             <div className="action-card" onClick={()=>window.location.href="/timesheets.html"}>
-              <div className="icon-circle">⏱️</div>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
               <h3>Výkaz hodin</h3>
               <p>Přidat čas</p>
             </div>
+            <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs'); else window.location.href="/jobs.html";}}>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                  <path d="M9 12h6"/>
+                  <path d="M9 16h6"/>
+                </svg>
+              </div>
+              <h3>Zakázky</h3>
+              <p>Přehled</p>
+            </div>
+            <div className="action-card" onClick={()=>window.location.href="/tasks.html"}>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+              </div>
+              <h3>Úkoly</h3>
+              <p>Přehled</p>
+            </div>
             <div className="action-card" onClick={()=>window.location.href="/employees.html"}>
-              <div className="icon-circle">👥</div>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+              </div>
               <h3>Tým</h3>
               <p>Spravovat</p>
             </div>
-            <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('reports');}}>
-              <div className="icon-circle">📊</div>
+            <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('reports'); else window.location.href="/reports.html";}}>
+              <div className="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </div>
               <h3>Statistiky</h3>
               <p>Přehledy</p>
             </div>
@@ -1117,7 +1171,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
         },[]);
         
         // Simple SVG Bar Chart Component
-        const BarChart = ({data,height=200,color="#3ea76a"})=>{
+        const BarChart = ({data,height=200,color="#b0fba5"})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
           const barWidth = 280 / data.length;
@@ -1135,7 +1189,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
         };
         
         // Simple SVG Pie Chart Component
-        const PieChart = ({data,size=200,colors=["#3ea76a","#4bb878","#2d8f55","#1f6b42","#0d4d2a"]})=>{
+        const PieChart = ({data,size=200,colors=["#b0fba5","#b0fba5","#b0fba5","#b0fba5","#b0fba5"]})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const total = data.reduce((s,d)=>s+d.hours,0);
           if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
@@ -1171,7 +1225,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             .metric-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; display: flex; gap: 16px; align-items: center; transition: all 0.3s; }
             .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-color: var(--mint); }
             .metric-card.primary { border-left: 4px solid #3b82f6; }
-            .metric-card.success { border-left: 4px solid #3ea76a; }
+            .metric-card.success { border-left: 4px solid #b0fba5; }
             .metric-card.warning { border-left: 4px solid #fb923c; }
             .metric-card.info { border-left: 4px solid #60a5fa; }
             .metric-icon { font-size: 48px; line-height: 1; }
@@ -1179,9 +1233,9 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
             .metric-data h2 { font-size: 32px; font-weight: 700; color: #e8eef2; margin: 0 0 4px 0; }
             .metric-data p { font-size: 14px; color: #9ca8b3; margin: 0 0 8px 0; }
             .trend { font-size: 12px; color: #9ca8b3; }
-            .trend.up { color: #3ea76a; }
+            .trend.up { color: #b0fba5; }
             .progress-mini { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 8px 0 4px 0; }
-            .progress-mini .fill { height: 100%; background: linear-gradient(90deg, #3ea76a, #22c55e); transition: width 0.3s; }
+            .progress-mini .fill { height: 100%; background: linear-gradient(90deg, #b0fba5, #b0fba5); transition: width 0.3s; }
             
             .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
             .action-btn { flex: 1; min-width: 150px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; font-size: 14px; font-weight: 500; }
@@ -1374,7 +1428,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               {/* Monthly Performance Chart */}
               <div className="dashboard-chart">
                 <h3>📈 Výkon za měsíc</h3>
-                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={200} color="#3ea76a"/>
+                <BarChart data={chartData.monthly.map(d=>({name:d.date,hours:d.hours}))} height={200} color="#b0fba5"/>
               </div>
               
               {/* Time Breakdown Chart */}
@@ -1445,7 +1499,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           })();
         },[]);
         
-        const BarChart = ({data,height=200,color="#3ea76a"})=>{
+        const BarChart = ({data,height=200,color="#b0fba5"})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const max = Math.max(...data.map(d=>d.hours),1);
           const barWidth = 280 / data.length;
@@ -1462,7 +1516,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           </svg>;
         };
         
-        const PieChart = ({data,size=200,colors=["#3ea76a","#4bb878","#2d8f55","#1f6b42","#0d4d2a"]})=>{
+        const PieChart = ({data,size=200,colors=["#b0fba5","#b0fba5","#b0fba5","#b0fba5","#b0fba5"]})=>{
           if(!data||data.length===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
           const total = data.reduce((s,d)=>s+d.hours,0);
           if(total===0) return <div style={{padding:40,textAlign:"center",color:"#6b7580"}}>Žádná data</div>;
@@ -1494,11 +1548,11 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                 <div style={{fontSize:16,fontWeight:600,color:"#e8eef2"}}>Hodiny per zaměstnanec</div>
                 <div style={{display:"flex",gap:4}}>
-                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="week"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("week")}>Týden</button>
-                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(62, 167, 106, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="week"?"rgba(176, 251, 165, 0.15)":"transparent"}} onClick={()=>setChartPeriod("week")}>Týden</button>
+                  <button className="btn btn-ghost" style={{padding:"4px 8px",fontSize:11,background:chartPeriod==="month"?"rgba(176, 251, 165, 0.15)":"transparent"}} onClick={()=>setChartPeriod("month")}>Měsíc</button>
                 </div>
               </div>
-              <BarChart data={chartData.employees} height={200} color="#3ea76a"/>
+              <BarChart data={chartData.employees} height={200} color="#b0fba5"/>
             </div>
             <div className="card" style={{padding:20}}>
               <div style={{fontSize:16,fontWeight:600,color:"#e8eef2",marginBottom:16}}>Rozdělení hodin</div>
@@ -1647,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <div class="nav-label">Domů</div>
   </a>
   <a href="/?tab=jobs" onclick="event.preventDefault(); if(window.setAppTab) { window.setAppTab('jobs'); } else { window.location.href='/?tab=jobs'; }" class="nav-item">
-    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></div>
     <div class="nav-label">Zakázky</div>
   </a>
   <a href="/timesheets.html" class="nav-item">
@@ -1663,11 +1717,11 @@ document.addEventListener('DOMContentLoaded', function(){
     <div class="nav-label">Přehledy</div>
   </a>
   <a href="#" id="more-menu-btn" class="nav-item" onclick="event.preventDefault(); document.getElementById('more-menu').classList.toggle('show');">
-    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></div>
     <div class="nav-label">Více</div>
   </a>
   <a href="/settings.html" class="nav-item">
-    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg></div>
+    <div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/></svg></div>
     <div class="nav-label">Nastavení</div>
   </a>
 </nav>
@@ -1754,6 +1808,8 @@ document.addEventListener('DOMContentLoaded', function(){
     updateBottomNav();
     setInterval(updateBottomNav, 1000);
 </script>
+<script src="/static/navigation.js"></script>
+<link rel="stylesheet" href="/static/icons.css">
 
 </body>
 </html>

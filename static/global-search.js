@@ -236,7 +236,7 @@
                         border-bottom: 1px solid rgba(255,255,255,0.05);
                         transition: background 0.2s;
                         cursor: pointer;
-                    " onmouseover="this.style.background='rgba(74, 222, 128, 0.1)'" onmouseout="this.style.background='transparent'" onclick="event.preventDefault(); window.location.href='${result.url}'; document.getElementById('global-search-overlay').style.display='none';">
+                    " onmouseover="this.style.background='rgba(176, 251, 165, 0.1)'" onmouseout="this.style.background='transparent'" onclick="event.preventDefault(); window.location.href='${result.url}'; document.getElementById('global-search-overlay').style.display='none';">
                         <span style="font-size: 20px;">${result.icon}</span>
                         <div style="flex: 1;">
                             <div style="font-weight: 600; margin-bottom: 2px;">${escapeHtml(result.title)}</div>

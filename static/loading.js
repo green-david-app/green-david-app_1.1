@@ -21,8 +21,8 @@ function showLoading(message = 'Načítám...') {
         <div style="
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(74, 222, 128, 0.3);
-            border-top-color: #4ade80;
+            border: 4px solid rgba(176, 251, 165, 0.3);
+            border-top-color: #b0fba5;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         "></div>

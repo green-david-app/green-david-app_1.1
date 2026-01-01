@@ -410,7 +410,7 @@
     border-bottom: none;
   }
   .ts-grid-row:hover {
-    background: rgba(62, 167, 106, 0.05);
+    background: rgba(176, 251, 165, 0.05);
   }
   .ts-employee-cell {
     display: table-cell;
@@ -429,7 +429,7 @@
     width: 32px;
     height: 32px;
     border-radius: 6px;
-    background: linear-gradient(135deg, var(--mint) 0%, #4bb878 100%);
+    background: linear-gradient(135deg, var(--mint) 0%, #b0fba5 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -459,8 +459,8 @@
     border-right: none;
   }
   .ts-time-entry {
-    background: rgba(62, 167, 106, 0.15);
-    border: 1px solid rgba(62, 167, 106, 0.3);
+    background: rgba(176, 251, 165, 0.15);
+    border: 1px solid rgba(176, 251, 165, 0.3);
     border-radius: 6px;
     padding: 6px 8px;
     margin-bottom: 6px;
@@ -473,7 +473,7 @@
     overflow-wrap: break-word;
   }
   .ts-time-entry:hover {
-    background: rgba(62, 167, 106, 0.25);
+    background: rgba(176, 251, 165, 0.25);
     border-color: var(--mint);
   }
   .ts-entry-hours {
@@ -495,8 +495,8 @@
   .ts-add-btn {
     width: 100%;
     padding: 6px 8px;
-    background: rgba(62, 167, 106, 0.1);
-    border: 1px dashed rgba(62, 167, 106, 0.4);
+    background: rgba(176, 251, 165, 0.1);
+    border: 1px dashed rgba(176, 251, 165, 0.4);
     border-radius: 6px;
     color: var(--mint);
     cursor: pointer;
@@ -506,7 +506,7 @@
     overflow-wrap: break-word;
   }
   .ts-add-btn:hover {
-    background: rgba(62, 167, 106, 0.2);
+    background: rgba(176, 251, 165, 0.2);
     border-color: var(--mint);
   }
 
@@ -817,7 +817,7 @@
     background: #86efac;
   }
   .ts-bar-column.medium {
-    background: #4ade80;
+    background: #b0fba5;
   }
   .ts-bar-column.high {
     background: #16a34a;
@@ -848,8 +848,8 @@
     border: 1px solid var(--border-primary);
   }
   .ts-top-project-item.rank-1 {
-    background: rgba(74, 222, 128, 0.1);
-    border-color: #4ade80;
+    background: rgba(176, 251, 165, 0.1);
+    border-color: #b0fba5;
   }
   .ts-rank {
     font-size: 20px;
@@ -1157,8 +1157,8 @@
   // Project colors
   const projectColors = {};
   const colorPalette = [
-    '#4ade80', '#3ea76a', '#2d8f55', '#1f6b3d', '#155d31',
-    '#5aee90', '#6bd08c', '#7cc5ff', '#60a5fa', '#4a90e2'
+    '#b0fba5', '#b0fba5', '#b0fba5', '#b0fba5', '#b0fba5',
+    '#b0fba5', '#b0fba5', '#7cc5ff', '#60a5fa', '#4a90e2'
   ];
   
   let currentView = 'list';
@@ -1386,7 +1386,7 @@
           const emp = employeesList.find(e => e.id === r.employee_id);
           const empName = (emp ? emp.name : 'Neznámý');
           const jobTitle = (r.job_title || ('Zakázka '+r.job_id));
-          const color = r.job_id ? getProjectColor(r.job_id) : '#4ade80';
+          const color = r.job_id ? getProjectColor(r.job_id) : '#b0fba5';
           entry.style.background = color + '33';
           entry.style.borderColor = color;
           entry.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;gap:8px;">' +
@@ -1614,7 +1614,7 @@
           // Parse time from entry (if available) or use default
           const startHour = 9; // Default start
           const hours = entry.hours || 0;
-          const color = entry.job_id ? getProjectColor(entry.job_id) : '#4ade80';
+          const color = entry.job_id ? getProjectColor(entry.job_id) : '#b0fba5';
           
           // Calculate position (each hour = 60px)
           const top = (startHour - 8) * 60;
@@ -1774,7 +1774,7 @@
     breakdownEl.innerHTML = sorted.map(([name, data]) => {
       const hours = data.hours;
       const percent = totalHours > 0 ? (hours / totalHours * 100) : 0;
-      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
       
       return `
         <div class="ts-project-item">
@@ -1851,7 +1851,7 @@
     if (trendSummaryEl) {
       if (diff > 0) {
         trendSummaryEl.textContent = `+${diff.toFixed(1)}h`;
-        trendSummaryEl.style.color = '#4ade80';
+        trendSummaryEl.style.color = '#b0fba5';
       } else if (diff < 0) {
         trendSummaryEl.textContent = `${diff.toFixed(1)}h`;
         trendSummaryEl.style.color = '#ff4d4d';
@@ -1876,7 +1876,7 @@
       const intensity = Math.min((totalHours / 8) * 100, 100);
       const dayEl = document.createElement('div');
       dayEl.className = 'ts-heatmap-day';
-      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
+      dayEl.style.background = `rgba(176, 251, 165, ${intensity / 100})`;
       dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
       heatMapEl.appendChild(dayEl);
     }
@@ -1893,7 +1893,7 @@
       if (job || data.jobId) {
         const item = document.createElement('div');
         item.className = 'ts-legend-item';
-        const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+        const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
         const jobTitle = job ? job.title : name;
         item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${jobTitle}</span>`;
         legendEl.appendChild(item);
@@ -1945,7 +1945,7 @@
     topEl.innerHTML = sorted.map(([name, data], index) => {
       const hours = data.hours;
       const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
-      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      const color = data.jobId ? getProjectColor(data.jobId) : '#b0fba5';
       const medal = index < 3 ? medals[index] : '•';
       const rankClass = index === 0 ? 'rank-1' : '';
       
@@ -2066,7 +2066,7 @@
       const intensity = Math.min((totalHours / 8) * 100, 100);
       const dayEl = document.createElement('div');
       dayEl.className = 'ts-heatmap-day';
-      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
+      dayEl.style.background = `rgba(176, 251, 165, ${intensity / 100})`;
       dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
       heatMapEl.appendChild(dayEl);
     }

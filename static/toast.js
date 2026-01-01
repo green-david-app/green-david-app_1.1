@@ -31,7 +31,7 @@ class ToastManager {
         };
         
         const colors = {
-            success: '#4ade80',
+            success: '#b0fba5',
             error: '#f87171',
             warning: '#fb923c',
             info: '#60a5fa'

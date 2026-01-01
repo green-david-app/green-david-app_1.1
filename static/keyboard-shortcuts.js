@@ -93,7 +93,7 @@
                         border-radius: 4px;
                         padding: 4px 8px;
                         font-size: 12px;
-                        color: #4ade80;
+                        color: #b0fba5;
                         font-family: monospace;
                     ">${modifier}${key.toUpperCase()}</kbd>
                 </div>

@@ -14,11 +14,11 @@
   --bg-tertiary: #2a2f35;
   
   /* Mint Green Accent */
-  --mint: #3ea76a;
-  --mint-light: #4bb878;
-  --mint-dark: #2d8f55;
-  --mint-bg: rgba(62, 167, 106, 0.15);
-  --mint-border: rgba(62, 167, 106, 0.3);
+  --mint: #b0fba5;
+  --mint-light: #b0fba5;
+  --mint-dark: #b0fba5;
+  --mint-bg: rgba(176, 251, 165, 0.15);
+  --mint-border: rgba(176, 251, 165, 0.3);
   
   /* Text Colors */
   --text-primary: #e8eef2;

@@ -250,10 +250,25 @@ def seed_admin():
         )
         db.commit()
 
+def seed_employees():
+    db = get_db()
+    cur = db.execute("SELECT COUNT(*) c FROM employees")
+    if cur.fetchone()["c"] == 0:
+        # Původní zaměstnanci
+        employees = [
+            ("david", "zahradník"),
+            ("vendi", "zahradník"),
+            ("jason", "zahradník"),
+        ]
+        for name, role in employees:
+            db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
+        db.commit()
+
 @app.before_request
 def _ensure():
     ensure_schema()
     seed_admin()
+    seed_employees()
 
 # ----------------- helpers for jobs schema compat -----------------
 def _jobs_info():
@@ -365,7 +380,48 @@ def api_employees():
     db = get_db()
     if request.method == "GET":
         rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
-        return jsonify({"ok": True, "employees":[dict(r) for r in rows]})
+        employees = []
+        for r in rows:
+            emp = dict(r)
+            emp_id = emp["id"]
+            
+            # Vypočítej hodiny tento týden
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            monday = today - timedelta(days=today.weekday())
+            week_start = monday.strftime("%Y-%m-%d")
+            week_end = (monday + timedelta(days=6)).strftime("%Y-%m-%d")
+            
+            timesheet_rows = db.execute(
+                "SELECT SUM(hours) as total FROM timesheets WHERE employee_id=? AND date >= ? AND date <= ?",
+                (emp_id, week_start, week_end)
+            ).fetchone()
+            emp["hours_week"] = round(timesheet_rows["total"] or 0, 1)
+            
+            # Spočítej aktivní zakázky (kde je zaměstnanec přiřazen)
+            job_rows = db.execute(
+                "SELECT COUNT(DISTINCT job_id) as count FROM job_assignments WHERE employee_id=?",
+                (emp_id,)
+            ).fetchone()
+            emp["active_projects"] = job_rows["count"] or 0
+            
+            # Spočítej dokončené úkoly
+            task_rows = db.execute(
+                "SELECT COUNT(*) as count FROM tasks WHERE employee_id=? AND status='completed'",
+                (emp_id,)
+            ).fetchone()
+            emp["completed_tasks"] = task_rows["count"] or 0
+            
+            # Status (online pokud má výkazy za posledních 24h)
+            recent_timesheet = db.execute(
+                "SELECT COUNT(*) as count FROM timesheets WHERE employee_id=? AND date >= date('now', '-1 day')",
+                (emp_id,)
+            ).fetchone()
+            emp["status"] = "online" if (recent_timesheet["count"] or 0) > 0 else "offline"
+            
+            employees.append(emp)
+        
+        return jsonify({"ok": True, "employees": employees})
     if request.method == "POST":
         data = request.get_json(force=True, silent=True) or {}
         name = data.get("name"); role = data.get("role") or "worker"

@@ -17,8 +17,8 @@
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
             --text-tertiary: #6b7580;
-            --mint: #4ade80;
-            --mint-dark: #22c55e;
+            --mint: #b0fba5;
+            --mint-dark: #b0fba5;
             --warning: #fb923c;
             --danger: #f87171;
         }
@@ -93,7 +93,7 @@
 
         .employee-card:hover {
             transform: translateY(-4px);
-            border-color: #4ade80;
+            border-color: #b0fba5;
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
@@ -101,7 +101,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4ade80, #22c55e);
+            background: linear-gradient(135deg, #b0fba5, #b0fba5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -123,7 +123,7 @@
         }
 
         .status-dot.online {
-            background: #4ade80;
+            background: #b0fba5;
         }
 
         .status-dot.offline {
@@ -157,7 +157,7 @@
         }
 
         .employee-stat .value {
-            color: #4ade80;
+            color: #b0fba5;
             font-size: 20px;
             font-weight: bold;
         }
@@ -186,7 +186,7 @@
         }
 
         .employee-actions button:hover {
-            background: #4ade80;
+            background: #b0fba5;
             color: #000;
         }
 
@@ -283,98 +283,122 @@
     <script src="/static/global-search.js"></script>
     <script src="/static/keyboard-shortcuts.js"></script>
     <script>
-        const mockEmployees = [
-            {
-                id: 1,
-                name: "Petr Novák",
-                role: "Vedoucí projektu",
-                status: "online",
-                hoursWeek: 42,
-                activeProjects: 5,
-                completedTasks: 23
-            },
-            {
-                id: 2,
-                name: "Jana Svobodová",
-                role: "Elektrikář",
-                status: "online",
-                hoursWeek: 38,
-                activeProjects: 3,
-                completedTasks: 18
-            },
-            {
-                id: 3,
-                name: "Martin Dvořák",
-                role: "Instalatér",
-                status: "offline",
-                hoursWeek: 40,
-                activeProjects: 4,
-                completedTasks: 15
-            },
-            {
-                id: 4,
-                name: "Eva Nováková",
-                role: "Asistent",
-                status: "online",
-                hoursWeek: 35,
-                activeProjects: 2,
-                completedTasks: 31
-            },
-            {
-                id: 5,
-                name: "Tomáš Procházka",
-                role: "Zahradník",
-                status: "online",
-                hoursWeek: 36,
-                activeProjects: 3,
-                completedTasks: 12
-            },
-            {
-                id: 6,
-                name: "Marie Černá",
-                role: "Malíř",
-                status: "offline",
-                hoursWeek: 0,
-                activeProjects: 1,
-                completedTasks: 8
+        // Načti REÁLNÁ data z API
+        async function loadEmployees() {
+            try {
+                if (window.showLoading) window.showLoading('Načítám zaměstnance...');
+                
+                const response = await fetch('/api/employees');
+                if (!response.ok) {
+                    throw new Error('Failed to load employees');
+                }
+                
+                const data = await response.json();
+                const employees = data.employees || [];
+                
+                if (window.hideLoading) window.hideLoading();
+                
+                renderEmployees(employees);
+                
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                if (window.hideLoading) window.hideLoading();
+                if (window.showToast) {
+                    window.showToast('Chyba při načítání zaměstnanců', 'error');
+                }
+                
+                // Fallback - zobraz prázdný stav
+                showEmptyState();
             }
-        ];
+        }
 
-        function renderEmployees() {
+        function renderEmployees(employees) {
             const grid = document.getElementById('employees-grid');
             if (!grid) return;
             
-            grid.innerHTML = mockEmployees.map(emp => `
+            if (employees.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            grid.innerHTML = employees.map(emp => {
+                const initials = getInitials(emp.name);
+                const status = emp.status || 'offline';
+                
+                return `
                 <div class="employee-card">
                     <div class="employee-avatar">
-                        ${emp.name.split(' ').map(n => n[0]).join('')}
-                        <div class="status-dot ${emp.status}"></div>
+                        ${initials}
+                        <div class="status-dot ${status}"></div>
                     </div>
-                    <h3 class="employee-name">${escapeHtml(emp.name)}</h3>
-                    <p class="employee-role">${escapeHtml(emp.role)}</p>
+                    <h3 class="employee-name">${escapeHtml(emp.name || 'Bez jména')}</h3>
+                    <p class="employee-role">${escapeHtml(emp.role || 'Zaměstnanec')}</p>
                     
                     <div class="employee-stats">
                         <div class="employee-stat">
-                            <div class="value">${emp.hoursWeek}h</div>
+                            <div class="value">${emp.hours_week || 0}h</div>
                             <div class="label">Tento týden</div>
                         </div>
                         <div class="employee-stat">
-                            <div class="value">${emp.activeProjects}</div>
+                            <div class="value">${emp.active_projects || 0}</div>
                             <div class="label">Zakázky</div>
                         </div>
                         <div class="employee-stat">
-                            <div class="value">${emp.completedTasks}</div>
+                            <div class="value">${emp.completed_tasks || 0}</div>
                             <div class="label">Úkoly</div>
                         </div>
                     </div>
                     
                     <div class="employee-actions">
-                        <button title="Zavolat" onclick="callEmployee(${emp.id})">📞</button>
-                        <button title="Email" onclick="emailEmployee(${emp.id})">📧</button>
-                        <button title="Detail" onclick="showEmployeeDetail(${emp.id})">👤</button>
+                        <button title="Zavolat" onclick="callEmployee(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                            </svg>
+                        </button>
+                        <button title="Email" onclick="emailEmployee(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </button>
+                        <button title="Detail" onclick="showEmployeeDetail(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        // Helper funkce pro iniciály
+        function getInitials(name) {
+            if (!name) return '??';
+            return name
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+
+        function showEmptyState() {
+            const grid = document.getElementById('employees-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5);">
+                    <svg class="icon-xl" style="width: 80px; height: 80px; margin: 0 auto 24px; stroke: rgba(255,255,255,0.3);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;">👥 Žádní zaměstnanci</h3>
+                    <p style="margin-bottom: 24px;">Přidejte prvního zaměstnance</p>
+                </div>
+            `;
         }
 
         function callEmployee(id) {
@@ -405,9 +429,12 @@
             return div.innerHTML;
         }
 
+        // Načti při načtení stránky
         document.addEventListener('DOMContentLoaded', () => {
-            renderEmployees();
+            loadEmployees();
         });
     </script>
+    <script src="/static/bottom-nav.js"></script>
+    <link rel="stylesheet" href="/static/icons.css">
 </body>
 </html>

@@ -38,4 +38,4 @@ dialog::backdrop{background:#0008}
 .result .meta{font-size:.8rem;color:#8aa39b;margin-bottom:.2rem}
 .result .sub{color:#cfd8d3;margin-top:.25rem}
 /* Day highlight anchor support */
-.day--highlight{outline:3px solid #4ade80; box-shadow:0 0 0 3px rgba(74,222,128,.3) inset; border-radius:.5rem}
+.day--highlight{outline:3px solid #b0fba5; box-shadow:0 0 0 3px rgba(176,251,165,.3) inset; border-radius:.5rem}
