@@ -8,15 +8,51 @@
 function renderKanban() {
     document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
     
-    if (filteredJobs.length === 0 && jobs.length === 0) {
+    // DEBUG
+    console.log('=== renderKanban DEBUG ===');
+    console.log('jobs.length:', typeof jobs !== 'undefined' ? jobs.length : 'undefined');
+    console.log('filteredJobs.length:', typeof filteredJobs !== 'undefined' ? filteredJobs.length : 'undefined');
+    
+    // Skeleton loading - jen když nemáme žádná data (initial load)
+    if (typeof jobs !== 'undefined' && jobs.length === 0) {
         ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
             const container = document.getElementById(`cards-${statusKey}`);
             if (container) {
-                for (let i = 0; i < 3; i++) {
-                    container.appendChild(createSkeletonCard());
+                for (let i = 0; i < 2; i++) {
+                    const skeleton = typeof createSkeletonCard === 'function' ? createSkeletonCard() : null;
+                    if (skeleton) container.appendChild(skeleton);
                 }
             }
         });
+        return;
+    }
+    
+    // Žádné výsledky po filtrování - zobraz empty state
+    if (typeof filteredJobs !== 'undefined' && filteredJobs.length === 0) {
+        const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
+        if (kanbanBoard) {
+            const emptyState = document.createElement('div');
+            emptyState.style.cssText = 'grid-column: 1/-1; padding: 60px 20px; text-align: center;';
+            emptyState.innerHTML = `
+                <svg style="width: 64px; height: 64px; color: var(--text-tertiary); margin: 0 auto 16px; display: block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 8px;">
+                    Žádné zakázky odpovídající filtrům
+                </div>
+                <div style="font-size: 14px; color: var(--text-tertiary);">
+                    Zkuste změnit filtry nebo vytvořit novou zakázku
+                </div>
+            `;
+            kanbanBoard.insertBefore(emptyState, kanbanBoard.firstChild);
+        }
+        return;
+    }
+    
+    // Normální rendering karet
+    if (typeof filteredJobs === 'undefined' || !filteredJobs) {
+        console.error('filteredJobs is undefined!');
         return;
     }
     
