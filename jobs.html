@@ -1964,6 +1964,14 @@
                 Zakázky
             </h1>
             <div class="header-actions">
+                <!-- Global Search Trigger -->
+                <button class="search-trigger" onclick="openGlobalSearch()" title="Hledat (⌘K)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                </button>
+                
                 <button class="btn-view active" data-view="kanban">
                     <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="#1a2332" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/>
@@ -2459,7 +2467,7 @@
     <script src="/static/toast.js"></script>
     <script src="/static/loading.js"></script>
     <script src="/static/keyboard-shortcuts.js"></script>
-    <script src="/static/global-search.js"></script>
+    <script src="/static/js/shared/global-search.js"></script>
     <script>
         // Global state
         let jobs = [];
@@ -2975,7 +2983,14 @@
                 document.getElementById('kanban-view').style.display = 'grid';
                 document.getElementById('list-view').classList.remove('active');
                 document.getElementById('timeline-view').classList.remove('active');
-                renderKanban();
+                // Použij renderKanban z externího modulu nebo fallback na lokální
+                if (typeof window.JobsKanban !== 'undefined' && window.JobsKanban.renderKanban) {
+                    window.JobsKanban.renderKanban();
+                } else if (typeof renderKanban === 'function') {
+                    renderKanban();
+                } else {
+                    console.error('renderKanban function not found!');
+                }
             } else if (currentView === 'list') {
                 document.getElementById('kanban-view').style.display = 'none';
                 document.getElementById('list-view').classList.add('active');
@@ -3009,87 +3024,84 @@
             return skeleton;
         }
 
-        function renderKanban() {
-            document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
-            
-            // DEBUG
-            console.log('=== renderKanban DEBUG ===');
-            console.log('jobs.length:', jobs.length);
-            console.log('filteredJobs.length:', filteredJobs.length);
-            
-            // Skeleton loading - jen když nemáme žádná data (initial load)
-            if (jobs.length === 0) {
-                ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
-                    const container = document.getElementById(`cards-${statusKey}`);
-                    if (container) {
-                        for (let i = 0; i < 2; i++) {
-                            container.appendChild(createSkeletonCard());
+        // renderKanban() je definována v /static/js/jobs/jobs-kanban.js
+        // Použijeme tu z externího souboru, ne duplikát zde
+        
+        // Fallback renderKanban pokud externí modul není načten
+        if (typeof window.JobsKanban === 'undefined') {
+            function renderKanban() {
+                document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
+                
+                // DEBUG
+                console.log('=== renderKanban DEBUG (fallback) ===');
+                console.log('jobs.length:', typeof jobs !== 'undefined' ? jobs.length : 'undefined');
+                console.log('filteredJobs.length:', typeof filteredJobs !== 'undefined' ? filteredJobs.length : 'undefined');
+                
+                // Skeleton loading - jen když nemáme žádná data (initial load)
+                if (typeof jobs !== 'undefined' && jobs.length === 0) {
+                    ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
+                        const container = document.getElementById(`cards-${statusKey}`);
+                        if (container && typeof createSkeletonCard === 'function') {
+                            for (let i = 0; i < 2; i++) {
+                                container.appendChild(createSkeletonCard());
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                // Žádné výsledky po filtrování - zobraz empty state
+                if (typeof filteredJobs !== 'undefined' && filteredJobs.length === 0) {
+                    const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
+                    if (kanbanBoard) {
+                        const emptyState = document.createElement('div');
+                        emptyState.style.cssText = 'grid-column: 1/-1; padding: 60px 20px; text-align: center;';
+                        emptyState.innerHTML = `
+                            <svg style="width: 64px; height: 64px; color: var(--text-tertiary); margin: 0 auto 16px; display: block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 8px;">
+                                Žádné zakázky odpovídající filtrům
+                            </div>
+                            <div style="font-size: 14px; color: var(--text-tertiary);">
+                                Zkuste změnit filtry nebo vytvořit novou zakázku
+                            </div>
+                        `;
+                        kanbanBoard.insertBefore(emptyState, kanbanBoard.firstChild);
+                    }
+                    return;
+                }
+                
+                // Normální rendering karet
+                if (typeof filteredJobs === 'undefined' || !filteredJobs) {
+                    console.error('filteredJobs is undefined!');
+                    return;
+                }
+                
+                filteredJobs.forEach(job => {
+                    if (typeof createJobCard === 'function') {
+                        const card = createJobCard(job);
+                        let statusKey = 'new';
+                        const statusLower = (job.status || '').toLowerCase();
+                        if (statusLower === 'aktivní' || statusLower === 'active' || statusLower === 'probíhá') {
+                            statusKey = 'active';
+                        } else if (statusLower === 'pozastavené' || statusLower === 'paused') {
+                            statusKey = 'paused';
+                        } else if (statusLower === 'dokončeno' || statusLower === 'completed' || statusLower === 'dokončené') {
+                            statusKey = 'completed';
+                        }
+                        const container = document.getElementById(`cards-${statusKey}`);
+                        if (container) {
+                            container.appendChild(card);
                         }
                     }
                 });
-                return;
+                
+                if (typeof updateColumnCounts === 'function') {
+                    updateColumnCounts();
+                }
             }
-            
-            // Žádné výsledky po filtrování - zobraz empty state
-            if (filteredJobs.length === 0) {
-                // Najdi kanban-board kontejner
-                const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
-                if (kanbanBoard) {
-                    // Vytvoř empty state, ale zachovej strukturu sloupců
-                    const emptyState = document.createElement('div');
-                    emptyState.style.cssText = 'grid-column: 1/-1; padding: 60px 20px; text-align: center;';
-                    emptyState.innerHTML = `
-                        <svg style="width: 64px; height: 64px; color: var(--text-tertiary); margin: 0 auto 16px; display: block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                        <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 8px;">
-                            Žádné zakázky odpovídající filtrům
-                        </div>
-                        <div style="font-size: 14px; color: var(--text-tertiary);">
-                            Zkuste změnit filtry nebo vytvořit novou zakázku
-                        </div>
-                    `;
-                    // Přidej empty state na začátek kanban board
-                    kanbanBoard.insertBefore(emptyState, kanbanBoard.firstChild);
-                }
-                return;
-            }
-            
-            filteredJobs.forEach(job => {
-                const card = createJobCard(job);
-                // Normalizuj status pro správné zařazení
-                let statusKey = 'new';
-                const statusLower = (job.status || '').toLowerCase();
-                if (statusLower === 'aktivní' || statusLower === 'active' || statusLower === 'probíhá') {
-                    statusKey = 'active';
-                } else if (statusLower === 'pozastavené' || statusLower === 'paused') {
-                    statusKey = 'paused';
-                } else if (statusLower === 'dokončeno' || statusLower === 'completed' || statusLower === 'dokončené') {
-                    statusKey = 'completed';
-                } else {
-                    statusKey = 'new';
-                }
-                const container = document.getElementById(`cards-${statusKey}`);
-                if (container) {
-                    container.appendChild(card);
-                }
-            });
-            
-            // FORCE Lucide icons immediately after cards are rendered
-            requestAnimationFrame(() => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                    
-                    // Double-check after animation frame
-                    setTimeout(() => {
-                        lucide.createIcons();
-                        console.log('✓ Ikony inicializovány');
-                    }, 50);
-                }
-            });
-            
-            updateColumnCounts();
         }
 
         let timelineZoomLevel = 'month'; // 'month', 'quarter', 'year'
@@ -4959,6 +4971,41 @@
         }
       }, 500);
     </script>
+    
+    <!-- Global Search Overlay -->
+    <div id="global-search-overlay" class="search-overlay">
+        <div class="search-overlay-backdrop" onclick="closeGlobalSearch()"></div>
+        
+        <div class="search-container-modal">
+            <!-- Input -->
+            <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" 
+                       id="global-search-input" 
+                       placeholder="Hledat v Green David App..."
+                       autocomplete="off">
+                <kbd class="search-kbd">⌘K</kbd>
+            </div>
+            
+            <!-- Results -->
+            <div class="search-results" id="global-search-results">
+                <div class="search-empty">
+                    <p>Začněte psát pro vyhledávání...</p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="search-footer">
+                <span><kbd>↑</kbd><kbd>↓</kbd> Navigace</span>
+                <span><kbd>Enter</kbd> Otevřít</span>
+                <span><kbd>Esc</kbd> Zavřít</span>
+            </div>
+        </div>
+    </div>
+    
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
 </body>
