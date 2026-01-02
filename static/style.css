@@ -355,15 +355,29 @@ a:hover {
 
 .btn-primary, button:not(.ghost):not(.btn-secondary):not(.btn-danger):not(.btn-ghost) {
   background: var(--mint);
-  color: #000000;
+  color: #1a2332;
   border-color: var(--mint);
   font-weight: 600;
 }
 
 .btn-primary:hover, button:not(.ghost):not(.btn-secondary):not(.btn-danger):not(.btn-ghost):hover {
   background: var(--mint-light);
-  color: #000000;
+  color: #1a2332;
   box-shadow: 0 0 0 3px var(--mint-bg);
+}
+
+/* Ensure all green buttons have dark text for readability */
+.btn-primary svg,
+.btn-primary i[data-lucide] {
+  stroke: #1a2332 !important;
+  color: #1a2332 !important;
+}
+
+.btn-primary svg path,
+.btn-primary svg line,
+.btn-primary svg circle,
+.btn-primary svg rect {
+  stroke: #1a2332 !important;
 }
 
 .btn-secondary {

@@ -96,16 +96,20 @@
         .btn-view.active {
             background: #9FD4A1;
             border-color: #9FD4A1;
-            color: #1a2332;
+            color: #1a2332 !important;  /* Tmavý text */
             font-weight: 600;
         }
 
-        .btn-view.active svg,
+        .btn-view.active svg {
+            stroke: #1a2332 !important;  /* Tmavé SVG ikony */
+            color: #1a2332 !important;
+        }
+
         .btn-view.active i[data-lucide] {
             stroke: #1a2332 !important;
             color: #1a2332 !important;
         }
-        
+
         .btn-view.active svg path,
         .btn-view.active svg line,
         .btn-view.active svg circle,
@@ -113,9 +117,21 @@
             stroke: #1a2332 !important;
             fill: none !important;
         }
-        
+
         .btn-view.active:hover {
             background: #7EBC82;
+            color: #0f172a !important;  /* Ještě tmavší při hover */
+        }
+
+        .btn-view.active:hover svg,
+        .btn-view.active:hover svg path,
+        .btn-view.active:hover svg line {
+            stroke: #0f172a !important;
+        }
+
+        .btn-view.active:hover i[data-lucide] {
+            stroke: #0f172a !important;
+            color: #0f172a !important;
         }
 
         .btn-primary {
@@ -1283,15 +1299,15 @@
             border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Mobile */
+        /* Mobile Responsive - IMPROVED */
         @media (max-width: 768px) {
             .page {
-                padding: 12px;
+                padding: 12px 8px;  /* Menší padding na mobilu */
             }
 
             .page-header {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
                 gap: 12px;
             }
 
@@ -1300,35 +1316,37 @@
             }
 
             .header-actions {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);  /* 3 tlačítka v řadě */
                 gap: 8px;
-            }
-
-            .header-actions > * {
                 width: 100%;
             }
 
-            .btn-view,
-            .btn-secondary,
-            .btn-primary {
-                flex: 1;
+            .btn-view {
+                padding: 10px 8px;
+                font-size: 13px;
                 justify-content: center;
+                white-space: nowrap;
+            }
+
+            .btn-view svg {
+                width: 16px !important;
+                height: 16px !important;
+                margin-right: 4px;
+            }
+
+            /* Hlavní + tlačítko na celou šířku */
+            .btn-primary {
+                grid-column: 1 / -1;  /* přes všechny sloupce */
+                padding: 12px;
+                font-size: 15px;
+                min-height: 44px;
+            }
+
+            .btn-secondary {
                 padding: 10px 14px;
                 font-size: 14px;
                 min-height: 44px;
-            }
-            
-            /* Stack view buttons horizontally but allow wrapping */
-            .header-actions .btn-view {
-                flex: 1 1 auto;
-                min-width: calc(33.333% - 6px);
-            }
-            
-            /* Make secondary buttons stack vertically */
-            .header-actions .btn-secondary {
-                width: 100%;
             }
 
             .filters-grid {
@@ -1460,6 +1478,12 @@
                 width: 100%;
             }
             
+            /* Statistiky - menší font */
+            .jobs-dashboard {
+                grid-template-columns: repeat(2, 1fr);  /* 2 sloupce místo 4 */
+                gap: 8px;
+            }
+
             .dashboard-card {
                 padding: 10px 12px;
                 height: auto;
@@ -1480,24 +1504,54 @@
                 font-size: 10px;
                 margin-top: 2px;
             }
-            
-            .jobs-dashboard {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
+
+            /* Kanban sloupce - scrollovatelné horizontálně */
+            .kanban-board {
+                display: flex;
+                overflow-x: auto;
+                gap: 12px;
+                padding-bottom: 12px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .kanban-column {
+                min-width: 280px;  /* Pevná šířka pro lepší scrollování */
+                flex-shrink: 0;
             }
             
-            .quick-actions {
-                gap: 3px;
-            }
-            
+            /* Quick action tlačítka - větší na mobilu */
             .quick-action-btn {
-                width: 28px;
-                height: 28px;
+                width: 36px !important;  /* Větší pro lepší tap target */
+                height: 36px !important;
             }
-            
-            .quick-action-btn i[data-lucide] {
-                width: 16px;
-                height: 16px;
+
+            .quick-action-btn i[data-lucide],
+            .quick-action-btn svg {
+                width: 20px !important;
+                height: 20px !important;
+            }
+
+            /* Quick actions vždy viditelné na mobilu */
+            .quick-actions {
+                display: flex !important;  /* Vždy zobrazit, ne jen při hover */
+                opacity: 0.9;
+                gap: 4px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .header-actions {
+                grid-template-columns: repeat(2, 1fr);  /* 2 tlačítka v řadě na malých obrazovkách */
+            }
+
+            .btn-view {
+                font-size: 12px;
+                padding: 8px 6px;
+            }
+
+            .kanban-column {
+                min-width: 260px;
             }
         }
 
@@ -2306,11 +2360,26 @@
                 }
             });
             
-            // Initialize Lucide icons for new cards
+            // Initialize Lucide icons for new cards - FORCE MULTIPLE TIMES
             if (typeof lucide !== 'undefined') {
+                // Inicializuj hned
+                lucide.createIcons();
+                
+                // Inicializuj znovu po 50ms (pro jistotu)
                 setTimeout(() => {
                     lucide.createIcons();
-                }, 100);
+                }, 50);
+                
+                // Inicializuj znovu po 200ms (pro případy pomalého načítání)
+                setTimeout(() => {
+                    lucide.createIcons();
+                }, 200);
+                
+                // Final check po 500ms
+                setTimeout(() => {
+                    lucide.createIcons();
+                    console.log('✓ Lucide icons initialized');
+                }, 500);
             }
             
             updateColumnCounts();

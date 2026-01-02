@@ -71,3 +71,4 @@
 - ⚠️ Výkon a optimalizace
 - ⚠️ Polishing (animace, typography, spacing, shadows)
 
+
