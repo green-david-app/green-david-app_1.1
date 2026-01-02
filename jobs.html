@@ -2478,15 +2478,26 @@
     <script src="/static/keyboard-shortcuts.js"></script>
     <script src="/static/js/shared/global-search.js"></script>
     <script>
-        // Global state
-        let jobs = [];
-        let employees = [];
-        let filteredJobs = [];
-        let currentView = 'kanban';
-        let currentSort = { field: null, direction: 'asc' };
-        let selectedJobIds = new Set(); // Bulk selection
-        let notifications = JSON.parse(localStorage.getItem('notifications') || '[]'); // Notifikace
-        let filters = {
+        // Global state - EXPOSE TO WINDOW IMMEDIATELY
+        window.jobs = [];
+        window.employees = [];
+        window.filteredJobs = [];
+        window.currentView = 'kanban';
+        window.currentSort = { field: null, direction: 'asc' };
+        window.selectedJobIds = new Set(); // Bulk selection
+        window.notifications = JSON.parse(localStorage.getItem('notifications') || '[]'); // Notifikace
+        window.currentJobId = null;
+        
+        // Local aliases for backward compatibility
+        let jobs = window.jobs;
+        let employees = window.employees;
+        let filteredJobs = window.filteredJobs;
+        let currentView = window.currentView;
+        let currentSort = window.currentSort;
+        let selectedJobIds = window.selectedJobIds;
+        let notifications = window.notifications;
+        let currentJobId = window.currentJobId;
+        window.filters = {
             search: '',
             status: [],
             client: '',
@@ -2547,15 +2558,16 @@
                 
                 if (employeesRes.ok) {
                     const empData = await employeesRes.json();
-                    employees = empData.employees || [];
-                    localStorage.setItem('cachedEmployees', JSON.stringify(employees));
+                    window.employees = empData.employees || [];
+                    employees = window.employees;
+                    localStorage.setItem('cachedEmployees', JSON.stringify(window.employees));
                 }
                 
                 // Cache for offline use
                 saveJobsToCache(apiJobs);
                 
                 // Mapuj data z API
-                jobs = apiJobs.map(job => ({
+                window.jobs = apiJobs.map(job => ({
                     id: job.id,
                     title: job.title || job.name || `Zakázka ${job.id}`,
                     client: job.client || '—',
@@ -2579,8 +2591,11 @@
                     comments: job.comments || []
                 }));
                 
+                // Update local alias
+                jobs = window.jobs;
+                
                 // Cache for offline use
-                saveJobsToCache(jobs);
+                saveJobsToCache(window.jobs);
                 
                 if (window.hideLoading) window.hideLoading();
                 
@@ -2599,7 +2614,7 @@
                 const cachedJobs = loadJobsFromCache();
                 
                 if (cachedJobs && cachedJobs.length > 0) {
-                    jobs = cachedJobs.map(job => ({
+                    window.jobs = cachedJobs.map(job => ({
                         id: job.id,
                         title: job.title || job.name || `Zakázka ${job.id}`,
                         client: job.client || '—',
@@ -3571,7 +3586,8 @@
             }
             
             // Fallback to inline implementation
-            filteredJobs = jobs.filter(job => {
+            const jobs = window.jobs || [];
+            window.filteredJobs = jobs.filter(job => {
                 // Vylepšené fulltextové vyhledávání
                 if (filters.search) {
                     const searchLower = filters.search.toLowerCase().trim();
@@ -3683,6 +3699,9 @@
                 
                 return true;
             });
+            
+            // Update local alias
+            filteredJobs = window.filteredJobs;
         }
 
         // Drag & Drop
@@ -4143,13 +4162,14 @@
             }
         });
 
-        let currentJobId = null;
+        // currentJobId je už definováno výše jako window.currentJobId
 
         function showJobDetail(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
-            currentJobId = jobId;
+            window.currentJobId = jobId;
+            currentJobId = window.currentJobId;
             document.getElementById('detail-title').textContent = job.title;
             const body = document.getElementById('detail-body');
             body.innerHTML = `
@@ -4196,7 +4216,8 @@
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
-            currentJobId = jobId;
+            window.currentJobId = jobId;
+            currentJobId = window.currentJobId;
             const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
             document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
             
@@ -4489,8 +4510,10 @@
                 }
                 
                 // Odstraň z lokálního pole
-                jobs = jobs.filter(j => j.id !== jobId);
-                filteredJobs = filteredJobs.filter(j => j.id !== jobId);
+                window.jobs = window.jobs.filter(j => j.id !== jobId);
+                window.filteredJobs = window.filteredJobs.filter(j => j.id !== jobId);
+                jobs = window.jobs;
+                filteredJobs = window.filteredJobs;
                 
                 if (window.hideLoading) window.hideLoading();
                 if (window.showToast) window.showToast('Zakázka úspěšně smazána', 'success');
@@ -4501,8 +4524,9 @@
                 updateStats();
                 
                 // Pokud byl otevřen detail této zakázky, zavři ho
-                if (currentJobId === jobId) {
+                if (window.currentJobId === jobId) {
                     document.getElementById('job-detail-modal').classList.remove('active');
+                    window.currentJobId = null;
                     currentJobId = null;
                 }
                 
@@ -4766,7 +4790,8 @@
                 const ids = Array.from(selectedJobIds);
                 const promises = ids.map(id => fetch(`/api/jobs/${id}`, { method: 'DELETE' }));
                 await Promise.all(promises);
-                jobs = jobs.filter(job => !selectedJobIds.has(job.id.toString()));
+                window.jobs = window.jobs.filter(job => !selectedJobIds.has(job.id.toString()));
+                jobs = window.jobs;
                 deselectAllJobs();
                 applyFilters();
                 renderView();
@@ -4925,7 +4950,8 @@
             if (btn) {
                 document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentView = viewName;
+                window.currentView = viewName;
+                currentView = window.currentView;
                 renderView();
             }
         }
