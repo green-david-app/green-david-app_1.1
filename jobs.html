@@ -101,8 +101,16 @@
 
         .btn-view.active svg,
         .btn-view.active i[data-lucide] {
-            stroke: #1a1a1a;
-            color: #1a1a1a;
+            stroke: #1a1a1a !important;
+            color: #1a1a1a !important;
+        }
+        
+        .btn-view.active svg path,
+        .btn-view.active svg line,
+        .btn-view.active svg circle,
+        .btn-view.active svg rect {
+            stroke: #1a1a1a !important;
+            fill: none !important;
         }
 
         .btn-primary {
@@ -126,10 +134,21 @@
         }
         
         .btn-primary svg {
-            stroke: #1a1a1a;
-            color: #1a1a1a;
-            width: 20px;
-            height: 20px;
+            stroke: #1a1a1a !important;
+            color: #1a1a1a !important;
+            width: 20px !important;
+            height: 20px !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .btn-primary svg line,
+        .btn-primary svg path,
+        .btn-primary svg circle,
+        .btn-primary svg rect {
+            stroke: #1a1a1a !important;
+            fill: none !important;
         }
         
         .btn-primary i[data-lucide] {
@@ -652,11 +671,25 @@
         }
 
         .quick-action-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: #000000;
-            color: #000000;
-            stroke-width: 1.5;
+            width: 18px !important;
+            height: 18px !important;
+            stroke: #000000 !important;
+            color: #000000 !important;
+            stroke-width: 2 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            fill: none !important;
+        }
+        
+        .quick-action-btn svg path,
+        .quick-action-btn svg circle,
+        .quick-action-btn svg line,
+        .quick-action-btn svg rect,
+        .quick-action-btn svg polyline {
+            stroke: #000000 !important;
+            fill: none !important;
+            stroke-width: 2 !important;
         }
         
         .quick-action-btn i[data-lucide] {
@@ -2093,19 +2126,19 @@
                 </div>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Přidat zaměstnance">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Naplánovat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14h.01"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14h.01"/></svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Detail zakázky">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     </button>
                 </div>
             `;
