@@ -95,3 +95,4 @@ window.JobsUtils = {
     calculateProgress
 };
 
+
