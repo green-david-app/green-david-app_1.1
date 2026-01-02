@@ -684,6 +684,12 @@
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
+        
+        /* Ensure SVG icons inherit dark color */
+        .quick-action-btn svg {
+            stroke: currentColor;
+            color: #1a2332;
+        }
 
         .quick-action-btn:hover {
             background: #7EBC82;
@@ -1062,13 +1068,30 @@
             width: 100%;
         }
 
-        /* DNES marker */
+        /* DNES marker - vertical line */
         .timeline-today-marker {
             position: absolute;
             width: 2px;
+            height: 100%;
             background: #ef4444;
             z-index: 10;
             pointer-events: none;
+            top: 0;
+        }
+        
+        .timeline-today-marker::before {
+            content: "DNES";
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
         }
 
         .timeline-today-label {
@@ -1081,7 +1104,9 @@
             font-weight: 600;
             z-index: 11;
             pointer-events: none;
-            top: 0;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         /* Tooltip */
@@ -1252,24 +1277,36 @@
         }
 
         .close-modal {
-            background: none;
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #ef4444;
             border: none;
-            color: rgba(255,255,255,0.6);
-            font-size: 28px;
+            color: #ffffff;
+            font-size: 20px;
             cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
+            padding: 8px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 8px;
             transition: all 0.2s;
+            z-index: 10;
         }
 
         .close-modal:hover {
-            background: rgba(255,255,255,0.1);
+            background: #dc2626;
             color: #fff;
+            transform: scale(1.1);
+        }
+        
+        .close-modal svg {
+            width: 20px;
+            height: 20px;
+            stroke: #ffffff;
+            stroke-width: 2;
         }
 
         .modal-body {
@@ -1894,7 +1931,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Nová zakázka</h2>
-                <button class="close-modal">&times;</button>
+                <button class="close-modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="job-form">
@@ -1933,13 +1975,17 @@
         <div class="modal-content" style="max-width:900px;">
             <div class="modal-header">
                 <h2 id="detail-title">Detail zakázky</h2>
-                <button class="close-modal">&times;</button>
+                <button class="close-modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body" id="detail-body">
                 <!-- Detail content will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary close-modal">Zavřít</button>
                 <button class="btn-primary" id="btn-edit-job" onclick="if(currentJobId) openEditJobModal(currentJobId)">Upravit</button>
             </div>
         </div>
@@ -2627,10 +2673,10 @@
             html += '</div>'; // timeline-body
             html += '</div>'; // timeline-grid
             
-            // DNES marker (absolutně pozicovaný)
+            // DNES marker (absolutně pozicovaný - vertical line)
             if (todayOffset >= 0 && todayOffset < days.length) {
-                html += `<div class="timeline-today-marker" style="left: ${200 + todayLeft}px; top: 80px; height: calc(100% - 80px);"></div>`;
-                html += `<div class="timeline-today-label" style="left: ${200 + todayLeft - 18}px; top: 40px;">DNES</div>`;
+                const markerLeft = 200 + todayLeft;
+                html += `<div class="timeline-today-marker" style="left: ${markerLeft}px; top: 0; height: 100%;"></div>`;
             }
             
             html += '</div>'; // timeline-container
@@ -3178,6 +3224,12 @@
             const startDate = document.getElementById('edit-start-date').value;
             const deadline = document.getElementById('edit-deadline').value;
             
+            // DEBUG: Vypiš všechny datum values před odesláním
+            console.log('=== DEBUG: Ukládání dat ===');
+            console.log('Created Date:', createdDate, 'Format:', createdDate ? new Date(createdDate).toISOString().split('T')[0] : 'null');
+            console.log('Start Date:', startDate, 'Format:', startDate ? new Date(startDate).toISOString().split('T')[0] : 'null');
+            console.log('Deadline:', deadline, 'Format:', deadline ? new Date(deadline).toISOString().split('T')[0] : 'null');
+            
             if (createdDate && startDate) {
                 if (new Date(startDate) < new Date(createdDate)) {
                     if (window.showToast) window.showToast('Datum zahájení musí být po datu zadání', 'error');
@@ -3210,16 +3262,33 @@
             try {
                 if (window.showLoading) window.showLoading('Ukládám změny...');
                 
+                // DEBUG: Zkontroluj formát dat před odesláním
+                const formattedData = {
+                    ...updateData,
+                    date: deadline ? new Date(deadline).toISOString().split('T')[0] : null,
+                    created_date: createdDate ? new Date(createdDate).toISOString().split('T')[0] : null,
+                    start_date: startDate ? new Date(startDate).toISOString().split('T')[0] : null
+                };
+                console.log('=== DEBUG: Data odesílaná na server ===');
+                console.log('Formatted Data:', formattedData);
+                console.log('JSON:', JSON.stringify(formattedData));
+                
                 const response = await fetch('/api/jobs', {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(updateData)
+                    body: JSON.stringify(formattedData)
                 });
                 
+                // DEBUG: Server response
+                const responseData = await response.json();
+                console.log('=== DEBUG: Server Response ===');
+                console.log('Status:', response.status, response.ok ? 'OK' : 'ERROR');
+                console.log('Response Data:', responseData);
+                
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error = responseData;
                     const errorMessages = {
                         'missing_id': 'Chybí ID zakázky',
                         'missing_fields': 'Chybí povinná pole',
