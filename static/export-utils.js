@@ -137,4 +137,3 @@ window.exportJobsToExcel = exportJobsToExcel;
 
 
 
-

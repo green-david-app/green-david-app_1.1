@@ -7,13 +7,6 @@
     <link rel="stylesheet" href="/style.css"/>
     <script src="/app-settings.js"></script>
     <link rel="stylesheet" href="/static/icons.css">
-    
-    <!-- CSS Modules -->
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/layouts.css">
-    <link rel="stylesheet" href="/static/css/components.css">
-    <link rel="stylesheet" href="/static/css/pages/jobs.css">
-    
     <style>
         :root {
             --bg-primary: #0a1628;
@@ -46,7 +39,7 @@
             color: var(--text-primary);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            padding-bottom: 80px;
         }
 
         .page {
@@ -677,8 +670,8 @@
         }
 
         .quick-action-btn {
-            width: 32px;
-            height: 32px;
+            width: 50px;
+            height: 50px;
             background: #9FD4A1;
             border: 1px solid rgba(0,0,0,0.15);
             border-radius: 6px;
@@ -706,10 +699,10 @@
         }
 
         .quick-action-btn svg {
-            width: 22px !important;
-            height: 22px !important;
-            stroke: #000000 !important;
-            color: #000000 !important;
+            width: 30px !important;
+            height: 30px !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
             stroke-width: 3 !important;
             display: block !important;
             visibility: visible !important;
@@ -722,7 +715,7 @@
         .quick-action-btn svg line,
         .quick-action-btn svg rect,
         .quick-action-btn svg polyline {
-            stroke: #000000 !important;
+            stroke: #1a2332 !important;
             fill: none !important;
             stroke-width: 3 !important;
         }
@@ -896,7 +889,6 @@
 
         /* Gantt Chart Container */
         .timeline-container {
-            position: relative;
             background: #1a2332;
             border-radius: 8px;
             overflow: hidden;
@@ -904,7 +896,6 @@
         }
 
         .timeline-grid {
-            position: relative;
             display: flex;
             flex-direction: column;
         }
@@ -1143,95 +1134,6 @@
 
         .timeline-tooltip div {
             margin-bottom: 4px;
-        }
-
-        /* ========================================
-           SKELETON LOADING STATES
-           ======================================== */
-        
-        .skeleton-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.08) 100%);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 16px;
-            animation: shimmer 1.5s infinite;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .skeleton-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255,255,255,0.1) 50%, 
-                transparent 100%);
-            animation: shimmer-slide 1.5s infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-        }
-        
-        @keyframes shimmer-slide {
-            0% {
-                left: -100%;
-            }
-            100% {
-                left: 100%;
-            }
-        }
-        
-        .skeleton-header {
-            height: 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            margin-bottom: 12px;
-            width: 70%;
-        }
-        
-        .skeleton-line {
-            height: 14px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-        
-        .skeleton-line.short {
-            width: 50%;
-        }
-        
-        .skeleton-line.medium {
-            width: 70%;
-        }
-        
-        .skeleton-progress {
-            height: 8px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 4px;
-            margin: 12px 0;
-        }
-        
-        .skeleton-actions {
-            display: flex;
-            gap: 4px;
-            margin-top: 12px;
-        }
-        
-        .skeleton-action {
-            width: 32px;
-            height: 32px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 6px;
         }
 
         /* Custom scrollbar */
@@ -1680,45 +1582,26 @@
                 flex-shrink: 0;
             }
             
-            /* Quick action tlačítka - menší na mobilu */
+            /* Quick action tlačítka - větší na mobilu */
             .quick-action-btn {
-                width: 40px !important;
-                height: 40px !important;
+                width: 36px !important;  /* Větší pro lepší tap target */
+                height: 36px !important;
             }
 
             .quick-action-btn i[data-lucide],
             .quick-action-btn svg {
-                width: 24px !important;
-                height: 24px !important;
+                width: 20px !important;
+                height: 20px !important;
             }
 
-            /* Quick actions přesunuté dolů na mobilu */
-            .job-card {
-                position: relative;
-                padding-bottom: 50px;  /* Místo pro tlačítka */
-            }
-            
+            /* Quick actions vždy viditelné na mobilu */
             .quick-actions {
-                top: auto;
-                bottom: 8px;  /* Přesun dolů */
-                right: 8px;
-                display: flex !important;
+                display: flex !important;  /* Vždy zobrazit, ne jen při hover */
                 opacity: 0.9;
                 gap: 4px;
             }
         }
 
-        /* Mobile bottom nav safe area */
-        @media (max-width: 768px) {
-            body {
-                padding-bottom: calc(80px + env(safe-area-inset-bottom));
-            }
-            
-            .bottom-nav {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-        }
-        
         /* Extra small screens */
         @media (max-width: 480px) {
             .header-actions {
@@ -1778,168 +1661,6 @@
             color: #fff;
             font-size: inherit;
             font-weight: inherit;
-        }
-
-        /* ============================================
-           LOADING STATES
-           ============================================ */
-
-        /* 1. Skeleton screens */
-        .skeleton {
-            background: linear-gradient(
-                90deg,
-                rgba(255,255,255,0.05) 25%,
-                rgba(255,255,255,0.1) 50%,
-                rgba(255,255,255,0.05) 75%
-            );
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .skeleton-card {
-            background: var(--bg-card, rgba(255,255,255,0.05));
-            border: 1px solid var(--border-primary, rgba(255,255,255,0.1));
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-
-        .skeleton-header {
-            height: 20px;
-            width: 70%;
-            margin-bottom: 12px;
-        }
-
-        .skeleton-line {
-            height: 14px;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .skeleton-line.short {
-            width: 40%;
-        }
-
-        .skeleton-line.medium {
-            width: 60%;
-        }
-
-        /* 2. Button loading state */
-        .btn-loading {
-            position: relative;
-            color: transparent !important;
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 16px;
-            height: 16px;
-            margin: -8px 0 0 -8px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* 3. Overlay loading (fullscreen) */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(159,212,161,0.3);
-            border-top-color: #9FD4A1;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        .loading-text {
-            color: var(--text-primary, #fff);
-            margin-top: 16px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        /* 4. Inline loading (small) */
-        .loading-inline {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #9FD4A1;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            vertical-align: middle;
-            margin-left: 8px;
-        }
-
-        /* 5. Card loading state (when refreshing) */
-        .job-card.loading {
-            opacity: 0.6;
-            pointer-events: none;
-            position: relative;
-        }
-
-        .job-card.loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 24px;
-            height: 24px;
-            margin: -12px 0 0 -12px;
-            border: 3px solid rgba(159,212,161,0.3);
-            border-top-color: #9FD4A1;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        /* 6. Drag & Drop ghost state */
-        .job-card.dragging {
-            opacity: 0.4;
-            transform: scale(0.95);
-            transition: all 0.2s;
-        }
-
-        .drag-ghost {
-            z-index: 10000;
-            pointer-events: none;
-        }
             width: 100%;
             padding: 0;
         }
@@ -1964,14 +1685,6 @@
                 Zakázky
             </h1>
             <div class="header-actions">
-                <!-- Global Search Trigger -->
-                <button class="search-trigger" onclick="openGlobalSearch()" title="Hledat (⌘K)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                </button>
-                
                 <button class="btn-view active" data-view="kanban">
                     <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="#1a2332" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/>
@@ -2006,13 +1719,6 @@
                     <i data-lucide="download" style="width:18px;height:18px;stroke:#e0e0e0;"></i>
                     Export
                 </button>
-                <button class="btn-secondary" id="btn-notifications" onclick="toggleNotifications()" style="position:relative;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span id="notification-badge" class="notification-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:10px;width:18px;height:18px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;">0</span>
-                </button>
                 <button class="btn-primary" id="btn-new-job">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a2332" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                         <line x1="12" x2="12" y1="5" y2="19"/>
@@ -2022,26 +1728,6 @@
                 </button>
             </div>
         </header>
-
-        <!-- Bulk Actions Toolbar -->
-        <div id="bulk-actions-toolbar" class="bulk-actions-toolbar" style="display:none;background:rgba(159,212,161,0.15);border:1px solid rgba(159,212,161,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <span style="color:#fff;font-weight:600;">Vybráno: <strong id="selected-count">0</strong> zakázek</span>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <select id="bulk-status-change" style="padding:8px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:#fff;font-size:13px;cursor:pointer;">
-                    <option value="">Změnit status</option>
-                    <option value="new">Nové</option>
-                    <option value="active">Aktivní</option>
-                    <option value="paused">Pozastavené</option>
-                    <option value="completed">Dokončené</option>
-                </select>
-                <button id="bulk-archive" class="btn-secondary" style="padding:8px 16px;font-size:13px;">Archivovat</button>
-                <button id="bulk-export" class="btn-secondary" style="padding:8px 16px;font-size:13px;">Exportovat</button>
-                <button id="bulk-delete" class="btn-danger" style="padding:8px 16px;font-size:13px;background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color:#ef4444;">Smazat</button>
-                <button id="bulk-deselect-all" style="padding:8px 12px;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:13px;">Zrušit výběr</button>
-            </div>
-        </div>
 
         <!-- Dashboard Stats -->
         <div class="jobs-dashboard">
@@ -2073,31 +1759,12 @@
                 <h3 style="margin:0;color:#fff;">Filtry a vyhledávání</h3>
                 <button class="btn-secondary" id="btn-reset-filters">Resetovat</button>
             </div>
-            
-            <!-- Rychlé filtry -->
-            <div class="quick-filters" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-                <button class="btn-quick-filter" data-filter="today" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;">DNES</button>
-                <button class="btn-quick-filter" data-filter="week" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;">Tento týden</button>
-                <button class="btn-quick-filter" data-filter="month" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;">Tento měsíc</button>
-                <button class="btn-quick-filter" data-filter="overdue" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;">Po termínu</button>
-                <button class="btn-quick-filter" data-filter="my-active" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;">Moje aktivní</button>
-            </div>
-            
-            <!-- Uložené filtry -->
-            <div class="saved-filters" id="saved-filters" style="display:none;margin-bottom:16px;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span style="font-size:12px;color:var(--text-secondary);">Uložené:</span>
-                    <div id="saved-filters-list" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-                    <button id="btn-save-filter" style="padding:6px 12px;background:rgba(159,212,161,0.2);border:1px solid rgba(159,212,161,0.3);border-radius:6px;color:#9FD4A1;cursor:pointer;font-size:12px;">+ Uložit aktuální</button>
-                </div>
-            </div>
-            
             <div class="search-box">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/>
                     <path d="m21 21-4.35-4.35"/>
                 </svg>
-                <input type="text" id="search-input" placeholder="🔍 Hledat zakázky (název, klient, adresa, poznámky...)">
+                <input type="text" id="search-input" placeholder="Hledat zakázky...">
             </div>
             <div class="filters-grid">
                 <div class="filter-group">
@@ -2294,19 +1961,6 @@
                     </select>
                     <input type="number" id="job-budget" placeholder="Rozpočet (Kč)">
                     <textarea id="job-description" placeholder="Popis" rows="4"></textarea>
-                    <div class="form-group">
-                        <label>Fotky zakázky</label>
-                        <div id="photo-upload-area" class="photo-upload-area" style="border:2px dashed rgba(255,255,255,0.2);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto 12px;opacity:0.5;">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            <p style="margin:0;color:rgba(255,255,255,0.6);">Klikněte nebo přetáhněte fotky sem</p>
-                            <input type="file" id="job-photos-input" multiple accept="image/*" style="display:none;">
-                        </div>
-                        <div id="job-photos-preview" class="photos-preview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:12px;"></div>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -2332,7 +1986,7 @@
                 <!-- Detail content will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button class="btn-primary" id="btn-edit-job" onclick="if(window.currentJobId) window.openEditJobModal(window.currentJobId)">Upravit</button>
+                <button class="btn-primary" id="btn-edit-job" onclick="if(currentJobId) openEditJobModal(currentJobId)">Upravit</button>
             </div>
         </div>
     </div>
@@ -2400,104 +2054,16 @@
         </div>
     </div>
 
-    <script>
-        // ============================================
-        // GLOBAL ERROR BOUNDARY
-        // ============================================
-
-        // Catch all unhandled errors (pouze pokud ještě není nastaveno)
-        if (!window.__errorHandlerInitialized) {
-            window.__errorHandlerInitialized = true;
-            
-            window.addEventListener('error', (event) => {
-                // Ignoruj syntax errors které už byly zobrazeny
-                if (event.error && event.error.message && event.error.message.includes('already been declared')) {
-                    console.warn('Duplicate declaration error (will be fixed):', event.error.message);
-                    return;
-                }
-            console.error('Unhandled error:', event.error);
-            
-                // Show user-friendly message (pouze pokud není syntax error)
-                if (typeof window.showToast === 'function' && event.error && !event.error.message.includes('already been declared')) {
-                    window.showToast('Něco se pokazilo. Zkuste obnovit stránku.', 'error');
-                }
-            
-            // Log to error tracking
-            if (window.Sentry) {
-                window.Sentry.captureException(event.error);
-            }
-            
-            // Prevent default behavior
-            event.preventDefault();
-        });
-
-        // Catch unhandled promise rejections
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
-            
-            if (typeof window.showToast === 'function') {
-                window.showToast('Operace selhala. Zkuste to znovu.', 'error');
-            }
-            
-            if (window.Sentry) {
-                window.Sentry.captureException(event.reason);
-            }
-            
-            event.preventDefault();
-            });
-        }
-
-        // Network status monitoring
-        window.addEventListener('offline', () => {
-            if (typeof window.showToast === 'function') {
-                window.showToast('Ztraceno připojení k internetu', 'warning', 0);
-            }
-        });
-
-        window.addEventListener('online', () => {
-            if (typeof window.showToast === 'function') {
-                window.showToast('Připojení obnoveno', 'success');
-            }
-            // Reload data if function exists
-            if (typeof loadJobs === 'function') {
-                setTimeout(() => loadJobs(), 500);
-            }
-        });
-    </script>
-    <script src="/static/js/shared/error-handler.js"></script>
-    <script src="/static/js/shared/validation.js"></script>
-    <script src="/static/js/jobs/jobs-utils.js"></script>
-    <script src="/static/js/jobs/jobs-api.js"></script>
-    <script src="/static/js/jobs/jobs-filters.js"></script>
-    <script src="/static/js/jobs/jobs-kanban.js"></script>
-    <script src="/static/js/jobs/jobs-timeline.js"></script>
-    <script src="/static/js/jobs/jobs-list.js"></script>
-    <script src="/static/js/jobs/jobs-modals.js"></script>
     <script src="/static/toast.js"></script>
     <script src="/static/loading.js"></script>
-    <script src="/static/keyboard-shortcuts.js"></script>
-    <script src="/static/js/shared/global-search.js"></script>
     <script>
-        // Global state - EXPOSE TO WINDOW IMMEDIATELY
-        window.jobs = [];
-        window.employees = [];
-        window.filteredJobs = [];
-        window.currentView = 'kanban';
-        window.currentSort = { field: null, direction: 'asc' };
-        window.selectedJobIds = new Set(); // Bulk selection
-        window.notifications = JSON.parse(localStorage.getItem('notifications') || '[]'); // Notifikace
-        window.currentJobId = null;
-        
-        // Local aliases for backward compatibility
-        let jobs = window.jobs;
-        let employees = window.employees;
-        let filteredJobs = window.filteredJobs;
-        let currentView = window.currentView;
-        let currentSort = window.currentSort;
-        let selectedJobIds = window.selectedJobIds;
-        let notifications = window.notifications;
-        let currentJobId = window.currentJobId;
-        window.filters = {
+        // Global state
+        let jobs = [];
+        let employees = [];
+        let filteredJobs = [];
+        let currentView = 'kanban';
+        let currentSort = { field: null, direction: 'asc' };
+        let filters = {
             search: '',
             status: [],
             client: '',
@@ -2507,68 +2073,18 @@
             dateFrom: '',
             dateTo: '',
             budgetMin: '',
-            budgetMax: '',
-            quickDateFilter: '', // 'today', 'week', 'month', 'overdue'
-            myActive: false
+            budgetMax: ''
         };
-        
-        // Uložené filtry
-        let savedFilters = JSON.parse(localStorage.getItem('savedFilters') || '[]');
-
-        // Cache functions
-        function saveJobsToCache(jobs) {
-            try {
-                localStorage.setItem('cachedJobs', JSON.stringify(jobs));
-            } catch (e) {
-                console.warn('Failed to save jobs to cache:', e);
-            }
-        }
-
-        function loadJobsFromCache() {
-            try {
-                const cached = localStorage.getItem('cachedJobs');
-                return cached ? JSON.parse(cached) : null;
-            } catch (e) {
-                console.warn('Failed to load jobs from cache:', e);
-                return null;
-            }
-        }
 
         // Load data
         async function loadJobs() {
             try {
-                // Skeleton se zobrazí automaticky v renderKanban() když jobs.length === 0
                 if (window.showLoading) window.showLoading('Načítám zakázky...');
                 
-                // Vytvoř AbortController pro timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-                
-                // Zkontroluj offline stav
-                if (!navigator.onLine) {
-                    throw new Error('OFFLINE');
-                }
-                
-                let jobsRes, employeesRes;
-                
-                try {
-                    [jobsRes, employeesRes] = await Promise.all([
-                        fetch('/api/jobs', { signal: controller.signal }),
-                        fetch('/api/employees', { signal: controller.signal })
-                    ]);
-                    
-                    clearTimeout(timeoutId);
-                } catch (fetchError) {
-                    clearTimeout(timeoutId);
-                    
-                    if (fetchError.name === 'AbortError') {
-                        throw new Error('TIMEOUT');
-                    } else if (!navigator.onLine) {
-                        throw new Error('OFFLINE');
-                    } else {
-                        throw fetchError;
-                    }
-                }
+                const [jobsRes, employeesRes] = await Promise.all([
+                    fetch('/api/jobs'),
+                    fetch('/api/employees')
+                ]);
                 
                 if (!jobsRes.ok) throw new Error('Failed to load jobs');
                 
@@ -2577,16 +2093,11 @@
                 
                 if (employeesRes.ok) {
                     const empData = await employeesRes.json();
-                    window.employees = empData.employees || [];
-                    employees = window.employees;
-                    localStorage.setItem('cachedEmployees', JSON.stringify(window.employees));
+                    employees = empData.employees || [];
                 }
                 
-                // Cache for offline use
-                saveJobsToCache(apiJobs);
-                
                 // Mapuj data z API
-                window.jobs = apiJobs.map(job => ({
+                jobs = apiJobs.map(job => ({
                     id: job.id,
                     title: job.title || job.name || `Zakázka ${job.id}`,
                     client: job.client || '—',
@@ -2594,8 +2105,6 @@
                     status: mapStatusToKanban(job.status),
                     priority: job.priority || 'medium',
                     deadline: job.date || null,
-                    created_date: job.created_date || null,
-                    start_date: job.start_date || null,
                     progress: calculateProgress(job),
                     budget: job.budget || 0,
                     actualCost: job.actual_cost || 0,
@@ -2606,87 +2115,27 @@
                     completedTasks: job.completed_tasks || 0,
                     photo: job.photo || null,
                     lastActivity: job.updated_at || job.created_at || null,
-                    notes: job.note || '',
-                    comments: job.comments || []
+                    notes: job.note || ''
                 }));
                 
-                // Update local alias
-                jobs = window.jobs;
-                
-                // Cache for offline use
-                saveJobsToCache(window.jobs);
-                
                 if (window.hideLoading) window.hideLoading();
                 
-                // Vždy zavolej renderView - skeleton se zobrazí automaticky pokud jobs.length === 0
-                populateFilters();
-                applyFilters();
-                renderView();
-                updateStats();
-                checkDeadlineNotifications();
-                
-            } catch (e) {
-                hideSkeletonCards();
-                if (window.hideLoading) window.hideLoading();
-                
-                // Try to load from cache
-                const cachedJobs = loadJobsFromCache();
-                
-                if (cachedJobs && cachedJobs.length > 0) {
-                    window.jobs = cachedJobs.map(job => ({
-                        id: job.id,
-                        title: job.title || job.name || `Zakázka ${job.id}`,
-                        client: job.client || '—',
-                        address: job.city || job.address || '—',
-                        status: mapStatusToKanban(job.status),
-                        priority: job.priority || 'medium',
-                        deadline: job.date || null,
-                        created_date: job.created_date || null,
-                        start_date: job.start_date || null,
-                        progress: calculateProgress(job),
-                        budget: job.budget || 0,
-                        actualCost: job.actual_cost || 0,
-                        type: job.type || '',
-                        manager: job.manager || '',
-                        team: job.team || [],
-                        tasks: job.tasks || 0,
-                        completedTasks: job.completed_tasks || 0,
-                        photo: job.photo || null,
-                        lastActivity: job.updated_at || job.created_at || null,
-                        notes: job.note || '',
-                        comments: job.comments || []
-                    }));
+                if (jobs.length === 0) {
+                    showEmptyState();
+                } else {
                     populateFilters();
                     applyFilters();
                     renderView();
                     updateStats();
-                    
-                    if (window.showToast) {
-                        window.showToast('Zobrazuji uložená data (offline mode)', 'warning', 5000);
-                    }
-                } else {
-                    // No cache available - show error state
-                    showErrorState('Nepodařilo se načíst zakázky. Zkontrolujte připojení k internetu.');
-                    
-                    // Use error handler if available
-                    if (window.ErrorHandler) {
-                        window.ErrorHandler.handleError(e, 'loadJobs');
-                    } else {
-                        // Fallback error handling
-                        let errorMessage = 'Chyba při načítání zakázek';
-                        if (e.message === 'TIMEOUT') {
-                            errorMessage = 'Připojení je pomalé. Zkuste obnovit stránku.';
-                        } else if (e.message === 'OFFLINE' || !navigator.onLine) {
-                            errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
-                        } else if (e.message) {
-                            errorMessage = e.message;
-                        }
-                        if (window.showToast) {
-                            window.showToast(errorMessage, 'error');
-                        }
-                    }
-                    console.error('Error loading jobs:', e);
                 }
+                
+            } catch (e) {
+                console.error('Error loading jobs:', e);
+                if (window.hideLoading) window.hideLoading();
+                if (window.showToast) {
+                    window.showToast('Chyba při načítání zakázek', 'error');
+                }
+                showEmptyState();
             }
         }
 
@@ -2724,7 +2173,6 @@
         }
 
         function updateStats() {
-            const jobs = window.jobs || [];
             const activeJobs = jobs.filter(j => j.status === 'active');
             const urgentJobs = jobs.filter(j => {
                 if (!j.deadline) return false;
@@ -2733,7 +2181,6 @@
             });
             
             const totalValue = activeJobs.reduce((sum, j) => sum + (j.budget || 0), 0);
-            const formatCurrency = window.JobsUtils ? window.JobsUtils.formatCurrency : (amount) => amount.toLocaleString('cs-CZ', { style: 'currency', currency: 'CZK' });
             document.getElementById('stat-total-value').textContent = formatCurrency(totalValue);
             
             document.getElementById('stat-urgent').textContent = urgentJobs.length;
@@ -2750,96 +2197,40 @@
                 document.getElementById('stat-top-projects').textContent = thisWeek.map(j => j.title).join(', ');
             }
             
-            // Vylepšené statistiky
-            const completedJobs = jobs.filter(j => j.status === 'completed' || j.status === 'dokončené');
-            const totalJobs = jobs.length;
-            const completionRate = totalJobs > 0 ? Math.round((completedJobs.length / totalJobs) * 100) : 0;
-            
-            // Průměrná doba dokončení
-            let avgCompletionDays = 0;
-            const jobsWithDates = completedJobs.filter(j => j.created_date && j.deadline);
-            if (jobsWithDates.length > 0) {
-                const totalDays = jobsWithDates.reduce((sum, j) => {
-                    const created = new Date(j.created_date);
-                    const deadline = new Date(j.deadline);
-                    return sum + Math.ceil((deadline - created) / (1000 * 60 * 60 * 24));
-                }, 0);
-                avgCompletionDays = Math.round(totalDays / jobsWithDates.length);
-            }
-            
-            // Zakázky za posledních 12 měsíců (pro graf)
-            const monthlyData = {};
-            const now = new Date();
-            for (let i = 11; i >= 0; i--) {
-                const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-                monthlyData[monthKey] = jobs.filter(j => {
-                    if (!j.created_date) return false;
-                    const jobDate = new Date(j.created_date);
-                    return jobDate.getFullYear() === month.getFullYear() && jobDate.getMonth() === month.getMonth();
-                }).length;
-            }
-            
             // Trend
             const thisMonth = jobs.filter(j => j.status === 'active').length;
             const lastMonth = 0; // TODO: Calculate from historical data
             const trend = thisMonth > lastMonth ? '↑' : thisMonth < lastMonth ? '↓' : '→';
             document.getElementById('stat-trend').textContent = trend;
             document.getElementById('stat-trend-desc').textContent = `${thisMonth} aktivních zakázek`;
-            
-            // Ulož data pro grafy
-            window.statsData = {
-                completionRate: completionRate,
-                avgCompletionDays: avgCompletionDays,
-                monthlyData: monthlyData,
-                totalJobs: totalJobs,
-                completedJobs: completedJobs.length,
-                activeJobs: activeJobs.length
-            };
         }
 
-        // Use JobsUtils if available, otherwise fallback
         function formatCurrency(amount) {
-            if (window.JobsUtils && window.JobsUtils.formatCurrency) {
-                return window.JobsUtils.formatCurrency(amount);
-            }
             return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' }).format(amount);
         }
 
         function formatDate(dateStr) {
-            if (window.JobsUtils && window.JobsUtils.formatDate) {
-                return window.JobsUtils.formatDate(dateStr);
-            }
             if (!dateStr) return '—';
             const date = new Date(dateStr);
             return date.toLocaleDateString('cs-CZ');
         }
 
         function getDaysUntilDeadline(deadline) {
-            if (window.JobsUtils && window.JobsUtils.getDaysUntilDeadline) {
-                return window.JobsUtils.getDaysUntilDeadline(deadline);
-            }
             if (!deadline) return null;
             const days = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
             return days;
         }
 
         function getDeadlineBadgeClass(days) {
-            if (window.JobsUtils && window.JobsUtils.getDeadlineBadgeClass) {
-                return window.JobsUtils.getDeadlineBadgeClass(days);
-            }
-            if (days === null) return 'muted';
-            if (days < 0) return 'danger';
-            if (days <= 7) return 'danger';
-            if (days <= 14) return 'warning';
-            if (days <= 30) return 'ok';
-            return 'muted';
+            if (days === null) return 'muted'; // Bez deadline - šedá
+            if (days < 0) return 'danger'; // Prošlý termín (minulost) - červená #ef4444
+            if (days <= 7) return 'danger'; // Blíží se (0-7 dní) - červená #ef4444
+            if (days <= 14) return 'warning'; // Blíží se (8-14 dní) - oranžová #f59e0b
+            if (days <= 30) return 'ok'; // Budoucí (15-30 dní) - zelená #9FD4A1
+            return 'muted'; // Daleko (>30 dní) - šedá #6b7280
         }
 
         function getJobTypeIcon(type) {
-            if (window.JobsUtils && window.JobsUtils.getJobTypeIcon) {
-                return window.JobsUtils.getJobTypeIcon(type);
-            }
             const icons = {
                 reconstruction: '<svg class="job-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
                 'new-build': '<svg class="job-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
@@ -2851,20 +2242,10 @@
         }
 
         function createJobCard(job) {
-            if (window.JobsUtils && window.JobsUtils.createJobCard) {
-                return window.JobsUtils.createJobCard(job);
-            }
-            
-            // Fallback to inline implementation
             const card = document.createElement('div');
             card.className = `job-card status-${job.status}`;
             card.draggable = true;
             card.dataset.jobId = job.id;
-            
-            const getDaysUntilDeadline = window.JobsUtils ? window.JobsUtils.getDaysUntilDeadline : () => null;
-            const getDeadlineBadgeClass = window.JobsUtils ? window.JobsUtils.getDeadlineBadgeClass : () => '';
-            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
-            const getJobTypeIcon = window.JobsUtils ? window.JobsUtils.getJobTypeIcon : () => '';
             
             const daysUntil = getDaysUntilDeadline(job.deadline);
             const deadlineClass = getDeadlineBadgeClass(daysUntil);
@@ -2880,7 +2261,6 @@
             if (hasAlert) card.classList.add('has-alert');
             
             card.innerHTML = `
-                <!-- Checkbox removed - bulk actions disabled -->
                 ${job.photo ? `<img src="${job.photo}" class="job-card-photo" alt="${escapeHtml(job.title)}">` : ''}
                 <div class="job-card-header">
                     <h4 class="inline-edit" data-field="title" data-job-id="${job.id}">${escapeHtml(job.title || 'Bez názvu')}</h4>
@@ -2938,23 +2318,23 @@
                 </div>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Kalendář">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
                             <line x1="16" x2="16" y1="2" y2="6"></line>
                             <line x1="8" x2="8" y1="2" y2="6"></line>
@@ -2962,7 +2342,7 @@
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" x2="12" y1="16" y2="12"></line>
                             <line x1="12" x2="12.01" y1="8" y2="8"></line>
@@ -3034,292 +2414,80 @@
         }
 
         function renderView() {
-            const currentView = window.currentView || 'kanban';
-            
-            // Hide all views first
-            const kanbanView = document.getElementById('kanban-view');
-            const listView = document.getElementById('list-view');
-            const timelineView = document.getElementById('timeline-view');
-            
-            if (kanbanView) kanbanView.style.display = 'none';
-            if (listView) listView.classList.remove('active');
-            if (timelineView) timelineView.classList.remove('active');
-            
             if (currentView === 'kanban') {
-                if (kanbanView) kanbanView.style.display = 'grid';
-                // Použij renderKanban z externího modulu nebo fallback na lokální
-                if (typeof window.JobsKanban !== 'undefined' && window.JobsKanban.renderKanban) {
-                    window.JobsKanban.renderKanban();
-                } else if (typeof renderKanban === 'function') {
-                    renderKanban();
-                } else {
-                    console.error('renderKanban function not found!');
-                }
+                document.getElementById('kanban-view').style.display = 'grid';
+                document.getElementById('list-view').classList.remove('active');
+                document.getElementById('timeline-view').classList.remove('active');
+                renderKanban();
             } else if (currentView === 'list') {
-                if (listView) listView.classList.add('active');
-                if (typeof window.JobsList !== 'undefined' && window.JobsList.renderList) {
-                    window.JobsList.renderList();
-                } else if (typeof renderList === 'function') {
-                    renderList();
-                } else {
-                    console.error('renderList function not found!');
-                }
+                document.getElementById('kanban-view').style.display = 'none';
+                document.getElementById('list-view').classList.add('active');
+                document.getElementById('timeline-view').classList.remove('active');
+                renderList();
             } else if (currentView === 'timeline') {
-                if (timelineView) timelineView.classList.add('active');
-                if (typeof window.JobsTimeline !== 'undefined' && window.JobsTimeline.renderTimeline) {
-                    window.JobsTimeline.renderTimeline();
-                } else if (typeof renderTimeline === 'function') {
-                    renderTimeline();
+                document.getElementById('kanban-view').style.display = 'none';
+                document.getElementById('list-view').classList.remove('active');
+                document.getElementById('timeline-view').classList.add('active');
+                renderTimeline();
+            }
+        }
+
+        function renderKanban() {
+            document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
+            
+            filteredJobs.forEach(job => {
+                const card = createJobCard(job);
+                // Normalizuj status pro správné zařazení
+                let statusKey = 'new';
+                const statusLower = (job.status || '').toLowerCase();
+                if (statusLower === 'aktivní' || statusLower === 'active' || statusLower === 'probíhá') {
+                    statusKey = 'active';
+                } else if (statusLower === 'pozastavené' || statusLower === 'paused') {
+                    statusKey = 'paused';
+                } else if (statusLower === 'dokončeno' || statusLower === 'completed' || statusLower === 'dokončené') {
+                    statusKey = 'completed';
                 } else {
-                    console.error('renderTimeline function not found!');
+                    statusKey = 'new';
                 }
-            }
-        }
-
-        function createSkeletonCard() {
-            const skeleton = document.createElement('div');
-            skeleton.className = 'skeleton-card';
-            skeleton.innerHTML = `
-                <div class="skeleton-header"></div>
-                <div class="skeleton-line"></div>
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line medium"></div>
-                <div class="skeleton-progress"></div>
-                <div class="skeleton-actions">
-                    <div class="skeleton-action"></div>
-                    <div class="skeleton-action"></div>
-                    <div class="skeleton-action"></div>
-                    <div class="skeleton-action"></div>
-                    <div class="skeleton-action"></div>
-                </div>
-            `;
-            return skeleton;
-        }
-
-        function showSkeletonCards(count = 6) {
-            const containers = {
-                'new': document.getElementById('cards-new'),
-                'active': document.getElementById('cards-active'),
-                'paused': document.getElementById('cards-paused'),
-                'completed': document.getElementById('cards-completed')
-            };
-            Object.values(containers).forEach(container => {
-                if (!container) return;
-                container.innerHTML = '';
-                // Přidej 2 skeleton karty do každého sloupce
-                for (let i = 0; i < 2; i++) {
-                    const skeleton = createSkeletonCard();
-                    container.appendChild(skeleton);
+                const container = document.getElementById(`cards-${statusKey}`);
+                if (container) {
+                    container.appendChild(card);
                 }
-            });
-        }
-
-        function hideSkeletonCards() {
-            document.querySelectorAll('.skeleton-card').forEach(card => {
-                card.style.opacity = '0';
-                setTimeout(() => card.remove(), 300);
-            });
-        }
-
-        // Export to window
-        window.showSkeletonCards = showSkeletonCards;
-        window.hideSkeletonCards = hideSkeletonCards;
-        window.createSkeletonCard = createSkeletonCard;
-        window.createJobCard = createJobCard;
-        window.openEditJobModal = openEditJobModal;
-
-        // renderKanban() je definována v /static/js/jobs/jobs-kanban.js
-        // Použijeme tu z externího souboru, ne duplikát zde
-        
-        // Fallback renderKanban pokud externí modul není načten
-        if (typeof window.JobsKanban === 'undefined') {
-            function renderKanban() {
-                document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
-                
-                // DEBUG
-                console.log('=== renderKanban DEBUG (fallback) ===');
-                console.log('jobs.length:', typeof jobs !== 'undefined' ? jobs.length : 'undefined');
-                console.log('filteredJobs.length:', typeof filteredJobs !== 'undefined' ? filteredJobs.length : 'undefined');
-                
-                // Skeleton loading - jen když nemáme žádná data (initial load)
-                if (typeof jobs !== 'undefined' && jobs.length === 0) {
-                    ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
-                        const container = document.getElementById(`cards-${statusKey}`);
-                        if (container && typeof createSkeletonCard === 'function') {
-                            for (let i = 0; i < 2; i++) {
-                                container.appendChild(createSkeletonCard());
-                            }
-                        }
-                    });
-                    return;
-                }
-                
-                // Žádné výsledky po filtrování - zobraz empty state
-                if (typeof filteredJobs !== 'undefined' && filteredJobs.length === 0) {
-                    const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
-                    if (kanbanBoard) {
-                        const emptyState = document.createElement('div');
-                        emptyState.style.cssText = 'grid-column: 1/-1; padding: 60px 20px; text-align: center;';
-                        emptyState.innerHTML = `
-                            <svg style="width: 64px; height: 64px; color: var(--text-tertiary); margin: 0 auto 16px; display: block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.35-4.35"></path>
-                            </svg>
-                            <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 8px;">
-                                Žádné zakázky odpovídající filtrům
-                            </div>
-                            <div style="font-size: 14px; color: var(--text-tertiary);">
-                                Zkuste změnit filtry nebo vytvořit novou zakázku
-                            </div>
-                        `;
-                        kanbanBoard.insertBefore(emptyState, kanbanBoard.firstChild);
-                    }
-                    return;
-                }
-                
-                // Normální rendering karet
-                if (typeof filteredJobs === 'undefined' || !filteredJobs) {
-                    console.error('filteredJobs is undefined!');
-                    return;
-                }
-                
-                filteredJobs.forEach(job => {
-                    if (typeof createJobCard === 'function') {
-                        const card = createJobCard(job);
-                        let statusKey = 'new';
-                        const statusLower = (job.status || '').toLowerCase();
-                        if (statusLower === 'aktivní' || statusLower === 'active' || statusLower === 'probíhá') {
-                            statusKey = 'active';
-                        } else if (statusLower === 'pozastavené' || statusLower === 'paused') {
-                            statusKey = 'paused';
-                        } else if (statusLower === 'dokončeno' || statusLower === 'completed' || statusLower === 'dokončené') {
-                            statusKey = 'completed';
-                        }
-                        const container = document.getElementById(`cards-${statusKey}`);
-                        if (container) {
-                            container.appendChild(card);
-                        }
-                    }
-                });
-                
-                if (typeof updateColumnCounts === 'function') {
-                    updateColumnCounts();
-                }
-            }
-        }
-
-        // timelineZoomLevel je definována v /static/js/jobs/jobs-timeline.js
-        // Použijeme tu z externího modulu, ne duplikát zde
-        
-        // Fallback timelineZoom pokud externí modul není načten
-        if (typeof window.JobsTimeline === 'undefined') {
-            let timelineZoomLevelFallback = 'month'; // 'month', 'quarter', 'year'
-            
-            function timelineZoom(level) {
-                timelineZoomLevelFallback = level;
-                // Aktualizuj aktivní tlačítko
-                document.querySelectorAll('.timeline-zoom-button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                const activeBtn = document.getElementById(`zoom-${level}`);
-                if (activeBtn) activeBtn.classList.add('active');
-                if (typeof renderTimeline === 'function') {
-                    renderTimeline();
-                }
-            }
-        } else {
-            // Použij timelineZoom z externího modulu
-            function timelineZoom(level) {
-                if (window.JobsTimeline && window.JobsTimeline.timelineZoom) {
-                    window.JobsTimeline.timelineZoom(level);
-                }
-            }
-        }
-
-        function setupTimelineDragAndDrop(container, startDate, dayWidth) {
-            let draggedBar = null;
-            let draggedJobId = null;
-            
-            container.querySelectorAll('.timeline-bar').forEach(bar => {
-                bar.addEventListener('dragstart', (e) => {
-                    draggedBar = bar;
-                    draggedJobId = bar.dataset.jobId;
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', draggedJobId);
-                    bar.style.opacity = '0.5';
-                });
-                
-                bar.addEventListener('dragend', (e) => {
-                    bar.style.opacity = '';
-                    draggedBar = null;
-                    draggedJobId = null;
-                    container.querySelectorAll('.drag-preview').forEach(p => p.remove());
-                });
             });
             
-            container.querySelectorAll('.timeline-bars-container').forEach(dropZone => {
-                dropZone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (!draggedBar) return;
-                    const containerRect = dropZone.getBoundingClientRect();
-                    const x = e.clientX - containerRect.left;
-                    const dayIndex = Math.floor(x / dayWidth);
-                    const previewLeft = dayIndex * dayWidth;
-                    let preview = dropZone.querySelector('.drag-preview');
-                    if (!preview) {
-                        preview = document.createElement('div');
-                        preview.className = 'drag-preview';
-                        preview.style.cssText = 'position:absolute;top:0;width:' + draggedBar.offsetWidth + 'px;height:' + draggedBar.offsetHeight + 'px;background:rgba(159,212,161,0.3);border:2px dashed #9FD4A1;pointer-events:none;z-index:100;';
-                        dropZone.appendChild(preview);
-                    }
-                    preview.style.left = previewLeft + 'px';
-                });
-                
-                dropZone.addEventListener('dragleave', (e) => {
-                    const preview = dropZone.querySelector('.drag-preview');
-                    if (preview) preview.remove();
-                });
-                
-                dropZone.addEventListener('drop', async (e) => {
-                    e.preventDefault();
-                    const preview = dropZone.querySelector('.drag-preview');
-                    if (preview) preview.remove();
-                    if (!draggedJobId) return;
-                    const containerRect = dropZone.getBoundingClientRect();
-                    const x = e.clientX - containerRect.left;
-                    const dayIndex = Math.max(0, Math.floor(x / dayWidth));
-                    const newDate = new Date(startDate);
-                    newDate.setDate(newDate.getDate() + dayIndex);
-                    const newDeadline = newDate.toISOString().split('T')[0];
-                    try {
-                        if (window.showLoading) window.showLoading('Aktualizuji deadline...');
-                        const job = jobs.find(j => j.id.toString() === draggedJobId);
-                        if (!job) return;
-                        const response = await fetch('/api/jobs', {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id: draggedJobId, date: newDeadline })
-                        });
-                        if (!response.ok) throw new Error('Chyba při aktualizaci');
-                        job.deadline = newDeadline;
-                        renderTimeline();
-                        if (window.hideLoading) window.hideLoading();
-                        if (window.showToast) window.showToast('Deadline aktualizován', 'success');
-                    } catch (error) {
-                        if (window.hideLoading) window.hideLoading();
-                        if (window.showToast) window.showToast('Chyba při aktualizaci deadline', 'error');
-                        console.error(error);
-                    }
-                });
+            // FORCE Lucide icons immediately after cards are rendered
+            requestAnimationFrame(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                    
+                    // Double-check after animation frame
+                    setTimeout(() => {
+                        lucide.createIcons();
+                        console.log('✓ Ikony inicializovány');
+                    }, 50);
+                }
             });
+            
+            updateColumnCounts();
         }
-        
+
+        let timelineZoomLevel = 'month'; // 'month', 'quarter', 'year'
+
+        function timelineZoom(level) {
+            timelineZoomLevel = level;
+            // Aktualizuj aktivní tlačítko
+            document.querySelectorAll('.timeline-zoom-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`zoom-${level}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            renderTimeline();
+        }
+
         function renderTimeline() {
             const container = document.getElementById('timeline-container');
             if (!container) return;
 
-            const filteredJobs = window.filteredJobs || [];
             if (filteredJobs.length === 0) {
                 container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">Žádné zakázky k zobrazení</div>';
                 return;
@@ -3329,15 +2497,10 @@
             const today = new Date();
             let startDate, endDate;
             
-            // Získej zoom level z externího modulu nebo použij fallback
-            const zoomLevel = (window.JobsTimeline && window.JobsTimeline.getZoomLevel) 
-                ? window.JobsTimeline.getZoomLevel() 
-                : (typeof timelineZoomLevelFallback !== 'undefined' ? timelineZoomLevelFallback : 'month');
-            
-            if (zoomLevel === 'month') {
+            if (timelineZoomLevel === 'month') {
                 startDate = new Date(today.getFullYear(), today.getMonth(), 1);
                 endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            } else if (zoomLevel === 'quarter') {
+            } else if (timelineZoomLevel === 'quarter') {
                 const quarter = Math.floor(today.getMonth() / 3);
                 startDate = new Date(today.getFullYear(), quarter * 3, 1);
                 endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
@@ -3369,7 +2532,7 @@
             });
 
             // Vypočítej šířku jednoho dne v pixelech
-            const dayWidth = zoomLevel === 'month' ? 20 : zoomLevel === 'quarter' ? 8 : 2;
+            const dayWidth = timelineZoomLevel === 'month' ? 20 : timelineZoomLevel === 'quarter' ? 8 : 2;
             const totalWidth = days.length * dayWidth;
             
             // Algoritmus pro tracks - aby se bloky nepřekrývaly
@@ -3489,11 +2652,10 @@
                             <span class="task-name" title="${jobTitle}">${jobTitle}</span>
                             <span class="task-progress">${progress}%</span>
                         </div>
-                        <div class="timeline-bars-container" style="width: ${totalWidth}px;" data-start-date="${startDate.toISOString()}" data-day-width="${dayWidth}">
+                        <div class="timeline-bars-container" style="width: ${totalWidth}px;">
                             <div class="timeline-bar ${progressClass}" 
                                  style="left: ${left}px; width: ${width}px;"
                                  onclick="showJobDetail(${job.id})"
-                                 draggable="true"
                                  data-job-id="${job.id}"
                                  data-job-title="${jobTitle}"
                                  data-job-client="${jobClient}"
@@ -3530,9 +2692,6 @@
             html += '</div>'; // timeline-container
 
             container.innerHTML = html;
-            
-            // Přidej drag & drop funkcionalitu pro Timeline bars
-            setupTimelineDragAndDrop(container, startDate, dayWidth);
             
             // Přidej tooltipy pro timeline bloky (nový styl)
             container.querySelectorAll('.timeline-bar[data-job-id]').forEach(bar => {
@@ -3586,16 +2745,10 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             
-            const filteredJobs = window.filteredJobs || [];
             if (filteredJobs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary);">Žádné zakázky</td></tr>';
                 return;
             }
-            
-            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
-            const formatDate = window.JobsUtils ? window.JobsUtils.formatDate : (date) => date || '—';
-            const getDaysUntilDeadline = window.JobsUtils ? window.JobsUtils.getDaysUntilDeadline : () => null;
-            const getDeadlineBadgeClass = window.JobsUtils ? window.JobsUtils.getDeadlineBadgeClass : () => '';
             
             filteredJobs.forEach(job => {
                 const tr = document.createElement('tr');
@@ -3638,7 +2791,6 @@
         }
 
         function updateColumnCounts() {
-            const filteredJobs = window.filteredJobs || [];
             const counts = { new: 0, active: 0, paused: 0, completed: 0 };
             const values = { new: 0, active: 0, paused: 0, completed: 0 };
             
@@ -3655,51 +2807,19 @@
                     const countEl = column.querySelector('.count');
                     const valueEl = document.getElementById(`value-${status}`);
                     if (countEl) countEl.textContent = counts[status];
-                    if (valueEl) {
-                        if (window.JobsKanban && window.JobsKanban.updateColumnCounts) {
-                            // Use module function if available
-                            window.JobsKanban.updateColumnCounts();
-                        } else {
-                            valueEl.textContent = formatCurrency(values[status]);
-                        }
-                    }
+                    if (valueEl) valueEl.textContent = formatCurrency(values[status]);
                 }
             });
         }
 
         function applyFilters() {
-            if (window.JobsFilters && window.JobsFilters.applyFilters) {
-                window.JobsFilters.applyFilters();
-                return;
-            }
-            
-            // Fallback to inline implementation
-            const jobs = window.jobs || [];
-            const filters = window.filters || {};
-            window.filteredJobs = jobs.filter(job => {
-                // Vylepšené fulltextové vyhledávání
+            filteredJobs = jobs.filter(job => {
+                // Search
                 if (filters.search) {
-                    const searchLower = filters.search.toLowerCase().trim();
-                    const searchTerms = searchLower.split(/\s+/); // Rozděl na jednotlivá slova
-                    
-                    // Vytvoř searchable text z všech polí
-                    const searchableText = [
-                        job.title || '',
-                        job.client || '',
-                        job.address || '',
-                        job.notes || '',
-                        job.type || '',
-                        job.manager || '',
-                        (job.team || []).join(' '),
-                        job.id?.toString() || ''
-                    ].join(' ').toLowerCase();
-                    
-                    // Hledej všechny termy (AND logika - všechny termy musí být nalezeny)
-                    const allTermsFound = searchTerms.every(term => 
-                        searchableText.includes(term)
-                    );
-                    
-                    if (!allTermsFound) {
+                    const searchLower = filters.search.toLowerCase();
+                    if (!job.title.toLowerCase().includes(searchLower) &&
+                        !job.client.toLowerCase().includes(searchLower) &&
+                        !job.address.toLowerCase().includes(searchLower)) {
                         return false;
                     }
                 }
@@ -3729,53 +2849,12 @@
                     return false;
                 }
                 
-                // Date range - podporuje i created_date a start_date
-                const jobDate = job.deadline || job.start_date || job.created_date;
-                if (filters.dateFrom && jobDate && new Date(jobDate) < new Date(filters.dateFrom)) {
+                // Date range
+                if (filters.dateFrom && job.deadline && new Date(job.deadline) < new Date(filters.dateFrom)) {
                     return false;
                 }
-                if (filters.dateTo && jobDate && new Date(jobDate) > new Date(filters.dateTo)) {
+                if (filters.dateTo && job.deadline && new Date(job.deadline) > new Date(filters.dateTo)) {
                     return false;
-                }
-                
-                // Rychlé filtry podle data
-                if (filters.quickDateFilter) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const jobDateObj = jobDate ? new Date(jobDate) : null;
-                    
-                    if (filters.quickDateFilter === 'today') {
-                        if (!jobDateObj || jobDateObj.toDateString() !== today.toDateString()) {
-                            return false;
-                        }
-                    } else if (filters.quickDateFilter === 'week') {
-                        const weekStart = new Date(today);
-                        weekStart.setDate(today.getDate() - today.getDay()); // Neděle
-                        if (!jobDateObj || jobDateObj < weekStart) {
-                            return false;
-                        }
-                    } else if (filters.quickDateFilter === 'month') {
-                        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                        if (!jobDateObj || jobDateObj < monthStart) {
-                            return false;
-                        }
-                    } else if (filters.quickDateFilter === 'overdue') {
-                        if (!jobDateObj || jobDateObj >= today || !job.deadline) {
-                            return false;
-                        }
-                    }
-                }
-                
-                // Filtr "Moje aktivní" - zakázky kde jsem v týmu nebo jsem manager
-                if (filters.myActive) {
-                    // TODO: Získat aktuálního uživatele z session/localStorage
-                    const currentUser = localStorage.getItem('currentUser') || '';
-                    const isMyJob = job.manager === currentUser || 
-                                   (job.team && job.team.includes(currentUser)) ||
-                                   job.status === 'active';
-                    if (!isMyJob) {
-                        return false;
-                    }
                 }
                 
                 // Budget
@@ -3788,9 +2867,6 @@
                 
                 return true;
             });
-            
-            // Update local alias
-            filteredJobs = window.filteredJobs;
         }
 
         // Drag & Drop
@@ -3835,8 +2911,7 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                window.currentView = btn.dataset.view;
-                currentView = window.currentView;
+                currentView = btn.dataset.view;
                 renderView();
             });
         });
@@ -3847,10 +2922,7 @@
                 renderView();
                 // Nastav aktivní tlačítko pro timeline zoom
                 setTimeout(() => {
-                    const zoomLevel = (window.JobsTimeline && window.JobsTimeline.getZoomLevel) 
-                        ? window.JobsTimeline.getZoomLevel() 
-                        : (typeof timelineZoomLevelFallback !== 'undefined' ? timelineZoomLevelFallback : 'month');
-                    const activeBtn = document.getElementById(`zoom-${zoomLevel}`);
+                    const activeBtn = document.getElementById(`zoom-${timelineZoomLevel}`);
                     if (activeBtn) activeBtn.classList.add('active');
                 }, 100);
             });
@@ -3872,12 +2944,6 @@
 
         // Naplň filtry daty
         function populateFilters() {
-            if (window.JobsFilters && window.JobsFilters.populateFilters) {
-                window.JobsFilters.populateFilters();
-                return;
-            }
-            
-            // Fallback to inline implementation
             // Naplň klienty
             const clients = [...new Set(jobs.map(j => j.client).filter(c => c && c !== '—'))];
             const clientSelect = document.getElementById('filter-client');
@@ -3960,140 +3026,6 @@
             renderView();
         });
 
-        // Rychlé filtry
-        document.querySelectorAll('.btn-quick-filter').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Odstraň aktivní stav z ostatních
-                document.querySelectorAll('.btn-quick-filter').forEach(b => {
-                    b.style.background = 'rgba(255,255,255,0.05)';
-                    b.style.borderColor = 'rgba(255,255,255,0.1)';
-                });
-                
-                const filterType = btn.dataset.filter;
-                
-                // Pokud klikneš na aktivní filtr, deaktivuj ho
-                if (filters.quickDateFilter === filterType && filterType !== 'my-active') {
-                    filters.quickDateFilter = '';
-                    btn.style.background = 'rgba(255,255,255,0.05)';
-                    btn.style.borderColor = 'rgba(255,255,255,0.1)';
-                } else {
-                    // Aktivuj filtr
-                    filters.quickDateFilter = filterType === 'my-active' ? '' : filterType;
-                    filters.myActive = filterType === 'my-active';
-                    
-                    btn.style.background = 'rgba(159,212,161,0.2)';
-                    btn.style.borderColor = 'rgba(159,212,161,0.5)';
-                    
-                    // Pokud je to date filter, nastav datumy
-                    if (filterType === 'today') {
-                        const today = new Date().toISOString().split('T')[0];
-                        filters.dateFrom = today;
-                        filters.dateTo = today;
-                        document.getElementById('filter-date-from').value = today;
-                        document.getElementById('filter-date-to').value = today;
-                    } else if (filterType === 'week') {
-                        const today = new Date();
-                        const weekStart = new Date(today);
-                        weekStart.setDate(today.getDate() - today.getDay());
-                        filters.dateFrom = weekStart.toISOString().split('T')[0];
-                        filters.dateTo = today.toISOString().split('T')[0];
-                        document.getElementById('filter-date-from').value = filters.dateFrom;
-                        document.getElementById('filter-date-to').value = filters.dateTo;
-                    } else if (filterType === 'month') {
-                        const today = new Date();
-                        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                        filters.dateFrom = monthStart.toISOString().split('T')[0];
-                        filters.dateTo = today.toISOString().split('T')[0];
-                        document.getElementById('filter-date-from').value = filters.dateFrom;
-                        document.getElementById('filter-date-to').value = filters.dateTo;
-                    } else if (filterType === 'overdue') {
-                        filters.dateTo = new Date().toISOString().split('T')[0];
-                        document.getElementById('filter-date-to').value = filters.dateTo;
-                    }
-                }
-                
-                applyFilters();
-                renderView();
-            });
-        });
-        
-        // Uložené filtry
-        function renderSavedFilters() {
-            const container = document.getElementById('saved-filters-list');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (savedFilters.length === 0) {
-                document.getElementById('saved-filters').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('saved-filters').style.display = 'block';
-            
-            savedFilters.forEach((savedFilter, index) => {
-                const btn = document.createElement('button');
-                btn.textContent = savedFilter.name || `Filtr ${index + 1}`;
-                btn.style.cssText = 'padding:6px 12px;background:rgba(159,212,161,0.15);border:1px solid rgba(159,212,161,0.3);border-radius:6px;color:#9FD4A1;cursor:pointer;font-size:12px;';
-                btn.addEventListener('click', () => {
-                    // Aplikuj uložený filtr
-                    Object.assign(filters, savedFilter.filters);
-                    applySavedFilterToUI(savedFilter.filters);
-                    applyFilters();
-                    renderView();
-                });
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '×';
-                deleteBtn.style.cssText = 'margin-left:4px;padding:0 6px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.3);border-radius:4px;color:#ef4444;cursor:pointer;font-size:14px;';
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    savedFilters.splice(index, 1);
-                    localStorage.setItem('savedFilters', JSON.stringify(savedFilters));
-                    renderSavedFilters();
-                });
-                
-                const wrapper = document.createElement('div');
-                wrapper.style.display = 'inline-flex';
-                wrapper.appendChild(btn);
-                wrapper.appendChild(deleteBtn);
-                container.appendChild(wrapper);
-            });
-        }
-        
-        function applySavedFilterToUI(filterData) {
-            if (filterData.search) document.getElementById('search-input').value = filterData.search;
-            if (filterData.status) {
-                const statusSelect = document.getElementById('filter-status');
-                Array.from(statusSelect.options).forEach((opt, idx) => {
-                    if (filterData.status.includes(opt.value)) {
-                        statusSelect.options[idx].selected = true;
-                    }
-                });
-            }
-            if (filterData.client) document.getElementById('filter-client').value = filterData.client;
-            if (filterData.manager) document.getElementById('filter-manager').value = filterData.manager;
-            if (filterData.location) document.getElementById('filter-location').value = filterData.location;
-            if (filterData.priority) document.getElementById('filter-priority').value = filterData.priority;
-            if (filterData.dateFrom) document.getElementById('filter-date-from').value = filterData.dateFrom;
-            if (filterData.dateTo) document.getElementById('filter-date-to').value = filterData.dateTo;
-            if (filterData.budgetMin) document.getElementById('filter-budget-min').value = filterData.budgetMin;
-            if (filterData.budgetMax) document.getElementById('filter-budget-max').value = filterData.budgetMax;
-        }
-        
-        document.getElementById('btn-save-filter')?.addEventListener('click', () => {
-            const name = prompt('Název filtru:', 'Můj filtr');
-            if (name) {
-                savedFilters.push({
-                    name: name,
-                    filters: {...filters}
-                });
-                localStorage.setItem('savedFilters', JSON.stringify(savedFilters));
-                renderSavedFilters();
-                if (window.showToast) window.showToast('Filtr uložen', 'success');
-            }
-        });
-        
         document.getElementById('btn-reset-filters')?.addEventListener('click', () => {
             filters = {
                 search: '',
@@ -4105,9 +3037,7 @@
                 dateFrom: '',
                 dateTo: '',
                 budgetMin: '',
-                budgetMax: '',
-                quickDateFilter: '',
-                myActive: false
+                budgetMax: ''
             };
             document.getElementById('search-input').value = '';
             document.getElementById('filter-status').selectedIndex = -1;
@@ -4119,19 +3049,9 @@
             document.getElementById('filter-date-to').value = '';
             document.getElementById('filter-budget-min').value = '';
             document.getElementById('filter-budget-max').value = '';
-            
-            // Reset rychlých filtrů
-            document.querySelectorAll('.btn-quick-filter').forEach(b => {
-                b.style.background = 'rgba(255,255,255,0.05)';
-                b.style.borderColor = 'rgba(255,255,255,0.1)';
-            });
-            
             applyFilters();
             renderView();
         });
-        
-        // Inicializuj uložené filtry při načtení
-        renderSavedFilters();
 
         // Column toggle
         function toggleColumn(btn) {
@@ -4155,9 +3075,6 @@
             const city = document.getElementById('job-address').value.trim();
             const code = ''; // Může být prázdný
             const date = document.getElementById('job-deadline').value;
-            
-            // Initialize jobPhotos if not defined
-            let jobPhotos = window.jobPhotos || [];
             
             // DEBUG: Zkontroluj všechna datum pole
             const createdDate = document.getElementById('job-created-date')?.value || null;
@@ -4205,8 +3122,7 @@
                 created_date: formattedCreatedDate,
                 start_date: formattedStartDate,
                 status: 'Plán',
-                note: document.getElementById('job-description').value.trim(),
-                photo: jobPhotos.length > 0 ? jobPhotos : null
+                note: document.getElementById('job-description').value.trim()
             };
             
             console.log('=== DEBUG: Data odesílaná na server ===');
@@ -4255,23 +3171,13 @@
             }
         });
 
-        // currentJobId je už definováno výše jako window.currentJobId
+        let currentJobId = null;
 
         function showJobDetail(jobId) {
-            if (window.JobsModals && window.JobsModals.showJobDetail) {
-                window.JobsModals.showJobDetail(jobId);
-                return;
-            }
-            
-            // Fallback to inline implementation
-            const jobs = window.jobs || [];
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
-            window.currentJobId = jobId;
-            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
-            const formatDate = window.JobsUtils ? window.JobsUtils.formatDate : (date) => date || '—';
-            
+            currentJobId = jobId;
             document.getElementById('detail-title').textContent = job.title;
             const body = document.getElementById('detail-body');
             body.innerHTML = `
@@ -4300,32 +3206,22 @@
                 <div style="margin-bottom:24px;">
                     <h4 style="color:var(--text-secondary);margin-bottom:8px;">Progress</h4>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${job.progress || 0}%"></div>
+                        <div class="progress-fill" style="width: ${job.progress}%"></div>
                     </div>
-                    <p style="margin-top:8px;color:var(--text-secondary);">${job.progress || 0}% dokončeno</p>
+                    <p style="margin-top:8px;color:var(--text-secondary);">${job.progress}% dokončeno</p>
                 </div>
             `;
             document.getElementById('job-detail-modal').classList.add('active');
         }
-        
-        // Expose to window for onclick handlers
-        window.showJobDetail = showJobDetail;
 
         function openEditJobModal(jobId) {
-            if (window.JobsModals && window.JobsModals.openEditJobModal) {
-                window.JobsModals.openEditJobModal(jobId);
-                return;
-            }
-            
-            // Fallback to inline implementation
-            const jobs = window.jobs || [];
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
-            window.currentJobId = jobId;
-            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
+            currentJobId = jobId;
             document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
             
+            // Mapuj status zpět na původní hodnotu
             const statusMap = {
                 'new': 'Plán',
                 'active': 'Aktivní',
@@ -4395,13 +3291,6 @@
             }
             
             const statusValue = document.getElementById('edit-status').value;
-            const progressValue = parseInt(document.getElementById('edit-progress').value) || 0;
-            
-            // DEBUG: Zkontroluj progress input
-            console.log('=== DEBUG: Progress ===');
-            console.log('Progress input exists:', !!document.getElementById('edit-progress'));
-            console.log('Progress value:', progressValue);
-            
             const updateData = {
                 id: currentJobId,
                 title: title,
@@ -4411,8 +3300,7 @@
                 created_date: createdDate || null,
                 start_date: startDate || null,
                 status: statusValue, // Použij přímo hodnotu z selectu (Plán, Aktivní, atd.)
-                note: document.getElementById('edit-notes').value.trim(),
-                progress: progressValue
+                note: document.getElementById('edit-notes').value.trim()
             };
             
             try {
@@ -4429,62 +3317,31 @@
                 console.log('Formatted Data:', formattedData);
                 console.log('JSON:', JSON.stringify(formattedData));
                 
-                // Vytvoř AbortController pro timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                const response = await fetch('/api/jobs', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formattedData)
+                });
                 
-                let response;
-                let responseData;
+                // DEBUG: Server response
+                const responseData = await response.json();
+                console.log('=== DEBUG: Server Response ===');
+                console.log('Status:', response.status, response.ok ? 'OK' : 'ERROR');
+                console.log('Response Data:', responseData);
                 
-                try {
-                    // Zkontroluj offline stav
-                    if (!navigator.onLine) {
-                        throw new Error('OFFLINE');
-                    }
-                    
-                    response = await fetch('/api/jobs', {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formattedData),
-                        signal: controller.signal
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    // DEBUG: Server response
-                    responseData = await response.json();
-                    console.log('=== DEBUG: Server Response ===');
-                    console.log('Status:', response.status, response.ok ? 'OK' : 'ERROR');
-                    console.log('Response Data:', responseData);
-                    
-                    if (!response.ok) {
-                        const error = responseData;
-                        const errorMessages = {
-                            'missing_id': 'Chybí ID zakázky',
-                            'missing_fields': 'Chybí povinná pole',
-                            'invalid_input': 'Neplatné vstupní údaje',
-                            'nothing_to_update': 'Žádné změny k uložení',
-                            'not_found': 'Zakázka nenalezena'
-                        };
-                        const errorMsg = errorMessages[error.error] || error.error || 'Chyba při ukládání zakázky';
-                        throw new Error(errorMsg);
-                    }
-                } catch (fetchError) {
-                    clearTimeout(timeoutId);
-                    
-                    // Handle různé typy chyb
-                    if (fetchError.name === 'AbortError') {
-                        if (window.showToast) window.showToast('Připojení je pomalé. Zkuste to znovu.', 'error');
-                        throw new Error('Timeout: Připojení trvá příliš dlouho');
-                    } else if (fetchError.message === 'OFFLINE' || !navigator.onLine) {
-                        if (window.showToast) window.showToast('Jste offline. Zkontrolujte připojení k internetu.', 'error');
-                        throw new Error('Offline: Žádné připojení k internetu');
-                    } else {
-                        // Re-throw ostatní chyby
-                        throw fetchError;
-                    }
+                if (!response.ok) {
+                    const error = responseData;
+                    const errorMessages = {
+                        'missing_id': 'Chybí ID zakázky',
+                        'missing_fields': 'Chybí povinná pole',
+                        'invalid_input': 'Neplatné vstupní údaje',
+                        'nothing_to_update': 'Žádné změny k uložení',
+                        'not_found': 'Zakázka nenalezena'
+                    };
+                    const errorMsg = errorMessages[error.error] || error.error || 'Chyba při ukládání zakázky';
+                    throw new Error(errorMsg);
                 }
                 
                 // Aktualizuj lokální data
@@ -4493,19 +3350,10 @@
                     client: updateData.client,
                     address: updateData.city,
                     deadline: updateData.date,
-                    created_date: updateData.created_date,
-                    start_date: updateData.start_date,
                     status: updateData.status,
                     notes: updateData.note,
                     progress: updateData.progress
                 });
-                
-                // Cache updated data
-                saveJobsToCache(jobs);
-                
-                // DEBUG: Zkontroluj co bylo uloženo
-                console.log('=== DEBUG: Lokální data aktualizována ===');
-                console.log('Job after update:', job);
                 
                 if (window.hideLoading) window.hideLoading();
                 if (window.showToast) window.showToast('Zakázka úspěšně upravena', 'success');
@@ -4521,27 +3369,11 @@
                 
             } catch (error) {
                 if (window.hideLoading) window.hideLoading();
-                
-                // Use error handler if available
-                if (window.ErrorHandler) {
-                    window.ErrorHandler.handleError(error, 'saveJobEdit');
+                const errorMsg = error.message || 'Nastala neočekávaná chyba při ukládání zakázky';
+                if (window.showToast) {
+                    window.showToast(errorMsg, 'error');
                 } else {
-                    // Fallback error handling
-                    let errorMessage = 'Nastala neočekávaná chyba při ukládání zakázky';
-                    if (error.message) {
-                        if (error.message.includes('Timeout')) {
-                            errorMessage = 'Připojení je pomalé. Zkuste to znovu.';
-                        } else if (error.message.includes('Offline')) {
-                            errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
-                        } else {
-                            errorMessage = error.message;
-                        }
-                    }
-                    if (window.showToast) {
-                        window.showToast(errorMessage, 'error');
-                    } else {
-                        alert(errorMessage);
-                    }
+                    alert(errorMsg);
                 }
                 console.error('Error saving job:', error);
             }
@@ -4565,33 +3397,8 @@
         }
         
         function scheduleJob(jobId) {
-            exportToCalendar(jobId);
+            if (window.showToast) window.showToast('Funkce plánování bude implementována', 'info');
         }
-        
-        function exportToCalendar(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            if (!job.deadline) {
-                if (window.showToast) window.showToast('Zakázka nemá deadline', 'warning');
-                return;
-            }
-            const startDate = new Date(job.deadline);
-            startDate.setHours(9, 0, 0, 0);
-            const endDate = new Date(startDate);
-            endDate.setHours(17, 0, 0, 0);
-            const formatICSDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            const escapeICS = (text) => String(text || '').replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');
-            const icsContent = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Green David App//Zakázky//CS','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',`UID:job-${job.id}@green-david.app`,`DTSTART:${formatICSDate(startDate)}`,`DTEND:${formatICSDate(endDate)}`,`DTSTAMP:${formatICSDate(new Date())}`,`SUMMARY:${escapeICS(job.title || 'Zakázka')}`,`DESCRIPTION:Klient: ${escapeICS(job.client || '—')}\\nAdresa: ${escapeICS(job.address || '—')}\\nProgress: ${job.progress || 0}%`,`LOCATION:${escapeICS(job.address || '')}`,`STATUS:CONFIRMED`,`SEQUENCE:0`,'END:VEVENT','END:VCALENDAR'].join('\r\n');
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `zakazka-${job.id}.ics`;
-            link.click();
-            URL.revokeObjectURL(link.href);
-            if (window.showToast) window.showToast('Kalendářový soubor stažen', 'success');
-        }
-        
-        window.exportToCalendar = exportToCalendar;
 
         function shareJob(jobId) {
             if (window.showToast) window.showToast('Sdílení bude implementováno', 'info');
@@ -4615,10 +3422,8 @@
                 }
                 
                 // Odstraň z lokálního pole
-                window.jobs = window.jobs.filter(j => j.id !== jobId);
-                window.filteredJobs = window.filteredJobs.filter(j => j.id !== jobId);
-                jobs = window.jobs;
-                filteredJobs = window.filteredJobs;
+                jobs = jobs.filter(j => j.id !== jobId);
+                filteredJobs = filteredJobs.filter(j => j.id !== jobId);
                 
                 if (window.hideLoading) window.hideLoading();
                 if (window.showToast) window.showToast('Zakázka úspěšně smazána', 'success');
@@ -4629,31 +3434,21 @@
                 updateStats();
                 
                 // Pokud byl otevřen detail této zakázky, zavři ho
-                if (window.currentJobId === jobId) {
+                if (currentJobId === jobId) {
                     document.getElementById('job-detail-modal').classList.remove('active');
-                    window.currentJobId = null;
                     currentJobId = null;
                 }
                 
             } catch (error) {
                 if (window.hideLoading) window.hideLoading();
-                
-                // Use error handler if available
-                if (window.ErrorHandler) {
-                    window.ErrorHandler.handleError(error, 'deleteJob');
-                } else {
-                    if (window.showToast) {
-                        window.showToast('Chyba při mazání zakázky: ' + error.message, 'error');
-                    }
+                if (window.showToast) {
+                    window.showToast('Chyba při mazání zakázky: ' + error.message, 'error');
                 }
                 console.error('Error deleting job:', error);
             }
         }
 
         function escapeHtml(text) {
-            if (window.JobsUtils && window.JobsUtils.escapeHtml) {
-                return window.JobsUtils.escapeHtml(text);
-            }
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
@@ -4744,10 +3539,10 @@
                 ]);
                 
                 const today = new Date().toISOString().slice(0, 10);
-                let filename = `green-david-zakazky-${today}`;
+                const filename = `green-david-zakazky-${today}.${format === 'xlsx' ? 'xlsx' : 'csv'}`;
                 
                 if (format === 'xlsx') {
-                    filename += '.xlsx';
+                    // Použij XLSX knihovnu pokud je dostupná
                     if (typeof XLSX !== 'undefined') {
                         const wb = XLSX.utils.book_new();
                         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -4758,38 +3553,10 @@
                         XLSX.utils.book_append_sheet(wb, ws, 'Zakázky');
                         XLSX.writeFile(wb, filename);
                     } else {
+                        // Fallback na CSV
                         exportToCSV(headers, rows, filename.replace('.xlsx', '.csv'));
                     }
-                } else if (format === 'json') {
-                    filename += '.json';
-                    const jsonData = {
-                        exportDate: new Date().toISOString(),
-                        totalJobs: exportJobs.length,
-                        jobs: exportJobs.map(job => ({
-                            id: job.id,
-                            title: job.title,
-                            client: job.client,
-                            address: job.address,
-                            status: job.status,
-                            deadline: job.deadline,
-                            progress: job.progress,
-                            priority: job.priority,
-                            notes: job.notes,
-                            created_date: job.created_date,
-                            start_date: job.start_date,
-                            budget: job.budget
-                        }))
-                    };
-                    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = filename;
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-                } else if (format === 'pdf') {
-                    exportToPDF(exportJobs, headers);
                 } else {
-                    filename += '.csv';
                     exportToCSV(headers, rows, filename);
                 }
                 
@@ -4821,133 +3588,7 @@
             link.click();
             URL.revokeObjectURL(link.href);
         }
-        
-        function exportToPDF(jobs, headers) {
-            const printWindow = window.open('', '_blank');
-            const today = new Date().toLocaleDateString('cs-CZ');
-            
-            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Export zakázek - ${today}</title><style>@media print{@page{margin:20mm}body{margin:0}}body{font-family:Arial,sans-serif;padding:20px;color:#1a1a1a;background:#fff}h1{color:#0a1628;border-bottom:3px solid #9FD4A1;padding-bottom:10px;margin-bottom:20px}.summary{background:#f5f5f5;padding:15px;border-radius:8px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#9FD4A1;color:#1a2332;padding:12px;text-align:left;font-weight:600}td{padding:10px;border-bottom:1px solid #e0e0e0}tr:hover{background:#f9f9f9}.status-new{color:#3b82f6}.status-active{color:#9FD4A1;font-weight:600}.status-paused{color:#f59e0b}.status-completed{color:#6b7280}</style></head><body><h1>Export zakázek - Green David App</h1><div class="summary"><strong>Datum exportu:</strong> ${today}<br><strong>Počet zakázek:</strong> ${jobs.length}<br><strong>Aktivní:</strong> ${jobs.filter(j => j.status === 'active').length}<br><strong>Dokončené:</strong> ${jobs.filter(j => j.status === 'completed').length}</div><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${jobs.map(job => `<tr><td>${job.id}</td><td>${escapeHtml(job.title || '')}</td><td>${escapeHtml(job.client || '')}</td><td>${escapeHtml(job.address || '')}</td><td class="status-${job.status}">${job.status}</td><td>${job.deadline ? new Date(job.deadline).toLocaleDateString('cs-CZ') : '—'}</td><td>${job.progress || 0}%</td><td>${job.priority || 'medium'}</td><td>${escapeHtml((job.notes || '').substring(0, 50))}</td></tr>`).join('')}</tbody></table></body></html>`;
-            
-            printWindow.document.write(html);
-            printWindow.document.close();
-            setTimeout(() => { printWindow.print(); }, 250);
-        }
 
-        // ========================================
-        // BULK ACTIONS
-        // ========================================
-        
-        function updateBulkActions() {
-            const checkboxes = document.querySelectorAll('.job-select-checkbox:checked');
-            selectedJobIds = new Set(Array.from(checkboxes).map(cb => cb.dataset.jobId));
-            const count = selectedJobIds.size;
-            const toolbar = document.getElementById('bulk-actions-toolbar');
-            const countEl = document.getElementById('selected-count');
-            if (countEl) countEl.textContent = count;
-            if (count > 0) {
-                if (toolbar) toolbar.style.display = 'flex';
-            } else {
-                if (toolbar) toolbar.style.display = 'none';
-            }
-        }
-        
-        function selectAllJobs() {
-            document.querySelectorAll('.job-select-checkbox').forEach(cb => {
-                cb.checked = true;
-                selectedJobIds.add(cb.dataset.jobId);
-            });
-            updateBulkActions();
-        }
-        
-        function deselectAllJobs() {
-            document.querySelectorAll('.job-select-checkbox').forEach(cb => { cb.checked = false; });
-            selectedJobIds.clear();
-            updateBulkActions();
-        }
-        
-        async function bulkChangeStatus(newStatus) {
-            if (selectedJobIds.size === 0) return;
-            if (!confirm(`Změnit status ${selectedJobIds.size} zakázek na "${newStatus}"?`)) return;
-            try {
-                if (window.showLoading) window.showLoading('Měním status...');
-                const updates = Array.from(selectedJobIds).map(id => ({ id: id, status: newStatus }));
-                const promises = updates.map(update => fetch('/api/jobs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) }));
-                await Promise.all(promises);
-                jobs.forEach(job => { if (selectedJobIds.has(job.id.toString())) job.status = newStatus; });
-                deselectAllJobs();
-                applyFilters();
-                renderView();
-                updateStats();
-                if (window.hideLoading) window.hideLoading();
-                if (window.showToast) window.showToast(`Status změněn u ${selectedJobIds.size} zakázek`, 'success');
-            } catch (error) {
-                if (window.hideLoading) window.hideLoading();
-                if (window.showToast) window.showToast('Chyba při změně statusu', 'error');
-                console.error(error);
-            }
-        }
-        
-        async function bulkDelete() {
-            if (selectedJobIds.size === 0) return;
-            if (!confirm(`Opravdu smazat ${selectedJobIds.size} zakázek? Tato akce je nevratná!`)) return;
-            try {
-                if (window.showLoading) window.showLoading('Mažu zakázky...');
-                const ids = Array.from(selectedJobIds);
-                const promises = ids.map(id => fetch(`/api/jobs/${id}`, { method: 'DELETE' }));
-                await Promise.all(promises);
-                window.jobs = window.jobs.filter(job => !selectedJobIds.has(job.id.toString()));
-                jobs = window.jobs;
-                deselectAllJobs();
-                applyFilters();
-                renderView();
-                updateStats();
-                if (window.hideLoading) window.hideLoading();
-                if (window.showToast) window.showToast(`Smazáno ${ids.length} zakázek`, 'success');
-            } catch (error) {
-                if (window.hideLoading) window.hideLoading();
-                if (window.showToast) window.showToast('Chyba při mazání', 'error');
-                console.error(error);
-            }
-        }
-        
-        function bulkExport() {
-            if (selectedJobIds.size === 0) return;
-            const selectedJobs = jobs.filter(job => selectedJobIds.has(job.id.toString()));
-            const csv = convertJobsToCSV(selectedJobs);
-            downloadFile(`zakazky-${Date.now()}.csv`, csv);
-            if (window.showToast) window.showToast(`Exportováno ${selectedJobs.length} zakázek`, 'success');
-        }
-        
-        function bulkArchive() {
-            if (selectedJobIds.size === 0) return;
-            bulkChangeStatus('completed');
-        }
-        
-        setTimeout(() => {
-            document.getElementById('bulk-status-change')?.addEventListener('change', (e) => {
-                if (e.target.value) { bulkChangeStatus(e.target.value); e.target.value = ''; }
-            });
-            document.getElementById('bulk-delete')?.addEventListener('click', bulkDelete);
-            document.getElementById('bulk-export')?.addEventListener('click', bulkExport);
-            document.getElementById('bulk-archive')?.addEventListener('click', bulkArchive);
-            document.getElementById('bulk-deselect-all')?.addEventListener('click', deselectAllJobs);
-            // "Vybrat vše" tlačítko odstraněno - bulk actions disabled
-            // const headerActions = document.querySelector('.header-actions');
-            // if (headerActions && !document.getElementById('btn-select-all')) {
-            //     const selectAllBtn = document.createElement('button');
-            //     selectAllBtn.id = 'btn-select-all';
-            //     selectAllBtn.className = 'btn-secondary';
-            //     selectAllBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> Vybrat vše';
-            //     selectAllBtn.style.cssText = 'display:flex;align-items:center;gap:6px;';
-            //     selectAllBtn.addEventListener('click', selectAllJobs);
-            //     headerActions.insertBefore(selectAllBtn, headerActions.firstChild);
-            // }
-        }, 500);
-        
-        const bulkActionsStyle = document.createElement('style');
-        bulkActionsStyle.textContent = '.job-card-checkbox input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:#9FD4A1}.job-card:hover .job-card-checkbox{opacity:1}.job-card-checkbox{opacity:0.3;transition:opacity 0.2s}.bulk-actions-toolbar{animation:slideDown 0.3s ease}@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}';
-        document.head.appendChild(bulkActionsStyle);
-        
         // Initialize
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -4969,10 +3610,9 @@
             <div class="form-group" style="margin-bottom:20px;">
                 <label style="display:block;margin-bottom:8px;color:var(--mint);font-size:14px;">Formát:</label>
                 <select id="exportFormat" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
-                    <option value="csv">CSV</option>
                     <option value="excel">Excel (.xlsx)</option>
-                    <option value="json">JSON (API)</option>
-                    <option value="pdf">PDF Report</option>
+                    <option value="csv">CSV</option>
+                    <option value="pdf">PDF</option>
                 </select>
             </div>
             
@@ -5027,101 +3667,9 @@
             const customRange = document.getElementById('customDateRange');
             customRange.style.display = period === 'custom' ? 'block' : 'none';
         }
-        
-        // ========================================
-        // KEYBOARD SHORTCUTS PRO JOBS PAGE
-        // ========================================
-        
-        function isInputFocused() {
-            const activeElement = document.activeElement;
-            return activeElement && (
-                activeElement.tagName === 'INPUT' ||
-                activeElement.tagName === 'TEXTAREA' ||
-                activeElement.isContentEditable ||
-                activeElement.classList.contains('inline-edit')
-            );
-        }
-        
-        function closeAllModals() {
-            document.querySelectorAll('.modal.active').forEach(modal => {
-                modal.classList.remove('active');
-            });
-            document.getElementById('filters-section')?.classList.remove('active');
-            currentJobId = null;
-        }
-        
-        function switchView(viewName) {
-            const btn = document.querySelector(`.btn-view[data-view="${viewName}"]`);
-            if (btn) {
-                document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                window.currentView = viewName;
-                currentView = window.currentView;
-                renderView();
-            }
-        }
-        
-        document.addEventListener('keydown', (e) => {
-            if (isInputFocused() && e.key !== 'Escape') return;
-            
-            if (e.key === 'Escape') {
-                closeAllModals();
-            } else if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                const searchInput = document.getElementById('search-input');
-                if (searchInput) {
-                    searchInput.focus();
-                    searchInput.select();
-                } else if (window.openGlobalSearch) {
-                    window.openGlobalSearch();
-                }
-            } else if (e.key === 'n' || e.key === 'N') {
-                e.preventDefault();
-                document.getElementById('btn-new-job')?.click();
-            } else if (e.key === '1') {
-                e.preventDefault();
-                switchView('kanban');
-            } else if (e.key === '2') {
-                e.preventDefault();
-                switchView('list');
-            } else if (e.key === '3') {
-                e.preventDefault();
-                switchView('timeline');
-            } else if (e.key === 'f' || e.key === 'F') {
-                e.preventDefault();
-                document.getElementById('filters-section')?.classList.toggle('active');
-            } else if (e.key === '?') {
-                e.preventDefault();
-                showKeyboardShortcutsHelp();
-            }
-        });
-        
-        function showKeyboardShortcutsHelp() {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
-            const content = document.createElement('div');
-            content.style.cssText = 'background:#1a2332;border-radius:12px;padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);';
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            const cmdKey = isMac ? '⌘' : 'Ctrl';
-            content.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2 style="margin:0;color:#fff;font-size:20px;">Klávesové zkratky</h2><button onclick="this.closest('[style*=\\'position:fixed\\']').remove()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:28px;cursor:pointer;padding:0;width:32px;height:32px;">&times;</button></div><div style="display:flex;flex-direction:column;gap:8px;"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Vyhledávání</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">${cmdKey}K</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Nová zakázka</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">N</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Zavřít modaly</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">ESC</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Kanban view</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">1</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Seznam view</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">2</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Timeline view</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">3</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Filtry</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">F</kbd></div><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><span style="color:#fff;">Zobrazit zkratky</span><kbd style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:12px;color:#9FD4A1;font-family:monospace;">?</kbd></div></div>`;
-            modal.appendChild(content);
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-            document.addEventListener('keydown', function escHandler(e) { if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); } });
-            document.body.appendChild(modal);
-        }
-        
-        setTimeout(() => {
-            const hint = document.createElement('div');
-            hint.style.cssText = 'position:fixed;bottom:100px;right:20px;background:rgba(26,35,50,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.6);z-index:1000;pointer-events:none;backdrop-filter:blur(10px);';
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            hint.innerHTML = `${isMac ? '⌘' : 'Ctrl'}K hledat • N nová • 1/2/3 views • ESC zavřít • ? zkratky`;
-            document.body.appendChild(hint);
-            setTimeout(() => { hint.style.opacity = '0'; hint.style.transition = 'opacity 0.3s'; setTimeout(() => hint.remove(), 300); }, 5000);
-        }, 1000);
     </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
       // Inicializuj Lucide Icons po načtení DOM
       document.addEventListener('DOMContentLoaded', () => {
@@ -5135,41 +3683,6 @@
         }
       }, 500);
     </script>
-    
-    <!-- Global Search Overlay -->
-    <div id="global-search-overlay" class="search-overlay">
-        <div class="search-overlay-backdrop" onclick="closeGlobalSearch()"></div>
-        
-        <div class="search-container-modal">
-            <!-- Input -->
-            <div class="search-input-wrapper">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input type="text" 
-                       id="global-search-input" 
-                       placeholder="Hledat v Green David App..."
-                       autocomplete="off">
-                <kbd class="search-kbd">⌘K</kbd>
-            </div>
-            
-            <!-- Results -->
-            <div class="search-results" id="global-search-results">
-                <div class="search-empty">
-                    <p>Začněte psát pro vyhledávání...</p>
-                </div>
-            </div>
-            
-            <!-- Footer -->
-            <div class="search-footer">
-                <span><kbd>↑</kbd><kbd>↓</kbd> Navigace</span>
-                <span><kbd>Enter</kbd> Otevřít</span>
-                <span><kbd>Esc</kbd> Zavřít</span>
-            </div>
-        </div>
-    </div>
-    
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
 </body>

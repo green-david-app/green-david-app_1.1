@@ -266,10 +266,8 @@
     });
 
     // Add CSS animation
-    if (!document.getElementById('global-search-styles')) {
-        const searchStyle = document.createElement('style');
-        searchStyle.id = 'global-search-styles';
-        searchStyle.textContent = `
+    const style = document.createElement('style');
+    style.textContent = `
         @keyframes slideDown {
             from {
                 transform: translateY(-20px);
@@ -281,8 +279,7 @@
             }
         }
     `;
-        document.head.appendChild(searchStyle);
-    }
+    document.head.appendChild(style);
 
     // Export for manual opening
     window.openGlobalSearch = openSearch;
