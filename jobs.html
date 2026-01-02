@@ -96,21 +96,26 @@
         .btn-view.active {
             background: #9FD4A1;
             border-color: #9FD4A1;
-            color: #1a1a1a;
+            color: #1a2332;
+            font-weight: 600;
         }
 
         .btn-view.active svg,
         .btn-view.active i[data-lucide] {
-            stroke: #1a1a1a !important;
-            color: #1a1a1a !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
         }
         
         .btn-view.active svg path,
         .btn-view.active svg line,
         .btn-view.active svg circle,
         .btn-view.active svg rect {
-            stroke: #1a1a1a !important;
+            stroke: #1a2332 !important;
             fill: none !important;
+        }
+        
+        .btn-view.active:hover {
+            background: #7EBC82;
         }
 
         .btn-primary {
@@ -118,10 +123,10 @@
             background: #9FD4A1;
             border: 1px solid #9FD4A1;
             border-radius: 6px;
-            color: #1a1a1a;
+            color: #1a2332;
             cursor: pointer;
             font-size: 15px;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.2s;
             display: flex;
             align-items: center;
@@ -130,12 +135,13 @@
 
         .btn-primary:hover {
             background: #7EBC82;
+            color: #1a2332;
             transform: translateY(-2px);
         }
         
         .btn-primary svg {
-            stroke: #1a1a1a !important;
-            color: #1a1a1a !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
             width: 20px !important;
             height: 20px !important;
             display: block !important;
@@ -147,13 +153,13 @@
         .btn-primary svg path,
         .btn-primary svg circle,
         .btn-primary svg rect {
-            stroke: #1a1a1a !important;
+            stroke: #1a2332 !important;
             fill: none !important;
         }
         
         .btn-primary i[data-lucide] {
-            stroke: #1a1a1a;
-            color: #1a1a1a;
+            stroke: #1a2332;
+            color: #1a2332;
             width: 18px;
             height: 18px;
         }
@@ -653,7 +659,7 @@
             background: #9FD4A1;
             border: 1px solid rgba(0,0,0,0.15);
             border-radius: 6px;
-            color: #000000;
+            color: #1a2332;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -673,8 +679,8 @@
         .quick-action-btn svg {
             width: 18px !important;
             height: 18px !important;
-            stroke: #000000 !important;
-            color: #000000 !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
             stroke-width: 2 !important;
             display: block !important;
             visibility: visible !important;
@@ -687,7 +693,7 @@
         .quick-action-btn svg line,
         .quick-action-btn svg rect,
         .quick-action-btn svg polyline {
-            stroke: #000000 !important;
+            stroke: #1a2332 !important;
             fill: none !important;
             stroke-width: 2 !important;
         }
@@ -695,9 +701,9 @@
         .quick-action-btn i[data-lucide] {
             width: 18px;
             height: 18px;
-            stroke: #000000;
-            color: #000000;
-            stroke-width: 1.5;
+            stroke: #1a2332;
+            color: #1a2332;
+            stroke-width: 2;
         }
         
         /* Tooltip */
@@ -709,19 +715,20 @@
             transform: translateX(-50%);
             background: #2a2a2a;
             color: #ffffff;
-            font-size: 13px;
+            font-size: 12px;
             padding: 6px 10px;
             border-radius: 4px;
             white-space: nowrap;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s;
             z-index: 1000;
+            font-weight: 500;
         }
         
         .quick-action-btn:hover::after {
             opacity: 1;
-            transition-delay: 0.5s;
+            transition-delay: 0.3s;
         }
 
         /* List View */
@@ -1285,16 +1292,43 @@
             .page-header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 12px;
+            }
+
+            .page-header h1 {
+                font-size: 22px;
             }
 
             .header-actions {
                 width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .header-actions > * {
+                width: 100%;
             }
 
             .btn-view,
+            .btn-secondary,
             .btn-primary {
                 flex: 1;
                 justify-content: center;
+                padding: 10px 14px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+            
+            /* Stack view buttons horizontally but allow wrapping */
+            .header-actions .btn-view {
+                flex: 1 1 auto;
+                min-width: calc(33.333% - 6px);
+            }
+            
+            /* Make secondary buttons stack vertically */
+            .header-actions .btn-secondary {
+                width: 100%;
             }
 
             .filters-grid {
@@ -1427,11 +1461,43 @@
             }
             
             .dashboard-card {
-                padding: 12px;
+                padding: 10px 12px;
+                height: auto;
+                min-height: 70px;
+            }
+            
+            .dashboard-card h3 {
+                font-size: 11px;
+                margin-bottom: 6px;
             }
             
             .dashboard-card .value {
-                font-size: 24px;
+                font-size: 20px;
+                line-height: 1.2;
+            }
+            
+            .dashboard-card .subtitle {
+                font-size: 10px;
+                margin-top: 2px;
+            }
+            
+            .jobs-dashboard {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .quick-actions {
+                gap: 3px;
+            }
+            
+            .quick-action-btn {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .quick-action-btn i[data-lucide] {
+                width: 16px;
+                height: 16px;
             }
         }
 
@@ -2125,20 +2191,20 @@
                     ${job.progress !== undefined ? `<span style="color: var(--mint); font-weight: bold; font-size: 12px;">${job.progress}%</span>` : ''}
                 </div>
                 <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Přidat zaměstnance">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit">
+                        <i data-lucide="edit-2"></i>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <i data-lucide="message-square"></i>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        <i data-lucide="paperclip"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Naplánovat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14h.01"/></svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Kalendář">
+                        <i data-lucide="calendar"></i>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Detail zakázky">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
+                        <i data-lucide="info"></i>
                     </button>
                 </div>
             `;
@@ -2239,6 +2305,13 @@
                     container.appendChild(card);
                 }
             });
+            
+            // Initialize Lucide icons for new cards
+            if (typeof lucide !== 'undefined') {
+                setTimeout(() => {
+                    lucide.createIcons();
+                }, 100);
+            }
             
             updateColumnCounts();
         }
