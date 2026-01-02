@@ -2272,22 +2272,45 @@
                 </div>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit">
-                        <i data-lucide="edit-2"></i>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
-                        <i data-lucide="message-square"></i>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
-                        <i data-lucide="paperclip"></i>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Kalendář">
-                        <i data-lucide="calendar"></i>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                            <line x1="16" x2="16" y1="2" y2="6"></line>
+                            <line x1="8" x2="8" y1="2" y2="6"></line>
+                            <line x1="3" x2="21" y1="10" y2="10"></line>
+                        </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
-                        <i data-lucide="info"></i>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" x2="12" y1="16" y2="12"></line>
+                            <line x1="12" x2="12.01" y1="8" y2="8"></line>
+                        </svg>
                     </button>
                 </div>
             `;
+            
+            // Inicializuj ikony pro tuto konkrétní kartu
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({ 
+                    element: card 
+                });
+            }
             
             // Drag & Drop
             card.addEventListener('dragstart', handleDragStart);
@@ -2386,27 +2409,18 @@
                 }
             });
             
-            // Initialize Lucide icons for new cards - FORCE MULTIPLE TIMES
-            if (typeof lucide !== 'undefined') {
-                // Inicializuj hned
-                lucide.createIcons();
-                
-                // Inicializuj znovu po 50ms (pro jistotu)
-                setTimeout(() => {
+            // FORCE Lucide icons immediately after cards are rendered
+            requestAnimationFrame(() => {
+                if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
-                }, 50);
-                
-                // Inicializuj znovu po 200ms (pro případy pomalého načítání)
-                setTimeout(() => {
-                    lucide.createIcons();
-                }, 200);
-                
-                // Final check po 500ms
-                setTimeout(() => {
-                    lucide.createIcons();
-                    console.log('✓ Lucide icons initialized');
-                }, 500);
-            }
+                    
+                    // Double-check after animation frame
+                    setTimeout(() => {
+                        lucide.createIcons();
+                        console.log('✓ Ikony inicializovány');
+                    }, 50);
+                }
+            });
             
             updateColumnCounts();
         }
