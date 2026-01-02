@@ -670,11 +670,11 @@
         }
 
         .quick-action-btn {
-            width: 50px;
-            height: 50px;
+            width: 23px;
+            height: 23px;
             background: #9FD4A1;
             border: 1px solid rgba(0,0,0,0.15);
-            border-radius: 6px;
+            border-radius: 4px;
             color: #1a2332;
             cursor: pointer;
             display: flex;
@@ -699,11 +699,11 @@
         }
 
         .quick-action-btn svg {
-            width: 30px !important;
-            height: 30px !important;
+            width: 19px !important;
+            height: 19px !important;
             stroke: #1a2332 !important;
             color: #1a2332 !important;
-            stroke-width: 3 !important;
+            stroke-width: 4 !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -717,15 +717,15 @@
         .quick-action-btn svg polyline {
             stroke: #1a2332 !important;
             fill: none !important;
-            stroke-width: 3 !important;
+            stroke-width: 4 !important;
         }
         
         .quick-action-btn i[data-lucide] {
-            width: 18px !important;
-            height: 18px !important;
+            width: 19px !important;
+            height: 19px !important;
             stroke: #1a2332 !important;
             color: #1a2332 !important;
-            stroke-width: 2 !important;
+            stroke-width: 4 !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -736,8 +736,8 @@
         .quick-action-btn [data-lucide] svg {
             stroke: #1a2332 !important;
             color: #1a2332 !important;
-            width: 18px !important;
-            height: 18px !important;
+            width: 19px !important;
+            height: 19px !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -751,7 +751,7 @@
         .quick-action-btn i[data-lucide] svg polyline {
             stroke: #1a2332 !important;
             fill: none !important;
-            stroke-width: 2 !important;
+            stroke-width: 4 !important;
         }
         
         /* Tooltip */
@@ -1588,10 +1588,28 @@
                 height: 36px !important;
             }
 
+            .quick-action-btn {
+                width: 23px;
+                height: 23px;
+            }
+            
             .quick-action-btn i[data-lucide],
             .quick-action-btn svg {
-                width: 20px !important;
-                height: 20px !important;
+                width: 19px !important;
+                height: 19px !important;
+            }
+            
+            .quick-action-btn svg path,
+            .quick-action-btn svg circle,
+            .quick-action-btn svg line,
+            .quick-action-btn svg rect,
+            .quick-action-btn svg polyline,
+            .quick-action-btn i[data-lucide] svg path,
+            .quick-action-btn i[data-lucide] svg line,
+            .quick-action-btn i[data-lucide] svg circle,
+            .quick-action-btn i[data-lucide] svg rect,
+            .quick-action-btn i[data-lucide] svg polyline {
+                stroke-width: 4 !important;
             }
 
             /* Quick actions vždy viditelné na mobilu */
