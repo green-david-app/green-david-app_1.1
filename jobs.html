@@ -3035,10 +3035,18 @@
 
         function renderView() {
             const currentView = window.currentView || 'kanban';
+            
+            // Hide all views first
+            const kanbanView = document.getElementById('kanban-view');
+            const listView = document.getElementById('list-view');
+            const timelineView = document.getElementById('timeline-view');
+            
+            if (kanbanView) kanbanView.style.display = 'none';
+            if (listView) listView.classList.remove('active');
+            if (timelineView) timelineView.classList.remove('active');
+            
             if (currentView === 'kanban') {
-                document.getElementById('kanban-view').style.display = 'grid';
-                document.getElementById('list-view').classList.remove('active');
-                document.getElementById('timeline-view').classList.remove('active');
+                if (kanbanView) kanbanView.style.display = 'grid';
                 // Použij renderKanban z externího modulu nebo fallback na lokální
                 if (typeof window.JobsKanban !== 'undefined' && window.JobsKanban.renderKanban) {
                     window.JobsKanban.renderKanban();
@@ -3048,22 +3056,22 @@
                     console.error('renderKanban function not found!');
                 }
             } else if (currentView === 'list') {
-                document.getElementById('kanban-view').style.display = 'none';
-                document.getElementById('list-view').classList.add('active');
-                document.getElementById('timeline-view').classList.remove('active');
+                if (listView) listView.classList.add('active');
                 if (typeof window.JobsList !== 'undefined' && window.JobsList.renderList) {
                     window.JobsList.renderList();
                 } else if (typeof renderList === 'function') {
                     renderList();
+                } else {
+                    console.error('renderList function not found!');
                 }
             } else if (currentView === 'timeline') {
-                document.getElementById('kanban-view').style.display = 'none';
-                document.getElementById('list-view').classList.remove('active');
-                document.getElementById('timeline-view').classList.add('active');
+                if (timelineView) timelineView.classList.add('active');
                 if (typeof window.JobsTimeline !== 'undefined' && window.JobsTimeline.renderTimeline) {
                     window.JobsTimeline.renderTimeline();
                 } else if (typeof renderTimeline === 'function') {
                     renderTimeline();
+                } else {
+                    console.error('renderTimeline function not found!');
                 }
             }
         }
@@ -3827,7 +3835,8 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentView = btn.dataset.view;
+                window.currentView = btn.dataset.view;
+                currentView = window.currentView;
                 renderView();
             });
         });
