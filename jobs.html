@@ -139,7 +139,7 @@
             background: #9FD4A1;
             border: 1px solid #9FD4A1;
             border-radius: 6px;
-            color: #1a2332;
+            color: #1a2332 !important;
             cursor: pointer;
             font-size: 15px;
             font-weight: 600;
@@ -662,7 +662,7 @@
             top: 8px;
             right: 8px;
             display: none;
-            gap: 4px;
+            gap: 8px;
         }
 
         .job-card:hover .quick-actions {
@@ -670,8 +670,8 @@
         }
 
         .quick-action-btn {
-            width: 32px;
-            height: 32px;
+            width: 50px;
+            height: 50px;
             background: #9FD4A1;
             border: 1px solid rgba(0,0,0,0.15);
             border-radius: 6px;
@@ -699,11 +699,11 @@
         }
 
         .quick-action-btn svg {
-            width: 18px !important;
-            height: 18px !important;
+            width: 30px !important;
+            height: 30px !important;
             stroke: #1a2332 !important;
             color: #1a2332 !important;
-            stroke-width: 2 !important;
+            stroke-width: 3 !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -717,7 +717,7 @@
         .quick-action-btn svg polyline {
             stroke: #1a2332 !important;
             fill: none !important;
-            stroke-width: 2 !important;
+            stroke-width: 3 !important;
         }
         
         .quick-action-btn i[data-lucide] {
@@ -2676,7 +2676,17 @@
             // DNES marker (absolutně pozicovaný - vertical line)
             if (todayOffset >= 0 && todayOffset < days.length) {
                 const markerLeft = 200 + todayLeft;
+                console.log('=== DEBUG: Timeline DNES marker ===');
+                console.log('Today offset:', todayOffset);
+                console.log('Today left:', todayLeft);
+                console.log('Day width:', dayWidth);
+                console.log('Marker left position:', markerLeft);
+                console.log('Total days:', days.length);
                 html += `<div class="timeline-today-marker" style="left: ${markerLeft}px; top: 0; height: 100%;"></div>`;
+            } else {
+                console.log('=== DEBUG: Timeline DNES marker ===');
+                console.log('Today offset:', todayOffset, '(outside range)');
+                console.log('Days range: 0 to', days.length);
             }
             
             html += '</div>'; // timeline-container
@@ -3066,6 +3076,23 @@
             const code = ''; // Může být prázdný
             const date = document.getElementById('job-deadline').value;
             
+            // DEBUG: Zkontroluj všechna datum pole
+            const createdDate = document.getElementById('job-created-date')?.value || null;
+            const startDate = document.getElementById('job-start-date')?.value || null;
+            const deadline = date;
+            
+            console.log('=== DEBUG: Ukládání nové zakázky ===');
+            console.log('Created Date:', createdDate, 'Format:', createdDate ? new Date(createdDate).toISOString().split('T')[0] : 'null');
+            console.log('Start Date:', startDate, 'Format:', startDate ? new Date(startDate).toISOString().split('T')[0] : 'null');
+            console.log('Deadline:', deadline, 'Format:', deadline ? new Date(deadline).toISOString().split('T')[0] : 'null');
+            console.log('Všechna pole formuláře:');
+            console.log('- job-title:', document.getElementById('job-title')?.value);
+            console.log('- job-client:', document.getElementById('job-client')?.value);
+            console.log('- job-address:', document.getElementById('job-address')?.value);
+            console.log('- job-deadline:', document.getElementById('job-deadline')?.value);
+            console.log('- job-created-date:', document.getElementById('job-created-date')?.value || 'POLE NEEXISTUJE');
+            console.log('- job-start-date:', document.getElementById('job-start-date')?.value || 'POLE NEEXISTUJE');
+            
             if (!title) {
                 if (window.showToast) window.showToast('Vyplňte název zakázky', 'warning');
                 return;
@@ -3081,15 +3108,26 @@
                 return;
             }
 
+            // Formátuj datumy do YYYY-MM-DD
+            const formattedDeadline = deadline ? new Date(deadline).toISOString().split('T')[0] : null;
+            const formattedCreatedDate = createdDate ? new Date(createdDate).toISOString().split('T')[0] : null;
+            const formattedStartDate = startDate ? new Date(startDate).toISOString().split('T')[0] : null;
+            
             const newJobData = {
                 title: title,
                 client: document.getElementById('job-client').value.trim(),
                 city: city,
                 code: code,
-                date: date,
+                date: formattedDeadline,
+                created_date: formattedCreatedDate,
+                start_date: formattedStartDate,
                 status: 'Plán',
                 note: document.getElementById('job-description').value.trim()
             };
+            
+            console.log('=== DEBUG: Data odesílaná na server ===');
+            console.log('Formatted Data:', newJobData);
+            console.log('JSON:', JSON.stringify(newJobData));
 
             try {
                 if (window.showLoading) window.showLoading('Vytvářím zakázku...');
@@ -3102,8 +3140,14 @@
                     body: JSON.stringify(newJobData)
                 });
                 
+                // DEBUG: Server response
+                const responseData = await response.json();
+                console.log('=== DEBUG: Server Response ===');
+                console.log('Status:', response.status, response.ok ? 'OK' : 'ERROR');
+                console.log('Response Data:', responseData);
+                
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error = responseData;
                     throw new Error(error.error || 'Chyba při vytváření zakázky');
                 }
                 
