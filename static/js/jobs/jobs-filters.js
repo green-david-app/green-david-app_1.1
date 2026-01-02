@@ -6,7 +6,9 @@
  * Apply filters
  */
 function applyFilters() {
-    filteredJobs = jobs.filter(job => {
+    const jobs = window.jobs || [];
+    const filters = window.filters || {};
+    window.filteredJobs = jobs.filter(job => {
         // Fulltext search
         if (filters.search) {
             const searchLower = filters.search.toLowerCase().trim();
@@ -113,6 +115,7 @@ function applyFilters() {
  * Populate filter dropdowns
  */
 function populateFilters() {
+    const jobs = window.jobs || [];
     // Clients
     const clients = [...new Set(jobs.map(j => j.client).filter(c => c && c !== '—'))];
     const clientSelect = document.getElementById('filter-client');

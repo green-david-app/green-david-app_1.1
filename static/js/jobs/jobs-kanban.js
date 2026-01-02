@@ -8,13 +8,16 @@
 function renderKanban() {
     document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
     
+    const jobs = window.jobs || [];
+    const filteredJobs = window.filteredJobs || [];
+    
     // DEBUG
     console.log('=== renderKanban DEBUG ===');
-    console.log('jobs.length:', typeof jobs !== 'undefined' ? jobs.length : 'undefined');
-    console.log('filteredJobs.length:', typeof filteredJobs !== 'undefined' ? filteredJobs.length : 'undefined');
+    console.log('jobs.length:', jobs.length);
+    console.log('filteredJobs.length:', filteredJobs.length);
     
     // Skeleton loading - jen když nemáme žádná data (initial load)
-    if (typeof jobs !== 'undefined' && jobs.length === 0) {
+    if (jobs.length === 0) {
         ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
             const container = document.getElementById(`cards-${statusKey}`);
             if (container) {
@@ -28,7 +31,7 @@ function renderKanban() {
     }
     
     // Žádné výsledky po filtrování - zobraz empty state
-    if (typeof filteredJobs !== 'undefined' && filteredJobs.length === 0) {
+    if (filteredJobs.length === 0) {
         const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
         if (kanbanBoard) {
             const emptyState = document.createElement('div');
@@ -51,11 +54,6 @@ function renderKanban() {
     }
     
     // Normální rendering karet
-    if (typeof filteredJobs === 'undefined' || !filteredJobs) {
-        console.error('filteredJobs is undefined!');
-        return;
-    }
-    
     filteredJobs.forEach(job => {
         const card = createJobCard(job);
         let statusKey = 'new';
@@ -91,6 +89,7 @@ function renderKanban() {
  * Update column counts
  */
 function updateColumnCounts() {
+    const filteredJobs = window.filteredJobs || [];
     const counts = { new: 0, active: 0, paused: 0, completed: 0 };
     const values = { new: 0, active: 0, paused: 0, completed: 0 };
     

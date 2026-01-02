@@ -6,10 +6,11 @@
  * Show job detail modal
  */
 function showJobDetail(jobId) {
+    const jobs = window.jobs || [];
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    currentJobId = jobId;
+    window.currentJobId = jobId;
     document.getElementById('detail-title').textContent = job.title;
     const body = document.getElementById('detail-body');
     
@@ -47,17 +48,19 @@ function showJobDetail(jobId) {
             <p style="margin-top:8px;color:var(--text-secondary);">${job.progress || 0}% dokončeno</p>
         </div>
     `;
-    document.getElementById('job-detail-modal').classList.add('active');
+    const modal = document.getElementById('job-detail-modal');
+    if (modal) modal.classList.add('active');
 }
 
 /**
  * Open edit job modal
  */
 function openEditJobModal(jobId) {
+    const jobs = window.jobs || [];
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    currentJobId = jobId;
+    window.currentJobId = jobId;
     const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
     document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
     
@@ -78,7 +81,8 @@ function openEditJobModal(jobId) {
     document.getElementById('edit-progress').value = job.progress || 0;
     document.getElementById('edit-notes').value = job.notes || '';
     
-    document.getElementById('edit-job-modal').classList.add('active');
+    const modal = document.getElementById('edit-job-modal');
+    if (modal) modal.classList.add('active');
 }
 
 // Export

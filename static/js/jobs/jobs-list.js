@@ -10,6 +10,8 @@ function renderList() {
     if (!tbody) return;
     tbody.innerHTML = '';
     
+    const filteredJobs = window.filteredJobs || [];
+    
     if (filteredJobs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary);">Žádné zakázky</td></tr>';
         return;
