@@ -1,0 +1,81 @@
+
+{% set title = title or 'green david app' %}
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ title }}</title>
+  <link rel="icon" href="/logo.svg"/>
+  <link rel="stylesheet" href="/style.css"/>
+
+  <style>
+    .tabs.with-search { display:flex; align-items:center; gap:12px; justify-content:center; position:relative; }
+    .tabs.with-search .search-in-tabs { display:flex; gap:8px; margin-left:auto; margin-right:auto; }
+    .tabs.with-search .search-in-tabs input[type="text"]{
+      background:#fff; color:#222; border:1px solid #666; border-radius:8px; padding:8px 12px; min-width:420px;
+    }
+    .tabs.with-search .search-in-tabs button{
+      background:#2e7d32; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer;
+    }
+    @media (max-width: 720px){
+      .tabs.with-search .search-in-tabs input[type="text"]{ min-width: 220px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <div class="brand">
+      <img src="/logo.jpg" alt="Green David" style="height:36px;width:auto;border-radius:8px;vertical-align:middle;margin-right:8px;" onerror="this.src='/logo.svg'"/>
+      <div class="brand-text">green david app</div>
+      <div class="brand-sub">interní systém</div>
+    </div>
+    <div class="user-area">
+      {% if me %}Přihlášen: {{ me.name }}{% endif %}
+      <a class="btn ghost" href="/logout">Odhlásit</a>
+    </div>
+  </div>
+
+  <div class="tabs" id="main-tabs">
+    <!-- původní odkazy (zakázky, úkoly, …) se načtou ze stávajícího layoutu -->
+  </div>
+
+  <div class="container" style="margin-top: 12px;">
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+  (function(){
+    function insertTabs(){
+      var tabs = document.querySelector('.tabs') || document.getElementById('main-tabs');
+      if(!tabs) return;
+      var first = tabs.querySelector('a') || null;
+      function mk(href, label){
+        var a = document.createElement('a');
+        a.href = href;
+        a.textContent = label;
+        a.className = (first && first.className) ? first.className : 'tab';
+        return a;
+      }
+      if(!tabs.querySelector('a[href="/calendar-page"]') && !tabs.querySelector('a[href="/calendar"]')){
+        tabs.insertBefore(mk('/calendar-page','kalendář'), first);
+      }
+      if(!tabs.querySelector('a[href="/timesheets-page"]') && !tabs.querySelector('a[href="/timesheets"]')){
+        tabs.insertBefore(mk('/timesheets-page','výkazy'), first);
+      }
+    }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', insertTabs); }
+    else { insertTabs(); }
+  })();
+  </script>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const q = params.get('q');
+      const inp = document.getElementById('global-search-input');
+      if(inp && q){ inp.value = q; }
+    })();
+  </script>
+</body>
+</html>

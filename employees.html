@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaměstnanci - Green David</title>
+    <link rel="stylesheet" href="/style.css"/>
+    <script src="/app-settings.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a1628;
+            --bg-secondary: #1a2942;
+            --bg-card: rgba(255,255,255,0.05);
+            --bg-elevated: rgba(255,255,255,0.08);
+            --border-primary: rgba(255,255,255,0.1);
+            --border-medium: rgba(255,255,255,0.15);
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #B2FBA5;
+            --mint-dark: #B2FBA5;
+            --warning: #fb923c;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--mint);
+            border: 1px solid var(--mint);
+            border-radius: 8px;
+            color: #0a0e11;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--mint-dark);
+            transform: translateY(-2px);
+        }
+
+        .employees-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .employee-card {
+            background: #2d3748;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            height: auto;
+            max-height: 180px;
+            overflow: hidden;
+        }
+
+        .employee-card:hover {
+            transform: translateY(-4px);
+            border-color: #B2FBA5;
+            box-shadow: 0 4px 12px rgba(178, 251, 165, 0.2);
+        }
+
+        .employee-card:active {
+            transform: translateY(-2px);
+        }
+
+        .employee-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #B2FBA5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 0 auto 12px;
+            position: relative;
+        }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 3px solid #1a1a1a;
+        }
+
+        .status-dot.online {
+            background: #B2FBA5;
+        }
+
+        .status-dot.offline {
+            background: #6b7280;
+        }
+
+        .employee-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px 0 4px;
+        }
+
+        .employee-role {
+            color: #a0aec0;
+            font-size: 14px;
+            margin: 0 0 12px;
+        }
+
+        .employee-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .employee-stat {
+            text-align: center;
+        }
+
+        .employee-stat .value {
+            color: #B2FBA5;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .employee-stat .label {
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .employee-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .employee-actions button {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .employee-actions button:hover {
+            background: #B2FBA5;
+            color: #000;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: var(--mint);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 767px) {
+            .page {
+                padding: 12px;
+            }
+
+            .employees-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .employee-card {
+                max-width: 100%;
+                padding: 16px;
+            }
+
+            .employee-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .employee-name {
+                font-size: 16px;
+            }
+
+            .employee-role {
+                font-size: 12px;
+            }
+
+            .employee-stats {
+                gap: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+
+            .employee-stat .value {
+                font-size: 16px;
+            }
+
+            .employee-stat .label {
+                font-size: 10px;
+            }
+
+            .employee-actions {
+                margin-top: 12px;
+            }
+
+            .employee-actions button {
+                padding: 6px 10px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="page-header">
+            <h1 style="display:flex;align-items:center;gap:12px;">
+              <svg style="width:32px;height:32px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+              Zaměstnanci
+            </h1>
+            <button class="btn-primary">+ Nový zaměstnanec</button>
+        </header>
+
+        <div class="employees-grid" id="employees-grid">
+            <!-- Generováno JavaScriptem -->
+        </div>
+    </div>
+
+
+    <!-- Employee Detail Modal -->
+    <div id="employeeModal" class="employee-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;overflow-y:auto;padding:20px;align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:var(--bg-secondary);border-radius:16px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border-primary);">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--border-primary);">
+                <h2 id="modalTitle" style="margin:0;font-size:24px;color:var(--text-primary);">Detail zaměstnance</h2>
+                <button class="close-modal" onclick="closeEmployeeModal()" style="background:none;border:none;color:var(--text-secondary);font-size:32px;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">×</button>
+            </div>
+            <div class="modal-body" id="modalBody" style="padding:20px;">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/toast.js"></script>
+    <script src="/static/loading.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script src="/static/keyboard-shortcuts.js"></script>
+    <script>
+        // Globální proměnná pro zaměstnance
+        let allEmployees = [];
+        let allJobs = [];
+        let allTasks = [];
+        let allTimesheets = [];
+
+        // Načti REÁLNÁ data z API
+        async function loadEmployees() {
+            try {
+                if (window.showLoading) window.showLoading('Načítám zaměstnance...');
+                
+                // Načti všechna potřebná data
+                const [employeesRes, jobsRes, tasksRes, timesheetsRes] = await Promise.all([
+                    fetch('/api/employees'),
+                    fetch('/api/jobs'),
+                    fetch('/api/tasks').catch(() => ({ok: false})),
+                    fetch('/api/timesheets').catch(() => ({ok: false}))
+                ]);
+                
+                if (!employeesRes.ok) {
+                    throw new Error('Failed to load employees');
+                }
+                
+                const employeesData = await employeesRes.json();
+                allEmployees = employeesData.employees || [];
+                
+                if (jobsRes.ok) {
+                    const jobsData = await jobsRes.json();
+                    allJobs = jobsData.jobs || jobsData || [];
+                }
+                
+                if (tasksRes.ok) {
+                    const tasksData = await tasksRes.json();
+                    allTasks = tasksData.tasks || tasksData || [];
+                }
+                
+                if (timesheetsRes.ok) {
+                    const timesheetsData = await timesheetsRes.json();
+                    allTimesheets = timesheetsData.timesheets || timesheetsData || [];
+                }
+                
+                if (window.hideLoading) window.hideLoading();
+                
+                renderEmployees(allEmployees);
+                
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                if (window.hideLoading) window.hideLoading();
+                if (window.showToast) {
+                    window.showToast('Chyba při načítání zaměstnanců', 'error');
+                }
+                
+                // Fallback - zobraz prázdný stav
+                showEmptyState();
+            }
+        }
+
+        function renderEmployees(employees) {
+            const grid = document.getElementById('employees-grid');
+            if (!grid) return;
+            
+            if (employees.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            grid.innerHTML = employees.map(emp => {
+                const initials = getInitials(emp.name);
+                const status = emp.status || 'offline';
+                
+                return `
+                <div class="employee-card" onclick="window.location.href='/employee-detail.html?id=${emp.id}'">
+                    <div class="employee-avatar">
+                        ${initials}
+                        <div class="status-dot ${status}"></div>
+                    </div>
+                    <h3 class="employee-name">${escapeHtml(emp.name || 'Bez jména')}</h3>
+                    <p class="employee-role">${escapeHtml(emp.role || 'Zaměstnanec')}</p>
+                    
+                    <div class="employee-stats">
+                        <div class="employee-stat">
+                            <div class="value">${emp.hours_week || 0}h</div>
+                            <div class="label">Tento týden</div>
+                        </div>
+                        <div class="employee-stat">
+                            <div class="value">${emp.active_projects || 0}</div>
+                            <div class="label">Zakázky</div>
+                        </div>
+                        <div class="employee-stat">
+                            <div class="value">${emp.completed_tasks || 0}</div>
+                            <div class="label">Úkoly</div>
+                        </div>
+                    </div>
+                    
+                    <div class="employee-actions" onclick="event.stopPropagation()">
+                        <button title="Zavolat" onclick="callEmployee(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                            </svg>
+                        </button>
+                        <button title="Email" onclick="emailEmployee(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </button>
+                        <button title="Detail" onclick="showEmployeeDetail(${emp.id})">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Helper funkce pro iniciály
+        function getInitials(name) {
+            if (!name) return '??';
+            return name
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+
+        function showEmptyState() {
+            const grid = document.getElementById('employees-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5);">
+                    <svg class="icon-xl" style="width: 80px; height: 80px; margin: 0 auto 24px; stroke: rgba(255,255,255,0.3);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;display:flex;align-items:center;justify-content:center;gap:8px;">
+                      <svg style="width:24px;height:24px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                      </svg>
+                      Žádní zaměstnanci
+                    </h3>
+                    <p style="margin-bottom: 24px;">Přidejte prvního zaměstnance</p>
+                </div>
+            `;
+        }
+
+        function callEmployee(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (emp) {
+                if (window.showToast) {
+                    window.showToast(`Volám ${emp.name}...`, 'info');
+                }
+                // Můžeš přidat skutečné volání: window.location.href = `tel:${emp.phone}`;
+            }
+        }
+
+        function emailEmployee(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (emp) {
+                if (window.showToast) {
+                    window.showToast(`Otevírám email pro ${emp.name}...`, 'info');
+                }
+                // Můžeš přidat skutečný email: window.location.href = `mailto:${emp.email}`;
+            }
+        }
+
+        function showEmployeeDetail(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (!emp) {
+                if (window.showToast) {
+                    window.showToast('Zaměstnanec nenalezen', 'error');
+                }
+                return;
+            }
+            
+            const modal = document.getElementById('employeeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            if (!modal || !modalTitle || !modalBody) return;
+            
+            modalTitle.textContent = emp.name || 'Detail zaměstnance';
+            
+            // Vypočítej statistiky
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weeklyHours = allTimesheets
+                .filter(ts => ts.employee_id === id && new Date(ts.date) >= weekStart)
+                .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            
+            const activeJobs = allJobs.filter(j => {
+                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+                return assignments.length > 0 && j.status !== 'completed' && j.status !== 'Dokončeno';
+            }).length;
+            
+            const empTasks = allTasks.filter(t => t.employee_id === id && t.status !== 'completed').length;
+            
+            // Měsíční hodiny
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthlyHours = allTimesheets
+                .filter(ts => ts.employee_id === id && new Date(ts.date) >= monthStart)
+                .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            
+            // Aktivní zakázky
+            const empJobs = allJobs.filter(j => {
+                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+                return assignments.length > 0;
+            });
+            
+            modalBody.innerHTML = `
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Osobní informace
+                    </h4>
+                    <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Jméno</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">${escapeHtml(emp.name || '—')}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Role</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">${escapeHtml(emp.role || '—')}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Status</div>
+                            <div class="value" style="font-size:14px;color:var(--text-primary);font-weight:500;">
+                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${emp.status === 'online' ? '#B2FBA5' : '#6b7280'};margin-right:6px;"></span>
+                                ${emp.status === 'online' ? 'Online' : 'Offline'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Statistiky
+                    </h4>
+                    <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Tento týden</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${weeklyHours.toFixed(1)}h</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Tento měsíc</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${monthlyHours.toFixed(1)}h</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Aktivní zakázky</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${activeJobs}</div>
+                        </div>
+                        <div class="info-item" style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                            <div class="label" style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">Otevřené úkoly</div>
+                            <div class="value" style="font-size:20px;color:#B2FBA5;font-weight:bold;">${empTasks}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${empJobs.length > 0 ? `
+                <div class="detail-section" style="margin-bottom:24px;">
+                    <h4 style="color:var(--text-primary);font-size:18px;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                        <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            <path d="M9 12h6"/>
+                            <path d="M9 16h6"/>
+                        </svg>
+                        Aktivní zakázky
+                    </h4>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        ${empJobs.slice(0, 5).map(job => `
+                            <div style="padding:12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-primary);">
+                                <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">${escapeHtml(job.title || job.název || 'Bez názvu')}</div>
+                                <div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(job.client || job.klient || '—')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeEmployeeModal() {
+            const modal = document.getElementById('employeeModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Zavři modal při kliknutí na pozadí
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('employeeModal');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeEmployeeModal();
+                    }
+                });
+            }
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Načti při načtení stránky
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEmployees();
+        });
+    </script>
+    <div id="bottom-nav-container"></div>
+    <script src="/static/bottom-nav.js"></script>
+    <link rel="stylesheet" href="/static/icons.css">
+</body>
+</html>

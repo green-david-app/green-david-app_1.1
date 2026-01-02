@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Úkoly - Green David</title>
+    <link rel="stylesheet" href="/style.css"/>
+    <script src="/app-settings.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a1628;
+            --bg-secondary: #1a2942;
+            --bg-card: rgba(255,255,255,0.05);
+            --bg-elevated: rgba(255,255,255,0.08);
+            --border-primary: rgba(255,255,255,0.1);
+            --border-medium: rgba(255,255,255,0.15);
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #B2FBA5;
+            --mint-dark: #B2FBA5;
+            --warning: #fb923c;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--mint);
+            border: 1px solid var(--mint);
+            border-radius: 8px;
+            color: #0a0e11;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--mint-dark);
+            transform: translateY(-2px);
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .filter-btn.active {
+            background: #B2FBA5;
+            color: #000;
+            border-color: #B2FBA5;
+        }
+
+        .tasks-kanban {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .tasks-kanban {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .task-column {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 400px;
+        }
+
+        .task-column h3 {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-column .count {
+            background: #B2FBA5;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            border-color: #B2FBA5;
+            transform: translateX(4px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item h4 {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .task-item.completed h4 {
+            text-decoration: line-through;
+        }
+
+        .task-item .task-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-header h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-body input,
+        .modal-body select,
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .modal-body input:focus,
+        .modal-body select:focus,
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #B2FBA5;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: var(--mint);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="page-header">
+            <h1>✅ Úkoly</h1>
+            <button class="btn-primary" id="btn-new-task">+ Nový úkol</button>
+        </header>
+
+        <!-- Filtry -->
+        <div class="filters-bar">
+            <button class="filter-btn active" data-filter="all">Všechny</button>
+            <button class="filter-btn" data-filter="my">Moje úkoly</button>
+            <button class="filter-btn" data-filter="high">🔴 Vysoká priorita</button>
+            <button class="filter-btn" data-filter="today">Dnes</button>
+        </div>
+
+        <!-- Kanban -->
+        <div class="tasks-kanban">
+            <div class="task-column">
+                <h3>📝 K dokončení <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-todo"></div>
+            </div>
+
+            <div class="task-column">
+                <h3>🔄 Probíhá <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-progress"></div>
+            </div>
+
+            <div class="task-column">
+                <h3>✅ Hotovo <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-done"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nový úkol</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <input type="text" id="task-title" placeholder="Název úkolu" required>
+                    <textarea id="task-desc" placeholder="Popis" rows="3"></textarea>
+                    <input type="date" id="task-deadline" placeholder="Deadline">
+                    <select id="task-priority">
+                        <option value="low">🟢 Nízká</option>
+                        <option value="medium" selected>🟡 Střední</option>
+                        <option value="high">🔴 Vysoká</option>
+                    </select>
+                    <select id="task-assignee">
+                        <option value="">Vyberte zaměstnance</option>
+                        <option>Petr Novák</option>
+                        <option>Jana Svobodová</option>
+                        <option>Martin Dvořák</option>
+                    </select>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal">Zrušit</button>
+                <button class="btn-primary" id="btn-save-task">Vytvořit</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="/static/toast.js"></script>
+    <script src="/static/loading.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script src="/static/keyboard-shortcuts.js"></script>
+    <script>
+        const mockTasks = [
+            {
+                id: 1,
+                title: "Objednat materiál na Třebonice",
+                description: "Obklady, lepidlo, spárovací hmota",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-15",
+                assignee: "Petr Novák"
+            },
+            {
+                id: 2,
+                title: "Kontrola elektroinstalace",
+                status: "progress",
+                priority: "medium",
+                deadline: "2026-01-20",
+                assignee: "Jana Svobodová"
+            },
+            {
+                id: 3,
+                title: "Zavolat klientovi",
+                status: "done",
+                priority: "low",
+                deadline: "2026-01-10",
+                assignee: "Martin Dvořák"
+            },
+            {
+                id: 4,
+                title: "Připravit fakturu",
+                description: "Faktura za dokončenou zakázku",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-18",
+                assignee: "Eva Nováková"
+            },
+            {
+                id: 5,
+                title: "Aktualizovat web",
+                status: "progress",
+                priority: "low",
+                deadline: null,
+                assignee: null
+            }
+        ];
+
+        let tasks = [];
+        let currentFilter = 'all';
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                if (res.ok) {
+                    const data = await res.json();
+                    tasks = data.tasks || [];
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (e) {
+                console.warn('API not available, using mock data:', e);
+                tasks = [...mockTasks];
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const statusMap = {
+                todo: 'tasks-todo',
+                progress: 'tasks-progress',
+                done: 'tasks-done'
+            };
+
+            Object.keys(statusMap).forEach(status => {
+                const container = document.getElementById(statusMap[status]);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                let filteredTasks = tasks.filter(t => {
+                    if (t.status !== status) return false;
+                    
+                    // Apply filters
+                    if (currentFilter === 'my') {
+                        // Mock - would check current user
+                        return t.assignee !== null;
+                    }
+                    if (currentFilter === 'high') {
+                        return t.priority === 'high';
+                    }
+                    if (currentFilter === 'today') {
+                        if (!t.deadline) return false;
+                        const today = new Date().toISOString().slice(0, 10);
+                        return t.deadline === today;
+                    }
+                    return true;
+                });
+                
+                filteredTasks.forEach(task => {
+                    const item = createTaskItem(task);
+                    container.appendChild(item);
+                });
+                
+                // Update count
+                const column = container.closest('.task-column');
+                if (column) {
+                    column.querySelector('.count').textContent = filteredTasks.length;
+                }
+            });
+        }
+
+        function createTaskItem(task) {
+            const item = document.createElement('div');
+            item.className = `task-item ${task.status === 'done' ? 'completed' : ''}`;
+            item.dataset.taskId = task.id;
+            
+            const priorityIcon = {
+                high: '🔴',
+                medium: '🟡',
+                low: '🟢'
+            }[task.priority] || '🟡';
+            
+            item.innerHTML = `
+                <h4>${escapeHtml(task.title)}</h4>
+                ${task.description ? `<p style="color: rgba(255,255,255,0.6); font-size: 12px; margin: 4px 0;">${escapeHtml(task.description)}</p>` : ''}
+                <div class="task-meta">
+                    <span>${priorityIcon}</span>
+                    ${task.deadline ? `<span>📅 ${task.deadline}</span>` : ''}
+                    ${task.assignee ? `<span>👤 ${escapeHtml(task.assignee)}</span>` : ''}
+                </div>
+            `;
+            
+            // Click to change status
+            item.addEventListener('click', () => {
+                if (task.status === 'todo') task.status = 'progress';
+                else if (task.status === 'progress') task.status = 'done';
+                else task.status = 'todo';
+                renderTasks();
+                showToast('Status úkolu změněn', 'success');
+            });
+            
+            return item;
+        }
+
+        // Modal
+        document.getElementById('btn-new-task')?.addEventListener('click', () => {
+            document.getElementById('task-modal').classList.add('active');
+        });
+
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('task-modal').classList.remove('active');
+            });
+        });
+
+        document.getElementById('btn-save-task')?.addEventListener('click', () => {
+            const title = document.getElementById('task-title').value.trim();
+            if (!title) {
+                showToast('Vyplňte název úkolu', 'warning');
+                return;
+            }
+            
+            const newTask = {
+                id: Math.max(...tasks.map(t => t.id), 0) + 1,
+                title: title,
+                description: document.getElementById('task-desc').value.trim(),
+                status: 'todo',
+                priority: document.getElementById('task-priority').value,
+                deadline: document.getElementById('task-deadline').value || null,
+                assignee: document.getElementById('task-assignee').value || null
+            };
+            
+            tasks.push(newTask);
+            renderTasks();
+            document.getElementById('task-modal').classList.remove('active');
+            document.getElementById('task-form').reset();
+            showToast('Úkol vytvořen', 'success');
+        });
+
+        // Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderTasks();
+            });
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                loadTasks();
+            });
+        } else {
+            loadTasks();
+        }
+    </script>
+    <div id="bottom-nav-container"></div>
+    <script src="/static/bottom-nav.js"></script>
+    <link rel="stylesheet" href="/static/icons.css">
+</body>
+</html>

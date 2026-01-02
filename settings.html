@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nastavení — green david app</title>
+  <link rel="icon" href="/logo.svg">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app-settings.js"></script>
+  <style>
+    :root {
+      --bg-primary: #1a1a1a;
+      --bg-card: #1f2428;
+      --bg-card-hover: #2a2f35;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --text-on-light: #0a0e11;
+      --accent-green: #B2FBA5;
+      --accent-blue: #60a5fa;
+      --accent-purple: #a78bfa;
+      --accent-orange: #fb923c;
+      --border-primary: #353b41;
+      --transition: 200ms ease;
+    }
+    
+    body {
+      margin: 0;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: system-ui, -apple-system, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      padding-bottom: 100px;
+    }
+    
+    .page-header {
+      padding: 20px 16px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-primary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-primary);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+    
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .settings-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-primary);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all var(--transition);
+    }
+    
+    .settings-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-green);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-primary);
+    }
+    
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(178, 251, 165, 0.1);
+      border-radius: 10px;
+    }
+    .card-icon .icon {
+      width: 24px;
+      height: 24px;
+      stroke: #B2FBA5;
+      fill: none;
+      stroke-width: 2;
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-primary);
+    }
+    
+    .setting-item {
+      margin-bottom: 20px;
+    }
+    
+    .setting-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .setting-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 30px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #2a2f35;
+      transition: 0.3s;
+      border-radius: 30px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+      background-color: var(--accent-green);
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+    
+    .color-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .color-option {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+    }
+    
+    .color-option:hover {
+      transform: scale(1.05);
+    }
+    
+    .color-option.active {
+      border-color: var(--text-primary);
+      box-shadow: 0 0 0 2px var(--bg-primary);
+    }
+    
+    .color-option[data-color="green"] { background: var(--accent-green); }
+    .color-option[data-color="blue"] { background: var(--accent-blue); }
+    .color-option[data-color="purple"] { background: var(--accent-purple); }
+    .color-option[data-color="orange"] { background: var(--accent-orange); }
+    
+    .color-option::after {
+      content: "✓";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    
+    .color-option.active::after {
+      opacity: 1;
+    }
+    
+    .font-size-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .size-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-weight: 500;
+    }
+    
+    .size-btn:hover {
+      background: var(--bg-card);
+      border-color: var(--accent-green);
+    }
+    
+    .size-btn.active {
+      background: var(--accent-green);
+      color: var(--text-on-light);
+      border-color: var(--accent-green);
+    }
+    
+    .file-upload {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .file-upload input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    .file-upload-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-card-hover);
+      border: 1px dashed var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    
+    .file-upload-btn:hover {
+      border-color: var(--accent-green);
+      background: var(--bg-card);
+    }
+    
+    .preview-image {
+      margin-top: 12px;
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 12px;
+      border: 1px solid var(--border-primary);
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all var(--transition);
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 2px rgba(178, 251, 165, 0.2);
+    }
+    
+    .slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-card-hover);
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      cursor: pointer;
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      cursor: pointer;
+      border: none;
+    }
+    
+    .slider-value {
+      text-align: center;
+      margin-top: 8px;
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--accent-green);
+    }
+    
+    .checkbox-item label {
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+    
+    .select-input {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 14px;
+    }
+    
+    .btn-primary {
+      background: var(--accent-green);
+      color: var(--text-on-light);
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-green);
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border-primary);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--bg-card);
+      border-color: var(--accent-green);
+    }
+    
+    .save-indicator {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      background: var(--accent-green);
+      color: var(--text-on-light);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all var(--transition);
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .save-indicator.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-card-hover);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-green);
+      transition: width 0.3s ease;
+    }
+    
+    .reset-btn {
+      margin-top: 32px;
+      text-align: center;
+    }
+    
+    .danger-zone {
+      border: 2px solid #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .color-picker-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1 class="page-title" style="display:flex;align-items:center;gap:12px;">
+      <svg style="width:32px;height:32px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+      </svg>
+      Nastavení
+    </h1>
+  </div>
+  
+  <div class="container">
+    <div class="settings-grid">
+      <!-- VZHLED A TÉMA -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Vzhled a téma</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">
+            <svg id="theme-icon" style="width:18px;height:18px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+            Dark Mode
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Barva akcentu</label>
+          <div class="color-picker-grid">
+            <div class="color-option active" data-color="green" data-hex="#B2FBA5"></div>
+            <div class="color-option" data-color="blue" data-hex="#60a5fa"></div>
+            <div class="color-option" data-color="purple" data-hex="#a78bfa"></div>
+            <div class="color-option" data-color="orange" data-hex="#fb923c"></div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Velikost fontu</label>
+          <div class="font-size-buttons">
+            <button class="size-btn" data-size="small">Malá</button>
+            <button class="size-btn active" data-size="medium">Střední</button>
+            <button class="size-btn" data-size="large">Velká</button>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Režim zobrazení</label>
+          <select class="select-input" id="viewMode">
+            <option value="cards">Karty</option>
+            <option value="compact">Kompaktní seznam</option>
+            <option value="table">Tabulky</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- FIREMNÍ IDENTITA -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">🏢</div>
+          <h2 class="card-title">Firemní identita</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Logo firmy</label>
+          <div class="file-upload">
+            <input type="file" id="logoUpload" accept="image/jpeg,image/png" />
+            <div class="file-upload-btn">
+              <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span>Nahrát logo</span>
+            </div>
+          </div>
+          <img id="logoPreview" class="preview-image" style="display:none;" />
+          <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+            Doporučená velikost: 200x200px
+          </p>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Název firmy</label>
+          <input type="text" class="form-input" id="companyName" placeholder="green david" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Slogan/popis</label>
+          <input type="text" class="form-input" id="companySlogan" placeholder="interní systém" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Barva loga/brandu</label>
+          <input type="color" class="form-input" id="brandColor" value="#B2FBA5" style="height: 50px;" />
+        </div>
+      </div>
+      
+      <!-- UŽIVATELSKÝ PROFIL -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Uživatelský profil</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Profilová fotka</label>
+          <div class="file-upload">
+            <input type="file" id="avatarUpload" accept="image/jpeg,image/png" />
+            <div class="file-upload-btn">
+              <svg style="width:20px;height:20px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span>Nahrát fotku</span>
+            </div>
+          </div>
+          <img id="avatarPreview" class="preview-image" style="display:none;" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Jméno a příjmení</label>
+          <input type="text" class="form-input" id="userName" placeholder="Jan Novák" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Email</label>
+          <input type="email" class="form-input" id="userEmail" placeholder="jan@example.com" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Telefon</label>
+          <input type="tel" class="form-input" id="userPhone" placeholder="+420 123 456 789" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Role</label>
+          <select class="select-input" id="userRole">
+            <option value="admin">Admin</option>
+            <option value="employee">Zaměstnanec</option>
+            <option value="view-only">View Only</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Preferovaný jazyk</label>
+          <select class="select-input" id="userLanguage">
+            <option value="cs">Čeština</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="changePasswordBtn">Změnit heslo</button>
+        </div>
+      </div>
+      
+      <!-- NOTIFIKACE -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Notifikace</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Email notifikace</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="notifNewJobs" checked />
+              <label for="notifNewJobs">Nové zakázky</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="notifDeadlines" checked />
+              <label for="notifDeadlines">Blížící se deadline</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="notifTasks" checked />
+              <label for="notifTasks">Nové úkoly</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="notifTeam" checked />
+              <label for="notifTeam">Změny v týmu</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Denní souhrn emailem</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="dailySummary">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Čas odeslání souhrnu</label>
+          <input type="time" class="form-input" id="summaryTime" value="08:00" />
+        </div>
+      </div>
+      
+      <!-- PRACOVNÍ NASTAVENÍ -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Pracovní nastavení</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Výchozí pohled při přihlášení</label>
+          <select class="select-input" id="defaultView">
+            <option value="dashboard">Dashboard</option>
+            <option value="calendar">Kalendář</option>
+            <option value="timesheets">Výkazy</option>
+            <option value="jobs">Zakázky</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Délka pracovního dne: <span id="workHoursValue">8</span> hodin</label>
+          <input type="range" class="slider" id="workHours" min="6" max="12" value="8" />
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Pracovní dny v týdnu</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="dayMon" checked />
+              <label for="dayMon">Pondělí</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="dayTue" checked />
+              <label for="dayTue">Úterý</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="dayWed" checked />
+              <label for="dayWed">Středa</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="dayThu" checked />
+              <label for="dayThu">Čtvrtek</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="dayFri" checked />
+              <label for="dayFri">Pátek</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="daySat" />
+              <label for="daySat">Sobota</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="daySun" />
+              <label for="daySun">Neděle</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Začátek pracovního týdne</label>
+          <select class="select-input" id="weekStart">
+            <option value="monday">Pondělí</option>
+            <option value="sunday">Neděle</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Formát data</label>
+          <select class="select-input" id="dateFormat">
+            <option value="DD.MM.YYYY" selected>DD.MM.YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Časové pásmo</label>
+          <select class="select-input" id="timezone">
+            <option value="auto">Automaticky (Europe/Prague)</option>
+            <option value="UTC">UTC</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="America/New_York">America/New_York</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- DATA A EXPORT -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Data a export</h2>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-primary" id="exportDataBtn" style="width: 100%;">Stáhnout všechna data</button>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+            Poslední export: <span id="lastExport">Nikdy</span>
+          </p>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Import dat (CSV)</label>
+          <div class="file-upload">
+            <input type="file" id="importData" accept=".csv" />
+            <div class="file-upload-btn">
+              <svg style="width:20px;height:20px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span>Nahrát CSV soubor</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Automatická záloha</label>
+          <select class="select-input" id="backupFrequency">
+            <option value="none">Vypnuto</option>
+            <option value="daily">Denní</option>
+            <option value="weekly">Týdenní</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="createBackupBtn" style="width: 100%;">Vytvořit zálohu nyní</button>
+        </div>
+      </div>
+      
+      <!-- SOUKROMÍ A BEZPEČNOST -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Soukromí a bezpečnost</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Dvoufaktorová autentizace</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="twoFactorAuth">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Historie přihlášení</label>
+          <div id="loginHistory" style="font-size: 12px; color: var(--text-secondary);">
+            Načítání...
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Aktivní sessions</label>
+          <div id="activeSessions" style="font-size: 12px; color: var(--text-secondary);">
+            Načítání...
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="downloadGDPRBtn" style="width: 100%;">Stáhnout moje data (GDPR)</button>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-danger" id="deleteAccountBtn" style="width: 100%;">Smazat můj účet</button>
+        </div>
+      </div>
+      
+      <!-- VÝKON A ÚLOŽIŠTĚ -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <h2 class="card-title">Výkon a úložiště</h2>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Použité úložiště: 2.3 GB / 10 GB</label>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 23%;"></div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+            Obrázky: 1.2 GB • Dokumenty: 0.8 GB • Databáze: 0.3 GB
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="clearCacheBtn" style="width: 100%;">Vymazat cache</button>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label">Vymazat logy starší než</label>
+          <select class="select-input" id="logRetention">
+            <option value="7">7 dní</option>
+            <option value="30" selected>30 dní</option>
+            <option value="90">90 dní</option>
+            <option value="365">1 rok</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- O APLIKACI -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <h2 class="card-title">O aplikaci</h2>
+        </div>
+        
+        <div class="setting-item">
+          <p style="font-size: 14px; color: var(--text-secondary);">
+            <strong>Verze:</strong> v1.2.3<br>
+            <strong>Poslední aktualizace:</strong> 31.12.2024<br>
+            <strong>Licence:</strong> Proprietární
+          </p>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="changelogBtn" style="width: 100%;">Zobrazit changelog</button>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="supportBtn" style="width: 100%;">Kontakt na podporu</button>
+        </div>
+        
+        <div class="setting-item">
+          <button class="btn btn-secondary" id="docsBtn" style="width: 100%;">Dokumentace</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- RESET BUTTON -->
+    <div class="reset-btn">
+      <button class="btn btn-danger" id="resetSettingsBtn">Obnovit výchozí nastavení</button>
+    </div>
+  </div>
+  
+  <!-- SAVE INDICATOR -->
+  <div class="save-indicator" id="saveIndicator">
+    ✓ Uloženo
+  </div>
+  
+
+<!-- More Menu (Expandable) -->
+<div id="more-menu" class="more-menu">
+  <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+  <div class="more-menu-panel">
+    <div class="more-menu-header">
+      <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+      <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div class="more-menu-content">
+      <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>přehled</span>
+      </a>
+      <a href="/calendar.html" class="more-menu-item">
+        <span>kalendář</span>
+      </a>
+      <a href="/timesheets.html" class="more-menu-item">
+        <span>výkazy hodin</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('jobs'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>zakázky</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('tasks'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>úkoly</span>
+      </a>
+      <a href="/employees.html" class="more-menu-item">
+        <span>zaměstnanci</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('warehouse'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>sklad</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>archiv zakázek</span>
+      </a>
+      <a href="/settings.html" class="more-menu-item">
+        <span>nastavení</span>
+      </a>
+    </div>
+  </div>
+</div>
+  
+  <script src="settings.js"></script>
+  <div id="bottom-nav-container"></div>
+  <script src="/static/bottom-nav.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
+</body>
+</html>
+
