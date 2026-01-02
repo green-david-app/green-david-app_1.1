@@ -3048,6 +3048,36 @@
             return skeleton;
         }
 
+        function showSkeletonCards(count = 6) {
+            const containers = {
+                'new': document.getElementById('cards-new'),
+                'active': document.getElementById('cards-active'),
+                'paused': document.getElementById('cards-paused'),
+                'completed': document.getElementById('cards-completed')
+            };
+            Object.values(containers).forEach(container => {
+                if (!container) return;
+                container.innerHTML = '';
+                // Přidej 2 skeleton karty do každého sloupce
+                for (let i = 0; i < 2; i++) {
+                    const skeleton = createSkeletonCard();
+                    container.appendChild(skeleton);
+                }
+            });
+        }
+
+        function hideSkeletonCards() {
+            document.querySelectorAll('.skeleton-card').forEach(card => {
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 300);
+            });
+        }
+
+        // Export to window
+        window.showSkeletonCards = showSkeletonCards;
+        window.hideSkeletonCards = hideSkeletonCards;
+        window.createSkeletonCard = createSkeletonCard;
+
         // renderKanban() je definována v /static/js/jobs/jobs-kanban.js
         // Použijeme tu z externího souboru, ne duplikát zde
         
