@@ -601,15 +601,15 @@ def api_jobs():
             if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
             updates = []; params = []
             if "title" in data and data["title"] is not None:
-                updates += _job_title_update_set(params, title)
+                updates += _job_title_update_set(params, data["title"])
             for f in ("client","status","city","code","date","note","created_date","start_date","progress"):
                 if f in data:
                     if f=="date" or f=="created_date" or f=="start_date":
-                        v = _normalize_date(data[f])
+                        v = _normalize_date(data[f]) if data[f] else None
                     elif f=="progress":
                         v = int(data[f]) if data[f] is not None else 0
                     else:
-                        v = data[f]
+                        v = data[f] if data[f] is not None else ""
                     updates.append(f"{f}=?"); params.append(v)
             # Touch legacy updated_at if present
             info = _jobs_info()
