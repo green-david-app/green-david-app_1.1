@@ -2105,6 +2105,8 @@
                     status: mapStatusToKanban(job.status),
                     priority: job.priority || 'medium',
                     deadline: job.date || null,
+                    created_date: job.created_date || null,
+                    start_date: job.start_date || null,
                     progress: calculateProgress(job),
                     budget: job.budget || 0,
                     actualCost: job.actual_cost || 0,
