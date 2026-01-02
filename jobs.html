@@ -3291,6 +3291,7 @@
             }
             
             const statusValue = document.getElementById('edit-status').value;
+            const progressValue = parseInt(document.getElementById('edit-progress').value) || 0;
             const updateData = {
                 id: currentJobId,
                 title: title,
@@ -3300,7 +3301,8 @@
                 created_date: createdDate || null,
                 start_date: startDate || null,
                 status: statusValue, // Použij přímo hodnotu z selectu (Plán, Aktivní, atd.)
-                note: document.getElementById('edit-notes').value.trim()
+                note: document.getElementById('edit-notes').value.trim(),
+                progress: progressValue
             };
             
             try {

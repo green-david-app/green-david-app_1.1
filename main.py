@@ -171,6 +171,10 @@ def _migrate_completed_at():
             db.execute("ALTER TABLE jobs ADD COLUMN start_date TEXT")
             db.commit()
             print("[DB] Added column: start_date")
+        if "progress" not in cols:
+            db.execute("ALTER TABLE jobs ADD COLUMN progress INTEGER DEFAULT 0")
+            db.commit()
+            print("[DB] Added column: progress")
     except Exception as e:
         print(f"[DB] Migration warning: {e}")
 
@@ -354,11 +358,12 @@ def _job_select_all():
     info = _jobs_info()
     base_cols = "id, client, status, city, code, date, note"
     date_cols = ", created_date, start_date" if "created_date" in _jobs_info() else ""
+    progress_col = ", progress" if "progress" in _jobs_info() else ""
     if "title" in info:
-        return f"SELECT title, {base_cols}{date_cols} FROM jobs"
+        return f"SELECT title, {base_cols}{date_cols}{progress_col} FROM jobs"
     if "name" in info:
-        return f"SELECT name AS title, {base_cols}{date_cols} FROM jobs"
-    return f"SELECT '' AS title, {base_cols}{date_cols} FROM jobs"
+        return f"SELECT name AS title, {base_cols}{date_cols}{progress_col} FROM jobs"
+    return f"SELECT '' AS title, {base_cols}{date_cols}{progress_col} FROM jobs"
 
 def _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=None):
     info = _jobs_info()
@@ -597,9 +602,14 @@ def api_jobs():
             updates = []; params = []
             if "title" in data and data["title"] is not None:
                 updates += _job_title_update_set(params, title)
-            for f in ("client","status","city","code","date","note"):
+            for f in ("client","status","city","code","date","note","created_date","start_date","progress"):
                 if f in data:
-                    v = _normalize_date(data[f]) if f=="date" else data[f]
+                    if f=="date" or f=="created_date" or f=="start_date":
+                        v = _normalize_date(data[f])
+                    elif f=="progress":
+                        v = int(data[f]) if data[f] is not None else 0
+                    else:
+                        v = data[f]
                     updates.append(f"{f}=?"); params.append(v)
             # Touch legacy updated_at if present
             info = _jobs_info()
