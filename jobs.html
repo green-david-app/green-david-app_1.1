@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="/style.css"/>
     <script src="/app-settings.js"></script>
     <link rel="stylesheet" href="/static/icons.css">
+    
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/layouts.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/pages/jobs.css">
+    
     <style>
         :root {
             --bg-primary: #0a1628;
@@ -1771,6 +1778,168 @@
             color: #fff;
             font-size: inherit;
             font-weight: inherit;
+        }
+
+        /* ============================================
+           LOADING STATES
+           ============================================ */
+
+        /* 1. Skeleton screens */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0.05) 25%,
+                rgba(255,255,255,0.1) 50%,
+                rgba(255,255,255,0.05) 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-card {
+            background: var(--bg-card, rgba(255,255,255,0.05));
+            border: 1px solid var(--border-primary, rgba(255,255,255,0.1));
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-header {
+            height: 20px;
+            width: 70%;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-line {
+            height: 14px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-line.short {
+            width: 40%;
+        }
+
+        .skeleton-line.medium {
+            width: 60%;
+        }
+
+        /* 2. Button loading state */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 3. Overlay loading (fullscreen) */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(159,212,161,0.3);
+            border-top-color: #9FD4A1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            color: var(--text-primary, #fff);
+            margin-top: 16px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* 4. Inline loading (small) */
+        .loading-inline {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #9FD4A1;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        /* 5. Card loading state (when refreshing) */
+        .job-card.loading {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .job-card.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            margin: -12px 0 0 -12px;
+            border: 3px solid rgba(159,212,161,0.3);
+            border-top-color: #9FD4A1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* 6. Drag & Drop ghost state */
+        .job-card.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+            transition: all 0.2s;
+        }
+
+        .drag-ghost {
+            z-index: 10000;
+            pointer-events: none;
+        }
             width: 100%;
             padding: 0;
         }
@@ -2223,6 +2392,70 @@
         </div>
     </div>
 
+    <script>
+        // ============================================
+        // GLOBAL ERROR BOUNDARY
+        // ============================================
+
+        // Catch all unhandled errors
+        window.addEventListener('error', (event) => {
+            console.error('Unhandled error:', event.error);
+            
+            // Show user-friendly message
+            if (typeof window.showToast === 'function') {
+                window.showToast('Něco se pokazilo. Zkuste obnovit stránku.', 'error');
+            }
+            
+            // Log to error tracking
+            if (window.Sentry) {
+                window.Sentry.captureException(event.error);
+            }
+            
+            // Prevent default behavior
+            event.preventDefault();
+        });
+
+        // Catch unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            
+            if (typeof window.showToast === 'function') {
+                window.showToast('Operace selhala. Zkuste to znovu.', 'error');
+            }
+            
+            if (window.Sentry) {
+                window.Sentry.captureException(event.reason);
+            }
+            
+            event.preventDefault();
+        });
+
+        // Network status monitoring
+        window.addEventListener('offline', () => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Ztraceno připojení k internetu', 'warning', 0);
+            }
+        });
+
+        window.addEventListener('online', () => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Připojení obnoveno', 'success');
+            }
+            // Reload data if function exists
+            if (typeof loadJobs === 'function') {
+                setTimeout(() => loadJobs(), 500);
+            }
+        });
+    </script>
+    <script src="/static/js/shared/error-handler.js"></script>
+    <script src="/static/js/shared/validation.js"></script>
+    <script src="/static/js/jobs/jobs-utils.js"></script>
+    <script src="/static/js/jobs/jobs-api.js"></script>
+    <script src="/static/js/jobs/jobs-filters.js"></script>
+    <script src="/static/js/jobs/jobs-kanban.js"></script>
+    <script src="/static/js/jobs/jobs-timeline.js"></script>
+    <script src="/static/js/jobs/jobs-list.js"></script>
+    <script src="/static/js/jobs/jobs-modals.js"></script>
     <script src="/static/toast.js"></script>
     <script src="/static/loading.js"></script>
     <script src="/static/keyboard-shortcuts.js"></script>
@@ -2257,9 +2490,7 @@
         // Load data
         async function loadJobs() {
             try {
-                // Zobraz skeleton loading při načítání
-                renderView(); // Zobrazí skeleton karty
-                
+                // Skeleton se zobrazí automaticky v renderKanban() když jobs.length === 0
                 if (window.showLoading) window.showLoading('Načítám zakázky...');
                 
                 // Vytvoř AbortController pro timeout
@@ -2300,7 +2531,11 @@
                 if (employeesRes.ok) {
                     const empData = await employeesRes.json();
                     employees = empData.employees || [];
+                    localStorage.setItem('cachedEmployees', JSON.stringify(employees));
                 }
+                
+                // Cache for offline use
+                saveJobsToCache(apiJobs);
                 
                 // Mapuj data z API
                 jobs = apiJobs.map(job => ({
@@ -2327,38 +2562,80 @@
                     comments: job.comments || []
                 }));
                 
+                // Cache for offline use
+                saveJobsToCache(jobs);
+                
                 if (window.hideLoading) window.hideLoading();
                 
-                if (jobs.length === 0) {
-                    showEmptyState();
-                } else {
+                // Vždy zavolej renderView - skeleton se zobrazí automaticky pokud jobs.length === 0
+                populateFilters();
+                applyFilters();
+                renderView();
+                updateStats();
+                checkDeadlineNotifications();
+                
+            } catch (e) {
+                hideSkeletonCards();
+                if (window.hideLoading) window.hideLoading();
+                
+                // Try to load from cache
+                const cachedJobs = loadJobsFromCache();
+                
+                if (cachedJobs && cachedJobs.length > 0) {
+                    jobs = cachedJobs.map(job => ({
+                        id: job.id,
+                        title: job.title || job.name || `Zakázka ${job.id}`,
+                        client: job.client || '—',
+                        address: job.city || job.address || '—',
+                        status: mapStatusToKanban(job.status),
+                        priority: job.priority || 'medium',
+                        deadline: job.date || null,
+                        created_date: job.created_date || null,
+                        start_date: job.start_date || null,
+                        progress: calculateProgress(job),
+                        budget: job.budget || 0,
+                        actualCost: job.actual_cost || 0,
+                        type: job.type || '',
+                        manager: job.manager || '',
+                        team: job.team || [],
+                        tasks: job.tasks || 0,
+                        completedTasks: job.completed_tasks || 0,
+                        photo: job.photo || null,
+                        lastActivity: job.updated_at || job.created_at || null,
+                        notes: job.note || '',
+                        comments: job.comments || []
+                    }));
                     populateFilters();
                     applyFilters();
                     renderView();
                     updateStats();
-                    checkDeadlineNotifications();
+                    
+                    if (window.showToast) {
+                        window.showToast('Zobrazuji uložená data (offline mode)', 'warning', 5000);
+                    }
+                } else {
+                    // No cache available - show error state
+                    showErrorState('Nepodařilo se načíst zakázky. Zkontrolujte připojení k internetu.');
+                    
+                    // Use error handler if available
+                    if (window.ErrorHandler) {
+                        window.ErrorHandler.handleError(e, 'loadJobs');
+                    } else {
+                        // Fallback error handling
+                        let errorMessage = 'Chyba při načítání zakázek';
+                        if (e.message === 'TIMEOUT') {
+                            errorMessage = 'Připojení je pomalé. Zkuste obnovit stránku.';
+                        } else if (e.message === 'OFFLINE' || !navigator.onLine) {
+                            errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
+                        } else if (e.message) {
+                            errorMessage = e.message;
+                        }
+                        if (window.showToast) {
+                            window.showToast(errorMessage, 'error');
+                        }
+                    }
+                    console.error('Error loading jobs:', e);
                 }
-                
-            } catch (e) {
-                console.error('Error loading jobs:', e);
-                if (window.hideLoading) window.hideLoading();
-                
-                // Zobraz uživatelsky přívětivou chybovou zprávu
-                let errorMessage = 'Chyba při načítání zakázek';
-                
-                if (e.message === 'TIMEOUT') {
-                    errorMessage = 'Připojení je pomalé. Zkuste obnovit stránku.';
-                } else if (e.message === 'OFFLINE' || !navigator.onLine) {
-                    errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
-                } else if (e.message) {
-                    errorMessage = e.message;
-                }
-                
-                if (window.showToast) {
-                    window.showToast(errorMessage, 'error');
-                }
-                
-                showEmptyState();
             }
         }
 
@@ -2468,32 +2745,48 @@
             };
         }
 
+        // Use JobsUtils if available, otherwise fallback
         function formatCurrency(amount) {
+            if (window.JobsUtils && window.JobsUtils.formatCurrency) {
+                return window.JobsUtils.formatCurrency(amount);
+            }
             return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' }).format(amount);
         }
 
         function formatDate(dateStr) {
+            if (window.JobsUtils && window.JobsUtils.formatDate) {
+                return window.JobsUtils.formatDate(dateStr);
+            }
             if (!dateStr) return '—';
             const date = new Date(dateStr);
             return date.toLocaleDateString('cs-CZ');
         }
 
         function getDaysUntilDeadline(deadline) {
+            if (window.JobsUtils && window.JobsUtils.getDaysUntilDeadline) {
+                return window.JobsUtils.getDaysUntilDeadline(deadline);
+            }
             if (!deadline) return null;
             const days = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
             return days;
         }
 
         function getDeadlineBadgeClass(days) {
-            if (days === null) return 'muted'; // Bez deadline - šedá
-            if (days < 0) return 'danger'; // Prošlý termín (minulost) - červená #ef4444
-            if (days <= 7) return 'danger'; // Blíží se (0-7 dní) - červená #ef4444
-            if (days <= 14) return 'warning'; // Blíží se (8-14 dní) - oranžová #f59e0b
-            if (days <= 30) return 'ok'; // Budoucí (15-30 dní) - zelená #9FD4A1
-            return 'muted'; // Daleko (>30 dní) - šedá #6b7280
+            if (window.JobsUtils && window.JobsUtils.getDeadlineBadgeClass) {
+                return window.JobsUtils.getDeadlineBadgeClass(days);
+            }
+            if (days === null) return 'muted';
+            if (days < 0) return 'danger';
+            if (days <= 7) return 'danger';
+            if (days <= 14) return 'warning';
+            if (days <= 30) return 'ok';
+            return 'muted';
         }
 
         function getJobTypeIcon(type) {
+            if (window.JobsUtils && window.JobsUtils.getJobTypeIcon) {
+                return window.JobsUtils.getJobTypeIcon(type);
+            }
             const icons = {
                 reconstruction: '<svg class="job-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
                 'new-build': '<svg class="job-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
@@ -2524,9 +2817,7 @@
             if (hasAlert) card.classList.add('has-alert');
             
             card.innerHTML = `
-                <div class="job-card-checkbox" style="position:absolute;top:12px;left:12px;z-index:10;">
-                    <input type="checkbox" class="job-select-checkbox" data-job-id="${job.id}" onchange="updateBulkActions()" onclick="event.stopPropagation()">
-                </div>
+                <!-- Checkbox removed - bulk actions disabled -->
                 ${job.photo ? `<img src="${job.photo}" class="job-card-photo" alt="${escapeHtml(job.title)}">` : ''}
                 <div class="job-card-header">
                     <h4 class="inline-edit" data-field="title" data-job-id="${job.id}">${escapeHtml(job.title || 'Bez názvu')}</h4>
@@ -2721,17 +3012,47 @@
         function renderKanban() {
             document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
             
-            // Pokud jsou data prázdná nebo se načítají, zobraz skeleton
-            if (filteredJobs.length === 0 && jobs.length === 0) {
-                // Zobraz skeleton v každém sloupci
+            // DEBUG
+            console.log('=== renderKanban DEBUG ===');
+            console.log('jobs.length:', jobs.length);
+            console.log('filteredJobs.length:', filteredJobs.length);
+            
+            // Skeleton loading - jen když nemáme žádná data (initial load)
+            if (jobs.length === 0) {
                 ['new', 'active', 'paused', 'completed'].forEach(statusKey => {
                     const container = document.getElementById(`cards-${statusKey}`);
                     if (container) {
-                        for (let i = 0; i < 3; i++) {
+                        for (let i = 0; i < 2; i++) {
                             container.appendChild(createSkeletonCard());
                         }
                     }
                 });
+                return;
+            }
+            
+            // Žádné výsledky po filtrování - zobraz empty state
+            if (filteredJobs.length === 0) {
+                // Najdi kanban-board kontejner
+                const kanbanBoard = document.querySelector('.kanban-board') || document.getElementById('kanban-view');
+                if (kanbanBoard) {
+                    // Vytvoř empty state, ale zachovej strukturu sloupců
+                    const emptyState = document.createElement('div');
+                    emptyState.style.cssText = 'grid-column: 1/-1; padding: 60px 20px; text-align: center;';
+                    emptyState.innerHTML = `
+                        <svg style="width: 64px; height: 64px; color: var(--text-tertiary); margin: 0 auto 16px; display: block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 8px;">
+                            Žádné zakázky odpovídající filtrům
+                        </div>
+                        <div style="font-size: 14px; color: var(--text-tertiary);">
+                            Zkuste změnit filtry nebo vytvořit novou zakázku
+                        </div>
+                    `;
+                    // Přidej empty state na začátek kanban board
+                    kanbanBoard.insertBefore(emptyState, kanbanBoard.firstChild);
+                }
                 return;
             }
             
@@ -3190,12 +3511,25 @@
                     const countEl = column.querySelector('.count');
                     const valueEl = document.getElementById(`value-${status}`);
                     if (countEl) countEl.textContent = counts[status];
-                    if (valueEl) valueEl.textContent = formatCurrency(values[status]);
+                    if (valueEl) {
+                        if (window.JobsKanban && window.JobsKanban.updateColumnCounts) {
+                            // Use module function if available
+                            window.JobsKanban.updateColumnCounts();
+                        } else {
+                            valueEl.textContent = formatCurrency(values[status]);
+                        }
+                    }
                 }
             });
         }
 
         function applyFilters() {
+            if (window.JobsFilters && window.JobsFilters.applyFilters) {
+                window.JobsFilters.applyFilters();
+                return;
+            }
+            
+            // Fallback to inline implementation
             filteredJobs = jobs.filter(job => {
                 // Vylepšené fulltextové vyhledávání
                 if (filters.search) {
@@ -3385,6 +3719,12 @@
 
         // Naplň filtry daty
         function populateFilters() {
+            if (window.JobsFilters && window.JobsFilters.populateFilters) {
+                window.JobsFilters.populateFilters();
+                return;
+            }
+            
+            // Fallback to inline implementation
             // Naplň klienty
             const clients = [...new Set(jobs.map(j => j.client).filter(c => c && c !== '—'))];
             const clientSelect = document.getElementById('filter-client');
@@ -3803,13 +4143,18 @@
         }
 
         function openEditJobModal(jobId) {
+            if (window.JobsModals && window.JobsModals.openEditJobModal) {
+                window.JobsModals.openEditJobModal(jobId);
+                return;
+            }
+            
+            // Fallback to inline implementation
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
             currentJobId = jobId;
             document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
             
-            // Mapuj status zpět na původní hodnotu
             const statusMap = {
                 'new': 'Plán',
                 'active': 'Aktivní',
@@ -3984,6 +4329,9 @@
                     progress: updateData.progress
                 });
                 
+                // Cache updated data
+                saveJobsToCache(jobs);
+                
                 // DEBUG: Zkontroluj co bylo uloženo
                 console.log('=== DEBUG: Lokální data aktualizována ===');
                 console.log('Job after update:', job);
@@ -4003,23 +4351,26 @@
             } catch (error) {
                 if (window.hideLoading) window.hideLoading();
                 
-                // Zobraz uživatelsky přívětivou chybovou zprávu
-                let errorMessage = 'Nastala neočekávaná chyba při ukládání zakázky';
-                
-                if (error.message) {
-                    if (error.message.includes('Timeout')) {
-                        errorMessage = 'Připojení je pomalé. Zkuste to znovu.';
-                    } else if (error.message.includes('Offline')) {
-                        errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
-                    } else {
-                        errorMessage = error.message;
-                    }
-                }
-                
-                if (window.showToast) {
-                    window.showToast(errorMessage, 'error');
+                // Use error handler if available
+                if (window.ErrorHandler) {
+                    window.ErrorHandler.handleError(error, 'saveJobEdit');
                 } else {
-                    alert(errorMessage);
+                    // Fallback error handling
+                    let errorMessage = 'Nastala neočekávaná chyba při ukládání zakázky';
+                    if (error.message) {
+                        if (error.message.includes('Timeout')) {
+                            errorMessage = 'Připojení je pomalé. Zkuste to znovu.';
+                        } else if (error.message.includes('Offline')) {
+                            errorMessage = 'Jste offline. Zkontrolujte připojení k internetu.';
+                        } else {
+                            errorMessage = error.message;
+                        }
+                    }
+                    if (window.showToast) {
+                        window.showToast(errorMessage, 'error');
+                    } else {
+                        alert(errorMessage);
+                    }
                 }
                 console.error('Error saving job:', error);
             }
@@ -4112,14 +4463,23 @@
                 
             } catch (error) {
                 if (window.hideLoading) window.hideLoading();
-                if (window.showToast) {
-                    window.showToast('Chyba při mazání zakázky: ' + error.message, 'error');
+                
+                // Use error handler if available
+                if (window.ErrorHandler) {
+                    window.ErrorHandler.handleError(error, 'deleteJob');
+                } else {
+                    if (window.showToast) {
+                        window.showToast('Chyba při mazání zakázky: ' + error.message, 'error');
+                    }
                 }
                 console.error('Error deleting job:', error);
             }
         }
 
         function escapeHtml(text) {
+            if (window.JobsUtils && window.JobsUtils.escapeHtml) {
+                return window.JobsUtils.escapeHtml(text);
+            }
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
@@ -4396,16 +4756,17 @@
             document.getElementById('bulk-export')?.addEventListener('click', bulkExport);
             document.getElementById('bulk-archive')?.addEventListener('click', bulkArchive);
             document.getElementById('bulk-deselect-all')?.addEventListener('click', deselectAllJobs);
-            const headerActions = document.querySelector('.header-actions');
-            if (headerActions && !document.getElementById('btn-select-all')) {
-                const selectAllBtn = document.createElement('button');
-                selectAllBtn.id = 'btn-select-all';
-                selectAllBtn.className = 'btn-secondary';
-                selectAllBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> Vybrat vše';
-                selectAllBtn.style.cssText = 'display:flex;align-items:center;gap:6px;';
-                selectAllBtn.addEventListener('click', selectAllJobs);
-                headerActions.insertBefore(selectAllBtn, headerActions.firstChild);
-            }
+            // "Vybrat vše" tlačítko odstraněno - bulk actions disabled
+            // const headerActions = document.querySelector('.header-actions');
+            // if (headerActions && !document.getElementById('btn-select-all')) {
+            //     const selectAllBtn = document.createElement('button');
+            //     selectAllBtn.id = 'btn-select-all';
+            //     selectAllBtn.className = 'btn-secondary';
+            //     selectAllBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> Vybrat vše';
+            //     selectAllBtn.style.cssText = 'display:flex;align-items:center;gap:6px;';
+            //     selectAllBtn.addEventListener('click', selectAllJobs);
+            //     headerActions.insertBefore(selectAllBtn, headerActions.firstChild);
+            // }
         }, 500);
         
         const bulkActionsStyle = document.createElement('style');
