@@ -9,25 +9,54 @@ function applyFilters() {
     const jobs = window.jobs || [];
     const filters = window.filters || {};
     window.filteredJobs = jobs.filter(job => {
-        // Fulltext search
+        // Vylepšené fulltextové vyhledávání s fuzzy matching
         if (filters.search) {
             const searchLower = filters.search.toLowerCase().trim();
-            const searchTerms = searchLower.split(/\s+/);
+            const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
             
+            if (searchTerms.length === 0) {
+                return true; // Prázdný dotaz = zobraz vše
+            }
+            
+            // Vytvoř searchable text z všech polí (včetně code, note, city)
             const searchableText = [
                 job.title || '',
+                job.name || '', // fallback pro staré zakázky
                 job.client || '',
                 job.address || '',
+                job.city || '',
+                job.code || '',
                 job.notes || '',
+                job.note || '', // fallback
                 job.type || '',
                 job.manager || '',
                 (job.team || []).join(' '),
-                job.id?.toString() || ''
+                job.id?.toString() || '',
+                (job.description || '').substring(0, 200) // první 200 znaků popisu
             ].join(' ').toLowerCase();
             
-            const allTermsFound = searchTerms.every(term => 
-                searchableText.includes(term)
-            );
+            // Vylepšené vyhledávání:
+            // 1. Přesná shoda má vyšší prioritu
+            // 2. Částečná shoda (fuzzy) pro delší termy
+            const allTermsFound = searchTerms.every(term => {
+                if (term.length < 2) return true; // Ignoruj velmi krátké termy
+                
+                // Přesná shoda
+                if (searchableText.includes(term)) {
+                    return true;
+                }
+                
+                // Fuzzy matching pro termy delší než 3 znaky
+                if (term.length >= 3) {
+                    // Hledej částečné shody (např. "pra" najde "praha")
+                    const regex = new RegExp(term.split('').join('.*'), 'i');
+                    if (regex.test(searchableText)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            });
             
             if (!allTermsFound) {
                 return false;
