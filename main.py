@@ -142,15 +142,24 @@ def api_jobs_archive():
         months.setdefault(ym or "unknown", []).append(r)
     return jsonify({"ok": True, "months": months})
 
-# --- Employees/Zamestnanci aliases (to avoid 404) ---
+# --- Team/Employees aliases (to avoid 404) ---
 from flask import render_template
 
+@app.route("/team")
+@app.route("/team/")
 @app.route("/employees")
 @app.route("/employees/")
 @app.route("/zamestnanci")
 @app.route("/zamestnanci/")
-def employees_alias():
-    return render_template("employees.html")
+def team_alias():
+    # Try to render team.html, fallback to employees.html
+    try:
+        return render_template("team.html")
+    except:
+        try:
+            return render_template("employees.html")
+        except:
+            return send_from_directory(".", "employees.html")
 # --- end aliases ---
 
 # ----------------- Migration -----------------
@@ -178,10 +187,68 @@ def _migrate_completed_at():
     except Exception as e:
         print(f"[DB] Migration warning: {e}")
 
+def _migrate_employees_enhanced():
+    """Add enhanced columns to employees table and create new tables"""
+    db = get_db()
+    try:
+        cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
+        
+        # Add new columns to employees table
+        new_cols = {
+            "birth_date": "TEXT",
+            "contract_type": "TEXT DEFAULT 'HPP'",
+            "start_date": "TEXT",
+            "hourly_rate": "REAL",
+            "salary": "REAL",
+            "skills": "TEXT",
+            "location": "TEXT",
+            "status": "TEXT DEFAULT 'active'",
+            "rating": "REAL DEFAULT 0",
+            "avatar_url": "TEXT"
+        }
+        
+        for col_name, col_def in new_cols.items():
+            if col_name not in cols:
+                db.execute(f"ALTER TABLE employees ADD COLUMN {col_name} {col_def}")
+                db.commit()
+                print(f"[DB] Added column: employees.{col_name}")
+        
+        # Create employee_documents table
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS employee_documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                file_url TEXT NOT NULL,
+                uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+            )
+        """)
+        db.commit()
+        print("[DB] Created table: employee_documents")
+        
+        # Create employee_timeline table
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS employee_timeline (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                description TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+            )
+        """)
+        db.commit()
+        print("[DB] Created table: employee_timeline")
+        
+    except Exception as e:
+        print(f"[DB] Migration warning: {e}")
+
 # Run migration after all functions are defined
 try:
     with app.app_context():
         _migrate_completed_at()
+        _migrate_employees_enhanced()
 except Exception as e:
     print(f"[DB] Migration failed: {e}")
 
@@ -500,12 +567,42 @@ def api_employees():
     if request.method == "POST":
         try:
             data = request.get_json(force=True, silent=True) or {}
-            name = data.get("name"); role = data.get("role") or "worker"
+            name = data.get("name")
+            if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
+            
+            # Get all fields with defaults
+            role = data.get("role") or "worker"
             phone = data.get("phone") or ""
             email = data.get("email") or ""
             address = data.get("address") or ""
-            if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
-            db.execute("INSERT INTO employees(name,role,phone,email,address) VALUES (?,?,?,?,?)", (name, role, phone, email, address))
+            birth_date = data.get("birth_date") or None
+            contract_type = data.get("contract_type") or "HPP"
+            start_date = data.get("start_date") or None
+            hourly_rate = data.get("hourly_rate") or None
+            salary = data.get("salary") or None
+            skills = data.get("skills") or ""
+            location = data.get("location") or ""
+            status = data.get("status") or "active"
+            rating = data.get("rating") or 0
+            avatar_url = data.get("avatar_url") or ""
+            
+            # Build INSERT query with all available columns
+            cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
+            insert_cols = ["name", "role"]
+            insert_vals = [name, role]
+            
+            for col in ["phone", "email", "address", "birth_date", "contract_type", "start_date", 
+                       "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url"]:
+                if col in cols:
+                    insert_cols.append(col)
+                    if col == "hourly_rate" or col == "salary" or col == "rating":
+                        insert_vals.append(hourly_rate if col == "hourly_rate" else (salary if col == "salary" else rating))
+                    else:
+                        val = locals().get(col, "")
+                        insert_vals.append(val if val else None)
+            
+            placeholders = ",".join(["?"] * len(insert_vals))
+            db.execute(f"INSERT INTO employees({','.join(insert_cols)}) VALUES ({placeholders})", insert_vals)
             db.commit()
             print(f"✓ Employee '{name}' created successfully")
             return jsonify({"ok": True})
@@ -520,11 +617,18 @@ def api_employees():
             if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
             updates = []
             params = []
-            allowed = ["name", "role", "phone", "email", "address"]
+            # Get all available columns from schema
+            cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
+            allowed = ["name", "role", "phone", "email", "address", "birth_date", "contract_type", 
+                      "start_date", "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url"]
             for k in allowed:
-                if k in data:
+                if k in data and k in cols:
                     updates.append(f"{k}=?")
-                    params.append(data[k])
+                    # Handle numeric fields
+                    if k in ["hourly_rate", "salary", "rating"]:
+                        params.append(float(data[k]) if data[k] is not None else None)
+                    else:
+                        params.append(data[k] if data[k] is not None else "")
             if not updates: return jsonify({"ok": False, "error":"no_updates"}), 400
             params.append(eid)
             db.execute(f"UPDATE employees SET {', '.join(updates)} WHERE id=?", tuple(params))
