@@ -3312,8 +3312,9 @@
                 const formattedData = {
                     ...updateData,
                     date: deadline ? new Date(deadline).toISOString().split('T')[0] : null,
-                    created_date: createdDate ? new Date(createdDate).toISOString().split('T')[0] : null,
-                    start_date: startDate ? new Date(startDate).toISOString().split('T')[0] : null
+                    // Vždy pošli created_date a start_date, i když jsou prázdné (null)
+                    created_date: createdDate && createdDate.trim() ? new Date(createdDate).toISOString().split('T')[0] : null,
+                    start_date: startDate && startDate.trim() ? new Date(startDate).toISOString().split('T')[0] : null
                 };
                 console.log('=== DEBUG: Data odesílaná na server ===');
                 console.log('Formatted Data:', formattedData);

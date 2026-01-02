@@ -605,12 +605,18 @@ def api_jobs():
             for f in ("client","status","city","code","date","note","created_date","start_date","progress"):
                 if f in data:
                     if f=="date" or f=="created_date" or f=="start_date":
-                        v = _normalize_date(data[f]) if data[f] else None
+                        # Normalizuj datum - pokud je prázdné/null, uloží se jako NULL do DB
+                        if data[f]:
+                            v = _normalize_date(data[f])
+                        else:
+                            v = None  # Explicitně None pro NULL v DB
                     elif f=="progress":
                         v = int(data[f]) if data[f] is not None else 0
                     else:
                         v = data[f] if data[f] is not None else ""
+                    # Přidej do updates i když je hodnota None (pro NULL v DB)
                     updates.append(f"{f}=?"); params.append(v)
+                    print(f"[PATCH] Updating {f} = {v} (type: {type(v).__name__})")
             # Touch legacy updated_at if present
             info = _jobs_info()
             if "updated_at" in info:
