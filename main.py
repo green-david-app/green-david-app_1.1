@@ -636,13 +636,25 @@ def api_job_assignments(job_id):
     return jsonify({"ok": True})
 
 # ----------------- Tasks CRUD -----------------
-@app.route("/api/tasks", methods=["GET","POST","PATCH","DELETE"])
+@app.route("/api/tasks", methods=["GET","POST","PATCH","PUT","DELETE"])
 def api_tasks():
     u, err = require_role(write=(request.method!="GET"))
     if err: return err
     db = get_db()
 
     if request.method == "GET":
+        task_id = request.args.get("id", type=int)
+        if task_id:
+            # Return single task by ID
+            row = db.execute("""SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
+                                      e.name AS employee_name
+                               FROM tasks t
+                               LEFT JOIN employees e ON e.id=t.employee_id
+                               WHERE t.id=?""", (task_id,)).fetchone()
+            if not row:
+                return jsonify({"ok": False, "error": "not_found"}), 404
+            return jsonify({"ok": True, "task": dict(row)})
+        
         jid = request.args.get("job_id", type=int)
         q = """SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
                       e.name AS employee_name
@@ -670,9 +682,9 @@ def api_tasks():
         db.commit()
         return jsonify({"ok": True})
 
-    if request.method == "PATCH":
+    if request.method in ("PATCH", "PUT"):
         data = request.get_json(force=True, silent=True) or {}
-        tid = data.get("id")
+        tid = data.get("id") or request.args.get("id", type=int)
         if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
         allowed = ["title","description","status","due_date","employee_id","job_id"]
         sets=[]; vals=[]
@@ -873,9 +885,11 @@ def api_search():
     db = get_db()
     out = []
     try:
-        cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
+        # Use title column if available, fallback to name
+        title_col = _job_title_col()
+        cur = db.execute(f"SELECT id, {title_col} AS title, city, code, date FROM jobs WHERE ({title_col} LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
         for r in cur.fetchall():
-            out.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+            out.append({"type":"Zakázka","id":r["id"],"title":r["title"] or "", "sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
     except Exception: pass
     try:
         cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
@@ -892,9 +906,11 @@ def search_page():
         like = f"%{q}%"
         db = get_db()
         try:
-            cur = db.execute("SELECT id, name, city, code, date FROM jobs WHERE (name LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
+            # Use title column if available, fallback to name
+            title_col = _job_title_col()
+            cur = db.execute(f"SELECT id, {title_col} AS title, city, code, date FROM jobs WHERE ({title_col} LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
             for r in cur.fetchall():
-                results.append({"type":"Zakázka","id":r["id"],"title":r["name"],"sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
+                results.append({"type":"Zakázka","id":r["id"],"title":r["title"] or "", "sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
         except Exception: pass
         try:
             cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
@@ -902,3 +918,133 @@ def search_page():
                 results.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
         except Exception: pass
     return render_template("search.html", title="Hledání", q=q, results=results)
+
+# ----------------- Calendar API -----------------
+@app.route("/api/calendar", methods=["GET", "POST", "PATCH"])
+def api_calendar():
+    db = get_db()
+    if request.method == "GET":
+        month_str = request.args.get("month")
+        date_str = request.args.get("date")
+        from_str = request.args.get("from")
+        to_str = request.args.get("to")
+        
+        q = "SELECT id, date, title, kind, job_id, start_time, end_time, note, color FROM calendar_events WHERE 1=1"
+        params = []
+        
+        if month_str:
+            try:
+                year, month = [int(x) for x in month_str.split("-")]
+                q += " AND strftime('%Y-%m', date) = ?"
+                params.append(month_str)
+            except Exception:
+                pass
+        elif date_str:
+            q += " AND date = ?"
+            params.append(_normalize_date(date_str))
+        elif from_str or to_str:
+            if from_str:
+                q += " AND date >= ?"
+                params.append(_normalize_date(from_str))
+            if to_str:
+                q += " AND date <= ?"
+                params.append(_normalize_date(to_str))
+        
+        q += " ORDER BY date ASC, id ASC"
+        rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        return jsonify({"ok": True, "events": rows, "items": rows})
+    
+    u, err = require_auth()
+    if err: return err
+    
+    data = request.get_json(force=True, silent=True) or {}
+    
+    if request.method == "POST":
+        title = (data.get("title") or "").strip()
+        date_str = _normalize_date(data.get("date"))
+        kind = (data.get("kind") or data.get("type") or "note").strip()
+        color = (data.get("color") or "#2e7d32").strip()
+        note = (data.get("note") or data.get("details") or "").strip()
+        job_id = data.get("job_id")
+        start_time = data.get("start_time") or ""
+        end_time = data.get("end_time") or ""
+        
+        if not title or not date_str:
+            return jsonify({"ok": False, "error": "missing_fields"}), 400
+        
+        db.execute(
+            "INSERT INTO calendar_events(date, title, kind, job_id, start_time, end_time, note, color) VALUES (?,?,?,?,?,?,?,?)",
+            (date_str, title, kind, job_id, start_time, end_time, note, color)
+        )
+        db.commit()
+        return jsonify({"ok": True})
+    
+    # PATCH
+    ev_id = data.get("id")
+    if not ev_id:
+        return jsonify({"ok": False, "error": "missing_id"}), 400
+    
+    updates = []
+    params = []
+    allowed = ["title", "date", "kind", "type", "color", "note", "details", "job_id", "start_time", "end_time"]
+    for k in allowed:
+        if k in data:
+            if k == "date":
+                params.append(_normalize_date(data[k]))
+            elif k == "type":
+                params.append(data[k])
+                updates.append("kind=?")
+                continue
+            elif k == "details":
+                params.append(data[k])
+                updates.append("note=?")
+                continue
+            else:
+                params.append(data[k])
+            updates.append(f"{k}=?")
+    
+    if not updates:
+        return jsonify({"ok": False, "error": "nothing_to_update"}), 400
+    
+    params.append(int(ev_id))
+    db.execute("UPDATE calendar_events SET " + ", ".join(updates) + " WHERE id=?", params)
+    db.commit()
+    return jsonify({"ok": True})
+
+@app.route("/api/calendar/<int:event_id>", methods=["DELETE"])
+def api_calendar_delete(event_id):
+    u, err = require_auth()
+    if err: return err
+    db = get_db()
+    db.execute("DELETE FROM calendar_events WHERE id=?", (event_id,))
+    db.commit()
+    return jsonify({"ok": True})
+
+# ----------------- /gd/api/ aliases -----------------
+@app.route("/gd/api/jobs", methods=["GET", "POST", "PATCH", "DELETE"])
+def gd_api_jobs():
+    return api_jobs()
+
+@app.route("/gd/api/jobs/<int:job_id>", methods=["GET"])
+def gd_api_job_detail(job_id):
+    return api_job_detail(job_id)
+
+@app.route("/gd/api/tasks", methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
+def gd_api_tasks():
+    return api_tasks()
+
+@app.route("/gd/api/employees", methods=["GET", "POST", "PATCH", "DELETE"])
+def gd_api_employees():
+    return api_employees()
+
+@app.route("/gd/api/timesheets", methods=["GET", "POST", "PATCH", "DELETE"])
+def gd_api_timesheets():
+    return api_timesheets()
+
+@app.route("/gd/api/calendar", methods=["GET", "POST", "PATCH"])
+def gd_api_calendar():
+    return api_calendar()
+
+@app.route("/gd/api/calendar/<int:event_id>", methods=["DELETE"])
+def gd_api_calendar_delete(event_id):
+    return api_calendar_delete(event_id)

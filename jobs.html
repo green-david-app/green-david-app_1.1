@@ -2332,7 +2332,7 @@
                 <!-- Detail content will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button class="btn-primary" id="btn-edit-job" onclick="if(currentJobId) openEditJobModal(currentJobId)">Upravit</button>
+                <button class="btn-primary" id="btn-edit-job" onclick="if(window.currentJobId) window.openEditJobModal(window.currentJobId)">Upravit</button>
             </div>
         </div>
     </div>
@@ -2514,6 +2514,25 @@
         
         // Uložené filtry
         let savedFilters = JSON.parse(localStorage.getItem('savedFilters') || '[]');
+
+        // Cache functions
+        function saveJobsToCache(jobs) {
+            try {
+                localStorage.setItem('cachedJobs', JSON.stringify(jobs));
+            } catch (e) {
+                console.warn('Failed to save jobs to cache:', e);
+            }
+        }
+
+        function loadJobsFromCache() {
+            try {
+                const cached = localStorage.getItem('cachedJobs');
+                return cached ? JSON.parse(cached) : null;
+            } catch (e) {
+                console.warn('Failed to load jobs from cache:', e);
+                return null;
+            }
+        }
 
         // Load data
         async function loadJobs() {
@@ -2705,6 +2724,7 @@
         }
 
         function updateStats() {
+            const jobs = window.jobs || [];
             const activeJobs = jobs.filter(j => j.status === 'active');
             const urgentJobs = jobs.filter(j => {
                 if (!j.deadline) return false;
@@ -2713,6 +2733,7 @@
             });
             
             const totalValue = activeJobs.reduce((sum, j) => sum + (j.budget || 0), 0);
+            const formatCurrency = window.JobsUtils ? window.JobsUtils.formatCurrency : (amount) => amount.toLocaleString('cs-CZ', { style: 'currency', currency: 'CZK' });
             document.getElementById('stat-total-value').textContent = formatCurrency(totalValue);
             
             document.getElementById('stat-urgent').textContent = urgentJobs.length;
@@ -2830,10 +2851,20 @@
         }
 
         function createJobCard(job) {
+            if (window.JobsUtils && window.JobsUtils.createJobCard) {
+                return window.JobsUtils.createJobCard(job);
+            }
+            
+            // Fallback to inline implementation
             const card = document.createElement('div');
             card.className = `job-card status-${job.status}`;
             card.draggable = true;
             card.dataset.jobId = job.id;
+            
+            const getDaysUntilDeadline = window.JobsUtils ? window.JobsUtils.getDaysUntilDeadline : () => null;
+            const getDeadlineBadgeClass = window.JobsUtils ? window.JobsUtils.getDeadlineBadgeClass : () => '';
+            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
+            const getJobTypeIcon = window.JobsUtils ? window.JobsUtils.getJobTypeIcon : () => '';
             
             const daysUntil = getDaysUntilDeadline(job.deadline);
             const deadlineClass = getDeadlineBadgeClass(daysUntil);
@@ -3003,6 +3034,7 @@
         }
 
         function renderView() {
+            const currentView = window.currentView || 'kanban';
             if (currentView === 'kanban') {
                 document.getElementById('kanban-view').style.display = 'grid';
                 document.getElementById('list-view').classList.remove('active');
@@ -3019,12 +3051,20 @@
                 document.getElementById('kanban-view').style.display = 'none';
                 document.getElementById('list-view').classList.add('active');
                 document.getElementById('timeline-view').classList.remove('active');
-                renderList();
+                if (typeof window.JobsList !== 'undefined' && window.JobsList.renderList) {
+                    window.JobsList.renderList();
+                } else if (typeof renderList === 'function') {
+                    renderList();
+                }
             } else if (currentView === 'timeline') {
                 document.getElementById('kanban-view').style.display = 'none';
                 document.getElementById('list-view').classList.remove('active');
                 document.getElementById('timeline-view').classList.add('active');
-                renderTimeline();
+                if (typeof window.JobsTimeline !== 'undefined' && window.JobsTimeline.renderTimeline) {
+                    window.JobsTimeline.renderTimeline();
+                } else if (typeof renderTimeline === 'function') {
+                    renderTimeline();
+                }
             }
         }
 
@@ -3077,6 +3117,8 @@
         window.showSkeletonCards = showSkeletonCards;
         window.hideSkeletonCards = hideSkeletonCards;
         window.createSkeletonCard = createSkeletonCard;
+        window.createJobCard = createJobCard;
+        window.openEditJobModal = openEditJobModal;
 
         // renderKanban() je definována v /static/js/jobs/jobs-kanban.js
         // Použijeme tu z externího souboru, ne duplikát zde
@@ -3269,6 +3311,7 @@
             const container = document.getElementById('timeline-container');
             if (!container) return;
 
+            const filteredJobs = window.filteredJobs || [];
             if (filteredJobs.length === 0) {
                 container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">Žádné zakázky k zobrazení</div>';
                 return;
@@ -3535,10 +3578,16 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             
+            const filteredJobs = window.filteredJobs || [];
             if (filteredJobs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary);">Žádné zakázky</td></tr>';
                 return;
             }
+            
+            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
+            const formatDate = window.JobsUtils ? window.JobsUtils.formatDate : (date) => date || '—';
+            const getDaysUntilDeadline = window.JobsUtils ? window.JobsUtils.getDaysUntilDeadline : () => null;
+            const getDeadlineBadgeClass = window.JobsUtils ? window.JobsUtils.getDeadlineBadgeClass : () => '';
             
             filteredJobs.forEach(job => {
                 const tr = document.createElement('tr');
@@ -3581,6 +3630,7 @@
         }
 
         function updateColumnCounts() {
+            const filteredJobs = window.filteredJobs || [];
             const counts = { new: 0, active: 0, paused: 0, completed: 0 };
             const values = { new: 0, active: 0, paused: 0, completed: 0 };
             
@@ -3617,6 +3667,7 @@
             
             // Fallback to inline implementation
             const jobs = window.jobs || [];
+            const filters = window.filters || {};
             window.filteredJobs = jobs.filter(job => {
                 // Vylepšené fulltextové vyhledávání
                 if (filters.search) {
@@ -4096,6 +4147,9 @@
             const code = ''; // Může být prázdný
             const date = document.getElementById('job-deadline').value;
             
+            // Initialize jobPhotos if not defined
+            let jobPhotos = window.jobPhotos || [];
+            
             // DEBUG: Zkontroluj všechna datum pole
             const createdDate = document.getElementById('job-created-date')?.value || null;
             const startDate = document.getElementById('job-start-date')?.value || null;
@@ -4195,11 +4249,20 @@
         // currentJobId je už definováno výše jako window.currentJobId
 
         function showJobDetail(jobId) {
+            if (window.JobsModals && window.JobsModals.showJobDetail) {
+                window.JobsModals.showJobDetail(jobId);
+                return;
+            }
+            
+            // Fallback to inline implementation
+            const jobs = window.jobs || [];
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
             window.currentJobId = jobId;
-            currentJobId = window.currentJobId;
+            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
+            const formatDate = window.JobsUtils ? window.JobsUtils.formatDate : (date) => date || '—';
+            
             document.getElementById('detail-title').textContent = job.title;
             const body = document.getElementById('detail-body');
             body.innerHTML = `
@@ -4228,13 +4291,16 @@
                 <div style="margin-bottom:24px;">
                     <h4 style="color:var(--text-secondary);margin-bottom:8px;">Progress</h4>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${job.progress}%"></div>
+                        <div class="progress-fill" style="width: ${job.progress || 0}%"></div>
                     </div>
-                    <p style="margin-top:8px;color:var(--text-secondary);">${job.progress}% dokončeno</p>
+                    <p style="margin-top:8px;color:var(--text-secondary);">${job.progress || 0}% dokončeno</p>
                 </div>
             `;
             document.getElementById('job-detail-modal').classList.add('active');
         }
+        
+        // Expose to window for onclick handlers
+        window.showJobDetail = showJobDetail;
 
         function openEditJobModal(jobId) {
             if (window.JobsModals && window.JobsModals.openEditJobModal) {
@@ -4243,11 +4309,11 @@
             }
             
             // Fallback to inline implementation
+            const jobs = window.jobs || [];
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
             window.currentJobId = jobId;
-            currentJobId = window.currentJobId;
             const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
             document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
             
