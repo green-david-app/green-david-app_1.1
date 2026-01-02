@@ -3,7 +3,23 @@ from datetime import datetime, date, timedelta
 from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.environ.get("DB_PATH", "app.db")
+# Database path configuration
+# Priority: 1. DB_PATH env var, 2. Persistent disk detection, 3. Default
+if os.environ.get("DB_PATH"):
+    # User explicitly set DB_PATH - use it
+    DB_PATH = os.environ.get("DB_PATH")
+elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    # Render platform detected - try persistent disk paths
+    if os.path.exists("/persistent"):
+        DB_PATH = "/persistent/app.db"
+    elif os.path.exists("/data"):
+        DB_PATH = "/data/app.db"
+    else:
+        # Fallback to /tmp which is persistent on Render
+        DB_PATH = "/tmp/app.db"
+else:
+    # Local development
+    DB_PATH = "app.db"
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
@@ -126,14 +142,39 @@ def _normalize_date(v):
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        # Ensure directory exists for DB_PATH
+        db_dir = os.path.dirname(DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+                print(f"[DB] Created directory: {db_dir}")
+            except Exception as e:
+                print(f"[DB] Warning: Could not create directory {db_dir}: {e}")
+        
+        # Log database path (only once at startup)
+        if not hasattr(get_db, '_logged'):
+            print(f"[DB] Using database: {DB_PATH}")
+            get_db._logged = True
+        
+        # Connect with WAL mode for better concurrency
+        g.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         g.db.row_factory = sqlite3.Row
+        # Enable WAL mode for better performance and durability
+        try:
+            g.db.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
     return g.db
 
 @app.teardown_appcontext
 def close_db(error=None):
     db = g.pop("db", None)
     if db is not None:
+        try:
+            # Ensure all changes are committed before closing
+            db.commit()
+        except Exception:
+            pass
         db.close()
 
 def current_user():
