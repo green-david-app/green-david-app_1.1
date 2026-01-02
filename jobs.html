@@ -889,6 +889,7 @@
 
         /* Gantt Chart Container */
         .timeline-container {
+            position: relative;
             background: #1a2332;
             border-radius: 8px;
             overflow: hidden;
@@ -896,6 +897,7 @@
         }
 
         .timeline-grid {
+            position: relative;
             display: flex;
             flex-direction: column;
         }
@@ -1582,21 +1584,29 @@
                 flex-shrink: 0;
             }
             
-            /* Quick action tlačítka - větší na mobilu */
+            /* Quick action tlačítka - menší na mobilu */
             .quick-action-btn {
-                width: 36px !important;  /* Větší pro lepší tap target */
-                height: 36px !important;
+                width: 40px !important;
+                height: 40px !important;
             }
 
             .quick-action-btn i[data-lucide],
             .quick-action-btn svg {
-                width: 20px !important;
-                height: 20px !important;
+                width: 24px !important;
+                height: 24px !important;
             }
 
-            /* Quick actions vždy viditelné na mobilu */
+            /* Quick actions přesunuté dolů na mobilu */
+            .job-card {
+                position: relative;
+                padding-bottom: 50px;  /* Místo pro tlačítka */
+            }
+            
             .quick-actions {
-                display: flex !important;  /* Vždy zobrazit, ne jen při hover */
+                top: auto;
+                bottom: 8px;  /* Přesun dolů */
+                right: 8px;
+                display: flex !important;
                 opacity: 0.9;
                 gap: 4px;
             }
@@ -3291,6 +3301,13 @@
             }
             
             const statusValue = document.getElementById('edit-status').value;
+            const progressValue = parseInt(document.getElementById('edit-progress').value) || 0;
+            
+            // DEBUG: Zkontroluj progress input
+            console.log('=== DEBUG: Progress ===');
+            console.log('Progress input exists:', !!document.getElementById('edit-progress'));
+            console.log('Progress value:', progressValue);
+            
             const updateData = {
                 id: currentJobId,
                 title: title,
@@ -3300,7 +3317,8 @@
                 created_date: createdDate || null,
                 start_date: startDate || null,
                 status: statusValue, // Použij přímo hodnotu z selectu (Plán, Aktivní, atd.)
-                note: document.getElementById('edit-notes').value.trim()
+                note: document.getElementById('edit-notes').value.trim(),
+                progress: progressValue
             };
             
             try {
@@ -3350,10 +3368,16 @@
                     client: updateData.client,
                     address: updateData.city,
                     deadline: updateData.date,
+                    created_date: updateData.created_date,
+                    start_date: updateData.start_date,
                     status: updateData.status,
                     notes: updateData.note,
                     progress: updateData.progress
                 });
+                
+                // DEBUG: Zkontroluj co bylo uloženo
+                console.log('=== DEBUG: Lokální data aktualizována ===');
+                console.log('Job after update:', job);
                 
                 if (window.hideLoading) window.hideLoading();
                 if (window.showToast) window.showToast('Zakázka úspěšně upravena', 'success');
