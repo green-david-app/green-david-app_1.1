@@ -41,8 +41,10 @@ function hideLoading() {
 }
 
 // Animation
-const style = document.createElement('style');
-style.textContent = `
+if (!document.getElementById('loading-styles')) {
+    const loadingStyle = document.createElement('style');
+    loadingStyle.id = 'loading-styles';
+    loadingStyle.textContent = `
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
@@ -51,7 +53,8 @@ style.textContent = `
     to { opacity: 0; }
 }
 `;
-document.head.appendChild(style);
+    document.head.appendChild(loadingStyle);
+}
 
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;

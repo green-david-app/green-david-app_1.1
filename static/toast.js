@@ -80,8 +80,10 @@ window.toast = new ToastManager();
 window.showToast = (msg, type) => window.toast.show(msg, type);
 
 // CSS Animation
-const style = document.createElement('style');
-style.textContent = `
+if (!document.getElementById('toast-styles')) {
+    const toastStyle = document.createElement('style');
+    toastStyle.id = 'toast-styles';
+    toastStyle.textContent = `
 @keyframes slideIn {
     from {
         transform: translateX(400px);
@@ -104,5 +106,6 @@ style.textContent = `
     }
 }
 `;
-document.head.appendChild(style);
+    document.head.appendChild(toastStyle);
+}
 

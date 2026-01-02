@@ -2405,14 +2405,22 @@
         // GLOBAL ERROR BOUNDARY
         // ============================================
 
-        // Catch all unhandled errors
-        window.addEventListener('error', (event) => {
+        // Catch all unhandled errors (pouze pokud ještě není nastaveno)
+        if (!window.__errorHandlerInitialized) {
+            window.__errorHandlerInitialized = true;
+            
+            window.addEventListener('error', (event) => {
+                // Ignoruj syntax errors které už byly zobrazeny
+                if (event.error && event.error.message && event.error.message.includes('already been declared')) {
+                    console.warn('Duplicate declaration error (will be fixed):', event.error.message);
+                    return;
+                }
             console.error('Unhandled error:', event.error);
             
-            // Show user-friendly message
-            if (typeof window.showToast === 'function') {
-                window.showToast('Něco se pokazilo. Zkuste obnovit stránku.', 'error');
-            }
+                // Show user-friendly message (pouze pokud není syntax error)
+                if (typeof window.showToast === 'function' && event.error && !event.error.message.includes('already been declared')) {
+                    window.showToast('Něco se pokazilo. Zkuste obnovit stránku.', 'error');
+                }
             
             // Log to error tracking
             if (window.Sentry) {
@@ -2436,7 +2444,8 @@
             }
             
             event.preventDefault();
-        });
+            });
+        }
 
         // Network status monitoring
         window.addEventListener('offline', () => {
@@ -3104,17 +3113,32 @@
             }
         }
 
-        let timelineZoomLevel = 'month'; // 'month', 'quarter', 'year'
-
-        function timelineZoom(level) {
-            timelineZoomLevel = level;
-            // Aktualizuj aktivní tlačítko
-            document.querySelectorAll('.timeline-zoom-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            const activeBtn = document.getElementById(`zoom-${level}`);
-            if (activeBtn) activeBtn.classList.add('active');
-            renderTimeline();
+        // timelineZoomLevel je definována v /static/js/jobs/jobs-timeline.js
+        // Použijeme tu z externího modulu, ne duplikát zde
+        
+        // Fallback timelineZoom pokud externí modul není načten
+        if (typeof window.JobsTimeline === 'undefined') {
+            let timelineZoomLevelFallback = 'month'; // 'month', 'quarter', 'year'
+            
+            function timelineZoom(level) {
+                timelineZoomLevelFallback = level;
+                // Aktualizuj aktivní tlačítko
+                document.querySelectorAll('.timeline-zoom-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const activeBtn = document.getElementById(`zoom-${level}`);
+                if (activeBtn) activeBtn.classList.add('active');
+                if (typeof renderTimeline === 'function') {
+                    renderTimeline();
+                }
+            }
+        } else {
+            // Použij timelineZoom z externího modulu
+            function timelineZoom(level) {
+                if (window.JobsTimeline && window.JobsTimeline.timelineZoom) {
+                    window.JobsTimeline.timelineZoom(level);
+                }
+            }
         }
 
         function setupTimelineDragAndDrop(container, startDate, dayWidth) {
@@ -3209,10 +3233,15 @@
             const today = new Date();
             let startDate, endDate;
             
-            if (timelineZoomLevel === 'month') {
+            // Získej zoom level z externího modulu nebo použij fallback
+            const zoomLevel = (window.JobsTimeline && window.JobsTimeline.getZoomLevel) 
+                ? window.JobsTimeline.getZoomLevel() 
+                : (typeof timelineZoomLevelFallback !== 'undefined' ? timelineZoomLevelFallback : 'month');
+            
+            if (zoomLevel === 'month') {
                 startDate = new Date(today.getFullYear(), today.getMonth(), 1);
                 endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            } else if (timelineZoomLevel === 'quarter') {
+            } else if (zoomLevel === 'quarter') {
                 const quarter = Math.floor(today.getMonth() / 3);
                 startDate = new Date(today.getFullYear(), quarter * 3, 1);
                 endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
@@ -3244,7 +3273,7 @@
             });
 
             // Vypočítej šířku jednoho dne v pixelech
-            const dayWidth = timelineZoomLevel === 'month' ? 20 : timelineZoomLevel === 'quarter' ? 8 : 2;
+            const dayWidth = zoomLevel === 'month' ? 20 : zoomLevel === 'quarter' ? 8 : 2;
             const totalWidth = days.length * dayWidth;
             
             // Algoritmus pro tracks - aby se bloky nepřekrývaly
@@ -3709,7 +3738,10 @@
                 renderView();
                 // Nastav aktivní tlačítko pro timeline zoom
                 setTimeout(() => {
-                    const activeBtn = document.getElementById(`zoom-${timelineZoomLevel}`);
+                    const zoomLevel = (window.JobsTimeline && window.JobsTimeline.getZoomLevel) 
+                        ? window.JobsTimeline.getZoomLevel() 
+                        : (typeof timelineZoomLevelFallback !== 'undefined' ? timelineZoomLevelFallback : 'month');
+                    const activeBtn = document.getElementById(`zoom-${zoomLevel}`);
                     if (activeBtn) activeBtn.classList.add('active');
                 }, 100);
             });
@@ -4165,6 +4197,7 @@
             if (!job) return;
             
             currentJobId = jobId;
+            const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
             document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
             
             const statusMap = {

@@ -58,6 +58,7 @@ function openEditJobModal(jobId) {
     if (!job) return;
     
     currentJobId = jobId;
+    const escapeHtml = window.JobsUtils ? window.JobsUtils.escapeHtml : (text) => text || '';
     document.getElementById('edit-job-title').textContent = `Upravit zakázku: ${escapeHtml(job.title)}`;
     
     const statusMap = {
