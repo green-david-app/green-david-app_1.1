@@ -946,7 +946,16 @@
                 
                 if (jobsRes.ok) {
                     const jobsData = await jobsRes.json();
-                    allJobs = jobsData.jobs || jobsData || [];
+                    // Handle different response formats
+                    if (Array.isArray(jobsData)) {
+                        allJobs = jobsData;
+                    } else if (jobsData.jobs && Array.isArray(jobsData.jobs)) {
+                        allJobs = jobsData.jobs;
+                    } else {
+                        allJobs = [];
+                    }
+                } else {
+                    allJobs = [];
                 }
                 
                 if (tasksRes.ok) {
@@ -956,7 +965,16 @@
                 
                 if (timesheetsRes.ok) {
                     const timesheetsData = await timesheetsRes.json();
-                    allTimesheets = timesheetsData.timesheets || timesheetsData || [];
+                    // Handle different response formats
+                    if (Array.isArray(timesheetsData)) {
+                        allTimesheets = timesheetsData;
+                    } else if (timesheetsData.timesheets && Array.isArray(timesheetsData.timesheets)) {
+                        allTimesheets = timesheetsData.timesheets;
+                    } else {
+                        allTimesheets = [];
+                    }
+                } else {
+                    allTimesheets = [];
                 }
                 
                 if (window.hideLoading) window.hideLoading();
@@ -1138,10 +1156,13 @@
         }
 
         function calculateMonthlyHours(empId) {
+            if (!Array.isArray(allTimesheets)) {
+                return 0;
+            }
             const today = new Date();
             const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
             return allTimesheets
-                .filter(ts => ts.employee_id === empId && new Date(ts.date) >= monthStart)
+                .filter(ts => ts && ts.employee_id === empId && new Date(ts.date) >= monthStart)
                 .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
         }
 
@@ -1312,27 +1333,30 @@
             weekStart.setDate(today.getDate() - today.getDay());
             weekStart.setHours(0, 0, 0, 0);
             
-            const weeklyHours = allTimesheets
-                .filter(ts => ts.employee_id === id && new Date(ts.date) >= weekStart)
+            const weeklyHours = (Array.isArray(allTimesheets) ? allTimesheets : [])
+                .filter(ts => ts && ts.employee_id === id && new Date(ts.date) >= weekStart)
                 .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
             
             const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-            const monthlyHours = allTimesheets
-                .filter(ts => ts.employee_id === id && new Date(ts.date) >= monthStart)
+            const monthlyHours = (Array.isArray(allTimesheets) ? allTimesheets : [])
+                .filter(ts => ts && ts.employee_id === id && new Date(ts.date) >= monthStart)
                 .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
             
             // Aktivní a dokončené projekty
-            const activeJobs = allJobs.filter(j => {
-                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+            const jobsArray = Array.isArray(allJobs) ? allJobs : [];
+            const tasksArray = Array.isArray(allTasks) ? allTasks : [];
+            
+            const activeJobs = jobsArray.filter(j => {
+                const assignments = tasksArray.filter(t => t && t.job_id === j.id && t.employee_id === id);
                 return assignments.length > 0 && j.status !== 'completed' && j.status !== 'Dokončeno';
             });
             
-            const completedJobs = allJobs.filter(j => {
-                const assignments = allTasks.filter(t => t.job_id === j.id && t.employee_id === id);
+            const completedJobs = jobsArray.filter(j => {
+                const assignments = tasksArray.filter(t => t && t.job_id === j.id && t.employee_id === id);
                 return assignments.length > 0 && (j.status === 'completed' || j.status === 'Dokončeno');
             });
             
-            const empTasks = allTasks.filter(t => t.employee_id === id && t.status !== 'completed').length;
+            const empTasks = tasksArray.filter(t => t && t.employee_id === id && t.status !== 'completed').length;
             
             // Status
             const status = emp.status || 'offline';
