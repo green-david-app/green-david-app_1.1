@@ -1420,3 +1420,53 @@ body.more-menu-open .bottom-nav {
 .page-header h1:first-child {
   display: none !important;
 }
+
+/* ========================================
+   CSS PROMĚNNÉ Z HTML SOUBORŮ
+   Přesunuto z inline <style> tagů
+   ======================================== */
+
+:root {
+  /* Společné proměnné pro většinu stránek */
+  --bg-primary: #0a1628;
+  --bg-secondary: #1a2942;
+  --bg-card: rgba(255,255,255,0.05);
+  --bg-elevated: rgba(255,255,255,0.08);
+  --border-primary: rgba(255,255,255,0.1);
+  --border-medium: rgba(255,255,255,0.15);
+  --text-primary: #e8eef2;
+  --text-secondary: #9ca8b3;
+  --text-tertiary: #6b7580;
+  --mint: #B2FBA5;
+  --mint-dark: #B2FBA5;
+  --mint-light: #BDDEBF;
+  --mint-background: #E5F2E6;
+  --warning: #fb923c;
+  --danger: #f87171;
+  --success: #B2FBA5;
+  
+  /* Status proměnné pro jobs.html */
+  --status-new: #3b82f6;
+  --status-active: #9FD4A1;
+  --status-paused: #f59e0b;
+  --status-completed: #6b7280;
+  
+  /* Calendar specifické proměnné */
+  --gd-bg: #1a1a1a;
+  --gd-ink: #0a0e11;
+  --gd-accent: #B2FBA5;
+  --gd-blue: #7cc5ff;
+  --gd-purple: #b78bf6;
+  --gd-orange: #ffb86b;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  
+  /* Settings specifické proměnné */
+  --bg-card-hover: #2a2f35;
+  --text-on-light: #0a0e11;
+  --accent-green: #B2FBA5;
+  --accent-blue: #60a5fa;
+  --accent-purple: #a78bfa;
+  --accent-orange: #fb923c;
+  --transition: 200ms ease;
+}
