@@ -650,7 +650,7 @@ input[type="checkbox"] {
   bottom: 0;
   left: 0;
   right: 0;
-  top: 0;
+  /* top: 0; - ODSTRANĚNO */
   z-index: 2000;
   display: none;
   pointer-events: none;
@@ -661,15 +661,7 @@ input[type="checkbox"] {
   pointer-events: all;
 }
 
-.more-menu-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
+/* .more-menu-backdrop - KOMPLETNĚ ODSTRANĚNO */
 
 .more-menu-panel {
   position: absolute;
