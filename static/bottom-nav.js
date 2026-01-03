@@ -214,37 +214,46 @@ function createMoreMenu() {
     menu.id = 'more-menu';
     menu.className = 'more-menu';
     menu.innerHTML = `
-        <a href="/employees.html" class="menu-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span>Tým</span>
-        </a>
-        <a href="/finance.html" class="menu-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-            <span>Finance</span>
-        </a>
-        <a href="/tasks.html" class="menu-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 11 12 14 22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
-            <span>Úkoly</span>
-        </a>
-        <a href="/archive" class="menu-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="21 8 21 21 3 21 3 8"/>
-                <rect x="1" y="3" width="22" height="5"/>
-                <line x1="10" y1="12" x2="14" y2="12"/>
-            </svg>
-            <span>Archiv</span>
-        </a>
+        <div class="more-menu-backdrop"></div>
+        <div class="more-menu-panel">
+            <div class="more-menu-header">
+                <h3 style="margin:0;color:var(--text-primary);">Menu</h3>
+                <button onclick="toggleMoreMenu()" style="background:transparent;border:none;color:var(--text-primary);font-size:24px;cursor:pointer;padding:4px 8px;">×</button>
+            </div>
+            <div class="more-menu-content">
+                <a href="/employees.html" class="more-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Tým</span>
+                </a>
+                <a href="/finance.html" class="more-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <span>Finance</span>
+                </a>
+                <a href="/tasks.html" class="more-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span>Úkoly</span>
+                </a>
+                <a href="/archive" class="more-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="21 8 21 21 3 21 3 8"/>
+                        <rect x="1" y="3" width="22" height="5"/>
+                        <line x1="10" y1="12" x2="14" y2="12"/>
+                    </svg>
+                    <span>Archiv</span>
+                </a>
+            </div>
+        </div>
     `;
     
     document.body.appendChild(menu);
@@ -265,9 +274,10 @@ function toggleMoreMenu() {
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('more-menu');
     const moreButton = document.querySelector('.nav-item[onclick*="toggleMoreMenu"]');
+    const backdrop = e.target.classList.contains('more-menu-backdrop');
     
     if (menu && menu.classList.contains('show')) {
-        if (!menu.contains(e.target) && !moreButton?.contains(e.target)) {
+        if (backdrop || (!menu.contains(e.target) && !moreButton?.contains(e.target))) {
             menu.classList.remove('show');
         }
     }
