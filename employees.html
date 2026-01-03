@@ -64,7 +64,7 @@
             background: var(--mint);
             border: 1px solid var(--mint);
             border-radius: 8px;
-            color: #0a0e11;
+            color: #000000 !important;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
@@ -312,14 +312,14 @@
         /* Zvětšení ikon pro desktop */
         @media (min-width: 768px) {
             .quick-action-btn-small {
-                width: 40px;
-                height: 40px;
+                width: 44px;
+                height: 44px;
             }
             
             .quick-action-btn-small svg {
-                width: 22px !important;
-                height: 22px !important;
-                stroke-width: 4 !important;
+                width: 26px !important;
+                height: 26px !important;
+                stroke-width: 5 !important;
                 stroke: #000000 !important;
             }
             
@@ -328,9 +328,10 @@
             .quick-action-btn-small svg circle,
             .quick-action-btn-small svg line,
             .quick-action-btn-small svg rect,
-            .quick-action-btn-small svg polyline {
+            .quick-action-btn-small svg polyline,
+            .quick-action-btn-small svg ellipse {
                 stroke: #000000 !important;
-                stroke-width: 4 !important;
+                stroke-width: 5 !important;
                 fill: none !important;
             }
         }

@@ -684,9 +684,7 @@ input[type="checkbox"] {
   pointer-events: all;
 }
 
-.more-menu-backdrop {
-  display: none; /* Vypnuto - nechceme šedé pozadí */
-}
+/* .more-menu-backdrop - odstraněno, není potřeba */
 
 .more-menu-panel {
   position: absolute;
