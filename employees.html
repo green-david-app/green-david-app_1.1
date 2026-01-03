@@ -301,25 +301,37 @@
         }
 
         .quick-action-btn-small svg {
-            width: 16px;
-            height: 16px;
-            stroke: currentColor;
+            width: 18px;
+            height: 18px;
+            stroke: #000000 !important;
             fill: none;
-            stroke-width: 2.5;
+            stroke-width: 3.5 !important;
             display: block;
         }
         
         /* Zvětšení ikon pro desktop */
         @media (min-width: 768px) {
             .quick-action-btn-small {
-                width: 36px;
-                height: 36px;
+                width: 40px;
+                height: 40px;
             }
             
             .quick-action-btn-small svg {
-                width: 20px;
-                height: 20px;
-                stroke-width: 3;
+                width: 22px !important;
+                height: 22px !important;
+                stroke-width: 4 !important;
+                stroke: #000000 !important;
+            }
+            
+            /* Force všechny SVG elementy */
+            .quick-action-btn-small svg path,
+            .quick-action-btn-small svg circle,
+            .quick-action-btn-small svg line,
+            .quick-action-btn-small svg rect,
+            .quick-action-btn-small svg polyline {
+                stroke: #000000 !important;
+                stroke-width: 4 !important;
+                fill: none !important;
             }
         }
 
