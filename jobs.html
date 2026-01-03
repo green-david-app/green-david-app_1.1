@@ -718,6 +718,33 @@
             transition: all 0.2s;
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            font-size: 0; /* Skrýt jakýkoliv text */
+            line-height: 0; /* Skrýt jakýkoliv text */
+            text-indent: -9999px; /* Skrýt jakýkoliv text */
+            overflow: hidden; /* Skrýt přetečení */
+        }
+        
+        /* Skrýt všechny textové uzly v quick-action-btn */
+        .quick-action-btn * {
+            font-size: 0;
+            line-height: 0;
+        }
+        
+        /* Skrýt textové uzly v quick-actions */
+        .quick-actions {
+            font-size: 0;
+            line-height: 0;
+        }
+        
+        .quick-actions * {
+            font-size: 0;
+            line-height: 0;
+        }
+        
+        /* Obnovit font-size pro SVG */
+        .quick-action-btn svg {
+            font-size: initial !important;
+            line-height: initial !important;
         }
         
         /* Ensure SVG icons inherit dark color */
@@ -1682,15 +1709,10 @@
                 flex-shrink: 0;
             }
             
-            /* Quick action tlačítka - větší na mobilu */
+            /* Quick action tlačítka - větší na mobilu pro lepší tap target */
             .quick-action-btn {
-                width: 36px !important;  /* Větší pro lepší tap target */
+                width: 36px !important;
                 height: 36px !important;
-            }
-
-            .quick-action-btn {
-                width: 23px;
-                height: 23px;
             }
             
             .quick-action-btn i[data-lucide],
@@ -1714,8 +1736,13 @@
 
             /* Quick actions se zobrazí pouze při show-actions třídě (při kliknutí) */
             .quick-actions {
+                display: none !important; /* Skryté ve výchozím stavu na mobilu */
                 opacity: 0.9;
                 gap: 4px;
+            }
+            
+            .job-card.show-actions .quick-actions {
+                display: flex !important; /* Zobrazit pouze při show-actions */
             }
         }
 
@@ -2440,23 +2467,23 @@
                     ${job.progress !== undefined ? `<span style="color: var(--mint); font-weight: bold; font-size: 12px;">${job.progress}%</span>` : ''}
                 </div>
                 <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" aria-label="Upravit">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" aria-label="Komentáře">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" aria-label="Přílohy">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                         </svg>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Kalendář">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" aria-label="Kalendář">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
                             <line x1="16" x2="16" y1="2" y2="6"></line>
@@ -2464,7 +2491,7 @@
                             <line x1="3" x2="21" y1="10" y2="10"></line>
                         </svg>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" aria-label="Info">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" x2="12" y1="16" y2="12"></line>
