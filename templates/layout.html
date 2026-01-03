@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ title or 'green david app' }}</title>
+  <!-- Inter Font - nejčistší, nejčitelnější -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/hide-top-nav.css"/>
+  <script src="/app-settings.js"></script>
+  <!-- Lucide Icons - minimalistické ikony -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Center brand area; keep logout in the top-right */
+    header.header { position: relative; padding: 12px 16px; }
+    .brand-wrap { display:flex; align-items:center; justify-content:center; gap:12px; }
+    .brand-logo { height:36px; width:auto; border-radius:8px; }
+    .brand-title { font-weight:700; }
+    .brand-sub { font-size:12px; opacity:.7; }
+    .logout-abs { position:absolute; right:16px; top:12px; }
+  </style>
+</head>
+<body>
+  <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
+    <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="/logo.jpg" alt="green david app" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+        <div style="font-size:18px;font-weight:600;color:#e8eef2;">green david app</div>
+      </div>
+      {% if session.get('uid') %}
+        <div>
+          <button id="logoutBtn" class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
+        </div>
+      {% endif %}
+    </div>
+  </header>
+<div id="archive-cta" style="display:none; text-align:right; max-width:1200px; margin:0 auto; padding:6px 8px;">
+  <a href="/archive" style="display:inline-block; padding:8px 14px; border-radius:10px; background:#2f7d32; color:#fff; text-decoration:none; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.2)">
+    archiv zakázek
+  </a>
+</div>
+
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer" style="padding:20px 14px;font-size:12px;opacity:.6;">© green david s.r.o.</footer>
+
+  <script>
+  (function(){
+    var btn = document.getElementById('logoutBtn');
+    if(btn){
+      btn.addEventListener('click', async function(){
+        try{ await fetch('/api/logout', {method:'POST'}); }catch(e){}
+        window.location.href = '/';
+      });
+    }
+  })();
+  </script>
+
+<script>
+(function(){
+  function ensureSearch(container){
+    if(!container) return;
+    if(container.querySelector('#globalSearch')) return;
+    var form = document.createElement('form');
+    form.id = 'globalSearch';
+    form.className = 'tabs-search';
+    form.action = '/search';
+    form.method = 'GET';
+    form.innerHTML = '<input type="search" name="q" placeholder="Hledat…" aria-label="Hledat"/>' +
+                     '<button type="submit" class="btn small">Hledat</button>';
+    container.appendChild(form);
+  }
+  function findTabs(){
+    document.querySelectorAll('.tabs').forEach(ensureSearch);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    findTabs();
+    var obs = new MutationObserver(findTabs);
+    obs.observe(document.body, {subtree:true, childList:true});
+  });
+})();
+</script>
+
+<!-- Deep-link handler for opening Job detail from /?tab=jobs&jobId=... -->
+
+<script>
+// SPA deep link helper: ?tab=jobs&jobId=123 or ?tab=employees
+(function(){
+  function qs(name){ return new URLSearchParams(window.location.search).get(name); }
+  const tab = qs('tab');
+  if (tab) {
+    // Try to switch initial tab by simulating click on the tab header if present
+    document.addEventListener('DOMContentLoaded', () => {
+      const map = {
+        'jobs': 'zakázky', 'employees': 'zaměstnanci',
+        'calendar': 'kalendář','timesheets':'výkazy hodin','tasks':'úkoly','warehouse':'sklad','users':'uživatelé'
+      };
+      const label = map[tab] || null;
+      if (label) {
+        // try click tab with given label
+        const clickTab = () => {
+          const tabs = Array.from(document.querySelectorAll('.tab'));
+          const t = tabs.find(el => el.textContent.trim() === label);
+          if (t) t.click();
+        };
+        clickTab();
+        // also observe in case it renders later
+        const obs = new MutationObserver(clickTab);
+        obs.observe(document.body, {subtree:true, childList:true});
+        setTimeout(()=>obs.disconnect(), 5000);
+      }
+    });
+  }
+  const jobId = qs('jobId');
+  if (jobId) {
+    // After jobs list is rendered, try to open the detail of that job
+    const tryOpen = () => {
+      // Find card/item that contains the ID number (ID column or data-id attr)
+      const selectorCandidates = [
+        `[data-job-id="${jobId}"] .btn, [data-id="${jobId}"] .btn`,
+        `.job-row[data-id="${jobId}"] .btn`,
+        `.job-item[data-id="${jobId}"] .btn`,
+        `tr:has(td:first-child:contains("${jobId}")) .btn`,
+        `a[href*="detail"][data-id="${jobId}"]`, `button:contains("Otevřít detail")`
+      ];
+      // Basic contains polyfill for querySelectorAll
+      (function(){
+        function containsSelectorPolyfill(){
+          // no native :contains in querySelector; we implement manual scan
+          const rows = Array.from(document.querySelectorAll('tr, .job-item, .job-row, [data-job-id], [data-id]'));
+          for (const el of rows) {
+            if (el.dataset && (el.dataset.jobId === jobId || el.dataset.id === jobId)) {
+              const btn = el.querySelector('a,button');
+              if (btn) { btn.click(); return true; }
+            }
+            if (el.querySelector) {
+              const tds = el.querySelectorAll('td,div,span');
+              for (const td of tds) {
+                if (td.textContent && td.textContent.trim() === jobId) {
+                  const btn = el.querySelector('a,button');
+                  if (btn) { btn.click(); return true; }
+                }
+              }
+            }
+          }
+          // fallback: click first "Otevřít detail" on page
+          const any = Array.from(document.querySelectorAll('a,button')).find(b => /Otevřít detail/i.test(b.textContent));
+          if (any) { any.click(); return true; }
+          return false;
+        }
+        window.__openJobDetailById = containsSelectorPolyfill;
+      })();
+
+      if (window.__openJobDetailById && window.__openJobDetailById()) return;
+    };
+    document.addEventListener('DOMContentLoaded', ()=>{
+      tryOpen();
+      const obs = new MutationObserver(()=>tryOpen());
+      obs.observe(document.body, {subtree:true, childList:true});
+      setTimeout(()=>obs.disconnect(), 5000);
+    });
+  }
+})();
+</script>
+
+<script src="/static/archive-cta.js"></script>
+
+<!-- Role and permissions context -->
+<script>
+// Globální objekt s info o přihlášeném uživateli
+window.currentUser = {
+    id: {{ session.get('uid', 'null') }},
+    name: {{ session.get('user_name', '""')|tojson }},
+    email: {{ session.get('user_email', '""')|tojson }},
+    role: {{ session.get('user_role', '"worker"')|tojson }}
+};
+
+// Pomocné funkce pro kontrolu oprávnění
+window.hasRole = function(...roles) {
+    return roles.includes(window.currentUser.role);
+};
+
+window.isOwner = function() {
+    return window.currentUser.role === 'owner' || window.currentUser.role === 'admin';
+};
+
+window.isManager = function() {
+    return ['owner', 'manager', 'admin'].includes(window.currentUser.role);
+};
+
+window.canApprove = function() {
+    return ['owner', 'manager', 'team_lead', 'admin'].includes(window.currentUser.role);
+};
+
+window.canManageEmployees = function() {
+    return ['owner', 'manager', 'admin'].includes(window.currentUser.role);
+};
+</script>
+
+<!-- Bottom Navigation Container -->
+<div id="bottom-nav-container"></div>
+<script src="/static/bottom-nav.js"></script>
+</body>
+</html>

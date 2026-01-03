@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kalendář — green david app</title>
+  <link rel="icon" href="/logo.svg">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/app-settings.js"></script>
+  <style>
+    :root{ --gd-bg:#1a1a1a; --gd-ink:#0a0e11; --gd-accent:#B2FBA5; --gd-blue:#7cc5ff; --gd-purple:#b78bf6; --gd-orange:#ffb86b; --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom); }
+    body{ margin:0; background:#1a1a1a; color:#0a0e11; -webkit-font-smoothing:antialiased; font-family:system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; }
+    .header-hero{ position:sticky; top:0; background:rgba(26,26,26,0.9); backdrop-filter:saturate(140%) blur(10px); padding:calc(10px + var(--safe-top)) 16px 12px; z-index:10; }
+    .back{ color:#B2FBA5; text-decoration:none; font-weight:600; }
+    .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
+    .toolbar .month{ font-size:clamp(22px,5.5vw,28px); font-weight:800; letter-spacing:-.3px; color:#ffffff; }
+    .navbtn{ border:0; background:#0a6040; color:white; padding:10px 12px; border-radius:14px; font-weight:700; }
+    .navbtn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
+    .grid-wrap{ padding:6px 10px 20px; background:#1a1a1a; }
+    .weekday{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding:0 2px 6px; color:#a0a0a0; font-weight:700; }
+    .weekday span{ text-align:center; font-size:12px; }
+    .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+    .day{ position:relative; background:#3d5a4a; border-radius:22px; min-height:84px; padding:10px 8px 8px; color:#0a0e11; box-shadow:0 1px 0 rgba(0,0,0,.07) inset; cursor:pointer; overflow:hidden; }
+    .day.out{ opacity:.6; background:#2d4a3a; }
+    .day.out .num{ color:#1a1a1a; }
+    .num{ font-weight:800; font-size:14px; color:#0a0e11; opacity:1; }
+    .events{ margin-top:6px; display:flex; flex-direction:column; gap:4px; }
+    .chip{ display:inline-flex; align-items:center; max-width:100%; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; background:#2d4a3a; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid rgba(255,255,255,.2); }
+    .chip.green{ border-color:#4ed296; } .chip.purple{ border-color:var(--gd-purple); } .chip.blue{ border-color:var(--gd-blue); } .chip.orange{ border-color:var(--gd-orange); }
+    .today{ background:#B2FBA5 !important; outline:2px solid #B2FBA5; outline-offset:-2px; }
+    .today .num{ color:#0a0e11; }
+    .legend{ display:flex; gap:10px; align-items:center; padding:8px 10px; color:#ffffff; }
+    .legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; }
+    .badge-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+    /* Sheet */
+    .sheet{ position:fixed; left:0; right:0; bottom:-100%; background:#1f2428; border-top-left-radius:18px; border-top-right-radius:18px; box-shadow:0 -10px 30px rgba(0,0,0,.25); padding:12px 14px calc(14px + var(--safe-bottom)); z-index:20; transition:bottom .25s ease; color:#e8eef2; }
+    .sheet.open{ bottom:0; }
+    .sheet .handle{ width:42px; height:5px; background:#ccd; border-radius:999px; margin:6px auto 10px; }
+    .daylist{ margin:2px 0 10px; max-height: 40vh; overflow:auto; border:1px solid #e9eef0; border-radius:12px; padding:6px 8px; }
+    .daylist .row{ display:flex; align-items:center; gap:8px; padding:8px 6px; border-bottom:1px dotted #e7ecee; }
+    .daylist .row:last-child{ border-bottom:0; }
+    .tag{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
+    .tag.job{ background:#e8fff2; color:#007e3a; border:1px solid #b3f4cd; }
+    .tag.task{ background:#f4ebff; color:#6a2df5; border:1px solid #dcc7ff; }
+    .tag.other{ background:#e8f4ff; color:#005da3; border:1px solid #c5e4ff; }
+    .trow-title{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .smallmuted{ color:#778; font-size:12px; }
+    .tabs{ display:flex; gap:6px; margin:10px 0; }
+    .tabs .t{ flex:1; text-align:center; border:1px solid #0a6040; padding:8px 10px; border-radius:12px; font-weight:700; color:#0a6040; }
+    .tabs .t.active{ background:#0a6040; color:#fff; }
+    .row{ display:flex; gap:8px; margin:8px 0; }
+    .row input, .row select{ flex:1; padding:10px 12px; border-radius:12px; border:1px solid #ccd; font-size:16px; }
+    .sheet .actions{ display:flex; justify-content:flex-end; gap:8px; }
+    .btn{ border:0; background:#0a6040; color:#fff; padding:10px 14px; border-radius:12px; font-weight:800; }
+    .btn.ghost{ background:transparent; color:#0a6040; border:2px solid #0a6040; }
+    /* Error overlay */
+    #err{ position:fixed; left:12px; right:12px; bottom:12px; background:#ffe9e9; color:#6b0000; padding:10px 12px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15); font-size:12px; display:none; z-index:9999; }
+    /* Bottom Navigation */
+    .bottom-nav{ position:fixed; bottom:0; left:0; right:0; height:83px; background:rgba(31,36,40,0.95); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border-top:0.5px solid #353b41; display:flex; justify-content:space-around; align-items:center; padding:8px 0 max(env(safe-area-inset-bottom), 8px) 0; z-index:1000; box-shadow:0 -2px 8px rgba(0,0,0,0.5); }
+    .nav-item{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; padding:4px; color:#6b7580; transition:color 200ms ease; cursor:pointer; text-decoration:none; max-width:80px; }
+    .nav-item:hover{ color:#b8c0c8; }
+    .nav-item.active{ color:#B2FBA5; }
+    .nav-icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; }
+    .nav-label{ font-size:11px; font-weight:500; text-align:center; }
+    /* More Menu */
+    .more-menu{ position:fixed; bottom:0; left:0; right:0; top:0; z-index:2000; display:none; pointer-events:none; }
+    .more-menu.show{ display:block; pointer-events:all; }
+    .more-menu-backdrop{ position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); }
+    .more-menu-panel{ position:absolute; bottom:0; left:0; right:0; background:#1f2428; border-top-left-radius:20px; border-top-right-radius:20px; max-height:80vh; overflow-y:auto; }
+    .more-menu-header{ display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #353b41; }
+    .more-menu-content{ padding:8px 0; }
+    .more-menu-item{ display:block; padding:12px 20px; color:#e8eef2; text-decoration:none; transition:background 200ms ease; }
+    .more-menu-item:hover{ background:#2a2f35; }
+    @media (min-width:800px){ .grid-wrap{ max-width:1100px; margin:0 auto; } .day{ min-height:120px; padding:12px; border-radius:24px; } .num{ font-size:16px; } }
+  </style>
+</head>
+<body>
+  <div class="header-hero">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <a class="back" href="/">&larr; Zpět do aplikace</a>
+      <a href="/settings.html" style="display:flex;align-items:center;gap:8px;color:#B2FBA5;text-decoration:none;padding:8px 12px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(178,251,165,0.1)';" onmouseout="this.style.background='transparent';" title="Nastavení">
+        <svg style="width:20px;height:20px;stroke:currentColor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+        </svg>
+      </a>
+    </div>
+    <div class="toolbar">
+      <button class="navbtn ghost" id="prevBtn">&#x25C0;</button>
+      <div class="month" id="monthLabel">Měsíc</div>
+      <button class="navbtn" id="nextBtn">&#x25B6;</button>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="weekday"><span>P</span><span>Ú</span><span>S</span><span>Č</span><span>P</span><span>S</span><span>N</span></div>
+    <div id="cal" class="cal" aria-live="polite"></div>
+    <div class="legend">
+      <div class="item"><span class="badge-dot" style="background:#4ed296"></span> zakázky</div>
+      <div class="item"><span class="badge-dot" style="background:#b78bf6"></span> úkoly / připomínky</div>
+      <div class="item"><span class="badge-dot" style="background:#7cc5ff"></span> ostatní</div>
+    </div>
+  </div>
+
+  <!-- Bottom sheet for quick view + add -->
+  <div id="sheet" class="sheet" aria-hidden="true">
+    <div class="handle"></div>
+    <div style="text-align:center; font-weight:800;">Den: <span id="sheetDate"></span></div>
+
+    <div id="dayEvents" class="daylist" style="display:none;"></div>
+    <div class="smallmuted" id="dayEventsEmpty" style="display:none; text-align:center; margin-top:6px;">V tento den zatím nic není.</div>
+
+    <div class="tabs">
+      <div id="tabJob" class="t active">Zakázka</div>
+      <div id="tabTask" class="t">Úkol</div>
+      <div id="tabNote" class="t">Poznámka</div>
+    </div>
+    <div id="formJob">
+      <div class="row"><input id="jTitle" placeholder="Název zakázky*" required></div>
+      <div class="row"><input id="jClient" placeholder="Zákazník*" required></div>
+      <div class="row">
+        <select id="jStatus"><option>Plán</option><option>Probíhá</option><option>Dokončeno</option></select>
+        <input id="jCity" placeholder="Město">
+      </div>
+      <div class="row"><input id="jCode" placeholder="Kód (např. 2025-091)"></div>
+      <div class="row"><input id="jNote" placeholder="Poznámka"></div>
+    </div>
+    <div id="formTask" style="display:none">
+      <div class="row"><input id="tTitle" placeholder="Nadpis úkolu*" required></div>
+      <div class="row"><input id="tDesc" placeholder="Popis"></div>
+    </div>
+    <div id="formNote" style="display:none">
+      <div class="row"><input id="nText" placeholder="Text poznámky*"></div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="cancelBtn">Zrušit</button>
+      <button class="btn" id="saveBtn">Uložit</button>
+    </div>
+  </div>
+
+  <div id="err"></div>
+
+  <script>
+    // ---- Error surface ----
+    function showErr(e){ var el=document.getElementById('err'); el.textContent = (e && (e.stack||e.message||e)) || 'Neznámá chyba'; el.style.display='block'; console.error(e); }
+    window.addEventListener('error', (e)=> showErr(e.error || e.message || e));
+    window.addEventListener('unhandledrejection', (e)=> showErr(e.reason || e));
+
+    // ---- Utils ----
+    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s)); const byId=id=>document.getElementById(id);
+    function fmtMonth(d){ return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
+    function ymd(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function ymdToCZ(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
+    function parseISODateLocal(s){
+      const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(!m) return s? new Date(s): null;
+      return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+    }
+    function mondayOfWeek(d){ const c=new Date(d); const wd=(c.getDay()+6)%7; c.setDate(c.getDate()-wd); return c; }
+    function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+    function monthEnd(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+    async function japi(paths,opts={}){
+      for (const p of paths){
+        try{
+          const res = await fetch(p,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts});
+          if(res.ok){ try{ return await res.json(); }catch{return{};} }
+        }catch(e){}
+      }
+      throw new Error('API nedostupné');
+    }
+
+    const monthLabel=$('#monthLabel'), cal=$('#cal');
+    const sheetEl=$('#sheet'), sheetDate=$('#sheetDate');
+    const dayEventsBox = $('#dayEvents'); const dayEventsEmpty = $('#dayEventsEmpty');
+
+    let state={ d:new Date(), focusDate:null, tab:'job', cache:{} };
+
+    // ---- Events loading with visible-range filter ----
+    async function fetchEventsForRange(fromDate, toDate){
+      const ym = `${state.d.getFullYear()}-${String(state.d.getMonth()+1).padStart(2,'0')}`;
+
+      try{
+        const j = await japi([`/gd/api/calendar?month=${ym}`, `/api/calendar?month=${ym}`]);
+        if (j && j.events){
+          return (j.events||[]).map(e => ({
+            id: e.id,
+            title: (e.title||e.name||'bez názvu'),
+            start: e.start||e.date_start||e.date||e.when,
+            end: e.end||e.date_end||e.until||e.start,
+            type: e.type||'other'
+          }));
+        }
+      }catch(e){/* fallback */}
+
+      const from = new Date(fromDate); const to = new Date(toDate);
+      from.setHours(0,0,0,0); to.setHours(23,59,59,999);
+      const inRange = (iso)=>{ const d=parseISODateLocal(iso); if(!d) return false; return d>=from && d<=to; };
+      const events=[];
+
+      try{
+        const jj=await japi(['/gd/api/jobs','/api/jobs']);
+        (jj.jobs||[]).forEach(j=>{
+          const date = j.date || j.when || j.start_date || j.start;
+          if(inRange(date)){
+            events.push({ id:`job-${j.id}`, title:`${j.title}${j.code? ' ('+j.code+')':''}`, start:date, end:date, type:'job' });
+          }
+        });
+      }catch(e){}
+
+      try{
+        const tt=await japi(['/gd/api/tasks','/api/tasks']);
+        (tt.tasks||[]).forEach(t=>{
+          const date = t.due_date || t.date || t.when || t.start;
+          if(inRange(date)){
+            events.push({ id:`task-${t.id}`, title:t.title, start:date, end:date, type:'reminder' });
+          }
+        });
+      }catch(e){}
+
+      return events;
+    }
+
+    function buildGridRange(d){
+      const start = monthStart(d), end = monthEnd(d);
+      const from = mondayOfWeek(start);
+      const to = new Date(mondayOfWeek(new Date(end.getFullYear(), end.getMonth(), end.getDate()+6)));
+      return {from, to};
+    }
+
+    function render(d, events){
+      monthLabel.textContent = fmtMonth(d);
+      cal.innerHTML='';
+      const {from,to} = buildGridRange(d);
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      const byDay={};
+      function spread(e){
+        const s = parseISODateLocal(e.start); const eEnd = parseISODateLocal(e.end || e.start);
+        if(!s || !eEnd) return;
+        s.setHours(0,0,0,0); eEnd.setHours(0,0,0,0);
+        for(let t=new Date(s); t<=eEnd; t.setDate(t.getDate()+1)){
+          const key = ymd(t);
+          (byDay[key]=byDay[key]||[]).push(e);
+        }
+      }
+      (events||[]).forEach(spread);
+      state.cache = byDay; // store for quick open
+
+      for(let dt=new Date(from); dt<=to; dt.setDate(dt.getDate()+1)){
+        const key=ymd(dt);
+        const div=document.createElement('div');
+        div.className='day'+(dt.getMonth()!==d.getMonth()?' out':'');
+        if(+dt===+today) div.classList.add('today');
+        div.setAttribute('data-date',key);
+
+        const num=document.createElement('div'); num.className='num'; num.textContent=dt.getDate(); div.appendChild(num);
+        const evs=(byDay[key]||[]);
+        if(evs.length){
+          const wrap=document.createElement('div'); wrap.className='events';
+          evs.slice(0,3).forEach(e=>{ const chip=document.createElement('div'); chip.className='chip '+(e.type==='job'?'green':e.type==='reminder'?'purple':'blue'); chip.title=e.title; chip.innerHTML=`<span class="t">${e.title}</span>`; wrap.appendChild(chip); });
+          if(evs.length>3){ const more=document.createElement('div'); more.className='chip orange'; more.textContent=`+${evs.length-3} další`; wrap.appendChild(more); }
+          div.appendChild(wrap);
+        }
+
+        div.addEventListener('click',()=> openSheet(key));
+        cal.appendChild(div);
+      }
+    }
+
+    async function load(){
+      const {from,to} = buildGridRange(state.d);
+      const evs = await fetchEventsForRange(from, to);
+      render(state.d, evs);
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()-1, 1); load(); });
+    document.getElementById('nextBtn').addEventListener('click', ()=>{ state.d = new Date(state.d.getFullYear(), state.d.getMonth()+1, 1); load(); });
+
+    // ---- Bottom sheet (Quick View + Add) ----
+    function renderDayList(dateStr){
+      const list = state.cache[dateStr] || [];
+      if(list.length===0){
+        dayEventsBox.style.display='none'; dayEventsEmpty.style.display='block';
+        dayEventsBox.innerHTML='';
+        return;
+      }
+      dayEventsEmpty.style.display='none'; dayEventsBox.style.display='block';
+      dayEventsBox.innerHTML = list.map(e => {
+  const tag = e.type==='job' ? 'job' : (e.type==='reminder' ? 'task' : 'other');
+  const rawId = String(e.id || e.job_id || e.task_id || e.key || '');
+  const id = (tag==='job') ? rawId : (rawId.match(/\d+/) ? rawId.match(/\d+/)[0] : rawId);
+  const title = e.title || e.name || '(bez názvu)';
+  return `<div class="row" data-id="${id}" data-type="${tag}">
+    <span class="tag ${tag}">${tag==='job'?'zakázka':(tag==='task'?'úkol':'ostatní')}</span>
+    <div class="trow-title">${title}</div>
+    <div class="row-actions">
+      <button class="act" onclick="onRowDetail('${tag}','${id}')">Detail</button>
+      <button class="act" onclick="onRowEdit('${tag}','${id}')">Upravit</button>
+      <button class="act" onclick="onRowDelete('${tag}','${id}')">Smazat</button>
+    </div>
+  </div>`;
+}).join('');
+    }
+
+    function openSheet(dateStr){ state.focusDate=dateStr; sheetDate.textContent=ymdToCZ(dateStr); renderDayList(dateStr); sheetEl.classList.add('open'); sheetEl.setAttribute('aria-hidden','false'); }
+    function closeSheet(){ sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden','true'); }
+    document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+    function setTab(k){ state.tab=k; document.getElementById('tabJob').classList.toggle('active',k==='job'); document.getElementById('tabTask').classList.toggle('active',k==='task'); document.getElementById('tabNote').classList.toggle('active',k==='note'); document.getElementById('formJob').style.display=(k==='job'?'':'none'); document.getElementById('formTask').style.display=(k==='task'?'':'none'); document.getElementById('formNote').style.display=(k==='note'?'':'none'); }
+    document.getElementById('tabJob').addEventListener('click', ()=>setTab('job')); document.getElementById('tabTask').addEventListener('click', ()=>setTab('task')); document.getElementById('tabNote').addEventListener('click', ()=>setTab('note'));
+
+    // Save handler
+    document.getElementById('saveBtn').addEventListener('click', async ()=>{
+      try{
+        if(!state.focusDate) return;
+        const dateStr = state.focusDate;
+        if(state.tab==='job'){
+          const payload={ title:document.getElementById('jTitle').value.trim(), client:document.getElementById('jClient').value.trim(), status:document.getElementById('jStatus').value, city:document.getElementById('jCity').value.trim(), code:document.getElementById('jCode').value.trim(), date:dateStr, note:document.getElementById('jNote').value.trim() };
+          if(!payload.title || !payload.client){ alert('Vyplň název a zákazníka.'); return; }
+          await japi(['/gd/api/jobs','/api/jobs'],{method:'POST', body:JSON.stringify(payload)});
+        }else if(state.tab==='task'){
+          const payload={ title:document.getElementById('tTitle').value.trim(), description:document.getElementById('tDesc').value.trim(), due_date:dateStr };
+          if(!payload.title){ alert('Vyplň název úkolu.'); return; }
+          await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
+        }else{
+          const payload={ title:'Poznámka', description:(document.getElementById('nText').value.trim()||'Poznámka'), due_date:dateStr };
+          await japi(['/gd/api/tasks','/api/tasks'],{method:'POST', body:JSON.stringify(payload)});
+        }
+        ['jTitle','jClient','jCity','jCode','jNote','tTitle','tDesc','nText'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+        await load();
+        renderDayList(dateStr); // refresh list in sheet too
+      }catch(e){ showErr(e); }
+    });
+
+    
+// ---- Row action functions (global, simple and robust) ----
+async function fetchDetailBy(type, id){
+  if(type==='job'){
+    const d = await japi([`/gd/api/jobs/${id}`, `/api/jobs/${id}`]);
+    return {type:'job', data:(d && d.job)||{}};
+  }else{
+    const list = await japi(['/gd/api/tasks','/api/tasks']);
+    const rows = list.rows || list || [];
+    const found = rows.find(r => String(r.id)===String(id));
+    return {type:'task', data:found||{id}};
+  }
+}
+
+async function onRowDetail(type, id){
+  try{
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    const det = await fetchDetailBy(type, id);
+    openSheet(dateStr);
+    if(det.type==='job'){
+      setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
+    }else{
+      setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    }
+  }catch(e){ showErr(e); }
+}
+
+async function onRowEdit(type, id){
+  try{
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    const det = await fetchDetailBy(type, id);
+    state.editing = { id, type: det.type };
+    openSheet(dateStr);
+    if(det.type==='job'){
+      setTab('job');
+      byId('jTitle') && (byId('jTitle').value = det.data.title || '');
+      byId('jClient') && (byId('jClient').value = det.data.client || '');
+      byId('jCity') && (byId('jCity').value = det.data.city || '');
+      byId('jCode') && (byId('jCode').value = det.data.code || '');
+      byId('jNote') && (byId('jNote').value = det.data.note || '');
+    }else{
+      setTab('task');
+      byId('tTitle') && (byId('tTitle').value = det.data.title || '');
+      byId('tDesc') && (byId('tDesc').value = det.data.description || '');
+      byId('tDue') && (byId('tDue').value = det.data.due_date || dateStr);
+    }
+  }catch(e){ showErr(e); }
+}
+
+async function onRowDelete(type, id){
+  try{
+    if(!confirm('Opravdu smazat?')) return;
+    if(type==='job'){ await japi([`/gd/api/jobs?id=${encodeURIComponent(id)}`, `/api/jobs?id=${encodeURIComponent(id)}`], {method:'DELETE'}); }
+    else { await japi([`/gd/api/tasks?id=${encodeURIComponent(id)}`, `/api/tasks?id=${encodeURIComponent(id)}`], {method:'DELETE'}); }
+    const dateStr = state.focusDate || (state.d.toISOString().slice(0,10));
+    await load(); renderDayList(dateStr);
+  }catch(e){ showErr(e); }
+}
+
+// Intercept save for PATCH when editing
+(function(){
+  const saveBtn = byId('saveBtn'), cancelBtn = byId('cancelBtn');
+  if(saveBtn){
+    const orig = saveBtn.onclick;
+    saveBtn.onclick = async () => {
+      try{
+        const dateStr = state.focusDate;
+        if(state.editing){
+          if(state.editing.type==='job'){
+            const payload = {
+              id:Number(state.editing.id),
+              title:(byId('jTitle')?.value||'').trim(),
+              client:(byId('jClient')?.value||'').trim(),
+              city:(byId('jCity')?.value||'').trim(),
+              code:(byId('jCode')?.value||'').trim(),
+              note:(byId('jNote')?.value||'').trim(), date:dateStr
+            };
+            await japi(['/gd/api/jobs','/api/jobs'], {method:'PATCH', body:JSON.stringify(payload)});
+          }else{
+            const payload = {
+              id:Number(state.editing.id),
+              title:(byId('tTitle')?.value||'').trim(),
+              description:(byId('tDesc')?.value||'').trim(),
+              due_date:(byId('tDue')?.value||dateStr)
+            };
+            await japi(['/gd/api/tasks','/api/tasks'], {method:'PATCH', body:JSON.stringify(payload)});
+          }
+          state.editing=null; closeSheet(); await load(); renderDayList(dateStr); return;
+        }
+      }catch(e){ showErr(e); return; }
+      if(typeof orig==='function'){ return orig(); }
+    };
+  }
+  if(cancelBtn){ cancelBtn.addEventListener('click', ()=>{ state.editing=null; closeSheet(); }); }
+})();
+
+    // Init
+    load();
+  </script>
+
+<!-- Bottom Navigation -->
+
+<!-- More Menu (Expandable) -->
+<div id="more-menu" class="more-menu">
+  <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+  <div class="more-menu-panel">
+    <div class="more-menu-header">
+      <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+      <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div class="more-menu-content">
+      <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>přehled</span>
+      </a>
+      <a href="/calendar.html" class="more-menu-item">
+        <span>kalendář</span>
+      </a>
+      <a href="/timesheets.html" class="more-menu-item">
+        <span>výkazy hodin</span>
+      </a>
+      <a href="/jobs.html" class="more-menu-item">
+        <span>zakázky</span>
+      </a>
+      <a href="/tasks.html" class="more-menu-item">
+        <span>úkoly</span>
+      </a>
+      <a href="/employees.html" class="more-menu-item">
+        <span>zaměstnanci</span>
+      </a>
+      <a href="/warehouse.html" class="more-menu-item">
+        <span>sklad</span>
+      </a>
+      <a href="/finance.html" class="more-menu-item">
+        <span>💰 finance</span>
+      </a>
+      <a href="/documents.html" class="more-menu-item">
+        <span>📁 dokumenty</span>
+      </a>
+      <a href="/reports.html" class="more-menu-item">
+        <span>📊 reporty</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>archiv zakázek</span>
+      </a>
+      <a href="/settings.html" class="more-menu-item">
+        <span>nastavení</span>
+      </a>
+    </div>
+  </div>
+</div>
+<div id="bottom-nav-container"></div>
+<script src="/static/bottom-nav.js"></script>
+<link rel="stylesheet" href="/static/icons.css">
+</body>
+</html>
