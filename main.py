@@ -387,7 +387,17 @@ def requires_role(*allowed_roles):
                 (session['uid'],)
             ).fetchone()
             
-            if not user or user['role'] not in allowed_roles:
+            if not user:
+                return jsonify({'ok': False, 'error': 'unauthorized'}), 401
+            
+            # Fallback: pokud nemá roli nebo je NULL, považujeme za owner (pro zpětnou kompatibilitu)
+            user_role = user['role'] or 'owner'
+            
+            # Pokud je role 'admin', mapujeme na 'owner'
+            if user_role == 'admin':
+                user_role = 'owner'
+            
+            if user_role not in allowed_roles:
                 return jsonify({'ok': False, 'error': 'forbidden'}), 403
             
             return f(*args, **kwargs)
@@ -405,7 +415,16 @@ def get_current_user():
         (session['uid'],)
     ).fetchone()
     
-    return dict(user) if user else None
+    if not user:
+        return None
+    
+    user_dict = dict(user)
+    
+    # Fallback: pokud nemá roli nebo je NULL, považujeme za owner (pro zpětnou kompatibilitu)
+    if not user_dict.get('role') or user_dict['role'] == 'admin':
+        user_dict['role'] = 'owner'
+    
+    return user_dict
 
 def can_manage_employee(manager_id, employee_id):
     """Kontrola, zda má manager oprávnění spravovat zaměstnance"""
@@ -532,12 +551,46 @@ def seed_admin():
             (
                 os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
                 os.environ.get("ADMIN_NAME","Admin"),
-                "admin",
+                "owner",  # Vytvořit jako owner místo admin
                 generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
                 datetime.utcnow().isoformat()
             )
         )
         db.commit()
+
+def _auto_upgrade_admins_to_owner():
+    """Automaticky upgrade admin účtů na owner při startu"""
+    db = get_db()
+    try:
+        # Upgrade známých admin emailů
+        admin_emails = ['admin@greendavid.local', 'david@greendavid.cz', 'admin@greendavid.cz', 'admin@example.com']
+        for email in admin_emails:
+            result = db.execute(
+                "UPDATE users SET role = 'owner' WHERE email = ? AND (role IS NULL OR role != 'owner' OR role = 'admin')",
+                (email,)
+            )
+            if result.rowcount > 0:
+                db.commit()
+                print(f"[DB] Auto-upgraded {email} to owner role")
+        
+        # Pokud žádný owner neexistuje, upgrade prvního uživatele
+        owner_exists = db.execute("SELECT COUNT(*) as cnt FROM users WHERE role = 'owner'").fetchone()
+        if owner_exists['cnt'] == 0:
+            first_user = db.execute("SELECT id, email FROM users ORDER BY id LIMIT 1").fetchone()
+            if first_user:
+                db.execute("UPDATE users SET role = 'owner' WHERE id = ?", (first_user['id'],))
+                db.commit()
+                print(f"[DB] Auto-upgraded first user {first_user['email']} to owner role")
+        
+        # Upgrade všech admin účtů na owner
+        result = db.execute(
+            "UPDATE users SET role = 'owner' WHERE role = 'admin' OR role IS NULL"
+        )
+        if result.rowcount > 0:
+            db.commit()
+            print(f"[DB] Auto-upgraded {result.rowcount} admin/NULL accounts to owner role")
+    except Exception as e:
+        print(f"[DB] Warning: Could not auto-upgrade admin: {e}")
 
 def seed_employees():
     db = get_db()
@@ -557,6 +610,7 @@ def seed_employees():
 def _ensure():
     ensure_schema()
     seed_admin()
+    _auto_upgrade_admins_to_owner()
     seed_employees()
 
 # ----------------- helpers for jobs schema compat -----------------
@@ -654,11 +708,24 @@ def api_login():
     row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
     if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    
+    # Normalizovat roli (admin -> owner, NULL -> owner)
+    user_role = row["role"] or "owner"
+    if user_role == "admin":
+        user_role = "owner"
+    
+    # Auto-upgrade admin účtů na owner při přihlášení
+    if row["role"] in (None, "admin"):
+        db.execute("UPDATE users SET role = 'owner' WHERE id = ?", (row["id"],))
+        db.commit()
+        user_role = "owner"
+        print(f"[DB] Auto-upgraded {email} to owner role on login")
+    
     # store user id and role in session
     session["uid"] = row["id"]
     session["user_name"] = row["name"]
     session["user_email"] = row["email"]
-    session["user_role"] = row["role"]
+    session["user_role"] = user_role
     return jsonify({"ok": True})
 
 @app.route("/api/logout", methods=["POST"])
@@ -677,11 +744,15 @@ def api_employees():
     
     db = get_db()
     if request.method == "GET":
-        # Filtrování podle role
-        if user['role'] in ('owner', 'manager', 'admin'):
+        # Filtrování podle role - použít roli s fallbackem
+        user_role = user.get('role') or 'owner'
+        if user_role == 'admin':
+            user_role = 'owner'
+        
+        if user_role in ('owner', 'manager'):
             # Owner a Manager vidí všechny zaměstnance
             rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
-        elif user['role'] == 'team_lead':
+        elif user_role == 'team_lead':
             # Team lead vidí jen své podřízené (pokud mají employees.user_id link)
             # Prozatím zobrazíme všechny, protože employees tabulka nemá user_id
             # TODO: Přidat user_id do employees tabulky pro propojení
@@ -733,7 +804,10 @@ def api_employees():
         return jsonify({"ok": True, "employees": employees})
     if request.method == "POST":
         # Pouze owner a manager mohou přidávat zaměstnance
-        if user['role'] not in ('owner', 'manager', 'admin'):
+        user_role = user.get('role') or 'owner'
+        if user_role == 'admin':
+            user_role = 'owner'
+        if user_role not in ('owner', 'manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
@@ -782,7 +856,10 @@ def api_employees():
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "PATCH":
         # Pouze owner a manager mohou upravovat zaměstnance
-        if user['role'] not in ('owner', 'manager', 'admin'):
+        user_role = user.get('role') or 'owner'
+        if user_role == 'admin':
+            user_role = 'owner'
+        if user_role not in ('owner', 'manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
@@ -814,7 +891,10 @@ def api_employees():
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "DELETE":
         # Pouze owner a manager mohou mazat zaměstnance
-        if user['role'] not in ('owner', 'manager', 'admin'):
+        user_role = user.get('role') or 'owner'
+        if user_role == 'admin':
+            user_role = 'owner'
+        if user_role not in ('owner', 'manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             eid = request.args.get("id", type=int)
