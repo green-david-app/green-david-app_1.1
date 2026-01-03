@@ -803,7 +803,7 @@
               <input type="search" placeholder="Vyhledávat..." />
             </div>
             <div className="admin-stats">
-              <div className="admin-stat" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+              <div className="admin-stat" onClick={()=>{window.location.href="/jobs.html";}}>
                 <span className="value">{stats.jobs}</span>
                 <span className="label">zakázky</span>
               </div>
@@ -820,7 +820,7 @@
 
           {/* Action Cards */}
           <div className="action-grid">
-            <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+            <div className="action-card" onClick={()=>{window.location.href="/jobs.html";}}>
               <div className="icon-circle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"/>
@@ -840,7 +840,7 @@
               <h3>Výkaz hodin</h3>
               <p>Přidat čas</p>
             </div>
-            <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs'); else window.location.href="/jobs.html";}}>
+            <div className="action-card" onClick={()=>{window.location.href="/jobs.html";}}>
               <div className="icon-circle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -1366,7 +1366,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           
           {/* Top Stat Cards */}
           <div className="dashboard-stats">
-            <div className="metric-card primary" style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+            <div className="metric-card primary" style={{cursor:"pointer"}} onClick={()=>{window.location.href="/jobs.html";}}>
               <div className="metric-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -1432,7 +1432,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
           
           {/* Quick Actions */}
           <div className="quick-actions">
-            <button className="action-btn" onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+            <button className="action-btn" onClick={()=>{window.location.href="/jobs.html";}}>
               <span className="icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"/>
@@ -1506,7 +1506,7 @@ if(open){ const emp=list.find(x=>x.id===open); if(emp) return <EmployeeDetail em
                 {activeJobs.slice(0,5).map(j=>{
                   const progress = Math.random()*100; // Simplified - would calculate from actual data
                   const daysLeft = j.date ? Math.ceil((new Date(j.date) - today) / (1000*60*60*24)) : null;
-                  return <div key={j.id} className="project-preview" style={{cursor:"pointer"}} onClick={()=>{if(window.setAppTab) window.setAppTab('jobs');}}>
+                  return <div key={j.id} className="project-preview" style={{cursor:"pointer"}} onClick={()=>{window.location.href="/jobs.html";}}>
                     <div className="project-info">
                       <h4>{j.title || `Zakázka ${j.id}`}</h4>
                       <p>{j.client || '—'} • {j.city || '—'}</p>
