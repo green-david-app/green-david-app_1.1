@@ -528,6 +528,13 @@
             align-items: flex-start;
             margin-bottom: 8px;
         }
+        
+        .job-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
 
         .job-card h4 {
             color: #ffffff;
@@ -539,13 +546,10 @@
         }
 
         .job-type-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             stroke: #000000;
-            background: var(--mint);
-            padding: 4px;
-            border-radius: 4px;
-            flex-shrink: 0;
+            stroke-width: 2;
         }
 
         .job-card-info {
@@ -2286,8 +2290,12 @@
             card.innerHTML = `
                 ${job.photo ? `<img src="${job.photo}" class="job-card-photo" alt="${escapeHtml(job.title)}">` : ''}
                 <div class="job-card-header">
-                    <h4 class="inline-edit" data-field="title" data-job-id="${job.id}">${escapeHtml(job.title || 'Bez názvu')}</h4>
-                    ${getJobTypeIcon(job.type)}
+                    <div class="job-title-row">
+                        <div class="icon-wrapper">
+                            ${getJobTypeIcon(job.type)}
+                        </div>
+                        <h4 class="inline-edit" data-field="title" data-job-id="${job.id}">${escapeHtml(job.title || 'Bez názvu')}</h4>
+                    </div>
                 </div>
                 <div class="job-card-info">
                     <div class="job-info-item">
