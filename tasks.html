@@ -6,6 +6,353 @@
     <title>Úkoly - Green David</title>
     <link rel="stylesheet" href="/static/style.css"/>
     <script src="/app-settings.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a1628;
+            --bg-secondary: #1a2942;
+            --bg-card: rgba(255,255,255,0.05);
+            --bg-elevated: rgba(255,255,255,0.08);
+            --border-primary: rgba(255,255,255,0.1);
+            --border-medium: rgba(255,255,255,0.15);
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #B2FBA5;
+            --mint-dark: #B2FBA5;
+            --warning: #fb923c;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-top: 56px; /* Space for fixed header */
+            padding-bottom: 80px;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 0; /* Remove top padding since body already has padding-top */
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            margin-top: 0; /* Ensure no top margin */
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--mint);
+            border: 1px solid var(--mint);
+            border-radius: 8px;
+            color: #0a0e11;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--mint-dark);
+            transform: translateY(-2px);
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .filter-btn.active {
+            background: #B2FBA5;
+            color: #000;
+            border-color: #B2FBA5;
+        }
+
+        .tasks-kanban {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .tasks-kanban {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .task-column {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 400px;
+        }
+
+        .task-column h3 {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-column .count {
+            background: #B2FBA5;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            border-color: #B2FBA5;
+            transform: translateX(4px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item h4 {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .task-item.completed h4 {
+            text-decoration: line-through;
+        }
+
+        .task-item .task-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 2000; /* Higher than header (1000) */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-header h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-body input,
+        .modal-body select,
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .modal-body input:focus,
+        .modal-body select:focus,
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #B2FBA5;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: var(--mint);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <header class="app-header">
