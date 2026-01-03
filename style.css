@@ -668,9 +668,15 @@ input[type="checkbox"] {
   pointer-events: all;
 }
 
+/* Skryj bottom toolbar když je more menu otevřené */
+body:has(.more-menu.show) .bottom-nav,
+body:has(.more-menu.show) #bottom-nav-container .bottom-nav,
 .more-menu.show ~ .bottom-nav,
-body:has(.more-menu.show) .bottom-nav {
-  display: none;
+.more-menu.show ~ #bottom-nav-container .bottom-nav {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 /* .more-menu-backdrop - KOMPLETNĚ ODSTRANĚNO */
@@ -1271,4 +1277,43 @@ body:has(.more-menu.show) .bottom-nav {
 
 .timeline-grid::-webkit-scrollbar-thumb:hover {
     background: #7EBC82;
+}
+
+/* ========================================
+   TIMESHEETS & GREEN BUTTONS ICON FIX
+   ======================================== */
+
+/* Všechny SVG ikony v zelených tlačítkách musí mít tmavou barvu */
+.btn-primary svg,
+button.btn-primary svg,
+.ts-actions .btn-primary svg,
+.ts-view-btn.active svg {
+  stroke: #0a0e11 !important;
+  color: #0a0e11 !important;
+}
+
+/* Zelené tlačítka view toggle */
+.ts-view-btn.active {
+  background: var(--mint) !important;
+  color: #0a0e11 !important;
+}
+
+.ts-view-btn.active svg {
+  stroke: #0a0e11 !important;
+}
+
+/* Navigační tlačítka v toolbaru */
+.ts-nav-btn {
+  background: transparent;
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.ts-nav-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--mint-border);
 }

@@ -271,16 +271,59 @@ function toggleMoreMenu() {
         setTimeout(() => toggleMoreMenu(), 10);
         return;
     }
-    menu.classList.toggle('show');
     
-    // Přidej event listenery na všechny odkazy v menu pro automatické zavření
-    if (menu.classList.contains('show')) {
+    const isShowing = menu.classList.toggle('show');
+    
+    // Dynamicky skryj/zobraz bottom-nav
+    const bottomNav = document.querySelector('.bottom-nav');
+    const bottomNavContainer = document.getElementById('bottom-nav-container');
+    
+    if (isShowing) {
+        // Skryj bottom toolbar
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+            bottomNav.style.opacity = '0';
+            bottomNav.style.visibility = 'hidden';
+            bottomNav.style.pointerEvents = 'none';
+        }
+        if (bottomNavContainer) {
+            bottomNavContainer.style.display = 'none';
+            bottomNavContainer.style.opacity = '0';
+            bottomNavContainer.style.visibility = 'hidden';
+        }
+        
+        // Přidej event listenery na všechny odkazy v menu pro automatické zavření
         const menuLinks = menu.querySelectorAll('.more-menu-item');
         menuLinks.forEach(link => {
             link.addEventListener('click', () => {
                 menu.classList.remove('show');
+                // Obnov bottom toolbar
+                if (bottomNav) {
+                    bottomNav.style.display = '';
+                    bottomNav.style.opacity = '';
+                    bottomNav.style.visibility = '';
+                    bottomNav.style.pointerEvents = '';
+                }
+                if (bottomNavContainer) {
+                    bottomNavContainer.style.display = '';
+                    bottomNavContainer.style.opacity = '';
+                    bottomNavContainer.style.visibility = '';
+                }
             }, { once: true });
         });
+    } else {
+        // Obnov bottom toolbar
+        if (bottomNav) {
+            bottomNav.style.display = '';
+            bottomNav.style.opacity = '';
+            bottomNav.style.visibility = '';
+            bottomNav.style.pointerEvents = '';
+        }
+        if (bottomNavContainer) {
+            bottomNavContainer.style.display = '';
+            bottomNavContainer.style.opacity = '';
+            bottomNavContainer.style.visibility = '';
+        }
     }
 }
 
@@ -296,6 +339,21 @@ document.addEventListener('click', (e) => {
         if ((!menuPanel?.contains(e.target) && !moreButton?.contains(e.target)) ||
             (e.target === menu)) {
             menu.classList.remove('show');
+            
+            // Obnov bottom toolbar
+            const bottomNav = document.querySelector('.bottom-nav');
+            const bottomNavContainer = document.getElementById('bottom-nav-container');
+            if (bottomNav) {
+                bottomNav.style.display = '';
+                bottomNav.style.opacity = '';
+                bottomNav.style.visibility = '';
+                bottomNav.style.pointerEvents = '';
+            }
+            if (bottomNavContainer) {
+                bottomNavContainer.style.display = '';
+                bottomNavContainer.style.opacity = '';
+                bottomNavContainer.style.visibility = '';
+            }
         }
     }
 });
