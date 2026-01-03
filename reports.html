@@ -10,25 +10,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="app-header-container">
-      <a href="/" class="app-header-brand">
-        <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
-        <div class="app-header-text">
-          <div class="app-header-title">green david app</div>
-        </div>
-      </a>
-      <div class="app-header-actions">
-        <div id="userbox" class="app-header-user"></div>
-        <a href="/settings.html" class="app-header-settings" title="Nastavení">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </header>
   <div class="reports-page">
       <h1>
         <svg style="width:32px;height:32px;stroke:#B2FBA5;display:inline-block;vertical-align:middle;margin-right:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -830,20 +811,7 @@
   <script src="/static/bottom-nav.js"></script>
   <link rel="stylesheet" href="/static/icons.css">
   <script>
-      async function refreshUserBox(){
-        const box = document.getElementById("userbox");
-        try{
-          const j = await fetch("/api/me").then(r=>r.json());
-          if(j.authenticated){
-            box.innerHTML = `<span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count||0}</strong></span> &nbsp; <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>`;
-            document.getElementById("logout-btn").onclick = async ()=>{ await fetch("/api/logout",{method:"POST"}); location.reload(); };
-          } else {
-            box.innerHTML = '<span>Nepřihlášen</span>';
-          }
-        }catch(e){ box.innerText = ""; }
-      }
-      refreshUserBox();
-  </script>
+    <script src="/static/js/components/header.js"></script>
 </body>
 </html>
 

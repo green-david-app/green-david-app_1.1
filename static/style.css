@@ -1317,9 +1317,8 @@ body.more-menu-open .bottom-nav {
 }
 
 /* ========================================
-   UNIFIED HEADER - Jednotný napříč aplikací
+   APP HEADER
    ======================================== */
-
 .app-header {
   background: rgba(31, 36, 40, 0.95);
   backdrop-filter: blur(20px);
@@ -1341,13 +1340,12 @@ body.more-menu-open .bottom-nav {
 }
 
 .app-header-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   cursor: pointer;
   transition: opacity 0.2s;
-  flex-shrink: 0;
 }
 
 .app-header-brand:hover {
@@ -1361,9 +1359,8 @@ body.more-menu-open .bottom-nav {
 }
 
 .app-header-text {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header-title {
@@ -1371,26 +1368,17 @@ body.more-menu-open .bottom-nav {
   font-weight: 600;
   color: #e8eef2;
   white-space: nowrap;
-  line-height: 1.2;
 }
 
 .app-header-subtitle {
-  font-size: 12px !important;
-  color: #9ca8b3 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  line-height: 1.2;
-  margin: 0;
-  padding: 0;
+  font-size: 12px;
+  color: #9ca8b3;
 }
 
 .app-header-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  flex-shrink: 0;
-  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .app-header-user {
@@ -1402,7 +1390,7 @@ body.more-menu-open .bottom-nav {
 }
 
 .app-header-settings {
-  display: flex !important;
+  display: flex;
   align-items: center;
   gap: 8px;
   color: #9ca8b3;
@@ -1410,8 +1398,6 @@ body.more-menu-open .bottom-nav {
   padding: 8px 12px;
   border-radius: 8px;
   transition: all 0.2s;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 .app-header-settings:hover {
@@ -1420,42 +1406,14 @@ body.more-menu-open .bottom-nav {
 }
 
 .app-header-settings svg {
-  width: 20px !important;
-  height: 20px !important;
-  stroke: currentColor !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  fill: none !important;
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
-/* Skryj staré/duplicitní headery */
+/* Skryj staré headery */
 .header:not(.app-header),
-.back,
-.brand:not(.app-header-brand),
-.ts-page-header,
-.page-header h1:first-child {
+.page-header:has(h1),
+.brand:not(.app-header-brand) {
   display: none !important;
-}
-
-/* Safari-specific fixes pro app-header */
-.app-header .app-header-subtitle {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  height: auto !important;
-  width: auto !important;
-  overflow: visible !important;
-}
-
-.app-header .app-header-settings {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-.app-header .app-header-settings svg {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
