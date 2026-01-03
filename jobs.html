@@ -1148,23 +1148,24 @@
             width: 100%;
         }
 
-        /* DNES marker - vertical line - pouze v timeline zobrazení */
+        /* DNES marker - vertical line - pouze v timeline zobrazení a pouze v časové ose */
         .timeline-today-marker {
             display: none; /* Skryto ve výchozím stavu */
         }
         
-        .timeline-view.active .timeline-today-marker {
-            display: block; /* Zobrazit pouze v aktivním timeline zobrazení */
+        .timeline-view.active .timeline-bars-container .timeline-today-marker {
+            display: block; /* Zobrazit pouze v aktivním timeline zobrazení a pouze v časové ose */
             position: absolute;
             width: 2px;
-            height: 100%;
+            height: 100%; /* 100% výšky timeline-bars-container (48px + padding) */
             background: #ef4444;
             z-index: 10;
             pointer-events: none;
             top: 0;
         }
         
-        .timeline-view.active .timeline-today-marker::before {
+        /* Label "DNES" pouze v prvním řádku */
+        .timeline-view.active .timeline-row:first-child .timeline-bars-container .timeline-today-marker::before {
             content: "DNES";
             position: absolute;
             top: -20px;
@@ -2764,6 +2765,10 @@
                 // Zkrať název pokud je příliš dlouhý
                 const shortTitle = jobTitle.length > 25 ? jobTitle.substring(0, 22) + '...' : jobTitle;
                 
+                // Přidáme DNES marker do každého řádku časové osy
+                const showTodayMarker = todayOffset >= 0 && todayOffset < days.length;
+                const markerLeft = showTodayMarker ? todayLeft : null;
+                
                 html += `
                     <div class="timeline-row">
                         <div class="timeline-task-info">
@@ -2771,6 +2776,7 @@
                             <span class="task-progress">${progress}%</span>
                         </div>
                         <div class="timeline-bars-container" style="width: ${totalWidth}px;">
+                            ${showTodayMarker ? `<div class="timeline-today-marker" style="left: ${markerLeft}px;"></div>` : ''}
                             <div class="timeline-bar ${progressClass}" 
                                  style="left: ${left}px; width: ${width}px;"
                                  onclick="showJobDetail(${job.id})"
@@ -2790,22 +2796,6 @@
             
             html += '</div>'; // timeline-body
             html += '</div>'; // timeline-grid
-            
-            // DNES marker (absolutně pozicovaný - vertical line)
-            if (todayOffset >= 0 && todayOffset < days.length) {
-                const markerLeft = 200 + todayLeft;
-                console.log('=== DEBUG: Timeline DNES marker ===');
-                console.log('Today offset:', todayOffset);
-                console.log('Today left:', todayLeft);
-                console.log('Day width:', dayWidth);
-                console.log('Marker left position:', markerLeft);
-                console.log('Total days:', days.length);
-                html += `<div class="timeline-today-marker" style="left: ${markerLeft}px; top: 0; height: 100%;"></div>`;
-            } else {
-                console.log('=== DEBUG: Timeline DNES marker ===');
-                console.log('Today offset:', todayOffset, '(outside range)');
-                console.log('Days range: 0 to', days.length);
-            }
             
             html += '</div>'; // timeline-container
 
