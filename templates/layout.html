@@ -24,27 +24,31 @@
   </style>
 </head>
 <body>
-  <header class="header">
-    <div style="max-width:1400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;">
-      <a href="/" class="brand-link">
-        <img src="/logo.jpg" alt="green david app" style="height:32px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
-        <div>
-          <div style="font-size:16px;font-weight:600;color:#e8eef2;line-height:1.2;">green david app</div>
-          <div style="font-size:11px;color:#9ca8b3;line-height:1.2;">interní systém</div>
+  <header class="app-header">
+    <div class="app-header-container">
+      <a href="/" class="app-header-brand">
+        <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
+        <div class="app-header-text">
+          <div class="app-header-title">green david app</div>
         </div>
       </a>
-      {% if session.get('uid') %}
-        <div>
-          <button id="logoutBtn" class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
+      <div class="app-header-actions">
+        <div class="app-header-user">
+          {% if session.get('uid') %}
+          <span>{{ session.get('user_email', '') }}</span>
+          {% endif %}
         </div>
-      {% endif %}
+        <a href="/settings.html" class="app-header-settings" title="Nastavení">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+          </svg>
+        </a>
+        {% if session.get('uid') %}
+        <button id="logoutBtn" class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
+        {% endif %}
+      </div>
     </div>
-  </header>
-  <header class="app-header">
-    <a href="/" class="app-header-brand">
-      <img src="/logo.jpg" alt="Green David" class="app-header-logo" onerror="this.src='/logo.svg'">
-      <span class="app-header-title">green david app</span>
-    </a>
   </header>
 <div id="archive-cta" style="display:none; text-align:right; max-width:1200px; margin:0 auto; padding:6px 8px;">
   <a href="/archive" style="display:inline-block; padding:8px 14px; border-radius:10px; background:#2f7d32; color:#fff; text-decoration:none; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.2)">
