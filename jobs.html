@@ -1148,8 +1148,13 @@
             width: 100%;
         }
 
-        /* DNES marker - vertical line */
+        /* DNES marker - vertical line - pouze v timeline zobrazení */
         .timeline-today-marker {
+            display: none; /* Skryto ve výchozím stavu */
+        }
+        
+        .timeline-view.active .timeline-today-marker {
+            display: block; /* Zobrazit pouze v aktivním timeline zobrazení */
             position: absolute;
             width: 2px;
             height: 100%;
@@ -1159,7 +1164,7 @@
             top: 0;
         }
         
-        .timeline-today-marker::before {
+        .timeline-view.active .timeline-today-marker::before {
             content: "DNES";
             position: absolute;
             top: -20px;
@@ -1175,6 +1180,11 @@
         }
 
         .timeline-today-label {
+            display: none; /* Skryto ve výchozím stavu */
+        }
+        
+        .timeline-view.active .timeline-today-label {
+            display: block; /* Zobrazit pouze v aktivním timeline zobrazení */
             position: absolute;
             background: #ef4444;
             color: #ffffff;
