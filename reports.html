@@ -118,6 +118,8 @@
       padding: 24px;
       cursor: pointer;
       transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
     }
 
     .report-type-card:hover {
@@ -131,6 +133,7 @@
       font-weight: 600;
       color: var(--text-primary);
       margin: 0 0 8px 0;
+      clear: both;
     }
 
     .report-type-card p {
@@ -140,8 +143,20 @@
     }
 
     .report-type-card .icon {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
       font-size: 48px;
       margin-bottom: 12px;
+      height: 48px;
+      width: 48px;
+      flex-shrink: 0;
+    }
+    
+    .report-type-card .icon i,
+    .report-type-card .icon svg {
+      width: 32px !important;
+      height: 32px !important;
     }
 
     .report-features {

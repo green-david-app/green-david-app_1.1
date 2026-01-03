@@ -582,7 +582,9 @@ input[type="checkbox"] {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 83px;
+  height: 83px !important;
+  min-height: 83px !important;
+  max-height: 83px !important;
   background: rgba(31, 36, 40, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -600,8 +602,10 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   flex: 1;
+  height: 100%;
   padding: var(--space-xs);
   color: #e0e0e0; /* Neaktivní položky */
   transition: color var(--transition);
