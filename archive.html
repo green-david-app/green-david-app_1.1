@@ -1,4 +1,4 @@
-<!doctype html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Archiv zakázek</title><link rel="stylesheet" href="/static/style.css"/></head><body><div class="container"><h1>Archiv zakázek</h1><div id="arch"></div></div><script>
+<!doctype html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Archiv zakázek</title><link rel="stylesheet" href="/static/style.css"/></head><body><header class="app-header"><a href="/" class="app-header-brand"><img src="/logo.jpg" alt="Green David" class="app-header-logo" onerror="this.src='/logo.svg'"><span class="app-header-title">green david app</span></a></header><div class="container"><h1>Archiv zakázek</h1><div id="arch"></div></div><script>
 (async () => {
   const res = await fetch('/api/jobs/archive'); const data = await res.json();
   const root = document.getElementById('arch');

@@ -1315,3 +1315,65 @@ body.more-menu-open .bottom-nav {
 .timeline-grid::-webkit-scrollbar-thumb:hover {
     background: #7EBC82;
 }
+
+/* ========================================
+   UNIFIED STICKY HEADER
+   ======================================== */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(31, 36, 40, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border-primary);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.app-header-brand:hover {
+  opacity: 0.8;
+}
+
+.app-header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.app-header-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.app-header-page {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+/* Skrýt staré headery */
+.back,
+.brand:not(.app-header-brand),
+.ts-page-header,
+.reports-header h1,
+.page-header h1 {
+  display: none !important;
+}

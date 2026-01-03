@@ -121,6 +121,9 @@
       padding: 24px;
       cursor: pointer;
       transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .report-type-card:hover {
@@ -133,7 +136,7 @@
       font-size: 20px;
       font-weight: 600;
       color: var(--text-primary);
-      margin: 0 0 8px 0;
+      margin: 0;
     }
 
     .report-type-card p {
@@ -143,8 +146,13 @@
     }
 
     .report-type-card .icon {
-      font-size: 48px;
-      margin-bottom: 12px;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0;
     }
 
     .report-features {
@@ -487,6 +495,12 @@
   </style>
 </head>
 <body>
+  <header class="app-header">
+    <a href="/" class="app-header-brand">
+      <img src="/logo.jpg" alt="Green David" class="app-header-logo" onerror="this.src='/logo.svg'">
+      <span class="app-header-title">green david app</span>
+    </a>
+  </header>
   <div class="reports-page">
     <!-- Header -->
     <div class="reports-header">
