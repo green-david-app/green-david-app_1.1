@@ -309,8 +309,68 @@
             padding: 24px;
             border-bottom: 1px solid var(--border-primary);
             display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        .employee-detail-header-left {
+            display: flex;
             gap: 20px;
             align-items: center;
+            flex: 1;
+        }
+        
+        .employee-detail-actions-header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .btn-edit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--mint);
+            color: #000;
+            border: 1px solid var(--mint);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-edit:hover {
+            background: var(--mint-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.5);
+        }
+        
+        .btn-edit svg,
+        .btn-delete svg {
+            width: 18px;
+            height: 18px;
         }
 
         .employee-detail-avatar {
@@ -405,20 +465,22 @@
 
         .tabs-nav {
             display: flex;
-            gap: 0;
+            gap: 16px;
             overflow-x: auto;
             padding: 0 24px;
+            margin-bottom: 24px;
         }
 
         .tab-button {
-            padding: 16px 24px;
-            background: none;
+            padding: 12px 24px;
+            background: rgba(159, 212, 161, 0.1);
             border: none;
             border-bottom: 3px solid transparent;
+            border-radius: 8px 8px 0 0;
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.2s;
             white-space: nowrap;
             display: flex;
@@ -428,11 +490,12 @@
 
         .tab-button:hover {
             color: var(--text-primary);
-            background: rgba(255,255,255,0.05);
+            background: rgba(159, 212, 161, 0.15);
         }
 
         .tab-button.active {
-            color: var(--mint);
+            color: #000;
+            background: var(--mint);
             border-bottom-color: var(--mint);
         }
 
@@ -1311,6 +1374,10 @@
         }
 
         function showEmployeeDetail(id) {
+            // Reset edit mode při otevření modalu
+            isEditMode = false;
+            originalEmployeeData = null;
+            
             const emp = allEmployees.find(e => e.id === id);
             if (!emp) {
                 if (window.showToast) {
@@ -1386,36 +1453,54 @@
             modalBody.innerHTML = `
                 <!-- Základní info (horní karta) -->
                 <div class="employee-detail-header">
-                    <div class="employee-detail-avatar">
-                        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(emp.name)}">` : initials}
-                        <div class="status-dot" style="background: ${statusColor};"></div>
+                    <div class="employee-detail-header-left">
+                        <div class="employee-detail-avatar">
+                            ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(emp.name)}">` : initials}
+                            <div class="status-dot" style="background: ${statusColor};"></div>
+                        </div>
+                        <div class="employee-detail-info">
+                            <h1 class="employee-detail-name">${escapeHtml(emp.name || 'Bez jména')}</h1>
+                            <p class="employee-detail-role">${escapeHtml(emp.role || 'Zaměstnanec')}</p>
+                            <div class="employee-detail-status">
+                                <div class="employee-detail-status-dot" style="background: ${statusColor};"></div>
+                                <span>${statusText}</span>
+                            </div>
+                            <div class="employee-detail-actions">
+                                ${phone ? `
+                                    <button class="btn-contact" onclick="callEmployee(${emp.id})">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                                        </svg>
+                                        Zavolat
+                                    </button>
+                                ` : ''}
+                                ${email ? `
+                                    <button class="btn-contact" onclick="emailEmployee(${emp.id})">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                            <polyline points="22,6 12,13 2,6"/>
+                                        </svg>
+                                        Email
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
-                    <div class="employee-detail-info">
-                        <h1 class="employee-detail-name">${escapeHtml(emp.name || 'Bez jména')}</h1>
-                        <p class="employee-detail-role">${escapeHtml(emp.role || 'Zaměstnanec')}</p>
-                        <div class="employee-detail-status">
-                            <div class="employee-detail-status-dot" style="background: ${statusColor};"></div>
-                            <span>${statusText}</span>
-                        </div>
-                        <div class="employee-detail-actions">
-                            ${phone ? `
-                                <button class="btn-contact" onclick="callEmployee(${emp.id})">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
-                                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                                    </svg>
-                                    Zavolat
-                                </button>
-                            ` : ''}
-                            ${email ? `
-                                <button class="btn-contact" onclick="emailEmployee(${emp.id})">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                        <polyline points="22,6 12,13 2,6"/>
-                                    </svg>
-                                    Email
-                                </button>
-                            ` : ''}
-                        </div>
+                    <div class="employee-detail-actions-header">
+                        <button class="btn-edit" onclick="editEmployee(${emp.id})" id="btnEditEmployee">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Upravit
+                        </button>
+                        <button class="btn-delete" onclick="deleteEmployee(${emp.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Smazat
+                        </button>
                     </div>
                 </div>
                 
@@ -1704,6 +1789,177 @@
             if (modal) {
                 modal.style.display = 'none';
             }
+            isEditMode = false;
+            originalEmployeeData = null;
+        }
+        
+        let isEditMode = false;
+        let originalEmployeeData = null;
+        
+        async function editEmployee(empId) {
+            if (isEditMode) {
+                // Uložit změny
+                await saveEmployee(empId);
+                return;
+            }
+            
+            isEditMode = true;
+            const emp = allEmployees.find(e => e.id === empId);
+            if (!emp) return;
+            
+            originalEmployeeData = {...emp};
+            
+            // Změnit tlačítko "Upravit" na "Uložit"
+            const editBtn = document.getElementById('btnEditEmployee');
+            if (editBtn) {
+                editBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Uložit
+                `;
+            }
+            
+            // Přepnout všechna pole na editovatelná
+            const infoValues = document.querySelectorAll('.info-value');
+            infoValues.forEach(item => {
+                const currentValue = item.textContent.trim();
+                if (currentValue === '—' || currentValue === '') return;
+                
+                const label = item.previousElementSibling;
+                if (!label || !label.classList.contains('info-label')) return;
+                
+                const fieldName = label.textContent.trim().toLowerCase();
+                let inputType = 'text';
+                let inputValue = currentValue;
+                
+                // Mapování názvů polí
+                const fieldMap = {
+                    'jméno': 'name',
+                    'role': 'role',
+                    'pozice': 'role',
+                    'telefon': 'phone',
+                    'email': 'email',
+                    'adresa': 'address',
+                    'narozeniny': 'birth_date',
+                    'typ smlouvy': 'contract_type',
+                    'začátek': 'start_date',
+                    'sazba': 'hourly_rate',
+                    'plát': 'salary'
+                };
+                
+                const mappedField = fieldMap[fieldName] || fieldName;
+                
+                // Speciální zpracování pro datum
+                if (fieldName.includes('narozeniny') || fieldName.includes('začátek')) {
+                    inputType = 'date';
+                    if (currentValue.includes('/')) {
+                        const parts = currentValue.split('/');
+                        if (parts.length === 3) {
+                            inputValue = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        }
+                    }
+                }
+                
+                // Speciální zpracování pro čísla
+                if (fieldName.includes('sazba') || fieldName.includes('plát')) {
+                    inputType = 'number';
+                    inputValue = currentValue.replace(/[^\d.,]/g, '').replace(',', '.');
+                }
+                
+                item.innerHTML = `<input type="${inputType}" value="${escapeHtml(inputValue)}" 
+                                         data-field="${mappedField}" 
+                                         class="inline-edit-input"
+                                         style="width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;">`;
+            });
+        }
+        
+        async function saveEmployee(empId) {
+            const inputs = document.querySelectorAll('.inline-edit-input');
+            const updates = {};
+            
+            inputs.forEach(input => {
+                const field = input.dataset.field;
+                let value = input.value.trim();
+                
+                // Prázdné hodnoty
+                if (!value || value === '—') {
+                    value = null;
+                }
+                
+                updates[field] = value;
+            });
+            
+            try {
+                const response = await fetch(`/api/employees`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: empId, ...updates})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    // Znovu načíst data
+                    await loadEmployees();
+                    // Znovu otevřít modal s aktualizovanými daty
+                    const emp = allEmployees.find(e => e.id === empId);
+                    if (emp) {
+                        showEmployeeDetail(empId);
+                    }
+                    isEditMode = false;
+                    
+                    // Zobrazit notifikaci
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('Zaměstnanec upraven', 'success');
+                    } else {
+                        alert('Zaměstnanec upraven');
+                    }
+                } else {
+                    throw new Error(data.error || 'Chyba při ukládání');
+                }
+            } catch (error) {
+                console.error('Error saving employee:', error);
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Chyba při ukládání: ' + error.message, 'error');
+                } else {
+                    alert('Chyba při ukládání: ' + error.message);
+                }
+            }
+        }
+        
+        async function deleteEmployee(empId) {
+            if (!confirm('Opravdu chcete smazat tohoto zaměstnance? Tato akce je nevratná.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/employees?id=${empId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    closeEmployeeModal();
+                    await loadEmployees();
+                    
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('Zaměstnanec smazán', 'success');
+                    } else {
+                        alert('Zaměstnanec smazán');
+                    }
+                } else {
+                    throw new Error(data.error || 'Chyba při mazání');
+                }
+            } catch (error) {
+                console.error('Error deleting employee:', error);
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Chyba při mazání: ' + error.message, 'error');
+                } else {
+                    alert('Chyba při mazání: ' + error.message);
+                }
+            }
         }
 
         // Zavři modal při kliknutí na pozadí
@@ -1718,6 +1974,11 @@
             }
         });
 
+        // Alias pro kompatibilitu
+        function openEmployeeDetail(id) {
+            showEmployeeDetail(id);
+        }
+        
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
