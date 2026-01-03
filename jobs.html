@@ -689,10 +689,19 @@
             right: 8px;
             display: none;
             gap: 8px;
+            z-index: 10;
         }
 
-        .job-card:hover .quick-actions {
+        /* Zobrazit tlačítka pouze při hoveru (desktop) nebo když je karta aktivní (mobil) */
+        .job-card.show-actions .quick-actions {
             display: flex;
+        }
+        
+        /* Na desktopu zobrazit při hoveru */
+        @media (min-width: 768px) {
+            .job-card:hover .quick-actions {
+                display: flex;
+            }
         }
 
         .quick-action-btn {
@@ -1703,9 +1712,8 @@
                 stroke-width: 4 !important;
             }
 
-            /* Quick actions vždy viditelné na mobilu */
+            /* Quick actions se zobrazí pouze při show-actions třídě (při kliknutí) */
             .quick-actions {
-                display: flex !important;  /* Vždy zobrazit, ne jen při hover */
                 opacity: 0.9;
                 gap: 4px;
             }
@@ -2477,14 +2485,45 @@
             card.addEventListener('dragstart', handleDragStart);
             card.addEventListener('dragend', handleDragEnd);
             
-            // Click to open detail
+            // Click handler - zobrazit quick actions při kliknutí na kartu (mobil i desktop)
             card.addEventListener('click', (e) => {
                 // Ignorovat kliknutí na bottom nav
                 if (e.target.closest('.bottom-nav') || e.target.closest('#bottom-nav-container')) {
                     return;
                 }
-                if (!e.target.closest('.quick-actions') && !e.target.closest('.inline-edit')) {
+                
+                // Pokud klik na quick-actions, nech to projít (tlačítka mají vlastní onclick)
+                if (e.target.closest('.quick-actions')) {
+                    return;
+                }
+                
+                // Pokud klik na inline-edit, nech to projít
+                if (e.target.closest('.inline-edit')) {
+                    return;
+                }
+                
+                // Pokud karta už má show-actions (tlačítka jsou viditelná), otevři detail
+                if (card.classList.contains('show-actions')) {
+                    card.classList.remove('show-actions');
                     showJobDetail(job.id);
+                    return;
+                }
+                
+                // Jinak zobraz quick actions (skryj ostatní karty)
+                const allCards = document.querySelectorAll('.job-card');
+                allCards.forEach(c => {
+                    if (c !== card) {
+                        c.classList.remove('show-actions');
+                    }
+                });
+                card.classList.add('show-actions');
+            });
+            
+            // Skrýt quick actions při kliknutí mimo kartu
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.job-card') && !e.target.closest('.quick-actions')) {
+                    const allCards = document.querySelectorAll('.job-card');
+                    allCards.forEach(c => c.classList.remove('show-actions'));
                 }
             });
             
