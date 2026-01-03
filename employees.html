@@ -301,6 +301,23 @@
             width: 16px;
             height: 16px;
             stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+            display: block;
+        }
+        
+        /* Zvětšení ikon pro desktop */
+        @media (min-width: 768px) {
+            .quick-action-btn-small {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .quick-action-btn-small svg {
+                width: 20px;
+                height: 20px;
+                stroke-width: 3;
+            }
         }
 
         /* Employee Detail Styles */

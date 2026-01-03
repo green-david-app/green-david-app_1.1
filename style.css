@@ -1254,11 +1254,31 @@ input[type="checkbox"] {
     background: var(--mint);
     border-radius: 6px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .icon-wrapper svg {
     width: 20px;
     height: 20px;
-    stroke: #000000;
-    stroke-width: 2;
+    stroke: #1a1a1a;
+    stroke-width: 3;
+    fill: none;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure icons are visible on desktop - zvětšení a ztučnění */
+@media (min-width: 768px) {
+    .icon-wrapper {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .icon-wrapper svg {
+        width: 22px;
+        height: 22px;
+        stroke-width: 3.5;
+        opacity: 1;
+    }
 }
