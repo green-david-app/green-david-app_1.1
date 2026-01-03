@@ -2387,6 +2387,10 @@
             
             // Click to open detail
             card.addEventListener('click', (e) => {
+                // Ignorovat kliknutí na bottom nav
+                if (e.target.closest('.bottom-nav') || e.target.closest('#bottom-nav-container')) {
+                    return;
+                }
                 if (!e.target.closest('.quick-actions') && !e.target.closest('.inline-edit')) {
                     showJobDetail(job.id);
                 }

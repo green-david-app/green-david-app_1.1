@@ -591,8 +591,9 @@ input[type="checkbox"] {
   justify-content: space-around;
   align-items: center;
   padding: var(--space-sm) 0 max(env(safe-area-inset-bottom), var(--space-sm)) 0;
-  z-index: 1000;
+  z-index: 10000;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
 }
 
 .nav-item {
@@ -607,6 +608,11 @@ input[type="checkbox"] {
   cursor: pointer;
   text-decoration: none;
   max-width: 80px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10001;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item:hover {

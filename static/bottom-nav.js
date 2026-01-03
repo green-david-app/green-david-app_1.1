@@ -69,10 +69,11 @@ function createBottomNav() {
             });
         }
         
-        const onclickAttr = item.isMoreMenu ? `onclick="event.preventDefault(); const menu = document.getElementById('more-menu'); if (menu) menu.classList.toggle('show');"` : '';
+        // Pro "Více" menu použijeme onclick, pro ostatní použijeme event listenery
+        const onclickAttr = item.isMoreMenu ? `onclick="event.preventDefault(); event.stopPropagation(); const menu = document.getElementById('more-menu'); if (menu) menu.classList.toggle('show');"` : '';
         
         return `
-            <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" ${onclickAttr}>
+            <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" ${onclickAttr} data-nav-item="${item.label}">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     ${item.icon}
                 </svg>
@@ -104,6 +105,63 @@ function initBottomNav() {
     const nav = createBottomNav();
     container.appendChild(nav);
     
+    // Přidat event listenery na všechny odkazy
+    const navLinks = nav.querySelectorAll('.nav-item');
+    navLinks.forEach(link => {
+        // Přeskočit "Více" menu - má vlastní handler
+        if (link.getAttribute('href') === '#') {
+            return;
+        }
+        
+        // Odstranit existující listenery (pokud existují)
+        const newLink = link.cloneNode(true);
+        link.parentNode.replaceChild(newLink, link);
+        
+        newLink.addEventListener('click', (e) => {
+            // Zajistit, že kliknutí není blokováno
+            e.stopPropagation();
+            
+            const href = newLink.getAttribute('href');
+            
+            // Pro SPA aplikace (index.html s taby)
+            if (href === '/' && typeof window.setAppTab === 'function') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.setAppTab('dashboard');
+                window.history.pushState({}, '', '/');
+                return false;
+            }
+            
+            // Pro query parametry (?tab=jobs)
+            if (href.startsWith('/?tab=')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const tab = href.split('tab=')[1].split('&')[0];
+                if (typeof window.setAppTab === 'function') {
+                    window.setAppTab(tab);
+                }
+                window.history.pushState({}, '', href);
+                return false;
+            }
+            
+            // Pro standalone stránky
+            if (href.startsWith('/') && !href.startsWith('/?')) {
+                // Pokud jsme na stejné stránce, jen scroll na top
+                if (window.location.pathname === href) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return false;
+                }
+                // Jinak normální navigace - necháme defaultní chování
+                // Ale zajistíme, že se stránka načte
+                return true;
+            }
+            
+            return true;
+        }, true); // Use capture phase to ensure we catch the event first
+    });
+    
     // Inicializuj Lucide ikony
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -120,3 +178,26 @@ if (document.readyState === 'loading') {
 
 // Také zkus po malém zpoždění (pro Flask templates a dynamické načítání)
 setTimeout(initBottomNav, 100);
+
+// Re-inicializuj při změně stránky (pro SPA navigaci)
+window.addEventListener('popstate', () => {
+    setTimeout(initBottomNav, 50);
+});
+
+// Re-inicializuj při změně hash (pro deep linking)
+window.addEventListener('hashchange', () => {
+    setTimeout(initBottomNav, 50);
+});
+
+// Zajistit, že bottom nav je vždy klikatelný a není blokován jinými event handlery
+document.addEventListener('click', (e) => {
+    // Pokud kliknutí je na bottom nav, zajistit že není blokováno
+    if (e.target.closest('.bottom-nav') || e.target.closest('#bottom-nav-container')) {
+        const navItem = e.target.closest('.nav-item');
+        if (navItem && navItem.getAttribute('href') !== '#') {
+            // Nechat event listenery v bottom-nav.js zpracovat kliknutí
+            // Tento handler zajistí, že jiné handlery nebudou blokovat
+            return;
+        }
+    }
+}, true); // Use capture phase

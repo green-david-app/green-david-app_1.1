@@ -564,8 +564,9 @@ input[type="checkbox"] {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
 }
 
 /* Universal bottom nav styles */
@@ -586,6 +587,11 @@ input[type="checkbox"] {
   border: none;
   cursor: pointer;
   font-size: 12px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10001;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bottom-nav .nav-item .icon {

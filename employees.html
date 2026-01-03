@@ -1607,8 +1607,12 @@
                                 <div class="info-value">${emp.start_date ? new Date(emp.start_date).toLocaleDateString('cs-CZ') : '—'}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">Mzda/Hodinová sazba</div>
-                                <div class="info-value">${emp.salary ? `${emp.salary} Kč` : (emp.hourly_rate ? `${emp.hourly_rate} Kč/h` : '—')}</div>
+                                <div class="info-label">Hodinová sazba</div>
+                                <div class="info-value">${emp.hourly_rate ? `${emp.hourly_rate} Kč/h` : '—'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Mzda</div>
+                                <div class="info-value">${emp.salary ? `${emp.salary} Kč` : '—'}</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Dovednosti</div>
@@ -1824,16 +1828,34 @@
             const infoValues = document.querySelectorAll('.info-value');
             infoValues.forEach(item => {
                 const currentValue = item.textContent.trim();
-                if (currentValue === '—' || currentValue === '') return;
                 
-                const label = item.previousElementSibling;
+                // Najít label - může být předchozí sourozenec nebo v parent elementu
+                let label = item.previousElementSibling;
+                if (!label || !label.classList.contains('info-label')) {
+                    // Zkusit najít label v parent elementu
+                    const parent = item.closest('.info-item');
+                    if (parent) {
+                        label = parent.querySelector('.info-label');
+                    }
+                }
+                
                 if (!label || !label.classList.contains('info-label')) return;
                 
                 const fieldName = label.textContent.trim().toLowerCase();
-                let inputType = 'text';
-                let inputValue = currentValue;
                 
-                // Mapování názvů polí
+                // Přeskočit statistiky a hodnocení (nejsou editovatelná)
+                if (fieldName.includes('hodiny tento měsíc') || 
+                    fieldName.includes('aktivní projekty') || 
+                    fieldName.includes('dokončené projekty') ||
+                    fieldName.includes('hodnocení') ||
+                    fieldName.includes('celkové hodnocení')) {
+                    return;
+                }
+                
+                let inputType = 'text';
+                let inputValue = currentValue === '—' ? '' : currentValue;
+                
+                // Mapování názvů polí - kompletní seznam
                 const fieldMap = {
                     'jméno': 'name',
                     'role': 'role',
@@ -1843,34 +1865,126 @@
                     'adresa': 'address',
                     'narozeniny': 'birth_date',
                     'typ smlouvy': 'contract_type',
+                    'datum nástupu': 'start_date',
                     'začátek': 'start_date',
+                    'hodinová sazba': 'hourly_rate',
                     'sazba': 'hourly_rate',
-                    'plát': 'salary'
+                    'mzda': 'salary',
+                    'plát': 'salary',
+                    'dovednosti': 'skills',
+                    'lokace': 'location'
                 };
                 
                 const mappedField = fieldMap[fieldName] || fieldName;
                 
                 // Speciální zpracování pro datum
-                if (fieldName.includes('narozeniny') || fieldName.includes('začátek')) {
+                if (fieldName.includes('narozeniny') || fieldName.includes('datum nástupu') || fieldName.includes('začátek')) {
                     inputType = 'date';
-                    if (currentValue.includes('/')) {
+                    if (currentValue !== '—' && currentValue.includes('/')) {
                         const parts = currentValue.split('/');
                         if (parts.length === 3) {
-                            inputValue = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            // Formát DD/MM/YYYY -> YYYY-MM-DD
+                            inputValue = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                         }
+                    } else if (currentValue === '—' || !currentValue) {
+                        inputValue = '';
                     }
                 }
                 
-                // Speciální zpracování pro čísla
-                if (fieldName.includes('sazba') || fieldName.includes('plát')) {
+                // Speciální zpracování pro číselná pole (hodinová sazba, mzda)
+                let step = null;
+                let min = null;
+                if (fieldName.includes('hodinová sazba') || fieldName.includes('sazba') || fieldName.includes('mzda')) {
                     inputType = 'number';
                     inputValue = currentValue.replace(/[^\d.,]/g, '').replace(',', '.');
+                    inputValue = inputValue || '';
+                    step = '0.01';
+                    min = '0';
                 }
                 
-                item.innerHTML = `<input type="${inputType}" value="${escapeHtml(inputValue)}" 
-                                         data-field="${mappedField}" 
-                                         class="inline-edit-input"
-                                         style="width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;">`;
+                // Speciální zpracování pro email
+                if (fieldName.includes('email')) {
+                    inputType = 'email';
+                }
+                
+                // Speciální zpracování pro telefon
+                if (fieldName.includes('telefon')) {
+                    inputType = 'tel';
+                }
+                
+                // Pro select pro "Typ smlouvy" a "Pozice"
+                if (fieldName.includes('typ smlouvy')) {
+                    const select = document.createElement('select');
+                    select.dataset.field = mappedField;
+                    select.className = 'inline-edit-input';
+                    select.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;';
+                    const options = ['HPP', 'DPP', 'DPČ', 'Brigáda', 'OSVČ'];
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        if (opt === inputValue || (inputValue === '—' && opt === 'HPP')) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    item.innerHTML = '';
+                    item.appendChild(select);
+                    return; // Přeskočit zbytek
+                }
+                
+                if (fieldName.includes('pozice') || fieldName.includes('role')) {
+                    const select = document.createElement('select');
+                    select.dataset.field = mappedField;
+                    select.className = 'inline-edit-input';
+                    select.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;';
+                    const options = ['zahradník', 'brigádník', 'manager', 'supervizor', 'řidič', 'operátor'];
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        if (opt === inputValue || (inputValue === '—' && opt === 'zahradník')) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    // Přidat možnost pro vlastní hodnotu
+                    const customOption = document.createElement('option');
+                    customOption.value = inputValue && inputValue !== '—' ? inputValue : '';
+                    customOption.textContent = inputValue && inputValue !== '—' ? inputValue : 'Vlastní...';
+                    if (inputValue && inputValue !== '—' && !options.includes(inputValue)) {
+                        customOption.selected = true;
+                    }
+                    select.appendChild(customOption);
+                    item.innerHTML = '';
+                    item.appendChild(select);
+                    return; // Přeskočit zbytek
+                }
+                
+                // Vytvořit input element
+                const input = document.createElement('input');
+                input.type = inputType;
+                input.value = inputValue;
+                input.dataset.field = mappedField;
+                input.className = 'inline-edit-input';
+                input.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;';
+                if (step) input.step = step;
+                if (min) input.min = min;
+                
+                // Pro textarea pro delší texty (adresa, dovednosti)
+                if (fieldName.includes('adresa') || fieldName.includes('dovednosti')) {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = inputValue;
+                    textarea.dataset.field = mappedField;
+                    textarea.className = 'inline-edit-input';
+                    textarea.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;min-height:60px;resize:vertical;';
+                    textarea.rows = 3;
+                    item.innerHTML = '';
+                    item.appendChild(textarea);
+                } else {
+                    item.innerHTML = '';
+                    item.appendChild(input);
+                }
             });
         }
         
@@ -1880,11 +1994,29 @@
             
             inputs.forEach(input => {
                 const field = input.dataset.field;
-                let value = input.value.trim();
+                let value;
+                
+                // Pro select elementy
+                if (input.tagName === 'SELECT') {
+                    value = input.value.trim();
+                } else {
+                    value = input.value.trim();
+                }
                 
                 // Prázdné hodnoty
-                if (!value || value === '—') {
+                if (!value || value === '—' || value === '' || value === 'Vlastní...') {
                     value = null;
+                } else {
+                    // Pro číselná pole převést na číslo
+                    if (input.type === 'number') {
+                        const numValue = parseFloat(value);
+                        value = isNaN(numValue) ? null : numValue;
+                    }
+                    // Pro datum pole - už je ve formátu YYYY-MM-DD
+                    else if (input.type === 'date') {
+                        // Datum už je ve správném formátu
+                        value = value || null;
+                    }
                 }
                 
                 updates[field] = value;
