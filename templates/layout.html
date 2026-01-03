@@ -24,12 +24,15 @@
   </style>
 </head>
 <body>
-  <header class="header" style="background:rgba(31,36,40,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #353b41;padding:16px 24px;position:sticky;top:0;z-index:100;">
-    <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <img src="/logo.jpg" alt="green david app" style="height:36px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
-        <div style="font-size:18px;font-weight:600;color:#e8eef2;">green david app</div>
-      </div>
+  <header class="header">
+    <div style="max-width:1400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;">
+      <a href="/" class="brand-link">
+        <img src="/logo.jpg" alt="green david app" style="height:32px;width:auto;border-radius:8px;" onerror="this.src='/logo.svg'"/>
+        <div>
+          <div style="font-size:16px;font-weight:600;color:#e8eef2;line-height:1.2;">green david app</div>
+          <div style="font-size:11px;color:#9ca8b3;line-height:1.2;">interní systém</div>
+        </div>
+      </a>
       {% if session.get('uid') %}
         <div>
           <button id="logoutBtn" class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
