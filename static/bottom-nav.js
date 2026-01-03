@@ -214,43 +214,47 @@ function createMoreMenu() {
     menu.id = 'more-menu';
     menu.className = 'more-menu';
     menu.innerHTML = `
-        <div class="more-menu-backdrop"></div>
         <div class="more-menu-panel">
             <div class="more-menu-header">
-                <h3 style="margin:0;color:var(--text-primary);">Menu</h3>
-                <button onclick="toggleMoreMenu()" style="background:transparent;border:none;color:var(--text-primary);font-size:24px;cursor:pointer;padding:4px 8px;">×</button>
+                <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+                <button onclick="toggleMoreMenu()" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
             <div class="more-menu-content">
-                <a href="/employees.html" class="more-menu-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <span>Tým</span>
+                <a href="/" class="more-menu-item">
+                    <span>přehled</span>
                 </a>
-                <a href="/finance.html" class="more-menu-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                    <span>Finance</span>
+                <a href="/calendar.html" class="more-menu-item">
+                    <span>kalendář</span>
+                </a>
+                <a href="/timesheets.html" class="more-menu-item">
+                    <span>výkazy hodin</span>
+                </a>
+                <a href="/jobs.html" class="more-menu-item">
+                    <span>zakázky</span>
                 </a>
                 <a href="/tasks.html" class="more-menu-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 11 12 14 22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                    <span>Úkoly</span>
+                    <span>úkoly</span>
                 </a>
-                <a href="/archive" class="more-menu-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="21 8 21 21 3 21 3 8"/>
-                        <rect x="1" y="3" width="22" height="5"/>
-                        <line x1="10" y1="12" x2="14" y2="12"/>
-                    </svg>
-                    <span>Archiv</span>
+                <a href="/employees.html" class="more-menu-item">
+                    <span>zaměstnanci</span>
+                </a>
+                <a href="/warehouse.html" class="more-menu-item">
+                    <span>sklad</span>
+                </a>
+                <a href="/finance.html" class="more-menu-item">
+                    <span>finance</span>
+                </a>
+                <a href="/documents.html" class="more-menu-item">
+                    <span>dokumenty</span>
+                </a>
+                <a href="/reports.html" class="more-menu-item">
+                    <span>reporty</span>
+                </a>
+                <a href="/archive.html" class="more-menu-item">
+                    <span>archiv</span>
+                </a>
+                <a href="/settings.html" class="more-menu-item">
+                    <span>nastavení</span>
                 </a>
             </div>
         </div>
@@ -274,10 +278,11 @@ function toggleMoreMenu() {
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('more-menu');
     const moreButton = document.querySelector('.nav-item[onclick*="toggleMoreMenu"]');
-    const backdrop = e.target.classList.contains('more-menu-backdrop');
+    const menuPanel = menu?.querySelector('.more-menu-panel');
     
     if (menu && menu.classList.contains('show')) {
-        if (backdrop || (!menu.contains(e.target) && !moreButton?.contains(e.target))) {
+        // Zavři pokud kliknutí je MIMO panel a MIMO tlačítko "Více"
+        if (!menuPanel?.contains(e.target) && !moreButton?.contains(e.target)) {
             menu.classList.remove('show');
         }
     }

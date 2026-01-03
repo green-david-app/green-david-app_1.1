@@ -279,22 +279,25 @@
         .quick-action-btn-small {
             width: 32px;
             height: 32px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #9FD4A1;
+            border: 1px solid rgba(0,0,0,0.15);
             border-radius: 6px;
-            color: var(--text-primary);
+            color: #1a2332;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
             position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .quick-action-btn-small:hover {
-            background: var(--mint);
-            border-color: var(--mint);
+            background: #7EBC82;
+            border-color: rgba(0,0,0,0.25);
             color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .quick-action-btn-small svg {

@@ -685,13 +685,7 @@ input[type="checkbox"] {
 }
 
 .more-menu-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  display: none; /* Vypnuto - nechceme šedé pozadí */
 }
 
 .more-menu-panel {
@@ -757,6 +751,15 @@ input[type="checkbox"] {
 
 .more-menu-item.active {
   color: #B2FBA5;
+}
+
+.more-menu-item svg {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
 }
 
 /* ========================================
