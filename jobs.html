@@ -753,8 +753,7 @@
             }
             
             .quick-action-btn svg {
-                width: 180px !important;
-                height: 180px !important;
+                /* width and height removed - using inline styles */
                 stroke-width: 1.5 !important;
             }
             
@@ -771,8 +770,7 @@
             /* Force override pro Lucide icons v quick-action buttons na desktopu */
             .quick-action-btn [data-lucide],
             .quick-action-btn i[data-lucide] {
-                width: 180px !important;
-                height: 180px !important;
+                /* width and height removed - using inline styles */
                 stroke: #000000 !important;
                 color: #000000 !important;
                 stroke-width: 1.5 !important;
@@ -780,8 +778,7 @@
             
             .quick-action-btn [data-lucide] svg,
             .quick-action-btn i[data-lucide] svg {
-                width: 180px !important;
-                height: 180px !important;
+                /* width and height removed - using inline styles */
                 stroke: #000000 !important;
                 color: #000000 !important;
                 stroke-width: 1.5 !important;
@@ -2449,7 +2446,7 @@
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 35px !important; height: 35px !important;">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" x2="12" y1="16" y2="12"></line>
                             <line x1="12" x2="12.01" y1="8" y2="8"></line>
