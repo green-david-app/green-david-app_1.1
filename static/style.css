@@ -582,9 +582,7 @@ input[type="checkbox"] {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 83px !important;
-  min-height: 83px !important;
-  max-height: 83px !important;
+  height: 83px;
   background: rgba(31, 36, 40, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -602,10 +600,8 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 4px;
   flex: 1;
-  height: 100%;
   padding: var(--space-xs);
   color: #e0e0e0; /* Neaktivní položky */
   transition: color var(--transition);
@@ -628,7 +624,10 @@ input[type="checkbox"] {
 }
 
 .nav-item svg {
+  width: 24px;
+  height: 24px;
   stroke-width: 1.5; /* Tenké, elegantní čáry */
+  flex-shrink: 0;
 }
 
 .nav-icon {
@@ -663,6 +662,14 @@ input[type="checkbox"] {
 .more-menu.show {
   display: block;
   pointer-events: all;
+}
+
+/* Skrýt bottom-nav když je "Více" menu otevřené */
+.more-menu.show ~ #bottom-nav-container,
+.more-menu.show ~ .bottom-nav,
+body.more-menu-open #bottom-nav-container,
+body.more-menu-open .bottom-nav {
+  display: none !important;
 }
 
 /* .more-menu-backdrop - KOMPLETNĚ ODSTRANĚNO */

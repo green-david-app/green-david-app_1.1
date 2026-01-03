@@ -271,7 +271,24 @@ function toggleMoreMenu() {
         setTimeout(() => toggleMoreMenu(), 10);
         return;
     }
+    const isShowing = menu.classList.contains('show');
     menu.classList.toggle('show');
+    
+    // Skrýt/zobrazit bottom-nav při otevření/zavření menu
+    const bottomNav = document.querySelector('.bottom-nav');
+    const bottomNavContainer = document.getElementById('bottom-nav-container');
+    
+    if (menu.classList.contains('show')) {
+        // Menu se otevírá - skrýt bottom-nav
+        if (bottomNav) bottomNav.style.display = 'none';
+        if (bottomNavContainer) bottomNavContainer.style.display = 'none';
+        document.body.classList.add('more-menu-open');
+    } else {
+        // Menu se zavírá - zobrazit bottom-nav
+        if (bottomNav) bottomNav.style.display = '';
+        if (bottomNavContainer) bottomNavContainer.style.display = '';
+        document.body.classList.remove('more-menu-open');
+    }
 }
 
 // Zavři menu při kliknutí mimo něj

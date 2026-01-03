@@ -3466,6 +3466,16 @@
             
             const statusValue = document.getElementById('edit-status').value;
             const progressValue = parseInt(document.getElementById('edit-progress').value) || 0;
+            
+            // Mapuj status z českého názvu na interní hodnotu
+            const statusMapReverse = {
+                'Plán': 'new',
+                'Aktivní': 'active',
+                'Pozastavené': 'paused',
+                'Dokončeno': 'completed'
+            };
+            const mappedStatus = statusMapReverse[statusValue] || 'new';
+            
             const updateData = {
                 id: currentJobId,
                 title: title,
@@ -3474,7 +3484,7 @@
                 date: deadline,
                 created_date: createdDate || null,
                 start_date: startDate || null,
-                status: statusValue, // Použij přímo hodnotu z selectu (Plán, Aktivní, atd.)
+                status: mappedStatus, // Použij mapovanou hodnotu (new, active, atd.)
                 note: document.getElementById('edit-notes').value.trim(),
                 progress: progressValue
             };

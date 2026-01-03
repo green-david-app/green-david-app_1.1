@@ -360,6 +360,28 @@
     background: var(--mint-light) !important;
     color: #0a0e11 !important;
   }
+  
+  /* Zajistit viditelnost ikon v tlačítkách */
+  .ts-actions .btn svg,
+  .ts-view-btn svg {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    vertical-align: middle !important;
+  }
+  
+  .ts-actions .btn-primary svg {
+    stroke: #0a0e11 !important;
+    color: #0a0e11 !important;
+  }
+  
+  .ts-view-btn.active svg {
+    stroke: #0a0e11 !important;
+    color: #0a0e11 !important;
+  }
 
   /* Summary Bar */
   .ts-summary-bar {
