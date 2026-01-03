@@ -725,11 +725,10 @@
         }
 
         .quick-action-btn svg {
-            width: 20px !important;
-            height: 20px !important;
+            /* width and height removed - using inline styles */
             stroke: #000000 !important;
             color: #000000 !important;
-            stroke-width: 2.5 !important;
+            stroke-width: 2 !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -743,7 +742,7 @@
         .quick-action-btn svg polyline {
             stroke: #000000 !important;
             fill: none !important;
-            stroke-width: 2.5 !important;
+            stroke-width: 2 !important;
         }
         
         /* Zvětšení a ztučnění ikon pro desktop */
@@ -754,9 +753,9 @@
             }
             
             .quick-action-btn svg {
-                width: 24px !important;
-                height: 24px !important;
-                stroke-width: 2.5 !important;
+                width: 180px !important;
+                height: 180px !important;
+                stroke-width: 2 !important;
             }
             
             .quick-action-btn svg path,
@@ -765,27 +764,27 @@
             .quick-action-btn svg rect,
             .quick-action-btn svg polyline {
                 stroke: #000000 !important;
-                stroke-width: 2.5 !important;
+                stroke-width: 2 !important;
                 fill: none !important;
             }
             
             /* Force override pro Lucide icons v quick-action buttons na desktopu */
             .quick-action-btn [data-lucide],
             .quick-action-btn i[data-lucide] {
-                width: 24px !important;
-                height: 24px !important;
+                width: 180px !important;
+                height: 180px !important;
                 stroke: #000000 !important;
                 color: #000000 !important;
-                stroke-width: 2.5 !important;
+                stroke-width: 2 !important;
             }
             
             .quick-action-btn [data-lucide] svg,
             .quick-action-btn i[data-lucide] svg {
-                width: 24px !important;
-                height: 24px !important;
+                width: 180px !important;
+                height: 180px !important;
                 stroke: #000000 !important;
                 color: #000000 !important;
-                stroke-width: 2.5 !important;
+                stroke-width: 2 !important;
             }
             
             .quick-action-btn [data-lucide] svg path,
@@ -799,17 +798,17 @@
             .quick-action-btn i[data-lucide] svg rect,
             .quick-action-btn i[data-lucide] svg polyline {
                 stroke: #000000 !important;
-                stroke-width: 2.5 !important;
+                stroke-width: 2 !important;
                 fill: none !important;
             }
         }
         
         .quick-action-btn i[data-lucide] {
-            width: 20px !important;
-            height: 20px !important;
-            stroke: #000000 !important;
-            color: #000000 !important;
-            stroke-width: 2.5 !important;
+            width: 25px !important;
+            height: 25px !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
+            stroke-width: 4 !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -818,10 +817,10 @@
         /* Force Lucide icons to be visible - target SVG created by Lucide */
         .quick-action-btn i[data-lucide] svg,
         .quick-action-btn [data-lucide] svg {
-            stroke: #000000 !important;
-            color: #000000 !important;
-            width: 20px !important;
-            height: 20px !important;
+            stroke: #1a2332 !important;
+            color: #1a2332 !important;
+            width: 25px !important;
+            height: 25px !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -833,9 +832,9 @@
         .quick-action-btn i[data-lucide] svg circle,
         .quick-action-btn i[data-lucide] svg rect,
         .quick-action-btn i[data-lucide] svg polyline {
-            stroke: #000000 !important;
+            stroke: #1a2332 !important;
             fill: none !important;
-            stroke-width: 2.5 !important;
+            stroke-width: 4 !important;
         }
         
         /* Tooltip */
@@ -1668,14 +1667,19 @@
             
             /* Quick action tlačítka - větší na mobilu */
             .quick-action-btn {
-                width: 30px;
-                height: 30px;
+                width: 36px !important;  /* Větší pro lepší tap target */
+                height: 36px !important;
+            }
+
+            .quick-action-btn {
+                width: 23px;
+                height: 23px;
             }
             
             .quick-action-btn i[data-lucide],
             .quick-action-btn svg {
-                width: 20px !important;
-                height: 20px !important;
+                width: 19px !important;
+                height: 19px !important;
             }
             
             .quick-action-btn svg path,
@@ -1688,7 +1692,7 @@
             .quick-action-btn i[data-lucide] svg circle,
             .quick-action-btn i[data-lucide] svg rect,
             .quick-action-btn i[data-lucide] svg polyline {
-                stroke-width: 2.5 !important;
+                stroke-width: 4 !important;
             }
 
             /* Quick actions vždy viditelné na mobilu */
@@ -1783,7 +1787,7 @@
             </h1>
             <div class="header-actions">
                 <button class="btn-view active" data-view="kanban">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="#1a2332" stroke-width="2">
+                    <svg style="width:40px !important;height:40px !important" viewBox="0 0 24 24" fill="none" stroke="#1a2332" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/>
                         <rect x="14" y="3" width="7" height="7"/>
                         <rect x="14" y="14" width="7" height="7"/>
@@ -1792,7 +1796,7 @@
                     Kanban
                 </button>
                 <button class="btn-view" data-view="list">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg style="width:40px !important;height:40px !important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="8" y1="6" x2="21" y2="6"/>
                         <line x1="8" y1="12" x2="21" y2="12"/>
                         <line x1="8" y1="18" x2="21" y2="18"/>
@@ -1803,7 +1807,7 @@
                     Seznam
                 </button>
                 <button class="btn-view" data-view="timeline">
-                    <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg style="width:40px !important;height:40px !important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                     </svg>
                     Timeline
@@ -2421,23 +2425,23 @@
                 </div>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" title="Komentáře">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); attachFile(${job.id})" title="Přílohy">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); scheduleJob(${job.id})" title="Kalendář">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
                             <line x1="16" x2="16" y1="2" y2="6"></line>
                             <line x1="8" x2="8" y1="2" y2="6"></line>
@@ -2445,7 +2449,7 @@
                         </svg>
                     </button>
                     <button class="quick-action-btn" onclick="event.stopPropagation(); showJobDetail(${job.id})" title="Info">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" style="width: 190px; height: 190px;">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" x2="12" y1="16" y2="12"></line>
                             <line x1="12" x2="12.01" y1="8" y2="8"></line>
