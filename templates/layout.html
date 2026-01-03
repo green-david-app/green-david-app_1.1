@@ -171,6 +171,38 @@
 
 <script src="/archive-cta.js"></script>
 
+<!-- Role and permissions context -->
+<script>
+// Globální objekt s info o přihlášeném uživateli
+window.currentUser = {
+    id: {{ session.get('uid', 'null') }},
+    name: {{ session.get('user_name', '""')|tojson }},
+    email: {{ session.get('user_email', '""')|tojson }},
+    role: {{ session.get('user_role', '"worker"')|tojson }}
+};
+
+// Pomocné funkce pro kontrolu oprávnění
+window.hasRole = function(...roles) {
+    return roles.includes(window.currentUser.role);
+};
+
+window.isOwner = function() {
+    return window.currentUser.role === 'owner' || window.currentUser.role === 'admin';
+};
+
+window.isManager = function() {
+    return ['owner', 'manager', 'admin'].includes(window.currentUser.role);
+};
+
+window.canApprove = function() {
+    return ['owner', 'manager', 'team_lead', 'admin'].includes(window.currentUser.role);
+};
+
+window.canManageEmployees = function() {
+    return ['owner', 'manager', 'admin'].includes(window.currentUser.role);
+};
+</script>
+
 <!-- Bottom Navigation Container -->
 <div id="bottom-nav-container"></div>
 <script src="/static/bottom-nav.js"></script>

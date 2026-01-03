@@ -352,6 +352,14 @@
 </div>
 
 <script>
+// Skrýt tlačítko "Přidat zaměstnance" pro role bez oprávnění
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.canManageEmployees === 'function' && !window.canManageEmployees()) {
+        const addButton = document.getElementById('btnAddEmployee');
+        if (addButton) addButton.style.display = 'none';
+    }
+});
+
 (async function(){
   const listBody = document.getElementById('listBody');
   const searchInput = document.getElementById('searchInput');

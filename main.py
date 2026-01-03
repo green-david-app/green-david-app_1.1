@@ -160,6 +160,18 @@ def team_alias():
             return render_template("employees.html")
         except:
             return send_from_directory(".", "employees.html")
+
+@app.route("/admin/roles")
+@app.route("/admin/roles/")
+@app.route("/admin_roles.html")
+def admin_roles():
+    """Stránka pro správu rolí - pouze pro ownera"""
+    u, err = require_auth()
+    if err:
+        return redirect('/login')
+    if u and u.get('role') not in ('owner', 'admin'):
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    return render_template("admin_roles.html")
 # --- end aliases ---
 
 # ----------------- Migration -----------------
@@ -244,11 +256,87 @@ def _migrate_employees_enhanced():
     except Exception as e:
         print(f"[DB] Migration warning: {e}")
 
+def _migrate_roles_and_hierarchy():
+    """Migrace: přidání sloupců role a manager_id do users tabulky"""
+    db = get_db()
+    try:
+        # Zkontrolovat existující sloupce
+        cols = [r[1] for r in db.execute("PRAGMA table_info(users)").fetchall()]
+        
+        # Přidat sloupec role pokud neexistuje nebo aktualizovat CHECK constraint
+        if 'role' not in cols:
+            db.execute("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'worker'")
+            db.commit()
+            print("[DB] Added column: users.role")
+        else:
+            # Aktualizovat CHECK constraint pro nové role
+            # SQLite nepodporuje ALTER COLUMN, takže musíme vytvořit novou tabulku
+            # Poznámka: Pokud už existuje manager_id, přeskočíme tuto část
+            if 'manager_id' not in cols:
+                try:
+                    # Vypnout foreign key kontroly během migrace
+                    db.execute("PRAGMA foreign_keys=OFF")
+                    db.execute("""
+                        CREATE TABLE users_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            email TEXT UNIQUE NOT NULL,
+                            name TEXT NOT NULL,
+                            role TEXT NOT NULL DEFAULT 'worker' CHECK(role IN ('owner','manager','team_lead','worker','admin')),
+                            password_hash TEXT NOT NULL,
+                            active INTEGER NOT NULL DEFAULT 1,
+                            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                            manager_id INTEGER NULL
+                        )
+                    """)
+                    db.execute("""
+                        INSERT INTO users_new (id, email, name, role, password_hash, active, created_at)
+                        SELECT id, email, name, 
+                               CASE 
+                                   WHEN role = 'admin' THEN 'owner'
+                                   ELSE role
+                               END,
+                               password_hash, active, created_at
+                        FROM users
+                    """)
+                    db.execute("DROP TABLE users")
+                    db.execute("ALTER TABLE users_new RENAME TO users")
+                    db.execute("PRAGMA foreign_keys=ON")
+                    db.commit()
+                    print("[DB] Updated users table with new role system")
+                except Exception as e:
+                    db.execute("PRAGMA foreign_keys=ON")
+                    print(f"[DB] Role migration warning: {e}")
+        
+        # Přidat manager_id pokud neexistuje
+        if 'manager_id' not in cols:
+            db.execute("ALTER TABLE users ADD COLUMN manager_id INTEGER NULL")
+            db.commit()
+            print("[DB] Added column: users.manager_id")
+            
+            # Přidat foreign key constraint (SQLite to podporuje přes CREATE INDEX)
+            try:
+                db.execute("CREATE INDEX IF NOT EXISTS idx_users_manager_id ON users(manager_id)")
+                db.commit()
+            except Exception as e:
+                print(f"[DB] Index creation warning: {e}")
+        
+        # Aktualizovat existujícího uživatele david@greendavid.cz na owner
+        try:
+            db.execute("UPDATE users SET role = 'owner' WHERE email = 'david@greendavid.cz'")
+            db.commit()
+            print("[DB] Updated david@greendavid.cz to owner role")
+        except Exception as e:
+            print(f"[DB] Owner update warning: {e}")
+            
+    except Exception as e:
+        print(f"[DB] Roles migration warning: {e}")
+
 # Run migration after all functions are defined
 try:
     with app.app_context():
         _migrate_completed_at()
         _migrate_employees_enhanced()
+        _migrate_roles_and_hierarchy()
 except Exception as e:
     print(f"[DB] Migration failed: {e}")
 
@@ -258,7 +346,12 @@ def current_user():
     if not uid:
         return None
     db = get_db()
-    row = db.execute("SELECT id,email,name,role,active FROM users WHERE id=?", (uid,)).fetchone()
+    # Zkontrolovat, zda existuje sloupec manager_id
+    cols = [r[1] for r in db.execute("PRAGMA table_info(users)").fetchall()]
+    if 'manager_id' in cols:
+        row = db.execute("SELECT id,email,name,role,active,manager_id FROM users WHERE id=?", (uid,)).fetchone()
+    else:
+        row = db.execute("SELECT id,email,name,role,active FROM users WHERE id=?", (uid,)).fetchone()
     return dict(row) if row else None
 
 def require_auth():
@@ -275,6 +368,62 @@ def require_role(write=False):
         return None, (jsonify({"ok": False, "error": "forbidden"}), 403)
     return u, None
 
+# ----------------- Permissions system -----------------
+from functools import wraps
+
+def requires_role(*allowed_roles):
+    """Decorator pro kontrolu oprávnění podle role"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Kontrola přihlášení
+            if 'uid' not in session:
+                return jsonify({'ok': False, 'error': 'unauthorized'}), 401
+            
+            # Získat roli uživatele z DB
+            db = get_db()
+            user = db.execute(
+                "SELECT role FROM users WHERE id = ?", 
+                (session['uid'],)
+            ).fetchone()
+            
+            if not user or user['role'] not in allowed_roles:
+                return jsonify({'ok': False, 'error': 'forbidden'}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def get_current_user():
+    """Pomocná funkce pro získání aktuálního uživatele s plnými informacemi"""
+    if 'uid' not in session:
+        return None
+    
+    db = get_db()
+    user = db.execute(
+        "SELECT id, email, name, role, manager_id FROM users WHERE id = ?",
+        (session['uid'],)
+    ).fetchone()
+    
+    return dict(user) if user else None
+
+def can_manage_employee(manager_id, employee_id):
+    """Kontrola, zda má manager oprávnění spravovat zaměstnance"""
+    db = get_db()
+    
+    # Owner může všechno
+    manager = db.execute("SELECT role FROM users WHERE id = ?", (manager_id,)).fetchone()
+    if manager and manager['role'] in ('owner', 'admin'):
+        return True
+    
+    # Manager/Team lead jen své lidi
+    employee = db.execute(
+        "SELECT manager_id FROM users WHERE id = ?", 
+        (employee_id,)
+    ).fetchone()
+    
+    return employee and employee['manager_id'] == manager_id
+
 # ----------------- bootstrap (subset) -----------------
 def ensure_schema():
     db = get_db()
@@ -283,10 +432,11 @@ def ensure_schema():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
-        role TEXT NOT NULL CHECK(role IN ('admin','manager','worker')),
+        role TEXT NOT NULL DEFAULT 'worker' CHECK(role IN ('owner','manager','team_lead','worker','admin')),
         password_hash TEXT NOT NULL,
         active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        manager_id INTEGER NULL
     );
     CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -504,8 +654,11 @@ def api_login():
     row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
     if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
-    # store user id in session
+    # store user id and role in session
     session["uid"] = row["id"]
+    session["user_name"] = row["name"]
+    session["user_email"] = row["email"]
+    session["user_role"] = row["role"]
     return jsonify({"ok": True})
 
 @app.route("/api/logout", methods=["POST"])
@@ -516,12 +669,26 @@ def api_logout():
 
 # employees
 @app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
+@requires_role('owner', 'manager', 'team_lead', 'worker')
 def api_employees():
-    u, err = require_role(write=(request.method!="GET"))
-    if err: return err
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
     db = get_db()
     if request.method == "GET":
-        rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
+        # Filtrování podle role
+        if user['role'] in ('owner', 'manager', 'admin'):
+            # Owner a Manager vidí všechny zaměstnance
+            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
+        elif user['role'] == 'team_lead':
+            # Team lead vidí jen své podřízené (pokud mají employees.user_id link)
+            # Prozatím zobrazíme všechny, protože employees tabulka nemá user_id
+            # TODO: Přidat user_id do employees tabulky pro propojení
+            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
+        else:
+            # Worker vidí jen sebe (pokud má employees.user_id link)
+            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
         employees = []
         for r in rows:
             emp = dict(r)
@@ -565,6 +732,9 @@ def api_employees():
         
         return jsonify({"ok": True, "employees": employees})
     if request.method == "POST":
+        # Pouze owner a manager mohou přidávat zaměstnance
+        if user['role'] not in ('owner', 'manager', 'admin'):
+            return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
             name = data.get("name")
@@ -611,6 +781,9 @@ def api_employees():
             print(f"✗ Error creating employee: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "PATCH":
+        # Pouze owner a manager mohou upravovat zaměstnance
+        if user['role'] not in ('owner', 'manager', 'admin'):
+            return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
             eid = data.get("id") or request.args.get("id", type=int)
@@ -640,6 +813,9 @@ def api_employees():
             print(f"✗ Error updating employee: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "DELETE":
+        # Pouze owner a manager mohou mazat zaměstnance
+        if user['role'] not in ('owner', 'manager', 'admin'):
+            return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             eid = request.args.get("id", type=int)
             if not eid: return jsonify({"ok": False, "error":"missing_id"}), 400
@@ -651,6 +827,154 @@ def api_employees():
             db.rollback()
             print(f"✗ Error deleting employee: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+# ----------------- Users management API (system users) -----------------
+@app.route("/api/users", methods=["GET"])
+@requires_role('owner', 'manager', 'team_lead')
+def api_get_users():
+    """Seznam uživatelů systému - filtrovaný podle role"""
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    db = get_db()
+    
+    if user['role'] in ('owner', 'manager', 'admin'):
+        # Owner a Manager vidí všechny uživatele
+        rows = db.execute("""
+            SELECT u.id, u.email, u.name, u.role, u.manager_id, u.active,
+                   m.name AS manager_name
+            FROM users u
+            LEFT JOIN users m ON m.id = u.manager_id
+            ORDER BY u.name
+        """).fetchall()
+    elif user['role'] == 'team_lead':
+        # Team lead vidí jen své podřízené
+        rows = db.execute("""
+            SELECT u.id, u.email, u.name, u.role, u.manager_id, u.active,
+                   m.name AS manager_name
+            FROM users u
+            LEFT JOIN users m ON m.id = u.manager_id
+            WHERE u.manager_id = ?
+            ORDER BY u.name
+        """, (user['id'],)).fetchall()
+    else:
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    
+    users = [dict(r) for r in rows]
+    return jsonify({"ok": True, "users": users})
+
+@app.route("/api/users", methods=["POST"])
+@requires_role('owner', 'manager')
+def api_add_user():
+    """Přidání nového uživatele - jen owner a manager"""
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    data = request.get_json(force=True, silent=True) or {}
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip().lower()
+    password = data.get("password", "")
+    role = data.get("role", "worker")
+    manager_id = data.get("manager_id")
+    
+    if not name or not email or not password:
+        return jsonify({"ok": False, "error": "missing_fields"}), 400
+    
+    if role not in ('owner', 'manager', 'team_lead', 'worker'):
+        return jsonify({"ok": False, "error": "invalid_role"}), 400
+    
+    # Manager nemůže vytvořit ownera
+    if user['role'] != 'owner' and role == 'owner':
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    
+    # Pokud není zadán manager_id, použije se aktuální uživatel jako manager
+    if manager_id is None:
+        manager_id = user['id']
+    
+    db = get_db()
+    try:
+        db.execute(
+            "INSERT INTO users (name, email, role, password_hash, manager_id, active) VALUES (?, ?, ?, ?, ?, 1)",
+            (name, email, role, generate_password_hash(password), manager_id)
+        )
+        db.commit()
+        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({"ok": True, "id": new_id})
+    except sqlite3.IntegrityError:
+        db.rollback()
+        return jsonify({"ok": False, "error": "email_exists"}), 400
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/users/<int:user_id>/role", methods=["PUT"])
+@requires_role('owner')
+def api_change_user_role(user_id):
+    """Změna role uživatele - jen owner"""
+    data = request.get_json(force=True, silent=True) or {}
+    new_role = data.get("role")
+    
+    if new_role not in ('owner', 'manager', 'team_lead', 'worker'):
+        return jsonify({"ok": False, "error": "invalid_role"}), 400
+    
+    db = get_db()
+    try:
+        db.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# ----------------- Timesheets approval -----------------
+@app.route("/api/timesheets/<int:timesheet_id>/approve", methods=["POST"])
+@requires_role('owner', 'manager', 'team_lead')
+def api_approve_timesheet(timesheet_id):
+    """Schválení výkazu - jen pro nadřízené"""
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    db = get_db()
+    
+    # Získat timesheet
+    timesheet = db.execute(
+        "SELECT employee_id FROM timesheets WHERE id = ?",
+        (timesheet_id,)
+    ).fetchone()
+    
+    if not timesheet:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    
+    # Kontrola oprávnění - owner může všechno
+    if user['role'] not in ('owner', 'admin'):
+        # Pro ostatní role potřebujeme zkontrolovat hierarchii
+        # Pokud timesheets nemá přímý link na users, použijeme employees
+        # Prozatím povolíme všem nadřízeným
+        pass
+    
+    # Zkontrolovat, zda timesheets tabulka má sloupce pro schválení
+    cols = [r[1] for r in db.execute("PRAGMA table_info(timesheets)").fetchall()]
+    
+    if 'approved' not in cols:
+        db.execute("ALTER TABLE timesheets ADD COLUMN approved INTEGER DEFAULT 0")
+        db.execute("ALTER TABLE timesheets ADD COLUMN approved_by INTEGER NULL")
+        db.execute("ALTER TABLE timesheets ADD COLUMN approved_at TEXT NULL")
+        db.commit()
+    
+    # Schválit
+    try:
+        db.execute(
+            "UPDATE timesheets SET approved = 1, approved_by = ?, approved_at = datetime('now') WHERE id = ?",
+            (user['id'], timesheet_id)
+        )
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 # ✅ jobs with legacy schema compatibility
 @app.route("/api/jobs", methods=["GET","POST","PATCH","DELETE"])
