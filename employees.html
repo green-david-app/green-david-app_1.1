@@ -301,8 +301,8 @@
         }
 
         .quick-action-btn-small svg {
-            width: 18px;
-            height: 18px;
+            width: 90px;
+            height: 90px;
             stroke: #000000 !important;
             fill: none;
             stroke-width: 3.5 !important;
@@ -317,8 +317,8 @@
             }
             
             .quick-action-btn-small svg {
-                width: 36px !important;
-                height: 36px !important;
+                width: 180px !important;
+                height: 180px !important;
                 stroke-width: 2 !important;
                 stroke: #000000 !important;
             }
@@ -1227,28 +1227,28 @@
                     
                     <div class="quick-actions-row" onclick="event.stopPropagation()">
                         <button class="quick-action-btn-small" title="Detail" onclick="event.stopPropagation(); showEmployeeDetail(${emp.id})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 38px; height: 38px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 190px; height: 190px;">
                                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
                         </button>
                         ${phone ? `
                             <button class="quick-action-btn-small" title="Zavolat" onclick="event.stopPropagation(); callEmployee(${emp.id})">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 38px; height: 38px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 190px; height: 190px;">
                                     <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
                                 </svg>
                             </button>
                         ` : ''}
                         ${email ? `
                             <button class="quick-action-btn-small" title="Email" onclick="event.stopPropagation(); emailEmployee(${emp.id})">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 38px; height: 38px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 190px; height: 190px;">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                                     <polyline points="22,6 12,13 2,6"/>
                                 </svg>
                             </button>
                         ` : ''}
                         <button class="quick-action-btn-small" title="Přiřadit k projektu" onclick="event.stopPropagation(); assignToProject(${emp.id})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 38px; height: 38px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 190px; height: 190px;">
                                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
                                 <rect x="9" y="3" width="6" height="4" rx="1"/>
                                 <path d="M9 12h6"/>
