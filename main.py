@@ -1504,7 +1504,8 @@ def api_timesheets_export():
 # ----------------- Template route -----------------
 @app.route("/timesheets.html")
 def page_timesheets():
-    return render_template("timesheets.html")
+    # Serve the standalone HTML to ensure unified JS header across all sections
+    return send_from_directory(".", "timesheets.html")
 
 # ----------------- Standalone HTML routes -----------------
 @app.route("/jobs.html")
