@@ -6046,10 +6046,22 @@ grid-template-columns: repeat(2, 1fr);
   grid-template-columns: 1fr;
 }
 #job-detail-modal .ops-item{
-  grid-template-columns: 1fr;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size:12.5px;
+  line-height:1.4;
+}
+#job-detail-modal .ops-todo-label{
+  width:100%;
+}
+#job-detail-modal .ops-main{
+  width:100%;
 }
 #job-detail-modal .ops-actions{
+  width:100%;
   justify-content:flex-start;
+  margin-top:2px;
 }
 
 .ops-main{min-width:0;flex:1 1 auto;}
