@@ -1540,48 +1540,344 @@
 
         let currentJobId = null;
 
-        function showJobDetail(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            currentJobId = jobId;
-            document.getElementById('detail-title').textContent = job.title;
-            const body = document.getElementById('detail-body');
-            body.innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
-                    <div>
-                        <h4 style="color:var(--text-secondary);margin-bottom:8px;">Klient</h4>
-                        <p style="margin:0;">${escapeHtml(job.client)}</p>
-                    </div>
-                    <div>
-                        <h4 style="color:var(--text-secondary);margin-bottom:8px;">Lokace</h4>
-                        <p style="margin:0;">${escapeHtml(job.address)}</p>
-                    </div>
-                    <div>
-                        <h4 style="color:var(--text-secondary);margin-bottom:8px;">Deadline</h4>
-                        <p style="margin:0;">${formatDate(job.deadline)}</p>
-                    </div>
-                    <div>
-                        <h4 style="color:var(--text-secondary);margin-bottom:8px;">Status</h4>
-                        <p style="margin:0;"><span class="priority-badge ${job.status}">${job.status}</span></p>
-                    </div>
-                </div>
-                <div style="margin-bottom:24px;">
-                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Popis</h4>
-                    <p>${escapeHtml(job.notes || '—')}</p>
-                </div>
-                <div style="margin-bottom:24px;">
-                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Progress</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${job.progress}%"></div>
-                    </div>
-                    <p style="margin-top:8px;color:var(--text-secondary);">${job.progress}% dokončeno</p>
-                </div>
-            `;
-            document.getElementById('job-detail-modal').classList.add('active');
-        }
+        // === Operativa: local-only (bezpečné pro nasazení bez změn backendu) ===
+function opsStorageKey(jobId) {
+    return `gd.ops.job.${jobId}`;
+}
 
-        function openEditJobModal(jobId) {
+function loadOps(jobId) {
+    try {
+        const raw = localStorage.getItem(opsStorageKey(jobId));
+        if (!raw) return { problems: [], todos: [] };
+        const parsed = JSON.parse(raw);
+        return {
+            problems: Array.isArray(parsed.problems) ? parsed.problems : [],
+            todos: Array.isArray(parsed.todos) ? parsed.todos : []
+        };
+    } catch (e) {
+        console.warn('Failed to load ops from localStorage', e);
+        return { problems: [], todos: [] };
+    }
+}
+
+function saveOps(jobId, ops) {
+    try {
+        localStorage.setItem(opsStorageKey(jobId), JSON.stringify(ops));
+    } catch (e) {
+        console.warn('Failed to save ops to localStorage', e);
+    }
+}
+
+function statusLabel(status) {
+    const map = { new: 'Nové', active: 'Aktivní', paused: 'Pozastavené', completed: 'Dokončené', blocked: 'Blokované' };
+    return map[status] || status || '—';
+}
+
+function severityLabel(sev) {
+    const map = { info: 'Info', blocking: 'Blokuje', critical: 'Kritické' };
+    return map[sev] || sev;
+}
+
+function escapeAttr(s) {
+    return String(s ?? '').replace(/"/g, '&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderProblems(jobId, ops) {
+    const open = ops.problems.filter(p => p.status !== 'resolved');
+    const count = open.length;
+    const hasBlocker = open.some(p => p.severity === 'blocking' || p.severity === 'critical');
+
+    const items = (ops.problems.length ? ops.problems : []).slice().sort((a,b)=>{
+        const aOpen = a.status !== 'resolved';
+        const bOpen = b.status !== 'resolved';
+        if (aOpen !== bOpen) return aOpen ? -1 : 1;
+        const sevRank = { critical: 0, blocking: 1, info: 2 };
+        return (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9);
+    });
+
+    const listHtml = items.length ? items.map(p => {
+        const isResolved = p.status === 'resolved';
+        return `
+            <div class="ops-item" style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                <div style="min-width:0;">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <span style="padding:4px 8px;border-radius:999px;font-size:12px;background:${p.severity === 'info' ? 'rgba(255,255,255,0.08)' : 'rgba(255, 193, 7, 0.18)'};border:1px solid rgba(255,255,255,0.10);">
+                            ${severityLabel(p.severity)}
+                        </span>
+                        <span style="font-weight:600;${isResolved ? 'text-decoration:line-through;opacity:0.7;' : ''}">${escapeHtml(p.title || '—')}</span>
+                    </div>
+                    ${p.note ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">${escapeHtml(p.note)}</div>` : ``}
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+                    ${isResolved ? `<span style="color:var(--text-secondary);font-size:12px;">Vyřešeno</span>` : `
+                        <button class="btn-secondary" style="padding:8px 10px;" onclick="resolveProblem(${jobId}, '${escapeAttr(p.id)}')">Vyřešit</button>
+                    `}
+                    <button class="btn-secondary" style="padding:8px 10px;" onclick="deleteProblem(${jobId}, '${escapeAttr(p.id)}')">Smazat</button>
+                </div>
+            </div>
+        `;
+    }).join('') : `
+        <div style="color:var(--text-secondary);padding:10px 0;">
+            Žádné problémy. Pokud něco blokuje práci, nahlaš to zde.
+        </div>
+    `;
+
+    return { count, hasBlocker, html: listHtml };
+}
+
+function renderTodos(jobId, ops) {
+    const items = ops.todos.slice().sort((a,b)=>{
+        const aDone = !!a.done;
+        const bDone = !!b.done;
+        if (aDone !== bDone) return aDone ? 1 : -1;
+        return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+    });
+
+    const listHtml = items.length ? items.map(t => `
+        <div class="ops-item" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+            <label style="display:flex;gap:10px;align-items:flex-start;min-width:0;cursor:pointer;">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${jobId}, '${escapeAttr(t.id)}', this.checked)" style="margin-top:3px;">
+                <div style="min-width:0;">
+                    <div style="font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.65;' : ''}">
+                        ${escapeHtml(t.title || '—')}
+                    </div>
+                    ${t.assignee ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assignee)}</div>` : ``}
+                </div>
+            </label>
+            <button class="btn-secondary" style="padding:8px 10px;flex-shrink:0;" onclick="deleteTodo(${jobId}, '${escapeAttr(t.id)}')">Smazat</button>
+        </div>
+    `).join('') : `
+        <div style="color:var(--text-secondary);padding:10px 0;">
+            Žádné úkoly. Přidej krátký to-do a přiřaď odpovědnost.
+        </div>
+    `;
+
+    const openCount = ops.todos.filter(t => !t.done).length;
+    return { openCount, html: listHtml };
+}
+
+function addProblem(jobId) {
+    const titleEl = document.getElementById('ops-problem-title');
+    const noteEl = document.getElementById('ops-problem-note');
+    const sevEl = document.getElementById('ops-problem-severity');
+
+    const title = (titleEl?.value || '').trim();
+    const note = (noteEl?.value || '').trim();
+    const severity = (sevEl?.value || 'blocking');
+
+    if (!title) {
+        if (window.showToast) window.showToast('Zadej název problému', 'error');
+        return;
+    }
+
+    const ops = loadOps(jobId);
+    ops.problems.push({
+        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        title,
+        note,
+        severity,
+        status: 'open',
+        createdAt: Date.now()
+    });
+    saveOps(jobId, ops);
+    titleEl.value = '';
+    noteEl.value = '';
+    renderOperativa(jobId);
+    if (window.showToast) window.showToast('Problém přidán', 'success');
+}
+
+function resolveProblem(jobId, problemId) {
+    const ops = loadOps(jobId);
+    const p = ops.problems.find(x => x.id === problemId);
+    if (!p) return;
+    p.status = 'resolved';
+    p.resolvedAt = Date.now();
+    saveOps(jobId, ops);
+    renderOperativa(jobId);
+    if (window.showToast) window.showToast('Problém označen jako vyřešený', 'success');
+}
+
+function deleteProblem(jobId, problemId) {
+    const ops = loadOps(jobId);
+    ops.problems = ops.problems.filter(x => x.id !== problemId);
+    saveOps(jobId, ops);
+    renderOperativa(jobId);
+}
+
+function addTodo(jobId) {
+    const titleEl = document.getElementById('ops-todo-title');
+    const assigneeEl = document.getElementById('ops-todo-assignee');
+
+    const title = (titleEl?.value || '').trim();
+    const assignee = (assigneeEl?.value || '').trim();
+
+    if (!title) {
+        if (window.showToast) window.showToast('Zadej název úkolu', 'error');
+        return;
+    }
+
+    const ops = loadOps(jobId);
+    ops.todos.push({
+        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        title,
+        assignee,
+        done: false,
+        createdAt: Date.now()
+    });
+    saveOps(jobId, ops);
+    titleEl.value = '';
+    assigneeEl.value = '';
+    renderOperativa(jobId);
+    if (window.showToast) window.showToast('Úkol přidán', 'success');
+}
+
+function toggleTodo(jobId, todoId, done) {
+    const ops = loadOps(jobId);
+    const t = ops.todos.find(x => x.id === todoId);
+    if (!t) return;
+    t.done = !!done;
+    saveOps(jobId, ops);
+    renderOperativa(jobId);
+}
+
+function deleteTodo(jobId, todoId) {
+    const ops = loadOps(jobId);
+    ops.todos = ops.todos.filter(x => x.id !== todoId);
+    saveOps(jobId, ops);
+    renderOperativa(jobId);
+}
+
+function renderOperativa(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const ops = loadOps(jobId);
+    const probs = renderProblems(jobId, ops);
+    const todos = renderTodos(jobId, ops);
+
+    const countersEl = document.getElementById('ops-counters');
+    if (countersEl) {
+        countersEl.innerHTML = `
+            <span style="display:inline-flex;gap:8px;align-items:center;">
+                <span style="opacity:0.9;">Problémy:</span>
+                <span style="font-weight:700;">${probs.count}</span>
+            </span>
+            <span style="display:inline-flex;gap:8px;align-items:center;margin-left:14px;">
+                <span style="opacity:0.9;">Úkoly:</span>
+                <span style="font-weight:700;">${todos.openCount}</span>
+            </span>
+        `;
+    }
+
+    document.getElementById('ops-problems-list').innerHTML = probs.html;
+    document.getElementById('ops-todos-list').innerHTML = todos.html;
+
+    const hint = document.getElementById('ops-blocker-hint');
+    if (hint) hint.style.display = probs.hasBlocker ? 'block' : 'none';
+}
+
+function showJobDetail(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    currentJobId = jobId;
+    document.getElementById('detail-title').textContent = job.title;
+    const body = document.getElementById('detail-body');
+
+    body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <div>
+                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Klient</h4>
+                    <p style="margin:0;">${escapeHtml(job.client)}</p>
+                </div>
+                <div>
+                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Lokace</h4>
+                    <p style="margin:0;">${escapeHtml(job.address)}</p>
+                </div>
+                <div>
+                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Deadline</h4>
+                    <p style="margin:0;">${formatDate(job.deadline)}</p>
+                </div>
+                <div>
+                    <h4 style="color:var(--text-secondary);margin-bottom:8px;">Status</h4>
+                    <p style="margin:0;"><span class="priority-badge ${job.status}">${escapeHtml(statusLabel(job.status))}</span></p>
+                </div>
+            </div>
+
+            <div id="ops-section" style="padding:16px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                    <div>
+                        <div style="font-weight:800;font-size:16px;">Operativa</div>
+                        <div id="ops-counters" style="color:var(--text-secondary);font-size:13px;margin-top:4px;"></div>
+                    </div>
+                    <div id="ops-blocker-hint" style="display:none;color:var(--text-secondary);font-size:13px;">
+                        Zakázka je blokovaná – řeš nejdřív problémy.
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div style="min-width:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                            <div style="font-weight:700;">Problémy / překážky</div>
+                            <button class="btn-secondary" style="padding:8px 10px;" onclick="addProblem(${jobId})">+ Nahlásit</button>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;">
+                            <input id="ops-problem-title" class="form-input" placeholder="Např. Chybí materiál – obrubníky">
+                            <div style="display:flex;gap:10px;">
+                                <select id="ops-problem-severity" class="form-input" style="flex:0 0 160px;">
+                                    <option value="blocking">Blokuje</option>
+                                    <option value="critical">Kritické</option>
+                                    <option value="info">Info</option>
+                                </select>
+                                <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)" style="flex:1 1 auto;">
+                            </div>
+                        </div>
+
+                        <div id="ops-problems-list" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+                    </div>
+
+                    <div style="min-width:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                            <div style="font-weight:700;">Úkoly (to-do)</div>
+                            <button class="btn-secondary" style="padding:8px 10px;" onclick="addTodo(${jobId})">+ Přidat</button>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;">
+                            <input id="ops-todo-title" class="form-input" placeholder="Např. Připravit podklad / domluvit dodávku">
+                            <input id="ops-todo-assignee" class="form-input" placeholder="Odpovědný (např. Adam)">
+                        </div>
+
+                        <div id="ops-todos-list" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="color:var(--text-secondary);margin-bottom:8px;">Popis</h4>
+                <p>${escapeHtml(job.notes || '—')}</p>
+            </div>
+
+            <div>
+                <h4 style="color:var(--text-secondary);margin-bottom:8px;">Progress</h4>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${job.progress}%"></div>
+                </div>
+                <p style="margin-top:8px;color:var(--text-secondary);">${job.progress}% dokončeno</p>
+            </div>
+        </div>
+    `;
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        try { lucide.createIcons(); } catch (e) {}
+    }
+
+    document.getElementById('job-detail-modal').classList.add('active');
+    renderOperativa(jobId);
+}
+
+function openEditJobModal(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
