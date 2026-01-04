@@ -6054,9 +6054,17 @@ grid-template-columns: repeat(2, 1fr);
 }
 #job-detail-modal .ops-todo-label{
   width:100%;
+  /* In modal, never place long text in a narrow column next to checkbox */
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
 }
 #job-detail-modal .ops-main{
   width:100%;
+}
+#job-detail-modal .ops-todo-label input[type="checkbox"]{
+  margin-top:0;
 }
 #job-detail-modal .ops-actions{
   width:100%;
