@@ -6037,17 +6037,30 @@ grid-template-columns: repeat(2, 1fr);
   flex:0 0 auto;
 }
 
+.ops-owner{
+  min-width: 220px;
+}
+
 .ops-todo-label{
   display:flex;
   gap:10px;
   align-items:flex-start;
   min-width:0;
   cursor:pointer;
-  flex:1 1 auto;
+  flex:1 1 260px;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .ops-todo-label input[type="checkbox"]{
   margin-top:3px;
+}
+
+/* Prevent super-narrow columns on small screens that cause per-letter wrapping */
+@media (max-width: 620px){
+  .ops-item{flex-direction:column;align-items:stretch;}
+  .ops-actions{justify-content:flex-start;}
+  .ops-owner{min-width: 0; width: 100%;}
 }
 
 /* Ensure buttons in operativa don't become too small */

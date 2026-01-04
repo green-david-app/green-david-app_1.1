@@ -666,7 +666,7 @@
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); addNote(${job.id})" aria-label="Komentáře">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); showJobOperativa(${job.id})" aria-label="Operativa">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
@@ -1582,6 +1582,24 @@ function escapeAttr(s) {
     return String(s ?? '').replace(/"/g, '&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function getEmployeeDisplayName(emp) {
+    if (!emp) return '';
+    return (emp.name || emp.full_name || emp.username || emp.email || emp.title || '').toString().trim() || `ID ${emp.id}`;
+}
+
+function employeeOptionsHtml(selectedId, placeholderText) {
+    const sel = selectedId != null ? String(selectedId) : '';
+    const ph = placeholderText || '—';
+    const opts = [`<option value="">${escapeHtml(ph)}</option>`];
+    (employees || []).forEach(e => {
+        const id = e.id != null ? String(e.id) : '';
+        if (!id) return;
+        const name = escapeHtml(getEmployeeDisplayName(e));
+        opts.push(`<option value="${escapeAttr(id)}" ${id === sel ? 'selected' : ''}>${name}</option>`);
+    });
+    return opts.join('');
+}
+
 function renderProblems(jobId, ops) {
     const open = ops.problems.filter(p => p.status !== 'resolved');
     const count = open.length;
@@ -1599,13 +1617,14 @@ function renderProblems(jobId, ops) {
         const isResolved = p.status === 'resolved';
         return `
             <div class="ops-item">
-                <div class="ops-col">
+                <div class="ops-main">
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <span style="padding:4px 8px;border-radius:999px;font-size:12px;background:${p.severity === 'info' ? 'rgba(255,255,255,0.08)' : 'rgba(255, 193, 7, 0.18)'};border:1px solid rgba(255,255,255,0.10);">
                             ${severityLabel(p.severity)}
                         </span>
                         <span style="font-weight:600;${isResolved ? 'text-decoration:line-through;opacity:0.7;' : ''}">${escapeHtml(p.title || '—')}</span>
                     </div>
+                    ${p.ownerName ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">Řeší: ${escapeHtml(p.ownerName)}</div>` : ``}
                     ${p.note ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">${escapeHtml(p.note)}</div>` : ``}
                 </div>
                 <div class="ops-actions">
@@ -1637,11 +1656,11 @@ function renderTodos(jobId, ops) {
         <div class="ops-item">
             <label class="ops-todo-label">
                 <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${jobId}, '${escapeAttr(t.id)}', this.checked)">
-                <div class="ops-col">
+                <div class="ops-main">
                     <div style="font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.65;' : ''}">
                         ${escapeHtml(t.title || '—')}
                     </div>
-                    ${t.assignee ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assignee)}</div>` : ``}
+                    ${t.assigneeName ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assigneeName)}</div>` : (t.assignee ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assignee)}</div>` : ``)}
                 </div>
             </label>
             <div class="ops-actions">
@@ -1662,10 +1681,14 @@ function addProblem(jobId) {
     const titleEl = document.getElementById('ops-problem-title');
     const noteEl = document.getElementById('ops-problem-note');
     const sevEl = document.getElementById('ops-problem-severity');
+    const ownerEl = document.getElementById('ops-problem-owner');
 
     const title = (titleEl?.value || '').trim();
     const note = (noteEl?.value || '').trim();
     const severity = (sevEl?.value || 'blocking');
+    const ownerId = (ownerEl?.value || '').toString().trim();
+    const owner = ownerId ? (employees || []).find(e => String(e.id) === ownerId) : null;
+    const ownerName = owner ? getEmployeeDisplayName(owner) : '';
 
     if (!title) {
         if (window.showToast) window.showToast('Zadej název problému', 'error');
@@ -1678,6 +1701,8 @@ function addProblem(jobId) {
         title,
         note,
         severity,
+        ownerId: ownerId || null,
+        ownerName: ownerName || null,
         status: 'open',
         createdAt: Date.now()
     });
@@ -1711,7 +1736,9 @@ function addTodo(jobId) {
     const assigneeEl = document.getElementById('ops-todo-assignee');
 
     const title = (titleEl?.value || '').trim();
-    const assignee = (assigneeEl?.value || '').trim();
+    const assigneeId = (assigneeEl?.value || '').toString().trim();
+    const assigneeEmp = assigneeId ? (employees || []).find(e => String(e.id) === assigneeId) : null;
+    const assigneeName = assigneeEmp ? getEmployeeDisplayName(assigneeEmp) : '';
 
     if (!title) {
         if (window.showToast) window.showToast('Zadej název úkolu', 'error');
@@ -1722,7 +1749,8 @@ function addTodo(jobId) {
     ops.todos.push({
         id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random()),
         title,
-        assignee,
+        assigneeId: assigneeId || null,
+        assigneeName: assigneeName || null,
         done: false,
         createdAt: Date.now()
     });
@@ -1833,8 +1861,11 @@ function showJobDetail(jobId) {
                                     <option value="critical">Kritické</option>
                                     <option value="info">Info</option>
                                 </select>
-                                <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)">
+                                <select id="ops-problem-owner" class="form-input ops-owner">
+                                    ${employeeOptionsHtml('', 'Řeší: —')}
+                                </select>
                             </div>
+                            <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)">
                         </div>
 
                         <div id="ops-problems-list" class="ops-list"></div>
@@ -1848,7 +1879,9 @@ function showJobDetail(jobId) {
 
                         <div class="ops-inputs">
                             <input id="ops-todo-title" class="form-input" placeholder="Např. Připravit podklad / domluvit dodávku">
-                            <input id="ops-todo-assignee" class="form-input" placeholder="Odpovědný (např. Adam)">
+                            <select id="ops-todo-assignee" class="form-input ops-owner">
+                                ${employeeOptionsHtml('', 'Odpovědný: —')}
+                            </select>
                         </div>
 
                         <div id="ops-todos-list" class="ops-list"></div>
@@ -1877,6 +1910,20 @@ function showJobDetail(jobId) {
 
     document.getElementById('job-detail-modal').classList.add('active');
     renderOperativa(jobId);
+}
+
+// Quick access: open job detail and focus directly on Operativa section
+function showJobOperativa(jobId) {
+    showJobDetail(jobId);
+    // Wait for modal content and operativa lists
+    setTimeout(() => {
+        const opsSection = document.getElementById('ops-section');
+        if (opsSection && opsSection.scrollIntoView) {
+            opsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        const focusEl = document.getElementById('ops-problem-title') || document.getElementById('ops-todo-title');
+        if (focusEl && focusEl.focus) focusEl.focus();
+    }, 80);
 }
 
 function openEditJobModal(jobId) {
