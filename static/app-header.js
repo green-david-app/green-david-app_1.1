@@ -2,6 +2,7 @@
 class AppHeader {
   constructor() {
     this.render();
+    this.cleanupLegacyHeaders();
     this.initUserBox();
   }
 
@@ -27,9 +28,9 @@ class AppHeader {
           <div class="app-header-actions">
             <div id="userbox" class="app-header-user"></div>
             <a href="/settings.html" class="app-header-settings" title="Nastavení">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+                <path d="M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a8.2 8.2 0 0 0-1.7-1L15 3h-6l-.3 3a8.2 8.2 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.9 7.9 0 0 0-.1 1 7.9 7.9 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a8.2 8.2 0 0 0 1.7 1L9 21h6l.3-3a8.2 8.2 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/>
               </svg>
             </a>
           </div>
@@ -70,12 +71,27 @@ class AppHeader {
       settingsLink.className = 'app-header-settings';
       settingsLink.title = 'Nastavení';
       settingsLink.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+          <path d="M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a8.2 8.2 0 0 0-1.7-1L15 3h-6l-.3 3a8.2 8.2 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.9 7.9 0 0 0-.1 1 7.9 7.9 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a8.2 8.2 0 0 0 1.7 1L9 21h6l.3-3a8.2 8.2 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/>
         </svg>
       `;
       actions.appendChild(settingsLink);
+    }
+  }
+
+  cleanupLegacyHeaders() {
+    // Bezpečně skryj staré top-bary/hlavičky napříč stránkami bez použití CSS :has()
+    try {
+      const candidates = document.querySelectorAll('.header, .page-header, .brand');
+      candidates.forEach((el) => {
+        if (!el.closest('.app-header')) {
+          // Pokud je to brand uvnitř nového headeru, nechat být; jinak skrýt
+          el.style.display = 'none';
+        }
+      });
+    } catch (e) {
+      // no-op
     }
   }
 
@@ -92,7 +108,14 @@ class AppHeader {
       const j = await res.json();
       
       if (j.authenticated) {
+        const u = j.user || {};
+        const nameOrEmail = (u.name || u.email || 'Uživatel').toString();
+        const role = (u.role || '').toString();
         box.innerHTML = `
+          <span title="${nameOrEmail}${role ? ' (' + role + ')' : ''}">
+            <strong style="color:#e8eef2;">${nameOrEmail}</strong>
+            ${role ? `<span style="color:#9ca8b3;">&nbsp;(${role})</span>` : ''}
+          </span>
           <span>Úkoly: <strong style="color:#e8eef2;">${j.tasks_count || 0}</strong></span>
           <button class="btn btn-ghost btn-sm" id="logout-btn" style="padding:6px 12px;font-size:13px;">Odhlásit</button>
         `;
@@ -111,11 +134,6 @@ class AppHeader {
     }
   }
 
-  // Metoda pro refresh userboxu (může být volána zvenčí)
-  async refreshUserBox() {
-    await this.initUserBox();
-  }
-
   async handleLogout() {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
@@ -123,6 +141,11 @@ class AppHeader {
     } catch (e) {
       console.error('Logout error:', e);
     }
+  }
+
+  // Metoda pro refresh userboxu (může být volána zvenčí)
+  async refreshUserBox() {
+    await this.initUserBox();
   }
 }
 

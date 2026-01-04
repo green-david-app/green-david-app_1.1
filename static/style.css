@@ -1411,9 +1411,11 @@ body.more-menu-open .bottom-nav {
   stroke: currentColor;
 }
 
-/* Skryj staré headery */
+/*
+  Skrytí starých headerů je řešeno primárně v JS (kvůli kompatibilitě prohlížečů).
+  Tady necháváme pouze bezpečné selektory bez :has().
+*/
 .header:not(.app-header),
-.page-header:has(h1),
 .brand:not(.app-header-brand) {
   display: none !important;
 }
