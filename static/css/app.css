@@ -6029,6 +6029,27 @@ grid-template-columns: repeat(2, 1fr);
   border-radius:12px;
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.06);
+  font-size:13px;
+  line-height:1.25;
+}
+
+/* Hard guardrail: never allow vertical (per-letter) wrapping in Operativa */
+.ops-item, .ops-item *{
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* In the Job Detail modal, stack actions below text earlier to prevent ultra-narrow text columns */
+#job-detail-modal .ops-grid{
+  grid-template-columns: 1fr;
+}
+#job-detail-modal .ops-item{
+  grid-template-columns: 1fr;
+}
+#job-detail-modal .ops-actions{
+  justify-content:flex-start;
 }
 
 .ops-main{min-width:0;flex:1 1 auto;}

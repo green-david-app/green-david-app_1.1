@@ -133,7 +133,17 @@
                 const res = await fetch('/api/tasks');
                 if (res.ok) {
                     const data = await res.json();
-                    tasks = data.tasks || [];
+                    tasks = (data.tasks || []).map(t => {
+                        // Normalize API payload to UI expectations
+                        const nt = { ...t };
+                        if (!nt.assignee) nt.assignee = nt.employee_name || null;
+                        if (!nt.priority) nt.priority = 'medium';
+                        // Backend historically used arbitrary statuses; map common ones.
+                        if (nt.status === 'open' || nt.status === 'new' || nt.status === null || nt.status === undefined) nt.status = 'todo';
+                        if (nt.status === 'in_progress') nt.status = 'progress';
+                        if (nt.status === 'resolved' || nt.status === 'closed') nt.status = 'done';
+                        return nt;
+                    });
                 } else {
                     throw new Error('API not available');
                 }

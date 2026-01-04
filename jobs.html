@@ -1745,19 +1745,38 @@ function addTodo(jobId) {
         return;
     }
 
-    const ops = loadOps(jobId);
-    ops.todos.push({
-        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random()),
+    // Always store locally (safe). If API is available, also create a real task so it shows up in /tasks.html.
+    const localId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random());
+    const newTodo = {
+        id: localId,
         title,
         assigneeId: assigneeId || null,
         assigneeName: assigneeName || null,
         done: false,
-        createdAt: Date.now()
-    });
+        createdAt: Date.now(),
+        apiTaskId: null
+    };
+
+    const ops = loadOps(jobId);
+    ops.todos.push(newTodo);
     saveOps(jobId, ops);
+
     titleEl.value = '';
     assigneeEl.value = '';
     renderOperativa(jobId);
+
+    // Best-effort API sync (does not break if API fails)
+    createApiTaskFromTodo(jobId, newTodo).then((apiId) => {
+        if (!apiId) return;
+        const ops2 = loadOps(jobId);
+        const t2 = ops2.todos.find(x => x.id === localId);
+        if (t2) {
+            t2.apiTaskId = apiId;
+            saveOps(jobId, ops2);
+            renderOperativa(jobId);
+        }
+    });
+
     if (window.showToast) window.showToast('Úkol přidán', 'success');
 }
 
@@ -1768,13 +1787,74 @@ function toggleTodo(jobId, todoId, done) {
     t.done = !!done;
     saveOps(jobId, ops);
     renderOperativa(jobId);
+
+    // Best-effort API sync
+    if (t.apiTaskId) {
+        updateApiTask(t.apiTaskId, { status: t.done ? 'done' : 'todo' });
+    }
 }
 
 function deleteTodo(jobId, todoId) {
     const ops = loadOps(jobId);
+    const t = ops.todos.find(x => x.id === todoId);
     ops.todos = ops.todos.filter(x => x.id !== todoId);
     saveOps(jobId, ops);
     renderOperativa(jobId);
+
+    // Best-effort API sync
+    if (t && t.apiTaskId) {
+        deleteApiTask(t.apiTaskId);
+    }
+}
+
+// --- API sync helpers for Tasks (safe best-effort) ---
+async function createApiTaskFromTodo(jobId, todo) {
+    try {
+        const payload = {
+            job_id: jobId,
+            employee_id: todo.assigneeId ? parseInt(todo.assigneeId, 10) : null,
+            title: todo.title,
+            description: '',
+            status: 'todo'
+        };
+        const res = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) return null;
+        // API returns {ok:true} without id, so fetch last task for this job and title match (best-effort)
+        const listRes = await fetch('/api/tasks?job_id=' + encodeURIComponent(jobId));
+        if (!listRes.ok) return null;
+        const data = await listRes.json();
+        const tasks = data.tasks || [];
+        const match = tasks.slice().reverse().find(x => (x.title || '') === todo.title && String(x.employee_id || '') === String(payload.employee_id || ''));
+        return match ? match.id : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+async function updateApiTask(taskId, patch) {
+    try {
+        const res = await fetch('/api/tasks', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: taskId, ...patch })
+        });
+        return res.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+async function deleteApiTask(taskId) {
+    try {
+        const res = await fetch('/api/tasks?id=' + encodeURIComponent(taskId), { method: 'DELETE' });
+        return res.ok;
+    } catch (e) {
+        return false;
+    }
 }
 
 function renderOperativa(jobId) {
