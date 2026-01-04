@@ -8,6 +8,93 @@ class AppHeader {
     this.initUserBox();
   }
 
+  initBackButton() {
+    const btn = document.getElementById('app-header-back');
+    if (!btn) return;
+
+    const path = (location.pathname || '/').toLowerCase();
+    const isHome = path === '/' || path.endsWith('/index.html');
+    const hasHistory = (typeof history !== 'undefined') && (history.length > 1);
+
+    // On home we hide it to avoid a "dead" back button.
+    if (isHome && !hasHistory) {
+      btn.style.display = 'none';
+      return;
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        if (hasHistory) {
+          history.back();
+          return;
+        }
+      } catch (_) {
+        // ignore
+      }
+      // Fallback
+      location.href = '/';
+    });
+  }
+
+  initSearch() {
+    const header = document.querySelector('.app-header');
+    const form = document.getElementById('app-header-search-form');
+    const input = document.getElementById('app-header-search-input');
+    const toggle = document.getElementById('app-header-search-toggle');
+    if (!header || !form || !input) return;
+
+    // Prefill from URL on search page.
+    try {
+      const url = new URL(location.href);
+      const q = (url.searchParams.get('q') || '').trim();
+      if (q) input.value = q;
+    } catch (_) {
+      // ignore
+    }
+
+    const openMobileSearch = () => {
+      header.classList.add('search-open');
+      // Allow CSS to apply before focusing
+      setTimeout(() => input.focus(), 0);
+    };
+
+    const closeMobileSearch = () => {
+      header.classList.remove('search-open');
+      input.blur();
+    };
+
+    if (toggle) {
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        openMobileSearch();
+      });
+    }
+
+    // Submit -> navigate to unified search page.
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = (input.value || '').trim();
+      if (!q) return;
+      location.href = `/search.html?q=${encodeURIComponent(q)}`;
+    });
+
+    // Esc closes mobile search.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && header.classList.contains('search-open')) {
+        closeMobileSearch();
+      }
+    });
+
+    // Click outside closes on mobile.
+    document.addEventListener('click', (e) => {
+      if (!header.classList.contains('search-open')) return;
+      const t = e.target;
+      if (t && (t.closest('#app-header-search-form') || t.closest('#app-header-search-toggle'))) return;
+      closeMobileSearch();
+    });
+  }
+
 
       render() {
         const headerHTML = `
@@ -103,7 +190,7 @@ class AppHeader {
   cleanupLegacyHeaders() {
     // Bezpečně skryj staré top-bary/hlavičky napříč stránkami bez použití CSS :has()
     try {
-      const candidates = document.querySelectorAll('.header, .page-header, .brand');
+      const candidates = document.querySelectorAll('.header, .page-header, .brand, .topbar, .top-bar, .top-nav, .navbar, .nav-top');
       candidates.forEach((el) => {
         if (!el.closest('.app-header')) {
           // Pokud je to brand uvnitř nového headeru, nechat být; jinak skrýt
