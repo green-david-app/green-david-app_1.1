@@ -1598,8 +1598,8 @@ function renderProblems(jobId, ops) {
     const listHtml = items.length ? items.map(p => {
         const isResolved = p.status === 'resolved';
         return `
-            <div class="ops-item" style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
-                <div style="min-width:0;">
+            <div class="ops-item">
+                <div class="ops-col">
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <span style="padding:4px 8px;border-radius:999px;font-size:12px;background:${p.severity === 'info' ? 'rgba(255,255,255,0.08)' : 'rgba(255, 193, 7, 0.18)'};border:1px solid rgba(255,255,255,0.10);">
                             ${severityLabel(p.severity)}
@@ -1608,7 +1608,7 @@ function renderProblems(jobId, ops) {
                     </div>
                     ${p.note ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">${escapeHtml(p.note)}</div>` : ``}
                 </div>
-                <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+                <div class="ops-actions">
                     ${isResolved ? `<span style="color:var(--text-secondary);font-size:12px;">Vyřešeno</span>` : `
                         <button class="btn-secondary" style="padding:8px 10px;" onclick="resolveProblem(${jobId}, '${escapeAttr(p.id)}')">Vyřešit</button>
                     `}
@@ -1634,17 +1634,19 @@ function renderTodos(jobId, ops) {
     });
 
     const listHtml = items.length ? items.map(t => `
-        <div class="ops-item" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
-            <label style="display:flex;gap:10px;align-items:flex-start;min-width:0;cursor:pointer;">
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${jobId}, '${escapeAttr(t.id)}', this.checked)" style="margin-top:3px;">
-                <div style="min-width:0;">
+        <div class="ops-item">
+            <label class="ops-todo-label">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${jobId}, '${escapeAttr(t.id)}', this.checked)">
+                <div class="ops-col">
                     <div style="font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.65;' : ''}">
                         ${escapeHtml(t.title || '—')}
                     </div>
                     ${t.assignee ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assignee)}</div>` : ``}
                 </div>
             </label>
-            <button class="btn-secondary" style="padding:8px 10px;flex-shrink:0;" onclick="deleteTodo(${jobId}, '${escapeAttr(t.id)}')">Smazat</button>
+            <div class="ops-actions">
+                <button class="btn-secondary" onclick="deleteTodo(${jobId}, '${escapeAttr(t.id)}')">Smazat</button>
+            </div>
         </div>
     `).join('') : `
         <div style="color:var(--text-secondary);padding:10px 0;">
@@ -1816,40 +1818,40 @@ function showJobDetail(jobId) {
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div style="min-width:0;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                <div class="ops-grid">
+                    <div class="ops-col">
+                        <div class="ops-col-header">
                             <div style="font-weight:700;">Problémy / překážky</div>
                             <button class="btn-secondary" style="padding:8px 10px;" onclick="addProblem(${jobId})">+ Nahlásit</button>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;">
+                        <div class="ops-inputs">
                             <input id="ops-problem-title" class="form-input" placeholder="Např. Chybí materiál – obrubníky">
-                            <div style="display:flex;gap:10px;">
-                                <select id="ops-problem-severity" class="form-input" style="flex:0 0 160px;">
+                            <div class="ops-row">
+                                <select id="ops-problem-severity" class="form-input ops-severity">
                                     <option value="blocking">Blokuje</option>
                                     <option value="critical">Kritické</option>
                                     <option value="info">Info</option>
                                 </select>
-                                <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)" style="flex:1 1 auto;">
+                                <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)">
                             </div>
                         </div>
 
-                        <div id="ops-problems-list" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+                        <div id="ops-problems-list" class="ops-list"></div>
                     </div>
 
-                    <div style="min-width:0;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                    <div class="ops-col">
+                        <div class="ops-col-header">
                             <div style="font-weight:700;">Úkoly (to-do)</div>
                             <button class="btn-secondary" style="padding:8px 10px;" onclick="addTodo(${jobId})">+ Přidat</button>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;">
+                        <div class="ops-inputs">
                             <input id="ops-todo-title" class="form-input" placeholder="Např. Připravit podklad / domluvit dodávku">
                             <input id="ops-todo-assignee" class="form-input" placeholder="Odpovědný (např. Adam)">
                         </div>
 
-                        <div id="ops-todos-list" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+                        <div id="ops-todos-list" class="ops-list"></div>
                     </div>
                 </div>
             </div>
