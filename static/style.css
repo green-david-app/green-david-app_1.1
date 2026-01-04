@@ -1411,6 +1411,140 @@ body.more-menu-open .bottom-nav {
   stroke: currentColor;
 }
 
+
+/* Global search + back button in header */
+.app-header-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: #9ca8b3;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-header-back:hover {
+  background: rgba(178, 251, 165, 0.1);
+  color: #9FD4A1;
+}
+
+.app-header-back svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.app-header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 520px;
+  margin: 0 24px;
+  position: relative;
+}
+
+.app-header-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #e7eef6;
+  padding: 10px 12px;
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+}
+
+.app-header-search-input::placeholder {
+  color: rgba(231, 238, 246, 0.45);
+}
+
+.app-header-search-input:focus {
+  border-color: rgba(159, 212, 161, 0.55);
+  box-shadow: 0 0 0 3px rgba(159, 212, 161, 0.15);
+}
+
+.app-header-search-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: #9ca8b3;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-header-search-toggle:hover {
+  background: rgba(178, 251, 165, 0.1);
+  color: #9FD4A1;
+}
+
+.app-header-search-toggle svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+/* Mobile: show icons (back + search), search input opens as overlay */
+@media (max-width: 720px) {
+  .app-header {
+    padding: 12px 14px;
+  }
+
+  .app-header-container {
+    gap: 10px;
+  }
+
+  .app-header-back-label {
+    display: none;
+  }
+
+  .app-header-brand .app-header-text {
+    display: none;
+  }
+
+  .app-header-search {
+    flex: 0 0 auto;
+    margin: 0;
+    max-width: none;
+  }
+
+  .app-header-search-input {
+    display: none;
+  }
+
+  .app-header-search-toggle {
+    display: inline-flex;
+  }
+
+  /* When search is open, input expands across header */
+  .app-header.search-open .app-header-brand,
+  .app-header.search-open .app-header-actions {
+    display: none;
+  }
+
+  .app-header.search-open .app-header-search {
+    flex: 1;
+    width: 100%;
+  }
+
+  .app-header.search-open .app-header-search-input {
+    display: block;
+    width: 100%;
+  }
+
+  .app-header.search-open .app-header-search-toggle {
+    display: none;
+  }
+}
+
+
 /*
   Skrytí starých headerů je řešeno primárně v JS (kvůli kompatibilitě prohlížečů).
   Tady necháváme pouze bezpečné selektory bez :has().
