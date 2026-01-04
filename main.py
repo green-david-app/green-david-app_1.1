@@ -25,6 +25,20 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
+
+# ----------------- Role definitions -----------------
+# Pozn.: role 'team_lead' byla v předchozích verzích; pro kompatibilitu ji mapujeme na 'lander'.
+ROLES = ("owner", "admin", "manager", "lander", "worker")
+WRITE_ROLES = ("owner", "admin", "manager", "lander")
+
+def normalize_role(role: str | None) -> str:
+    """Normalizace role pro zpětnou kompatibilitu a konzistentní autorizaci."""
+    if not role:
+        return "owner"
+    role = str(role).strip().lower()
+    if role == "team_lead":
+        return "lander"
+    return role
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ----------------- Database utilities -----------------
@@ -217,6 +231,8 @@ def _migrate_employees_enhanced():
             "status": "TEXT DEFAULT 'active'",
             "rating": "REAL DEFAULT 0",
             "avatar_url": "TEXT"
+        
+            ,"user_id": "INTEGER NULL"
         }
         
         for col_name, col_def in new_cols.items():
@@ -281,7 +297,7 @@ def _migrate_roles_and_hierarchy():
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             email TEXT UNIQUE NOT NULL,
                             name TEXT NOT NULL,
-                            role TEXT NOT NULL DEFAULT 'worker' CHECK(role IN ('owner','manager','team_lead','worker','admin')),
+                            role TEXT NOT NULL DEFAULT 'worker' CHECK(role IN ('owner','admin','manager','lander','worker','team_lead')),
                             password_hash TEXT NOT NULL,
                             active INTEGER NOT NULL DEFAULT 1,
                             created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -364,7 +380,7 @@ def require_role(write=False):
     u, err = require_auth()
     if err:
         return None, err
-    if write and u["role"] not in ("admin","manager"):
+    if write and normalize_role(u["role"]) not in WRITE_ROLES:
         return None, (jsonify({"ok": False, "error": "forbidden"}), 403)
     return u, None
 
@@ -392,10 +408,6 @@ def requires_role(*allowed_roles):
             
             # Fallback: pokud nemá roli nebo je NULL, považujeme za owner (pro zpětnou kompatibilitu)
             user_role = user['role'] or 'owner'
-            
-            # Pokud je role 'admin', mapujeme na 'owner'
-            if user_role == 'admin':
-                user_role = 'owner'
             
             if user_role not in allowed_roles:
                 return jsonify({'ok': False, 'error': 'forbidden'}), 403
@@ -463,7 +475,8 @@ def ensure_schema():
         role TEXT NOT NULL DEFAULT 'worker',
         phone TEXT DEFAULT '',
         email TEXT DEFAULT '',
-        address TEXT DEFAULT ''
+        address TEXT DEFAULT '',
+        user_id INTEGER NULL
     );
     -- prefer new schema; legacy DBs may still have jobs.name (possibly NOT NULL)
     CREATE TABLE IF NOT EXISTS jobs (
@@ -736,7 +749,7 @@ def api_logout():
 
 # employees
 @app.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
-@requires_role('owner', 'manager', 'team_lead', 'worker')
+@requires_role('owner', 'admin', 'manager', 'lander', 'worker')
 def api_employees():
     user = get_current_user()
     if not user:
@@ -744,26 +757,27 @@ def api_employees():
     
     db = get_db()
     if request.method == "GET":
-        # Filtrování podle role - použít roli s fallbackem
-        user_role = user.get('role') or 'owner'
-        if user_role == 'admin':
-            user_role = 'owner'
-        
-        if user_role in ('owner', 'manager'):
-            # Owner a Manager vidí všechny zaměstnance
-            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
-        elif user_role == 'team_lead':
-            # Team lead vidí jen své podřízené (pokud mají employees.user_id link)
-            # Prozatím zobrazíme všechny, protože employees tabulka nemá user_id
-            # TODO: Přidat user_id do employees tabulky pro propojení
-            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
-        else:
-            # Worker vidí jen sebe (pokud má employees.user_id link)
-            rows = db.execute("SELECT * FROM employees ORDER BY id DESC").fetchall()
+        # Všichni přihlášení uživatelé mohou číst seznam zaměstnanců; u každého zaměstnance doplníme informaci o účtu (pokud existuje).
+        rows = db.execute("""
+            SELECT e.*,
+                   u.id   AS account_user_id,
+                   u.email AS account_email,
+                   u.role AS account_role,
+                   u.active AS account_active
+            FROM employees e
+            LEFT JOIN users u ON u.id = e.user_id
+            ORDER BY e.id DESC
+        """).fetchall()
+
         employees = []
         for r in rows:
             emp = dict(r)
             emp_id = emp["id"]
+
+            # Účet zaměstnance (pokud je navázaný přes employees.user_id)
+            emp["has_account"] = emp.get("account_user_id") is not None
+            if emp.get("account_role") is not None:
+                emp["account_role"] = normalize_role(emp.get("account_role"))
             
             # Vypočítej hodiny tento týden
             from datetime import datetime, timedelta
@@ -804,10 +818,8 @@ def api_employees():
         return jsonify({"ok": True, "employees": employees})
     if request.method == "POST":
         # Pouze owner a manager mohou přidávat zaměstnance
-        user_role = user.get('role') or 'owner'
-        if user_role == 'admin':
-            user_role = 'owner'
-        if user_role not in ('owner', 'manager'):
+        user_role = normalize_role(user.get('role')) or 'owner'
+        if user_role not in ('owner','admin','manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
@@ -856,10 +868,8 @@ def api_employees():
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "PATCH":
         # Pouze owner a manager mohou upravovat zaměstnance
-        user_role = user.get('role') or 'owner'
-        if user_role == 'admin':
-            user_role = 'owner'
-        if user_role not in ('owner', 'manager'):
+        user_role = normalize_role(user.get('role')) or 'owner'
+        if user_role not in ('owner','admin','manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             data = request.get_json(force=True, silent=True) or {}
@@ -891,10 +901,8 @@ def api_employees():
             return jsonify({"ok": False, "error": str(e)}), 500
     if request.method == "DELETE":
         # Pouze owner a manager mohou mazat zaměstnance
-        user_role = user.get('role') or 'owner'
-        if user_role == 'admin':
-            user_role = 'owner'
-        if user_role not in ('owner', 'manager'):
+        user_role = normalize_role(user.get('role')) or 'owner'
+        if user_role not in ('owner','admin','manager'):
             return jsonify({"ok": False, "error": "forbidden"}), 403
         try:
             eid = request.args.get("id", type=int)
@@ -910,7 +918,7 @@ def api_employees():
 
 # ----------------- Users management API (system users) -----------------
 @app.route("/api/users", methods=["GET"])
-@requires_role('owner', 'manager', 'team_lead')
+@requires_role('owner', 'admin', 'manager', 'lander')
 def api_get_users():
     """Seznam uživatelů systému - filtrovaný podle role"""
     user = get_current_user()
@@ -919,7 +927,7 @@ def api_get_users():
     
     db = get_db()
     
-    if user['role'] in ('owner', 'manager', 'admin'):
+    if user['role'] in ('owner', 'admin', 'manager'):
         # Owner a Manager vidí všechny uživatele
         rows = db.execute("""
             SELECT u.id, u.email, u.name, u.role, u.manager_id, u.active,
@@ -928,7 +936,7 @@ def api_get_users():
             LEFT JOIN users m ON m.id = u.manager_id
             ORDER BY u.name
         """).fetchall()
-    elif user['role'] == 'team_lead':
+    elif normalize_role(user.get('role')) == 'lander':
         # Team lead vidí jen své podřízené
         rows = db.execute("""
             SELECT u.id, u.email, u.name, u.role, u.manager_id, u.active,
@@ -945,7 +953,7 @@ def api_get_users():
     return jsonify({"ok": True, "users": users})
 
 @app.route("/api/users", methods=["POST"])
-@requires_role('owner', 'manager')
+@requires_role('owner','admin', 'manager')
 def api_add_user():
     """Přidání nového uživatele - jen owner a manager"""
     user = get_current_user()
@@ -956,17 +964,18 @@ def api_add_user():
     name = data.get("name", "").strip()
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    role = data.get("role", "worker")
+    role = normalize_role(data.get("role", "worker"))
     manager_id = data.get("manager_id")
+    employee_id = data.get("employee_id")
     
     if not name or not email or not password:
         return jsonify({"ok": False, "error": "missing_fields"}), 400
     
-    if role not in ('owner', 'manager', 'team_lead', 'worker'):
+    if normalize_role(role) not in ROLES:
         return jsonify({"ok": False, "error": "invalid_role"}), 400
     
-    # Manager nemůže vytvořit ownera
-    if user['role'] != 'owner' and role == 'owner':
+    # Manager nemůže vytvořit owner/admin účty
+    if normalize_role(user.get('role')) not in ('owner','admin') and role in ('owner','admin'):
         return jsonify({"ok": False, "error": "forbidden"}), 403
     
     # Pokud není zadán manager_id, použije se aktuální uživatel jako manager
@@ -981,6 +990,14 @@ def api_add_user():
         )
         db.commit()
         new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        # Volitelné navázání účtu na zaměstnance (employees.user_id)
+        if employee_id is not None:
+            try:
+                db.execute("UPDATE employees SET user_id = ? WHERE id = ?", (new_id, int(employee_id)))
+                db.commit()
+            except Exception:
+                db.rollback()
         return jsonify({"ok": True, "id": new_id})
     except sqlite3.IntegrityError:
         db.rollback()
@@ -990,13 +1007,13 @@ def api_add_user():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.route("/api/users/<int:user_id>/role", methods=["PUT"])
-@requires_role('owner')
+@requires_role('owner','admin')
 def api_change_user_role(user_id):
     """Změna role uživatele - jen owner"""
     data = request.get_json(force=True, silent=True) or {}
-    new_role = data.get("role")
-    
-    if new_role not in ('owner', 'manager', 'team_lead', 'worker'):
+    new_role = normalize_role(data.get("role"))
+
+    if new_role not in ROLES:
         return jsonify({"ok": False, "error": "invalid_role"}), 400
     
     db = get_db()
@@ -1010,7 +1027,7 @@ def api_change_user_role(user_id):
 
 # ----------------- Timesheets approval -----------------
 @app.route("/api/timesheets/<int:timesheet_id>/approve", methods=["POST"])
-@requires_role('owner', 'manager', 'team_lead')
+@requires_role('owner', 'admin', 'manager', 'lander')
 def api_approve_timesheet(timesheet_id):
     """Schválení výkazu - jen pro nadřízené"""
     user = get_current_user()

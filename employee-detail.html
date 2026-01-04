@@ -158,7 +158,9 @@
         .activity-item:last-child {
             border-bottom: none;
         }
-    </style>
+    
+.employee-account{margin:4px 0 0 0;color:var(--text-muted);font-size:14px;}
+</style>
 </head>
 <body>
     <div class="header">
@@ -170,6 +172,7 @@
         <div class="avatar-large" id="avatarLarge">G</div>
         <h2 id="employee-name">Načítám...</h2>
         <p id="employee-role">—</p>
+        <p id="employee-account-role" class="employee-account">Účet: —</p>
         
         <div class="contact-info" id="contactInfo">
             <!-- Načte se dynamicky -->
@@ -236,6 +239,10 @@
                 document.getElementById('avatarLarge').textContent = initials;
                 document.getElementById('employee-name').textContent = employee.name || 'Bez jména';
                 document.getElementById('employee-role').textContent = employee.role || 'Zaměstnanec';
+                const acctEl = document.getElementById('employee-account-role');
+                if (acctEl) {
+                    acctEl.textContent = 'Účet: ' + (employee.has_account ? (employee.account_role || '—') : 'žádný');
+                }
 
                 // Kontaktní info
                 const contactInfo = document.getElementById('contactInfo');

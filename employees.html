@@ -266,6 +266,7 @@
                         <div class="employee-card-info">
                             <h3 class="employee-name">${escapeHtml(emp.name || 'Bez jména')}</h3>
                             <p class="employee-role">${escapeHtml(emp.role || 'Zaměstnanec')}</p>
+                            <p class="employee-account">Účet: ${emp.has_account ? escapeHtml(emp.account_role || "—") : "žádný"}</p>
                             ${location ? `
                                 <div class="employee-location">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
