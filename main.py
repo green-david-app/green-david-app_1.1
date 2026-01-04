@@ -1558,6 +1558,43 @@ def page_job_detail_query():
     return render_template("job_detail.html", job_id=jid)
 
 # ----------------- run -----------------
+
+# ----------------- One-time DB download (for migration/debug) -----------------
+# SECURITY:
+# - Disabled by default.
+# - Enable by setting env var DOWNLOAD_TOKEN on Render.
+# - Then download via: https://<your-app>/_download/app.db?token=<DOWNLOAD_TOKEN>
+#
+# After you download the DB, REMOVE the env var (or this route) and redeploy.
+@app.route("/_download/app.db")
+def download_app_db():
+    token_required = os.environ.get("DOWNLOAD_TOKEN")
+    if not token_required:
+        # Hide the existence of this endpoint unless explicitly enabled.
+        abort(404)
+
+    # Allow either:
+    # 1) correct token in query string, or
+    # 2) authenticated user with write role (optional convenience)
+    token = request.args.get("token", "")
+    u = current_user()
+    has_write = False
+    try:
+        if u and u.get("active") and normalize_role(u.get("role", "")) in WRITE_ROLES:
+            has_write = True
+    except Exception:
+        has_write = False
+
+    if token != token_required and not has_write:
+        abort(403)
+
+    db_path = os.environ.get("DOWNLOAD_DB_PATH") or DB_PATH or "/var/data/app.db"
+    if not os.path.exists(db_path):
+        abort(404)
+
+    return send_file(db_path, as_attachment=True, download_name="app.db")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
