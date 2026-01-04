@@ -5,29 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <link rel="stylesheet" href="/static/icons.css"/>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="/app-settings.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="app-header-container">
-      <a href="/" class="app-header-brand">
-        <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
-        <div class="app-header-text">
-          <div class="app-header-title">green david app</div>
-        </div>
-      </a>
-      <div class="app-header-actions">
-        <div id="userbox" class="app-header-user"></div>
-        <a href="/settings.html" class="app-header-settings" title="Nastavení">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </header>
-  <div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
+  <div id="app-header"></div>
+<div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
       <img src="/logo.jpg" alt="green david" style="width:36px;height:36px;border-radius:8px"/>
       <div style="font-weight:700;font-size:20px">green david app</div>
       <div style="opacity:.7;margin-left:6px">Výkazy hodin</div>
@@ -291,5 +276,9 @@
       }
       refreshUserBox();
   </script>
+  <script src="/static/app-header.js"></script>
+  <script src="/static/navigation.js"></script>
+  <script src="/static/toast.js"></script>
+  <script src="/static/loading.js"></script>
 </body>
 </html>

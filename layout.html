@@ -8,6 +8,8 @@
   <title>{{ title }}</title>
   <link rel="icon" href="/logo.svg"/>
   <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <link rel="stylesheet" href="/static/icons.css"/>
 
   <style>
     .tabs.with-search { display:flex; align-items:center; gap:12px; justify-content:center; position:relative; }
@@ -22,19 +24,10 @@
       .tabs.with-search .search-in-tabs input[type="text"]{ min-width: 220px; }
     }
   </style>
+  <script src="/app-settings.js"></script>
 </head>
 <body>
-  <div class="app-header">
-    <div class="brand">
-      <img src="/logo.jpg" alt="Green David" style="height:36px;width:auto;border-radius:8px;vertical-align:middle;margin-right:8px;" onerror="this.src='/logo.svg'"/>
-      <div class="brand-text">green david app</div>
-      <div class="brand-sub">interní systém</div>
-    </div>
-    <div class="user-area">
-      {% if me %}Přihlášen: {{ me.name }}{% endif %}
-      <a class="btn ghost" href="/logout">Odhlásit</a>
-    </div>
-  </div>
+  <div id="app-header"></div>
 
   <div class="tabs" id="main-tabs">
     <!-- původní odkazy (zakázky, úkoly, …) se načtou ze stávajícího layoutu -->
@@ -77,5 +70,10 @@
       if(inp && q){ inp.value = q; }
     })();
   </script>
+  <script src="/static/app-header.js"></script>
+  <script src="/static/navigation.js"></script>
+  <script src="/static/bottom-nav.js"></script>
+  <script src="/static/loading.js"></script>
+  <script src="/static/toast.js"></script>
 </body>
 </html>

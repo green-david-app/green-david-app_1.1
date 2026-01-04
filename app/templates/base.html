@@ -5,25 +5,23 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>green david app</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='icons.css') }}">
+  <script src="/app-settings.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">green david app <span class="muted">interní systém</span></div>
-    <nav>
-      <a href="/calendar">Kalendář</a>
-      <a href="/timesheets">Výkazy</a>
-    </nav>
-  <form id="globalSearchForm" class="global-search" action="/search" method="get" role="search">
-    <input type="search" name="q" placeholder="Hledat v celé aplikaci…" value="{{ request.args.get('q','') if request else '' }}" />
-    <button type="submit">Hledat</button>
-  </form>
-</header>
-  <main class="container">
+  <div id="app-header"></div>
+<main class="container">
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">© green david s.r.o.</footer>
   <script src="{{ url_for('static', filename='js/search-highlight.js') }}"></script>
   <script src="/public/js/calendar.date-shim.js"></script>
+  <script src="/static/app-header.js"></script>
+  <script src="/static/navigation.js"></script>
+  <script src="/static/bottom-nav.js"></script>
+  <script src="/static/toast.js"></script>
+  <script src="/static/loading.js"></script>
 </body>
 </html>
