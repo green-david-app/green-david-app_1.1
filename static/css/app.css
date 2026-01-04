@@ -5966,9 +5966,15 @@ grid-template-columns: repeat(2, 1fr);
 /* === Operativa in Job Detail Modal (safe, local-only) === */
 .ops-grid{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:16px;
 }
+
+/* Modal is relatively narrow; stack Operativa columns earlier to avoid ultra-narrow cells */
+@media (max-width: 980px){
+  .ops-grid{grid-template-columns:1fr;}
+}
+
 @media (max-width: 900px){
   .ops-grid{grid-template-columns:1fr;}
 }
@@ -6015,11 +6021,10 @@ grid-template-columns: repeat(2, 1fr);
 }
 
 .ops-item{
-  display:flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
   gap:10px;
-  justify-content:space-between;
   align-items:flex-start;
-  flex-wrap:wrap;
   padding:10px 12px;
   border-radius:12px;
   background:rgba(255,255,255,0.04);
@@ -6032,9 +6037,8 @@ grid-template-columns: repeat(2, 1fr);
   display:flex;
   gap:8px;
   align-items:center;
-  flex-wrap:wrap;
   justify-content:flex-end;
-  flex:0 0 auto;
+  flex-wrap:wrap;
 }
 
 .ops-owner{
@@ -6047,10 +6051,11 @@ grid-template-columns: repeat(2, 1fr);
   align-items:flex-start;
   min-width:0;
   cursor:pointer;
-  flex:1 1 260px;
+  flex:1 1 auto;
   word-break: normal;
   overflow-wrap: break-word;
-}
+width:100%;}
+
 
 .ops-todo-label input[type="checkbox"]{
   margin-top:3px;
@@ -6058,10 +6063,11 @@ grid-template-columns: repeat(2, 1fr);
 
 /* Prevent super-narrow columns on small screens that cause per-letter wrapping */
 @media (max-width: 620px){
-  .ops-item{flex-direction:column;align-items:stretch;}
+  .ops-item{grid-template-columns:1fr;}
   .ops-actions{justify-content:flex-start;}
   .ops-owner{min-width: 0; width: 100%;}
 }
+
 
 /* Ensure buttons in operativa don't become too small */
 .ops-actions .btn-secondary{
