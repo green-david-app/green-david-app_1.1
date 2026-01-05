@@ -1,6 +1,8 @@
 import os, re, io, sqlite3, json
 from datetime import datetime, date, timedelta
 from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session, redirect
+import uuid
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from assignment_helpers import (
     assign_employees_to_task, assign_employees_to_issue,
@@ -2503,4 +2505,194 @@ if __name__ == "__main__":
     print(f"[Server] Starting Flask app on {host}:{port} (debug={debug})")
     app.run(host=host, port=port, debug=debug)
 
+
+
+# ============================================================================
+# FILE ATTACHMENTS AND GPS LOCATION API ENDPOINTS
+# ============================================================================
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'mp4', 'mov'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/api/tasks/<int:task_id>/attachments", methods=["GET", "POST", "DELETE"])
+def api_task_attachments(task_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT a.*, e.name as uploader_name
+            FROM task_attachments a
+            LEFT JOIN employees e ON e.id = a.uploaded_by
+            WHERE a.task_id = ?
+            ORDER BY a.uploaded_at DESC
+        """, (task_id,)).fetchall()
+        return jsonify({"ok": True, "attachments": [dict(r) for r in rows]})
+    
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return jsonify({"ok": False, "error": "no_file"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"ok": False, "error": "empty_filename"}), 400
+        
+        if file and allowed_file(file.filename):
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            
+            file.save(filepath)
+            file_size = os.path.getsize(filepath)
+            
+            db.execute("""
+                INSERT INTO task_attachments (task_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (task_id, filename, original_filename, filepath, file_size, file.content_type, u["id"]))
+            db.commit()
+            
+            return jsonify({"ok": True, "filename": original_filename})
+        
+        return jsonify({"ok": False, "error": "invalid_file_type"}), 400
+    
+    if request.method == "DELETE":
+        att_id = request.args.get("id", type=int)
+        if not att_id:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
+        
+        row = db.execute("SELECT file_path FROM task_attachments WHERE id = ?", (att_id,)).fetchone()
+        if row and os.path.exists(row[0]):
+            os.remove(row[0])
+        
+        db.execute("DELETE FROM task_attachments WHERE id = ?", (att_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/api/issues/<int:issue_id>/attachments", methods=["GET", "POST", "DELETE"])
+def api_issue_attachments(issue_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT a.*, e.name as uploader_name
+            FROM issue_attachments a
+            LEFT JOIN employees e ON e.id = a.uploaded_by
+            WHERE a.issue_id = ?
+            ORDER BY a.uploaded_at DESC
+        """, (issue_id,)).fetchall()
+        return jsonify({"ok": True, "attachments": [dict(r) for r in rows]})
+    
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return jsonify({"ok": False, "error": "no_file"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"ok": False, "error": "empty_filename"}), 400
+        
+        if file and allowed_file(file.filename):
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            
+            file.save(filepath)
+            file_size = os.path.getsize(filepath)
+            
+            db.execute("""
+                INSERT INTO issue_attachments (issue_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (issue_id, filename, original_filename, filepath, file_size, file.content_type, u["id"]))
+            db.commit()
+            
+            return jsonify({"ok": True, "filename": original_filename})
+        
+        return jsonify({"ok": False, "error": "invalid_file_type"}), 400
+    
+    if request.method == "DELETE":
+        att_id = request.args.get("id", type=int)
+        if not att_id:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
+        
+        row = db.execute("SELECT file_path FROM issue_attachments WHERE id = ?", (att_id,)).fetchone()
+        if row and os.path.exists(row[0]):
+            os.remove(row[0])
+        
+        db.execute("DELETE FROM issue_attachments WHERE id = ?", (att_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/api/attachments/<path:filename>")
+def download_attachment(filename):
+    return send_from_directory(UPLOAD_DIR, filename, as_attachment=True)
+
+@app.route("/api/tasks/<int:task_id>/location", methods=["GET", "POST", "DELETE"])
+def api_task_location(task_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        row = db.execute("SELECT * FROM task_locations WHERE task_id = ? ORDER BY created_at DESC LIMIT 1", (task_id,)).fetchone()
+        return jsonify({"ok": True, "location": dict(row) if row else None})
+    
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        address = data.get("address", "")
+        
+        if lat is None or lng is None:
+            return jsonify({"ok": False, "error": "missing_coordinates"}), 400
+        
+        db.execute("DELETE FROM task_locations WHERE task_id = ?", (task_id,))
+        db.execute("""
+            INSERT INTO task_locations (task_id, latitude, longitude, address)
+            VALUES (?, ?, ?, ?)
+        """, (task_id, float(lat), float(lng), address))
+        db.commit()
+        return jsonify({"ok": True})
+    
+    if request.method == "DELETE":
+        db.execute("DELETE FROM task_locations WHERE task_id = ?", (task_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/api/issues/<int:issue_id>/location", methods=["GET", "POST", "DELETE"])
+def api_issue_location(issue_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        row = db.execute("SELECT * FROM issue_locations WHERE issue_id = ? ORDER BY created_at DESC LIMIT 1", (issue_id,)).fetchone()
+        return jsonify({"ok": True, "location": dict(row) if row else None})
+    
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        address = data.get("address", "")
+        
+        if lat is None or lng is None:
+            return jsonify({"ok": False, "error": "missing_coordinates"}), 400
+        
+        db.execute("DELETE FROM issue_locations WHERE issue_id = ?", (issue_id,))
+        db.execute("""
+            INSERT INTO issue_locations (issue_id, latitude, longitude, address)
+            VALUES (?, ?, ?, ?)
+        """, (issue_id, float(lat), float(lng), address))
+        db.commit()
+        return jsonify({"ok": True})
+    
+    if request.method == "DELETE":
+        db.execute("DELETE FROM issue_locations WHERE issue_id = ?", (issue_id,))
+        db.commit()
+        return jsonify({"ok": True})
 
