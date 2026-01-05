@@ -1545,18 +1545,55 @@ function opsStorageKey(jobId) {
     return `gd.ops.job.${jobId}`;
 }
 
-function loadOps(jobId) {
+async function loadOps(jobId) {
     try {
-        const raw = localStorage.getItem(opsStorageKey(jobId));
-        if (!raw) return { problems: [], todos: [] };
-        const parsed = JSON.parse(raw);
-        return {
-            problems: Array.isArray(parsed.problems) ? parsed.problems : [],
-            // POZOR: todos se už načítají z API, ne z localStorage
-            todos: []  // Ignoruj staré localStorage todos
-        };
+        // Načti issues a tasks z API
+        const [issuesRes, tasksRes] = await Promise.all([
+            fetch(`/api/issues?job_id=${jobId}`),
+            fetch(`/api/tasks?job_id=${jobId}`)
+        ]);
+        
+        let apiIssues = [];
+        let apiTasks = [];
+        
+        if (issuesRes.ok) {
+            const data = await issuesRes.json();
+            apiIssues = data.issues || [];
+        }
+        
+        if (tasksRes.ok) {
+            const data = await tasksRes.json();
+            apiTasks = data.tasks || [];
+        }
+        
+        // Konvertuj API formát na lokální formát
+        const problems = apiIssues.map(issue => ({
+            id: issue.id,
+            title: issue.title,
+            note: issue.description || '',
+            severity: issue.severity || 'info',
+            ownerId: issue.assigned_to,
+            ownerName: issue.assigned_name || '',
+            status: issue.status,
+            createdAt: new Date(issue.created_at).getTime(),
+            assignees: issue.assignees || []
+        }));
+        
+        const todos = apiTasks.map(task => ({
+            id: task.id,
+            title: task.title,
+            assigneeId: task.employee_id,
+            assigneeName: task.employee_name || '',
+            done: task.status === 'done',
+            status: task.status,
+            createdAt: task.created_at ? new Date(task.created_at).getTime() : Date.now(),
+            apiTaskId: task.id,
+            assignees: task.assignees || []
+        }));
+        
+        return { problems, todos };
     } catch (e) {
-        console.warn('Failed to load ops from localStorage', e);
+        console.warn('Failed to load ops from API', e);
         return { problems: [], todos: [] };
     }
 }
@@ -1679,93 +1716,153 @@ function renderTodos(jobId, ops) {
     return { openCount, html: listHtml };
 }
 
-function addProblem(jobId) {
+async function addProblem(jobId) {
     const titleEl = document.getElementById('ops-problem-title');
     const noteEl = document.getElementById('ops-problem-note');
     const sevEl = document.getElementById('ops-problem-severity');
-    const ownerEl = document.getElementById('ops-problem-owner');
 
     const title = (titleEl?.value || '').trim();
     const note = (noteEl?.value || '').trim();
     const severity = (sevEl?.value || 'blocking');
-    const ownerId = (ownerEl?.value || '').toString().trim();
-    const owner = ownerId ? (employees || []).find(e => String(e.id) === ownerId) : null;
-    const ownerName = owner ? getEmployeeDisplayName(owner) : '';
+    
+    // Získej vybrané zaměstnance
+    const assignedEmployees = window.issueSelectedEmployees || [];
+    const primaryEmployee = assignedEmployees.length > 0 ? assignedEmployees[0] : null;
 
     if (!title) {
         if (window.showToast) window.showToast('Zadej název problému', 'error');
         return;
     }
 
-    const ops = loadOps(jobId);
-    ops.problems.push({
-        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random()),
-        title,
-        note,
-        severity,
-        ownerId: ownerId || null,
-        ownerName: ownerName || null,
-        status: 'open',
-        createdAt: Date.now()
-    });
-    saveOps(jobId, ops);
-    titleEl.value = '';
-    noteEl.value = '';
-    renderOperativa(jobId);
-    if (window.showToast) window.showToast('Problém přidán', 'success');
+    try {
+        // Uložit do API
+        const res = await fetch('/api/issues', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                job_id: jobId,
+                title: title,
+                description: note,
+                type: 'blocker',
+                status: 'open',
+                severity: severity,
+                assigned_to: primaryEmployee,
+                assigned_employees: assignedEmployees,
+                primary_employee: primaryEmployee
+            })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to create issue');
+        }
+        
+        const data = await res.json();
+        console.log('✓ Issue created:', data);
+        
+        // Vyčisti formulář
+        titleEl.value = '';
+        noteEl.value = '';
+        window.issueSelectedEmployees = [];
+        
+        // Znovu načti operativu
+        await renderOperativa(jobId);
+        
+        if (window.showToast) window.showToast('Problém přidán', 'success');
+    } catch (e) {
+        console.error('✗ Failed to add problem:', e);
+        if (window.showToast) window.showToast('Chyba při přidávání problému', 'error');
+    }
 }
 
-function resolveProblem(jobId, problemId) {
-    const ops = loadOps(jobId);
-    const p = ops.problems.find(x => x.id === problemId);
-    if (!p) return;
-    p.status = 'resolved';
-    p.resolvedAt = Date.now();
-    saveOps(jobId, ops);
-    renderOperativa(jobId);
-    if (window.showToast) window.showToast('Problém označen jako vyřešený', 'success');
+async function resolveProblem(jobId, problemId) {
+    try {
+        const res = await fetch('/api/issues', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: problemId,
+                status: 'resolved'
+            })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to resolve issue');
+        }
+        
+        await renderOperativa(jobId);
+        if (window.showToast) window.showToast('Problém označen jako vyřešený', 'success');
+    } catch (e) {
+        console.error('✗ Failed to resolve problem:', e);
+        if (window.showToast) window.showToast('Chyba při řešení problému', 'error');
+    }
 }
 
-function deleteProblem(jobId, problemId) {
-    const ops = loadOps(jobId);
-    ops.problems = ops.problems.filter(x => x.id !== problemId);
-    saveOps(jobId, ops);
-    renderOperativa(jobId);
+async function deleteProblem(jobId, problemId) {
+    try {
+        const res = await fetch(`/api/issues?id=${problemId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to delete issue');
+        }
+        
+        await renderOperativa(jobId);
+        if (window.showToast) window.showToast('Problém smazán', 'success');
+    } catch (e) {
+        console.error('✗ Failed to delete problem:', e);
+        if (window.showToast) window.showToast('Chyba při mazání problému', 'error');
+    }
 }
 
-function addTodo(jobId) {
+async function addTodo(jobId) {
     const titleEl = document.getElementById('ops-todo-title');
-    const assigneeEl = document.getElementById('ops-todo-assignee');
-
     const title = (titleEl?.value || '').trim();
-    const assigneeId = (assigneeEl?.value || '').toString().trim();
-    const assigneeEmp = assigneeId ? (employees || []).find(e => String(e.id) === assigneeId) : null;
-    const assigneeName = assigneeEmp ? getEmployeeDisplayName(assigneeEmp) : '';
 
     if (!title) {
         if (window.showToast) window.showToast('Zadej název úkolu', 'error');
         return;
     }
 
-    // Always store locally (safe). If API is available, also create a real task so it shows up in /tasks.html.
-    const localId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random());
-    const newTodo = {
-        id: localId,
-        title,
-        assigneeId: assigneeId || null,
-        assigneeName: assigneeName || null,
-        done: false,
-        createdAt: Date.now(),
-        apiTaskId: null
-    };
+    // Získej vybrané zaměstnance
+    const assignedEmployees = window.taskSelectedEmployees || [];
+    const primaryEmployee = assignedEmployees.length > 0 ? assignedEmployees[0] : null;
 
-    const ops = loadOps(jobId);
-    ops.todos.push(newTodo);
-    saveOps(jobId, ops);
+    try {
+        const res = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                job_id: jobId,
+                employee_id: primaryEmployee,
+                title: title,
+                description: '',
+                status: 'todo',
+                assigned_employees: assignedEmployees,
+                primary_employee: primaryEmployee
+            })
+        });
 
-    titleEl.value = '';
-    assigneeEl.value = '';
-    renderOperativa(jobId);
+        if (!res.ok) {
+            throw new Error('Failed to create task');
+        }
+
+        const data = await res.json();
+        console.log('✓ Task created:', data);
+
+        // Vyčisti formulář
+        titleEl.value = '';
+        window.taskSelectedEmployees = [];
+
+        // Znovu načti operativu
+        await renderOperativa(jobId);
+
+        if (window.showToast) window.showToast('Úkol přidán', 'success');
+    } catch (e) {
+        console.error('✗ Failed to add todo:', e);
+        if (window.showToast) window.showToast('Chyba při přidávání úkolu', 'error');
+    }
+}
 
     // Best-effort API sync (does not break if API fails)
     createApiTaskFromTodo(jobId, newTodo).then((apiId) => {
@@ -1782,30 +1879,82 @@ function addTodo(jobId) {
     if (window.showToast) window.showToast('Úkol přidán', 'success');
 }
 
-function toggleTodo(jobId, todoId, done) {
-    const ops = loadOps(jobId);
-    const t = ops.todos.find(x => x.id === todoId);
-    if (!t) return;
-    t.done = !!done;
-    saveOps(jobId, ops);
-    renderOperativa(jobId);
-
-    // Best-effort API sync
-    if (t.apiTaskId) {
-        updateApiTask(t.apiTaskId, { status: t.done ? 'done' : 'todo' });
+async function completeTodo(jobId, todoId) {
+    try {
+        const res = await fetch('/api/tasks', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: todoId,
+                status: 'done'
+            })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to complete task');
+        }
+        
+        await renderOperativa(jobId);
+    } catch (e) {
+        console.error('✗ Failed to complete todo:', e);
+        if (window.showToast) window.showToast('Chyba při dokončení úkolu', 'error');
     }
 }
 
-function deleteTodo(jobId, todoId) {
-    const ops = loadOps(jobId);
-    const t = ops.todos.find(x => x.id === todoId);
-    ops.todos = ops.todos.filter(x => x.id !== todoId);
-    saveOps(jobId, ops);
-    renderOperativa(jobId);
+async function toggleTodo(jobId, todoId, done) {
+    try {
+        const res = await fetch('/api/tasks', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: todoId,
+                status: done ? 'done' : 'todo'
+            })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to toggle task');
+        }
+        
+        await renderOperativa(jobId);
+    } catch (e) {
+        console.error('✗ Failed to toggle todo:', e);
+        if (window.showToast) window.showToast('Chyba při změně úkolu', 'error');
+    }
+}
 
-    // Best-effort API sync
-    if (t && t.apiTaskId) {
-        deleteApiTask(t.apiTaskId);
+async function deleteTodo(jobId, todoId) {
+    try {
+        const res = await fetch(`/api/tasks?id=${todoId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to delete task');
+        }
+        
+        await renderOperativa(jobId);
+        if (window.showToast) window.showToast('Úkol smazán', 'success');
+    } catch (e) {
+        console.error('✗ Failed to delete todo:', e);
+        if (window.showToast) window.showToast('Chyba při mazání úkolu', 'error');
+    }
+}
+
+// --- Detail modal functions ---
+function openIssueDetail(jobId, issueId) {
+    console.log('Opening issue detail:', jobId, issueId);
+    // TODO: Implementovat detail modal pro issue
+    if (window.showToast) {
+        window.showToast('Detail issue - coming soon', 'info');
+    }
+}
+
+function openTaskDetail(jobId, taskId) {
+    console.log('Opening task detail:', jobId, taskId);
+    // TODO: Implementovat detail modal pro task
+    if (window.showToast) {
+        window.showToast('Detail úkolu - coming soon', 'info');
     }
 }
 
@@ -1859,11 +2008,11 @@ async function deleteApiTask(taskId) {
     }
 }
 
-function renderOperativa(jobId) {
+async function renderOperativa(jobId) {
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
 
-    const ops = loadOps(jobId);
+    const ops = await loadOps(jobId);
     const probs = renderProblems(jobId, ops);
     const todos = renderTodos(jobId, ops);
 
@@ -1898,7 +2047,7 @@ function renderOperativa(jobId) {
         } else {
             console.warn('Employees not loaded yet');
         }
-    }, 500);
+    }, 100);
 }
 
 // Global state

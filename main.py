@@ -15,7 +15,9 @@ if os.environ.get("DB_PATH"):
     DB_PATH = os.environ.get("DB_PATH")
 elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
     # Render platform detected - try persistent disk paths
-    if os.path.exists("/persistent"):
+    if os.path.exists("/var/data"):
+        DB_PATH = "/var/data/app.db"
+    elif os.path.exists("/persistent"):
         DB_PATH = "/persistent/app.db"
     elif os.path.exists("/data"):
         DB_PATH = "/data/app.db"
