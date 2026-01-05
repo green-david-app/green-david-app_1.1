@@ -77,17 +77,43 @@ def get_db():
         
         # Log database path (only once at startup)
         if not hasattr(get_db, '_logged'):
+            print(f"[DB] ==================== DATABASE DEBUG ====================")
             print(f"[DB] Using database: {DB_PATH}")
+            print(f"[DB] Database file exists: {os.path.exists(DB_PATH)}")
+            if os.path.exists(DB_PATH):
+                print(f"[DB] Database file size: {os.path.getsize(DB_PATH)} bytes")
+            print(f"[DB] RENDER env var: {os.environ.get('RENDER', 'NOT SET')}")
+            print(f"[DB] /var/data exists: {os.path.exists('/var/data')}")
+            if os.path.exists('/var/data'):
+                print(f"[DB] /var/data contents: {os.listdir('/var/data')}")
+            print(f"[DB] =========================================================")
             get_db._logged = True
         
         # Connect with WAL mode for better concurrency
         g.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         g.db.row_factory = sqlite3.Row
+        
         # Enable WAL mode for better performance and durability
         try:
             g.db.execute("PRAGMA journal_mode=WAL")
         except Exception:
             pass
+        
+        # Debug: Count records in key tables
+        if not hasattr(get_db, '_count_logged'):
+            try:
+                jobs_count = g.db.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+                print(f"[DB] Jobs count: {jobs_count}")
+            except Exception as e:
+                print(f"[DB] Error counting jobs: {e}")
+            
+            try:
+                employees_count = g.db.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
+                print(f"[DB] Employees count: {employees_count}")
+            except Exception as e:
+                print(f"[DB] Error counting employees: {e}")
+            
+            get_db._count_logged = True
     return g.db
 
 @app.teardown_appcontext
