@@ -41,8 +41,8 @@ function hideLoading() {
 }
 
 // Animation
-const style = document.createElement('style');
-style.textContent = `
+const loadingStyleEl = document.createElement('style');
+loadingStyleEl.textContent = `
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
@@ -51,7 +51,8 @@ style.textContent = `
     to { opacity: 0; }
 }
 `;
-document.head.appendChild(style);
+loadingStyleEl.id = 'loading-style';
+if (!document.getElementById('loading-style')) document.head.appendChild(loadingStyleEl);
 
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;

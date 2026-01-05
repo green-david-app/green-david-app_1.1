@@ -1,7 +1,12 @@
-import os, re, io, sqlite3
+import os, re, io, sqlite3, json
 from datetime import datetime, date, timedelta
 from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
+from assignment_helpers import (
+    assign_employees_to_task, assign_employees_to_issue,
+    get_task_assignees, get_issue_assignees,
+    get_employee_tasks, get_employee_issues
+)
 
 # Database path configuration
 # Priority: 1. DB_PATH env var, 2. Persistent disk detection, 3. Default
@@ -31,7 +36,7 @@ app.secret_key = SECRET_KEY
 ROLES = ("owner", "admin", "manager", "lander", "worker")
 WRITE_ROLES = ("owner", "admin", "manager", "lander")
 
-def normalize_role(role: str | None) -> str:
+def normalize_role(role):
     """Normalizace role pro zpětnou kompatibilitu a konzistentní autorizaci."""
     if not role:
         return "owner"
@@ -565,7 +570,7 @@ def seed_admin():
                 os.environ.get("ADMIN_EMAIL","admin@greendavid.local"),
                 os.environ.get("ADMIN_NAME","Admin"),
                 "owner",  # Vytvořit jako owner místo admin
-                generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123")),
+                generate_password_hash(os.environ.get("ADMIN_PASSWORD","admin123"), method='pbkdf2:sha256'),
                 datetime.utcnow().isoformat()
             )
         )
@@ -719,7 +724,20 @@ def api_login():
     password = data.get("password") or ""
     db = get_db()
     row = db.execute("SELECT id,email,name,role,password_hash,active FROM users WHERE email=?", (email,)).fetchone()
-    if not row or not check_password_hash(row["password_hash"], password) or not row["active"]:
+    
+    if not row or not row["active"]:
+        return jsonify({"ok": False, "error": "invalid_credentials"}), 401
+    
+    # Safe password verification - handle scrypt incompatibility on Python 3.9
+    try:
+        password_valid = check_password_hash(row["password_hash"], password)
+    except (AttributeError, ValueError) as e:
+        # Scrypt not available in Python 3.9 - regenerate hash with pbkdf2
+        print(f"[AUTH] Password hash error for {email}: {e}")
+        # For security, reject and force password reset
+        return jsonify({"ok": False, "error": "password_hash_incompatible"}), 401
+    
+    if not password_valid:
         return jsonify({"ok": False, "error": "invalid_credentials"}), 401
     
     # Normalizovat roli (admin -> owner, NULL -> owner)
@@ -986,7 +1004,7 @@ def api_add_user():
     try:
         db.execute(
             "INSERT INTO users (name, email, role, password_hash, manager_id, active) VALUES (?, ?, ?, ?, ?, 1)",
-            (name, email, role, generate_password_hash(password), manager_id)
+            (name, email, role, generate_password_hash(password, method='pbkdf2:sha256'), manager_id)
         )
         db.commit()
         new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -1303,18 +1321,37 @@ def api_tasks():
                                WHERE t.id=?""", (task_id,)).fetchone()
             if not row:
                 return jsonify({"ok": False, "error": "not_found"}), 404
-            return jsonify({"ok": True, "task": dict(row)})
+            
+            task = dict(row)
+            task["assignees"] = get_task_assignees(db, task_id)
+            return jsonify({"ok": True, "task": task})
         
         jid = request.args.get("job_id", type=int)
+        employee_id = request.args.get("employee_id", type=int)
+        
         q = """SELECT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
                       e.name AS employee_name
                FROM tasks t
                LEFT JOIN employees e ON e.id=t.employee_id"""
         conds=[]; params=[]
         if jid: conds.append("t.job_id=?"); params.append(jid)
+        if employee_id:
+            # Pokud je zadán employee_id, hledej přes assignments
+            q = """SELECT DISTINCT t.id, t.job_id, t.employee_id, t.title, t.description, t.status, t.due_date,
+                          e.name AS employee_name
+                   FROM tasks t
+                   LEFT JOIN employees e ON e.id=t.employee_id
+                   LEFT JOIN task_assignments ta ON ta.task_id = t.id"""
+            conds.append("(t.employee_id=? OR ta.employee_id=?)")
+            params.extend([employee_id, employee_id])
         if conds: q += " WHERE " + " AND ".join(conds)
         q += " ORDER BY COALESCE(t.due_date,''), t.id ASC"
         rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        
+        # Přidej assignees ke každému tasku
+        for task in rows:
+            task["assignees"] = get_task_assignees(db, task["id"])
+        
         return jsonify({"ok": True, "tasks": rows})
 
     if request.method == "POST":
@@ -1322,17 +1359,35 @@ def api_tasks():
             data = request.get_json(force=True, silent=True) or {}
             title = (data.get("title") or "").strip()
             if not title: return jsonify({"ok": False, "error":"invalid_input"}), 400
-            db.execute("""INSERT INTO tasks(job_id, employee_id, title, description, status, due_date)
-                          VALUES (?,?,?,?,?,?)""",
-                       (int(data.get("job_id")) if data.get("job_id") else None,
-                        int(data.get("employee_id")) if data.get("employee_id") else None,
-                        title,
-                        (data.get("description") or "").strip(),
-                        (data.get("status") or "open"),
-                        _normalize_date(data.get("due_date")) if data.get("due_date") else None))
+            
+            # Vytvoř úkol
+            db.execute("""
+                INSERT INTO tasks(job_id, employee_id, title, description, status, due_date, created_by, created_at, updated_at)
+                VALUES (?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+            """, (
+                int(data.get("job_id")) if data.get("job_id") else None,
+                int(data.get("employee_id")) if data.get("employee_id") else None,
+                title,
+                (data.get("description") or "").strip(),
+                (data.get("status") or "open"),
+                _normalize_date(data.get("due_date")) if data.get("due_date") else None,
+                u["id"]
+            ))
             db.commit()
-            print(f"✓ Task '{title}' created successfully")
-            return jsonify({"ok": True})
+            
+            # Získej ID nového úkolu
+            task_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+            
+            # Přiřaď zaměstnance (pokud jsou zadáni)
+            assigned_ids = data.get("assigned_employees", [])
+            primary_id = data.get("primary_employee")
+            
+            if assigned_ids:
+                assign_employees_to_task(db, task_id, assigned_ids, primary_id)
+                db.commit()
+            
+            print(f"✓ Task '{title}' created successfully (ID: {task_id})")
+            return jsonify({"ok": True, "id": task_id})
         except Exception as e:
             db.rollback()
             print(f"✗ Error creating task: {e}")
@@ -1351,9 +1406,21 @@ def api_tasks():
                     if k in ("employee_id","job_id") and v is not None:
                         v = int(v)
                     sets.append(f"{k}=?"); vals.append(v)
-            if not sets: return jsonify({"ok": False, "error":"nothing_to_update"}), 400
-            vals.append(int(tid))
-            db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
+            if sets:
+                vals.append(int(tid))
+                db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
+            
+            # Update assignments if provided
+            if "assigned_employees" in data:
+                # Clear existing assignments
+                db.execute("DELETE FROM task_assignments WHERE task_id=?", (tid,))
+                
+                # Add new assignments
+                assigned_ids = data.get("assigned_employees", [])
+                primary_id = data.get("primary_employee")
+                if assigned_ids:
+                    assign_employees_to_task(db, tid, assigned_ids, primary_id)
+            
             db.commit()
             print(f"✓ Task {tid} updated successfully")
             return jsonify({"ok": True})
@@ -1373,6 +1440,188 @@ def api_tasks():
         db.rollback()
         print(f"✗ Error deleting task: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+# issues CRUD
+@app.route("/api/issues", methods=["GET","POST","PATCH","DELETE"])
+def api_issues():
+    u, err = require_role(write=(request.method!="GET"))
+    if err: return err
+    db = get_db()
+
+    if request.method == "GET":
+        issue_id = request.args.get("id", type=int)
+        if issue_id:
+            # Return single issue by ID
+            row = db.execute("""
+                SELECT i.*, e.name AS assigned_name, u.name AS creator_name
+                FROM issues i
+                LEFT JOIN employees e ON e.id = i.assigned_to
+                LEFT JOIN users u ON u.id = i.created_by
+                WHERE i.id = ?
+            """, (issue_id,)).fetchone()
+            if not row:
+                return jsonify({"ok": False, "error": "not_found"}), 404
+            
+            issue = dict(row)
+            issue["assignees"] = get_issue_assignees(db, issue_id)
+            return jsonify({"ok": True, "issue": issue})
+        
+        # List issues with filters
+        jid = request.args.get("job_id", type=int)
+        assigned_to = request.args.get("assigned_to", type=int)
+        status = request.args.get("status")
+        
+        if assigned_to:
+            # Pokud filtrujeme podle přiřazení, použij JOIN přes assignments
+            q = """
+                SELECT DISTINCT i.*, e.name AS assigned_name, u.name AS creator_name, j.name AS job_name
+                FROM issues i
+                LEFT JOIN employees e ON e.id = i.assigned_to
+                LEFT JOIN users u ON u.id = i.created_by
+                LEFT JOIN jobs j ON j.id = i.job_id
+                LEFT JOIN issue_assignments ia ON ia.issue_id = i.id
+            """
+        else:
+            q = """
+                SELECT i.*, e.name AS assigned_name, u.name AS creator_name, j.name AS job_name
+                FROM issues i
+                LEFT JOIN employees e ON e.id = i.assigned_to
+                LEFT JOIN users u ON u.id = i.created_by
+                LEFT JOIN jobs j ON j.id = i.job_id
+            """
+        
+        conds = []
+        params = []
+        
+        if jid:
+            conds.append("i.job_id = ?")
+            params.append(jid)
+        if assigned_to:
+            conds.append("(i.assigned_to = ? OR ia.employee_id = ?)")
+            params.extend([assigned_to, assigned_to])
+        if status:
+            conds.append("i.status = ?")
+            params.append(status)
+        
+        if conds:
+            q += " WHERE " + " AND ".join(conds)
+        
+        q += " ORDER BY CASE i.status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, i.created_at DESC"
+        
+        rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        
+        # Přidej assignees ke každému issue
+        for issue in rows:
+            issue["assignees"] = get_issue_assignees(db, issue["id"])
+        
+        return jsonify({"ok": True, "issues": rows})
+
+    if request.method == "POST":
+        try:
+            data = request.get_json(force=True, silent=True) or {}
+            title = (data.get("title") or "").strip()
+            job_id = data.get("job_id")
+            
+            if not title or not job_id:
+                return jsonify({"ok": False, "error": "missing_required_fields"}), 400
+            
+            db.execute("""
+                INSERT INTO issues (job_id, title, description, type, status, severity, assigned_to, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                int(job_id),
+                title,
+                (data.get("description") or "").strip(),
+                data.get("type") or "blocker",
+                data.get("status") or "open",
+                data.get("severity"),
+                int(data["assigned_to"]) if data.get("assigned_to") else None,
+                u["id"]
+            ))
+            db.commit()
+            new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+            
+            # Přiřaď zaměstnance (pokud jsou zadáni)
+            assigned_ids = data.get("assigned_employees", [])
+            primary_id = data.get("primary_employee")
+            
+            if assigned_ids:
+                assign_employees_to_issue(db, new_id, assigned_ids, primary_id)
+                db.commit()
+            
+            print(f"✓ Issue '{title}' created (ID: {new_id})")
+            return jsonify({"ok": True, "id": new_id})
+        except Exception as e:
+            db.rollback()
+            print(f"✗ Error creating issue: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    if request.method == "PATCH":
+        try:
+            data = request.get_json(force=True, silent=True) or {}
+            issue_id = data.get("id") or request.args.get("id", type=int)
+            
+            if not issue_id:
+                return jsonify({"ok": False, "error": "missing_id"}), 400
+            
+            allowed = ["title", "description", "type", "status", "severity", "assigned_to"]
+            sets = []
+            vals = []
+            
+            for k in allowed:
+                if k in data:
+                    v = data[k]
+                    if k == "assigned_to" and v is not None:
+                        v = int(v)
+                    sets.append(f"{k} = ?")
+                    vals.append(v)
+            
+            # Auto-set resolved_at when status changes to resolved
+            if "status" in data and data["status"] == "resolved":
+                sets.append("resolved_at = datetime('now')")
+            elif "status" in data and data["status"] != "resolved":
+                sets.append("resolved_at = NULL")
+            
+            sets.append("updated_at = datetime('now')")
+            
+            if sets:
+                vals.append(int(issue_id))
+                db.execute("UPDATE issues SET " + ", ".join(sets) + " WHERE id = ?", vals)
+            
+            # Update assignments if provided
+            if "assigned_employees" in data:
+                # Clear existing assignments
+                db.execute("DELETE FROM issue_assignments WHERE issue_id=?", (issue_id,))
+                
+                # Add new assignments
+                assigned_ids = data.get("assigned_employees", [])
+                primary_id = data.get("primary_employee")
+                if assigned_ids:
+                    assign_employees_to_issue(db, issue_id, assigned_ids, primary_id)
+            
+            db.commit()
+            print(f"✓ Issue {issue_id} updated")
+            return jsonify({"ok": True})
+        except Exception as e:
+            db.rollback()
+            print(f"✗ Error updating issue: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    if request.method == "DELETE":
+        try:
+            issue_id = request.args.get("id", type=int)
+            if not issue_id:
+                return jsonify({"ok": False, "error": "missing_id"}), 400
+            
+            db.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
+            db.commit()
+            print(f"✓ Issue {issue_id} deleted")
+            return jsonify({"ok": True})
+        except Exception as e:
+            db.rollback()
+            print(f"✗ Error deleting issue: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
 # timesheets CRUD + export
 @app.route("/api/timesheets", methods=["GET","POST","PATCH","DELETE"])
 def api_timesheets():
@@ -1515,6 +1764,11 @@ def page_jobs():
 def page_tasks():
     return send_from_directory(".", "tasks.html")
 
+@app.route("/issues")
+@app.route("/issues.html")
+def page_issues():
+    return send_from_directory(".", "issues.html")
+
 @app.route("/employees.html")
 def page_employees():
     return send_from_directory(".", "employees.html")
@@ -1557,49 +1811,42 @@ def page_job_detail_query():
         return render_template("jobs_list.html")
     return render_template("job_detail.html", job_id=jid)
 
-# ----------------- run -----------------
+# ----------------- admin export / download -----------------
 
-# ----------------- One-time DB download (for migration/debug) -----------------
-# SECURITY:
-# - Disabled by default.
-# - Enable by setting env var DOWNLOAD_TOKEN on Render.
-# - Then download via: https://<your-app>/_download/app.db?token=<DOWNLOAD_TOKEN>
-#
-# After you download the DB, REMOVE the env var (or this route) and redeploy.
-@app.route("/_download/app.db")
-def download_app_db():
-    token_required = os.environ.get("DOWNLOAD_TOKEN")
-    if not token_required:
-        # Hide the existence of this endpoint unless explicitly enabled.
-        abort(404)
-
-    # Allow either:
-    # 1) correct token in query string, or
-    # 2) authenticated user with write role (optional convenience)
-    token = request.args.get("token", "")
-    u = current_user()
-    has_write = False
-    try:
-        if u and u.get("active") and normalize_role(u.get("role", "")) in WRITE_ROLES:
-            has_write = True
-    except Exception:
-        has_write = False
-
-    if token != token_required and not has_write:
-        abort(403)
-
-    db_path = os.environ.get("DOWNLOAD_DB_PATH") or DB_PATH or "/var/data/app.db"
+@app.route("/api/admin/download-db", methods=["GET"])
+@requires_role('owner', 'admin')
+def api_admin_download_db():
+    """Stáhne aktuální SQLite databázi jako soubor (pouze owner/admin)."""
+    db_path = os.environ.get("DB_PATH") or "/var/data/app.db"
     if not os.path.exists(db_path):
-        abort(404)
-
+        return jsonify({"ok": False, "error": "db_not_found", "path": db_path}), 404
     return send_file(db_path, as_attachment=True, download_name="app.db")
 
+@app.route("/api/admin/export-all", methods=["GET"])
+@requires_role('owner', 'admin')
+def api_admin_export_all():
+    """Export všech tabulek do JSON (pouze owner/admin)."""
+    db = get_db()
+    tables = [r["name"] for r in db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+    ).fetchall()]
+    export = {
+        "exported_at": datetime.utcnow().isoformat() + "Z",
+        "db_path": os.environ.get("DB_PATH") or "/var/data/app.db",
+        "tables": {},
+    }
+    for t in tables:
+        rows = db.execute(f"SELECT * FROM {t}").fetchall()
+        export["tables"][t] = [dict(r) for r in rows]
+    payload = json.dumps(export, ensure_ascii=False, indent=2)
+    buf = io.BytesIO(payload.encode("utf-8"))
+    filename = f"green-david-export-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.json"
+    return send_file(buf, mimetype="application/json", as_attachment=True, download_name=filename)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
 
-@app.get("/api/search")
+
+@app.route("/api/search", methods=["GET"])
 def api_search():
     q = (request.args.get("q") or "").strip()
     if not q:
@@ -1621,7 +1868,7 @@ def api_search():
     except Exception: pass
     return jsonify(out)
 
-@app.get("/search")
+@app.route("/search", methods=["GET"])
 def search_page():
     q = (request.args.get("q") or "").strip()
     results = []
@@ -1770,6 +2017,265 @@ def gd_api_jobs():
 def gd_api_job_detail(job_id):
     return api_job_detail(job_id)
 
+# === ATTACHMENTS API ===
+import os
+import uuid
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'mp4', 'mov'}
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/api/tasks/<int:task_id>/attachments", methods=["GET", "POST", "DELETE"])
+def api_task_attachments(task_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT a.*, e.name as uploader_name
+            FROM task_attachments a
+            LEFT JOIN employees e ON e.id = a.uploaded_by
+            WHERE a.task_id = ?
+            ORDER BY a.uploaded_at DESC
+        """, (task_id,)).fetchall()
+        return jsonify({"ok": True, "attachments": [dict(r) for r in rows]})
+    
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return jsonify({"ok": False, "error": "no_file"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"ok": False, "error": "empty_filename"}), 400
+        
+        if file and allowed_file(file.filename):
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            
+            file.save(filepath)
+            file_size = os.path.getsize(filepath)
+            
+            db.execute("""
+                INSERT INTO task_attachments (task_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (task_id, filename, original_filename, filepath, file_size, file.content_type, u["id"]))
+            db.commit()
+            
+            return jsonify({"ok": True, "filename": original_filename})
+        
+        return jsonify({"ok": False, "error": "invalid_file_type"}), 400
+    
+    if request.method == "DELETE":
+        att_id = request.args.get("id", type=int)
+        if not att_id:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
+        
+        row = db.execute("SELECT file_path FROM task_attachments WHERE id = ?", (att_id,)).fetchone()
+        if row and os.path.exists(row[0]):
+            os.remove(row[0])
+        
+        db.execute("DELETE FROM task_attachments WHERE id = ?", (att_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/api/issues/<int:issue_id>/attachments", methods=["GET", "POST", "DELETE"])
+def api_issue_attachments(issue_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT a.*, e.name as uploader_name
+            FROM issue_attachments a
+            LEFT JOIN employees e ON e.id = a.uploaded_by
+            WHERE a.issue_id = ?
+            ORDER BY a.uploaded_at DESC
+        """, (issue_id,)).fetchall()
+        return jsonify({"ok": True, "attachments": [dict(r) for r in rows]})
+    
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return jsonify({"ok": False, "error": "no_file"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"ok": False, "error": "empty_filename"}), 400
+        
+        if file and allowed_file(file.filename):
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            
+            file.save(filepath)
+            file_size = os.path.getsize(filepath)
+            
+            db.execute("""
+                INSERT INTO issue_attachments (issue_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (issue_id, filename, original_filename, filepath, file_size, file.content_type, u["id"]))
+            db.commit()
+            
+            return jsonify({"ok": True, "filename": original_filename})
+        
+        return jsonify({"ok": False, "error": "invalid_file_type"}), 400
+    
+    if request.method == "DELETE":
+        att_id = request.args.get("id", type=int)
+        if not att_id:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
+        
+        row = db.execute("SELECT file_path FROM issue_attachments WHERE id = ?", (att_id,)).fetchone()
+        if row and os.path.exists(row[0]):
+            os.remove(row[0])
+        
+        db.execute("DELETE FROM issue_attachments WHERE id = ?", (att_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+# Download attachment
+@app.route("/api/attachments/<path:filename>")
+def download_attachment(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+
+# === COMMENTS API ===
+@app.route("/api/tasks/<int:task_id>/comments", methods=["GET", "POST"])
+def api_task_comments(task_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT c.*, e.name as author_name
+            FROM task_comments c
+            LEFT JOIN employees e ON e.id = c.user_id
+            WHERE c.task_id = ?
+            ORDER BY c.created_at ASC
+        """, (task_id,)).fetchall()
+        return jsonify({"ok": True, "comments": [dict(r) for r in rows]})
+    
+    data = request.get_json(force=True, silent=True) or {}
+    comment = (data.get("comment") or "").strip()
+    if not comment:
+        return jsonify({"ok": False, "error": "empty_comment"}), 400
+    
+    db.execute("""
+        INSERT INTO task_comments (task_id, user_id, comment)
+        VALUES (?, ?, ?)
+    """, (task_id, u["id"], comment))
+    db.commit()
+    return jsonify({"ok": True})
+
+@app.route("/api/issues/<int:issue_id>/comments", methods=["GET", "POST"])
+def api_issue_comments(issue_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        rows = db.execute("""
+            SELECT c.*, e.name as author_name
+            FROM issue_comments c
+            LEFT JOIN employees e ON e.id = c.user_id
+            WHERE c.issue_id = ?
+            ORDER BY c.created_at ASC
+        """, (issue_id,)).fetchall()
+        return jsonify({"ok": True, "comments": [dict(r) for r in rows]})
+    
+    data = request.get_json(force=True, silent=True) or {}
+    comment = (data.get("comment") or "").strip()
+    if not comment:
+        return jsonify({"ok": False, "error": "empty_comment"}), 400
+    
+    db.execute("""
+        INSERT INTO issue_comments (issue_id, user_id, comment)
+        VALUES (?, ?, ?)
+    """, (issue_id, u["id"], comment))
+    db.commit()
+    return jsonify({"ok": True})
+
+# === LOCATIONS API ===
+@app.route("/api/tasks/<int:task_id>/location", methods=["GET", "POST", "DELETE"])
+def api_task_location(task_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        row = db.execute("SELECT * FROM task_locations WHERE task_id = ? ORDER BY created_at DESC LIMIT 1", (task_id,)).fetchone()
+        return jsonify({"ok": True, "location": dict(row) if row else None})
+    
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        address = data.get("address", "")
+        
+        if lat is None or lng is None:
+            return jsonify({"ok": False, "error": "missing_coordinates"}), 400
+        
+        # Delete old location
+        db.execute("DELETE FROM task_locations WHERE task_id = ?", (task_id,))
+        
+        # Insert new
+        db.execute("""
+            INSERT INTO task_locations (task_id, latitude, longitude, address)
+            VALUES (?, ?, ?, ?)
+        """, (task_id, float(lat), float(lng), address))
+        db.commit()
+        return jsonify({"ok": True})
+    
+    if request.method == "DELETE":
+        db.execute("DELETE FROM task_locations WHERE task_id = ?", (task_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
+@app.route("/api/issues/<int:issue_id>/location", methods=["GET", "POST", "DELETE"])
+def api_issue_location(issue_id):
+    u, err = require_role(write=(request.method != "GET"))
+    if err: return err
+    db = get_db()
+    
+    if request.method == "GET":
+        row = db.execute("SELECT * FROM issue_locations WHERE issue_id = ? ORDER BY created_at DESC LIMIT 1", (issue_id,)).fetchone()
+        return jsonify({"ok": True, "location": dict(row) if row else None})
+    
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        address = data.get("address", "")
+        
+        if lat is None or lng is None:
+            return jsonify({"ok": False, "error": "missing_coordinates"}), 400
+        
+        # Delete old location
+        db.execute("DELETE FROM issue_locations WHERE issue_id = ?", (issue_id,))
+        
+        # Insert new
+        db.execute("""
+            INSERT INTO issue_locations (issue_id, latitude, longitude, address)
+            VALUES (?, ?, ?, ?)
+        """, (issue_id, float(lat), float(lng), address))
+        db.commit()
+        return jsonify({"ok": True})
+    
+    if request.method == "DELETE":
+        db.execute("DELETE FROM issue_locations WHERE issue_id = ?", (issue_id,))
+        db.commit()
+        return jsonify({"ok": True})
+
 @app.route("/gd/api/tasks", methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
 def gd_api_tasks():
     return api_tasks()
@@ -1789,3 +2295,37 @@ def gd_api_calendar():
 @app.route("/gd/api/calendar/<int:event_id>", methods=["DELETE"])
 def gd_api_calendar_delete(event_id):
     return api_calendar_delete(event_id)
+
+
+# ----------------- run -----------------
+
+
+@app.route("/api/_routes", methods=["GET"])
+def api_routes():
+    """Debug helper: returns registered routes so you can verify endpoints exist."""
+    try:
+        routes = []
+        for rule in app.url_map.iter_rules():
+            if rule.endpoint == 'static':
+                continue
+            routes.append({
+                "rule": str(rule),
+                "methods": sorted([m for m in rule.methods if m not in ("HEAD","OPTIONS")]),
+                "endpoint": rule.endpoint,
+            })
+        return jsonify({"ok": True, "routes": sorted(routes, key=lambda r: r["rule"])})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    # Pro lokální vývoj použij 127.0.0.1, pro Render použij 0.0.0.0
+    is_render = os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+    host = "0.0.0.0" if is_render else "127.0.0.1"
+    port = int(os.environ.get("PORT", 5000))
+    debug = not is_render  # Debug mode jen lokálně
+    
+    print(f"[Server] Starting Flask app on {host}:{port} (debug={debug})")
+    app.run(host=host, port=port, debug=debug)
+
+

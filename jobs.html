@@ -1552,7 +1552,8 @@ function loadOps(jobId) {
         const parsed = JSON.parse(raw);
         return {
             problems: Array.isArray(parsed.problems) ? parsed.problems : [],
-            todos: Array.isArray(parsed.todos) ? parsed.todos : []
+            // POZOR: todos se už načítají z API, ne z localStorage
+            todos: []  // Ignoruj staré localStorage todos
         };
     } catch (e) {
         console.warn('Failed to load ops from localStorage', e);
@@ -1615,29 +1616,24 @@ function renderProblems(jobId, ops) {
 
     const listHtml = items.length ? items.map(p => {
         const isResolved = p.status === 'resolved';
+        
         return `
-            <div class="ops-item">
-                <div class="ops-main">
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="ops-item-card" style="cursor: pointer;" onclick="openIssueDetail(${jobId}, ${p.id})">
+                <div class="ops-item-header">
+                    <div style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
                         <span style="padding:4px 8px;border-radius:999px;font-size:12px;background:${p.severity === 'info' ? 'rgba(255,255,255,0.08)' : 'rgba(255, 193, 7, 0.18)'};border:1px solid rgba(255,255,255,0.10);">
                             ${severityLabel(p.severity)}
                         </span>
                         <span style="font-weight:600;${isResolved ? 'text-decoration:line-through;opacity:0.7;' : ''}">${escapeHtml(p.title || '—')}</span>
+                        ${p.ownerName ? `<span style="color:var(--text-secondary);font-size:13px;">→ ${escapeHtml(p.ownerName)}</span>` : ''}
                     </div>
-                    ${p.ownerName ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">Řeší: ${escapeHtml(p.ownerName)}</div>` : ``}
-                    ${p.note ? `<div style="margin-top:6px;color:var(--text-secondary);font-size:13px;${isResolved ? 'opacity:0.7;' : ''}">${escapeHtml(p.note)}</div>` : ``}
-                </div>
-                <div class="ops-actions">
-                    ${isResolved ? `<span style="color:var(--text-secondary);font-size:12px;">Vyřešeno</span>` : `
-                        <button class="btn-secondary" style="padding:8px 10px;" onclick="resolveProblem(${jobId}, '${escapeAttr(p.id)}')">Vyřešit</button>
-                    `}
-                    <button class="btn-secondary" style="padding:8px 10px;" onclick="deleteProblem(${jobId}, '${escapeAttr(p.id)}')">Smazat</button>
+                    <span style="color:#999;font-size:12px;">▶</span>
                 </div>
             </div>
         `;
     }).join('') : `
         <div style="color:var(--text-secondary);padding:10px 0;">
-            Žádné problémy. Pokud něco blokuje práci, nahlaš to zde.
+            Žádné issues. Pokud něco blokuje práci, nahlaš to zde.
         </div>
     `;
 
@@ -1646,34 +1642,40 @@ function renderProblems(jobId, ops) {
 
 function renderTodos(jobId, ops) {
     const items = ops.todos.slice().sort((a,b)=>{
-        const aDone = !!a.done;
-        const bDone = !!b.done;
+        const aDone = !!a.done || a.status === 'done';
+        const bDone = !!b.done || b.status === 'done';
         if (aDone !== bDone) return aDone ? 1 : -1;
         return (a.createdAt ?? 0) - (b.createdAt ?? 0);
     });
 
-    const listHtml = items.length ? items.map(t => `
-        <div class="ops-item">
-            <label class="ops-todo-label">
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${jobId}, '${escapeAttr(t.id)}', this.checked)">
-                <div class="ops-main">
-                    <div style="font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.65;' : ''}">
-                        ${escapeHtml(t.title || '—')}
+    const listHtml = items.length ? items.map(t => {
+        const isDone = !!t.done || t.status === 'done';
+        const assignees = t.assignees || [];
+        const assigneeNames = assignees.map(a => a.name).join(', ') || t.assigneeName || '';
+        
+        return `
+            <div class="ops-item-card" style="cursor: pointer;" onclick="openTaskDetail(${jobId}, ${t.id})">
+                <div class="ops-item-header">
+                    <div style="display:flex;gap:8px;align-items:center;flex:1;">
+                        <input type="checkbox" ${isDone ? 'checked' : ''} 
+                               onclick="event.stopPropagation(); completeTodo(${jobId}, ${t.id})"
+                               style="cursor:pointer;">
+                        <span style="font-weight:600;${isDone ? 'text-decoration:line-through;opacity:0.65;' : ''}">
+                            ${escapeHtml(t.title || '—')}
+                        </span>
+                        ${assigneeNames ? `<span style="color:var(--text-secondary);font-size:13px;">→ ${escapeHtml(assigneeNames)}</span>` : ''}
                     </div>
-                    ${t.assigneeName ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assigneeName)}</div>` : (t.assignee ? `<div style="margin-top:4px;color:var(--text-secondary);font-size:13px;">Odpovědný: ${escapeHtml(t.assignee)}</div>` : ``)}
+                    <span style="color:#999;font-size:12px;">▶</span>
                 </div>
-            </label>
-            <div class="ops-actions">
-                <button class="btn-secondary" onclick="deleteTodo(${jobId}, '${escapeAttr(t.id)}')">Smazat</button>
             </div>
-        </div>
-    `).join('') : `
+        `;
+    }).join('') : `
         <div style="color:var(--text-secondary);padding:10px 0;">
             Žádné úkoly. Přidej krátký to-do a přiřaď odpovědnost.
         </div>
     `;
 
-    const openCount = ops.todos.filter(t => !t.done).length;
+    const openCount = ops.todos.filter(t => !t.done && t.status !== 'done').length;
     return { openCount, html: listHtml };
 }
 
@@ -1884,6 +1886,115 @@ function renderOperativa(jobId) {
 
     const hint = document.getElementById('ops-blocker-hint');
     if (hint) hint.style.display = probs.hasBlocker ? 'block' : 'none';
+    
+    // Fill employee dropdowns
+    setTimeout(() => {
+        console.log('Filling dropdowns, employees:', employees ? employees.length : 'none');
+        if (employees && employees.length > 0) {
+            fillEmployeeDropdown('issue-employee-select', employees);
+            fillEmployeeDropdown('task-employee-select', employees);
+            renderEmployeeChips('issue');
+            renderEmployeeChips('task');
+        } else {
+            console.warn('Employees not loaded yet');
+        }
+    }, 500);
+}
+
+// Global state
+window.issueSelectedEmployees = [];
+window.taskSelectedEmployees = [];
+
+function fillEmployeeDropdown(selectId, employeeList) {
+    const select = document.getElementById(selectId);
+    if (!select) {
+        console.warn(`Select #${selectId} not found`);
+        return;
+    }
+    
+    console.log(`Filling #${selectId} with ${employeeList.length} employees`);
+    
+    // Clear and add placeholder
+    select.innerHTML = '<option value="">-- Vybrat --</option>';
+    
+    // Add employees
+    employeeList.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = emp.name;
+        select.appendChild(option);
+    });
+    
+    console.log(`✓ #${selectId} filled with ${select.options.length} options`);
+}
+
+function addIssueEmployee(empId) {
+    if (!empId) return;
+    empId = parseInt(empId);
+    if (!window.issueSelectedEmployees.includes(empId)) {
+        window.issueSelectedEmployees.push(empId);
+        renderEmployeeChips('issue');
+    }
+}
+
+function addTaskEmployee(empId) {
+    if (!empId) return;
+    empId = parseInt(empId);
+    if (!window.taskSelectedEmployees.includes(empId)) {
+        window.taskSelectedEmployees.push(empId);
+        renderEmployeeChips('task');
+    }
+}
+
+function removeEmployee(type, empId) {
+    if (type === 'issue') {
+        window.issueSelectedEmployees = window.issueSelectedEmployees.filter(id => id !== empId);
+        renderEmployeeChips('issue');
+    } else {
+        window.taskSelectedEmployees = window.taskSelectedEmployees.filter(id => id !== empId);
+        renderEmployeeChips('task');
+    }
+}
+
+function setPrimaryEmployee(type, empId) {
+    if (type === 'issue') {
+        const filtered = window.issueSelectedEmployees.filter(id => id !== empId);
+        window.issueSelectedEmployees = [empId, ...filtered];
+        renderEmployeeChips('issue');
+    } else {
+        const filtered = window.taskSelectedEmployees.filter(id => id !== empId);
+        window.taskSelectedEmployees = [empId, ...filtered];
+        renderEmployeeChips('task');
+    }
+}
+
+function renderEmployeeChips(type) {
+    const chipsId = type === 'issue' ? 'issue-selected-chips' : 'task-selected-chips';
+    const container = document.getElementById(chipsId);
+    if (!container) return;
+    
+    const selectedIds = type === 'issue' ? window.issueSelectedEmployees : window.taskSelectedEmployees;
+    const primaryId = selectedIds.length > 0 ? selectedIds[0] : null;
+    
+    if (selectedIds.length === 0) {
+        container.innerHTML = '<span style="opacity:0.5;font-size:13px;">Nikdo nepřiřazen</span>';
+        return;
+    }
+    
+    container.innerHTML = selectedIds.map(empId => {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return '';
+        
+        const isPrimary = empId === primaryId;
+        
+        return `
+            <div style="display:inline-flex;align-items:center;gap:6px;background:${isPrimary ? '#B2FBA5' : '#333'};color:${isPrimary ? '#000' : '#fff'};padding:6px 10px;border-radius:16px;font-size:13px;">
+                <span>${escapeHtml(emp.name)}</span>
+                ${isPrimary ? '<span style="font-weight:700;">★</span>' : `<button onclick="setPrimaryEmployee('${type}', ${empId}); event.preventDefault();" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:14px;" title="Nastavit jako hlavního">☆</button>`}
+                <button onclick="removeEmployee('${type}', ${empId}); event.preventDefault();" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;font-weight:700;font-size:16px;">×</button>
+            </div>
+        `;
+    }).join('');
 }
 
 function showJobDetail(jobId) {
@@ -1929,7 +2040,7 @@ function showJobDetail(jobId) {
                 <div class="ops-grid">
                     <div class="ops-col">
                         <div class="ops-col-header">
-                            <div style="font-weight:700;">Problémy / překážky</div>
+                            <div style="font-weight:700;">Issues</div>
                             <button class="btn-secondary" style="padding:8px 10px;" onclick="addProblem(${jobId})">+ Nahlásit</button>
                         </div>
 
@@ -1941,11 +2052,19 @@ function showJobDetail(jobId) {
                                     <option value="critical">Kritické</option>
                                     <option value="info">Info</option>
                                 </select>
-                                <select id="ops-problem-owner" class="form-input ops-owner">
-                                    ${employeeOptionsHtml('', 'Řeší: —')}
-                                </select>
                             </div>
                             <input id="ops-problem-note" class="form-input" placeholder="Poznámka (volitelné)">
+                            
+                            <!-- Employee selector with chips -->
+                            <div style="margin-top: 12px;">
+                                <label style="font-size: 13px; margin-bottom: 6px; display: block; opacity: 0.8;">Přiřadit zaměstnance:</label>
+                                <select id="issue-employee-select" class="form-input" style="margin-bottom: 8px;" onchange="addIssueEmployee(this.value); this.value='';">
+                                    <option value="">-- Vybrat --</option>
+                                </select>
+                                <div id="issue-selected-chips" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px;">
+                                    <!-- Chips here -->
+                                </div>
+                            </div>
                         </div>
 
                         <div id="ops-problems-list" class="ops-list"></div>
@@ -1959,9 +2078,17 @@ function showJobDetail(jobId) {
 
                         <div class="ops-inputs">
                             <input id="ops-todo-title" class="form-input" placeholder="Např. Připravit podklad / domluvit dodávku">
-                            <select id="ops-todo-assignee" class="form-input ops-owner">
-                                ${employeeOptionsHtml('', 'Odpovědný: —')}
-                            </select>
+                            
+                            <!-- Employee selector with chips -->
+                            <div style="margin-top: 12px;">
+                                <label style="font-size: 13px; margin-bottom: 6px; display: block; opacity: 0.8;">Přiřadit zaměstnance:</label>
+                                <select id="task-employee-select" class="form-input" style="margin-bottom: 8px;" onchange="addTaskEmployee(this.value); this.value='';">
+                                    <option value="">-- Vybrat --</option>
+                                </select>
+                                <div id="task-selected-chips" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px;">
+                                    <!-- Chips here -->
+                                </div>
+                            </div>
                         </div>
 
                         <div id="ops-todos-list" class="ops-list"></div>
@@ -2474,6 +2601,116 @@ function openEditJobModal(jobId) {
         }
       }, 500);
     </script>
+    
+    <!-- Multi-Select Dropdown CSS & JS -->
+    <link rel="stylesheet" href="/static/css/multi-select.css">
+    <link rel="stylesheet" href="/static/css/expandable-cards.css">
+    <link rel="stylesheet" href="/static/css/task-detail-modal.css">
+    <script src="/static/js/multi-select-dropdown.js"></script>
+    
+    <script src="/static/js/jobs-issues.js"></script>
+    <script src="/static/js/jobs-tasks.js"></script>
+    <script src="/static/js/task-detail-modal.js"></script>
+    <!-- Task/Issue Detail Modal -->
+    <div id="task-detail-modal" class="task-detail-modal">
+        <div class="task-detail-content">
+            <div class="task-detail-header">
+                <div class="task-detail-title" id="modal-title">Detail úkolu</div>
+                <button class="task-detail-close" onclick="closeTaskDetailModal()">×</button>
+            </div>
+            
+            <div class="task-detail-body">
+                <!-- Title -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Název</div>
+                    <input type="text" id="modal-task-title" class="task-detail-input" placeholder="Název úkolu/issue">
+                </div>
+                
+                <!-- Description -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Popis</div>
+                    <textarea id="modal-task-description" class="task-detail-textarea" placeholder="Podrobný popis..."></textarea>
+                </div>
+                
+                <!-- Status -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Stav</div>
+                    <select id="modal-task-status" class="task-detail-input">
+                        <option value="open">K dokončení</option>
+                        <option value="in_progress">Probíhá</option>
+                        <option value="done">Hotovo</option>
+                        <option value="resolved">Vyřešeno</option>
+                    </select>
+                </div>
+                
+                <!-- Assigned Employees -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Přiřazení zaměstnanci</div>
+                    <select id="modal-add-employee" class="task-detail-input" style="margin-bottom: 12px;" onchange="modalAddEmployee(this.value); this.value='';">
+                        <option value="">+ Přidat zaměstnance</option>
+                    </select>
+                    <div id="modal-employees-list" class="task-detail-employee-list">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Comments -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Poznámky & Komentáře</div>
+                    <div id="modal-comments" class="task-detail-comments">
+                        <!-- Comments here -->
+                    </div>
+                    <div class="task-detail-add-comment">
+                        <textarea id="modal-new-comment" class="task-detail-input" placeholder="Přidat poznámku..." style="flex:1; min-height: 60px;"></textarea>
+                        <button class="btn-secondary" onclick="addTaskComment()" style="align-self: flex-end;">Přidat</button>
+                    </div>
+                </div>
+                
+                <!-- Location -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📍 Poloha GPS</div>
+                    <div id="modal-location-container">
+                        <div id="modal-location-display" style="display:none;">
+                            <div id="modal-map" style="width:100%; height:200px; border-radius:6px; margin-bottom:12px; background:#0d0d0d;"></div>
+                            <div style="display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:8px;">
+                                <span id="modal-coords"></span>
+                                <a id="modal-gmaps-link" href="#" target="_blank" style="color:#B2FBA5;">Otevřít v Google Maps</a>
+                            </div>
+                            <button class="btn-secondary" onclick="removeLocation()" style="padding:6px 12px; font-size:13px;">Smazat polohu</button>
+                        </div>
+                        <div id="modal-location-actions" style="display:flex; gap:8px;">
+                            <button class="btn-secondary" onclick="getCurrentLocation()" style="padding:8px 12px;">📍 Získat aktuální polohu</button>
+                            <button class="btn-secondary" onclick="selectLocationOnMap()" style="padding:8px 12px;">🗺️ Vybrat na mapě</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Files -->
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📎 Přílohy</div>
+                    <div id="modal-file-drop-zone" style="border:2px dashed #333; border-radius:6px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer; transition:all 0.2s;"
+                         onclick="document.getElementById('modal-file-input').click()"
+                         ondragover="event.preventDefault(); this.style.borderColor='#B2FBA5';"
+                         ondragleave="this.style.borderColor='#333';"
+                         ondrop="handleFileDrop(event)">
+                        <div style="opacity:0.7; font-size:14px;">📎 Klikni nebo přetáhni soubory</div>
+                        <div style="opacity:0.5; font-size:12px; margin-top:4px;">PDF, obrázky, dokumenty, videa...</div>
+                        <input type="file" id="modal-file-input" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+                    </div>
+                    <div id="modal-files" class="task-detail-files">
+                        <!-- Files here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="task-detail-actions">
+                <button class="btn-secondary" onclick="deleteTaskFromModal()">🗑️ Smazat</button>
+                <button class="btn-secondary" onclick="closeTaskDetailModal()">Zrušit</button>
+                <button class="btn-primary" onclick="saveTaskDetails()">💾 Uložit změny</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
     <script src="/static/js/components/header.js"></script>

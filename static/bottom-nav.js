@@ -235,6 +235,9 @@ function createMoreMenu() {
                 <a href="/tasks.html" class="more-menu-item">
                     <span>úkoly</span>
                 </a>
+                <a href="/issues" class="more-menu-item">
+                    <span>🚨 issues</span>
+                </a>
                 <a href="/employees.html" class="more-menu-item">
                     <span>zaměstnanci</span>
                 </a>

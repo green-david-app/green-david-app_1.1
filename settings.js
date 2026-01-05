@@ -491,6 +491,11 @@
     const exportBtn = document.getElementById('exportDataBtn');
     if (exportBtn) {
       exportBtn.addEventListener('click', exportData);
+    
+    const downloadDbBtn = document.getElementById('downloadDbBtn');
+    if (downloadDbBtn) {
+      downloadDbBtn.addEventListener('click', downloadDb);
+    }
     }
     
     const importData = document.getElementById('importData');
@@ -607,11 +612,17 @@
   }
   
   function exportData() {
-    try {
-      const data = {
-        settings: currentSettings,
-        exportDate: new Date().toISOString()
-      };
+    // Server-side export (owner/admin only)
+    if (!confirm('Stáhnout export všech dat do JSON?')) return;
+
+    // Uložíme čas exportu lokálně (UI), samotný soubor dodá server
+    currentSettings.lastExport = new Date().toISOString();
+    saveSettings();
+    const lastExport = document.getElementById('lastExport');
+    if (lastExport) lastExport.textContent = formatDate(currentSettings.lastExport);
+
+    window.location.href = '/api/admin/export-all';
+};
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -757,3 +768,9 @@
   
 })();
 
+
+
+function downloadDb() {
+  if (!confirm('Stáhnout databázi (SQLite)? Obsahuje citlivá data.')) return;
+  window.location.href = '/api/admin/download-db';
+}
