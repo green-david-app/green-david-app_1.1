@@ -63,45 +63,6 @@ def normalize_role(role):
     return role
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# ----------------- Auto-run migrations on startup -----------------
-def run_migrations():
-    """Run all SQL migrations from migrations/ folder"""
-    migrations_dir = os.path.join(os.path.dirname(__file__), 'migrations')
-    if not os.path.exists(migrations_dir):
-        return
-    
-    # Get all .sql files
-    sql_files = sorted([f for f in os.listdir(migrations_dir) if f.endswith('.sql')])
-    
-    if not sql_files:
-        return
-    
-    db = sqlite3.connect(DB_PATH, check_same_thread=False)
-    cursor = db.cursor()
-    
-    for sql_file in sql_files:
-        try:
-            filepath = os.path.join(migrations_dir, sql_file)
-            print(f"[MIGRATION] Running: {sql_file}")
-            
-            with open(filepath, 'r') as f:
-                sql_script = f.read()
-            
-            cursor.executescript(sql_script)
-            db.commit()
-            print(f"[MIGRATION] ✓ {sql_file} completed")
-        except Exception as e:
-            print(f"[MIGRATION] ✗ {sql_file} failed: {e}")
-            db.rollback()
-    
-    db.close()
-
-# Run migrations on startup
-try:
-    run_migrations()
-except Exception as e:
-    print(f"[MIGRATION] Error during migration: {e}")
-
 # ----------------- Database utilities -----------------
 def get_db():
     if "db" not in g:
@@ -137,6 +98,138 @@ def get_db():
             g.db.execute("PRAGMA journal_mode=WAL")
         except Exception:
             pass
+        
+        # Run migrations once per app instance
+        if not hasattr(get_db, '_migrations_done'):
+            print("[DB] Running migrations...")
+            try:
+                # Create missing tables
+                g.db.executescript("""
+                    CREATE TABLE IF NOT EXISTS issues (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        job_id INTEGER NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT,
+                        type TEXT NOT NULL DEFAULT 'blocker',
+                        status TEXT NOT NULL DEFAULT 'open',
+                        severity TEXT,
+                        assigned_to INTEGER,
+                        created_by INTEGER NOT NULL,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at TEXT DEFAULT (datetime('now')),
+                        resolved_at TEXT,
+                        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+                        FOREIGN KEY (assigned_to) REFERENCES employees(id) ON DELETE SET NULL,
+                        FOREIGN KEY (created_by) REFERENCES users(id)
+                    );
+                    
+                    CREATE INDEX IF NOT EXISTS idx_issues_job_id ON issues(job_id);
+                    CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to);
+                    CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+                    
+                    CREATE TABLE IF NOT EXISTS issue_assignments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        issue_id INTEGER NOT NULL,
+                        employee_id INTEGER NOT NULL,
+                        is_primary BOOLEAN DEFAULT 0,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+                        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+                        UNIQUE(issue_id, employee_id)
+                    );
+                    
+                    CREATE INDEX IF NOT EXISTS idx_issue_assignments_issue_id ON issue_assignments(issue_id);
+                    CREATE INDEX IF NOT EXISTS idx_issue_assignments_employee_id ON issue_assignments(employee_id);
+                    
+                    CREATE TABLE IF NOT EXISTS task_assignments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        task_id INTEGER NOT NULL,
+                        employee_id INTEGER NOT NULL,
+                        is_primary BOOLEAN DEFAULT 0,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+                        UNIQUE(task_id, employee_id)
+                    );
+                    
+                    CREATE INDEX IF NOT EXISTS idx_task_assignments_task_id ON task_assignments(task_id);
+                    CREATE INDEX IF NOT EXISTS idx_task_assignments_employee_id ON task_assignments(employee_id);
+                    
+                    CREATE TABLE IF NOT EXISTS issue_attachments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        issue_id INTEGER,
+                        filename TEXT NOT NULL,
+                        original_filename TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        file_size INTEGER,
+                        mime_type TEXT,
+                        uploaded_by INTEGER,
+                        uploaded_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+                        FOREIGN KEY (uploaded_by) REFERENCES employees(id)
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS task_attachments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        task_id INTEGER,
+                        filename TEXT NOT NULL,
+                        original_filename TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        file_size INTEGER,
+                        mime_type TEXT,
+                        uploaded_by INTEGER,
+                        uploaded_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                        FOREIGN KEY (uploaded_by) REFERENCES employees(id)
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS issue_comments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        issue_id INTEGER NOT NULL,
+                        user_id INTEGER,
+                        comment TEXT NOT NULL,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+                        FOREIGN KEY (user_id) REFERENCES employees(id)
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS task_comments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        task_id INTEGER NOT NULL,
+                        user_id INTEGER,
+                        comment TEXT NOT NULL,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                        FOREIGN KEY (user_id) REFERENCES employees(id)
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS issue_locations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        issue_id INTEGER,
+                        latitude REAL NOT NULL,
+                        longitude REAL NOT NULL,
+                        address TEXT,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS task_locations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        task_id INTEGER,
+                        latitude REAL NOT NULL,
+                        longitude REAL NOT NULL,
+                        address TEXT,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+                    );
+                """)
+                g.db.commit()
+                print("[DB] ✓ Migrations completed")
+            except Exception as e:
+                print(f"[DB] ✗ Migration error: {e}")
+                g.db.rollback()
+            
+            get_db._migrations_done = True
         
         # Debug: Count records in key tables
         if not hasattr(get_db, '_count_logged'):
