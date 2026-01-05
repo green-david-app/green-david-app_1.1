@@ -63,6 +63,45 @@ def normalize_role(role):
     return role
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# ----------------- Auto-run migrations on startup -----------------
+def run_migrations():
+    """Run all SQL migrations from migrations/ folder"""
+    migrations_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+    if not os.path.exists(migrations_dir):
+        return
+    
+    # Get all .sql files
+    sql_files = sorted([f for f in os.listdir(migrations_dir) if f.endswith('.sql')])
+    
+    if not sql_files:
+        return
+    
+    db = sqlite3.connect(DB_PATH, check_same_thread=False)
+    cursor = db.cursor()
+    
+    for sql_file in sql_files:
+        try:
+            filepath = os.path.join(migrations_dir, sql_file)
+            print(f"[MIGRATION] Running: {sql_file}")
+            
+            with open(filepath, 'r') as f:
+                sql_script = f.read()
+            
+            cursor.executescript(sql_script)
+            db.commit()
+            print(f"[MIGRATION] ✓ {sql_file} completed")
+        except Exception as e:
+            print(f"[MIGRATION] ✗ {sql_file} failed: {e}")
+            db.rollback()
+    
+    db.close()
+
+# Run migrations on startup
+try:
+    run_migrations()
+except Exception as e:
+    print(f"[MIGRATION] Error during migration: {e}")
+
 # ----------------- Database utilities -----------------
 def get_db():
     if "db" not in g:
