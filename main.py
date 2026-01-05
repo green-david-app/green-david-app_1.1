@@ -27,8 +27,23 @@ elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
 else:
     # Local development
     DB_PATH = "app.db"
+
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
+
+# Upload directory configuration - use same logic as DB_PATH
+if os.environ.get("UPLOAD_DIR"):
+    UPLOAD_DIR = os.environ.get("UPLOAD_DIR")
+elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    if os.path.exists("/var/data"):
+        UPLOAD_DIR = "/var/data/uploads"
+    elif os.path.exists("/persistent"):
+        UPLOAD_DIR = "/persistent/uploads"
+    elif os.path.exists("/data"):
+        UPLOAD_DIR = "/data/uploads"
+    else:
+        UPLOAD_DIR = "/tmp/uploads"
+else:
+    UPLOAD_DIR = "uploads"
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = SECRET_KEY
