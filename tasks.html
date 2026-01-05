@@ -10,9 +10,25 @@
 </head>
 <body>
         <div class="page">
-            <h1>✅ Úkoly</h1>
-            <button class="btn-primary" id="btn-new-task">+ Nový úkol</button>
+            <h1>✅ Úkoly & Issues</h1>
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <button class="btn-primary" id="btn-new-task">+ Nový úkol</button>
+                <a href="/issues" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; padding: 10px 20px;">
+                    🚨 Zobrazit Issues
+                </a>
+            </div>
         </header>
+
+        <!-- My Issues Section -->
+        <div id="my-issues-section" style="margin-bottom: 32px; padding: 20px; background: #1a1a1a; border-radius: 12px; border-left: 4px solid #ff4444;">
+            <h2 style="margin: 0 0 16px 0; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                <span>🚨</span> Moje Issues
+                <span id="my-issues-count" style="background: #ff4444; padding: 2px 8px; border-radius: 12px; font-size: 14px;">0</span>
+            </h2>
+            <div id="my-issues-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="opacity: 0.5; text-align: center; padding: 20px;">Načítám...</div>
+            </div>
+        </div>
 
         <!-- Filtry -->
         <div class="filters-bar">
@@ -126,6 +142,21 @@
 
         let tasks = [];
         let currentFilter = 'all';
+        let employees = [];
+
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const res = await fetch('/api/employees');
+                if (res.ok) {
+                    const data = await res.json();
+                    employees = data.employees || [];
+                    console.log('Employees loaded:', employees.length);
+                }
+            } catch (e) {
+                console.error('Error loading employees:', e);
+            }
+        }
 
         // Load tasks
         async function loadTasks() {
@@ -219,13 +250,9 @@
                 </div>
             `;
             
-            // Click to change status
+            // Click to open detail modal
             item.addEventListener('click', () => {
-                if (task.status === 'todo') task.status = 'progress';
-                else if (task.status === 'progress') task.status = 'done';
-                else task.status = 'todo';
-                renderTasks();
-                showToast('Status úkolu změněn', 'success');
+                openTaskDetail(null, task.id);
             });
             
             return item;
@@ -283,15 +310,184 @@
             return div.innerHTML;
         }
 
+        // Load my issues
+        async function loadMyIssues() {
+            try {
+                // Get current user
+                const meRes = await fetch('/api/me');
+                const meData = await meRes.json();
+                
+                if (!meData.authenticated || !meData.user || !meData.user.employee_id) {
+                    document.getElementById('my-issues-section').style.display = 'none';
+                    return;
+                }
+                
+                const employeeId = meData.user.employee_id;
+                
+                // Load issues assigned to me
+                const res = await fetch(`/api/issues?assigned_to=${employeeId}&status=open`);
+                const data = await res.json();
+                
+                if (data.ok) {
+                    const issues = data.issues || [];
+                    const count = issues.length;
+                    
+                    document.getElementById('my-issues-count').textContent = count;
+                    
+                    const container = document.getElementById('my-issues-list');
+                    
+                    if (count === 0) {
+                        container.innerHTML = '<div style="opacity: 0.5; text-align: center; padding: 20px;">Žádné přiřazené issues</div>';
+                    } else {
+                        container.innerHTML = issues.map(issue => `
+                            <div style="background: #222; padding: 12px 16px; border-radius: 8px; cursor: pointer; border-left: 3px solid ${issue.type === 'blocker' ? '#ff4444' : '#ffa500'};"
+                                 onclick="window.location.href='/jobs/${issue.job_id}'">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(issue.title)}</div>
+                                        <div style="font-size: 13px; opacity: 0.7;">
+                                            ${escapeHtml(issue.job_name || 'Bez zakázky')}
+                                            ${issue.description ? ' • ' + escapeHtml(issue.description).substring(0, 50) + '...' : ''}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <span style="background: ${issue.type === 'blocker' ? '#ff4444' : '#ffa500'}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                            ${issue.type === 'blocker' ? 'Blokuje' : 'To-Do'}
+                                        </span>
+                                        <button onclick="event.stopPropagation(); resolveIssue(${issue.id})" 
+                                                style="background: #00cc66; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                            Vyřešit
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading issues:', e);
+            }
+        }
+        
+        async function resolveIssue(issueId) {
+            try {
+                const res = await fetch('/api/issues', {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: issueId, status: 'resolved'})
+                });
+                
+                if (res.ok) {
+                    loadMyIssues();
+                }
+            } catch (e) {
+                console.error('Error resolving issue:', e);
+            }
+        }
+
         // Initialize
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
+                loadEmployees();
                 loadTasks();
+                loadMyIssues();
             });
         } else {
+            loadEmployees();
             loadTasks();
+            loadMyIssues();
         }
     </script>
+    
+    <!-- Task Detail Modal -->
+    <div id="task-detail-modal" class="task-detail-modal">
+        <div class="task-detail-content">
+            <div class="task-detail-header">
+                <div class="task-detail-title" id="modal-title">Detail úkolu</div>
+                <button class="task-detail-close" onclick="closeTaskDetailModal()">×</button>
+            </div>
+            
+            <div class="task-detail-body">
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Název</div>
+                    <input type="text" id="modal-task-title" class="task-detail-input" placeholder="Název úkolu">
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Popis</div>
+                    <textarea id="modal-task-description" class="task-detail-textarea" placeholder="Podrobný popis..."></textarea>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Stav</div>
+                    <select id="modal-task-status" class="task-detail-input">
+                        <option value="open">K dokončení</option>
+                        <option value="in_progress">Probíhá</option>
+                        <option value="done">Hotovo</option>
+                    </select>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Přiřazení zaměstnanci</div>
+                    <select id="modal-add-employee" class="task-detail-input" style="margin-bottom: 12px;" onchange="modalAddEmployee(this.value); this.value='';">
+                        <option value="">+ Přidat zaměstnance</option>
+                    </select>
+                    <div id="modal-employees-list" class="task-detail-employee-list"></div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Poznámky & Komentáře</div>
+                    <div id="modal-comments" class="task-detail-comments"></div>
+                    <div class="task-detail-add-comment">
+                        <textarea id="modal-new-comment" class="task-detail-input" placeholder="Přidat poznámku..." style="flex:1; min-height: 60px;"></textarea>
+                        <button class="btn-secondary" onclick="addTaskComment()" style="align-self: flex-end;">Přidat</button>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📍 Poloha GPS</div>
+                    <div id="modal-location-container">
+                        <div id="modal-location-display" style="display:none;">
+                            <div id="modal-map" style="width:100%; height:200px; border-radius:6px; margin-bottom:12px; background:#0d0d0d;"></div>
+                            <div style="display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:8px;">
+                                <span id="modal-coords"></span>
+                                <a id="modal-gmaps-link" href="#" target="_blank" style="color:#B2FBA5;">Otevřít v Google Maps</a>
+                            </div>
+                            <button class="btn-secondary" onclick="removeLocation()" style="padding:6px 12px; font-size:13px;">Smazat polohu</button>
+                        </div>
+                        <div id="modal-location-actions" style="display:flex; gap:8px;">
+                            <button class="btn-secondary" onclick="getCurrentLocation()" style="padding:8px 12px;">📍 Získat aktuální polohu</button>
+                            <button class="btn-secondary" onclick="selectLocationOnMap()" style="padding:8px 12px;">🗺️ Vybrat na mapě</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📎 Přílohy</div>
+                    <div id="modal-file-drop-zone" style="border:2px dashed #333; border-radius:6px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer; transition:all 0.2s;"
+                         onclick="document.getElementById('modal-file-input').click()"
+                         ondragover="event.preventDefault(); this.style.borderColor='#B2FBA5';"
+                         ondragleave="this.style.borderColor='#333';"
+                         ondrop="handleFileDrop(event)">
+                        <div style="opacity:0.7; font-size:14px;">📎 Klikni nebo přetáhni soubory</div>
+                        <div style="opacity:0.5; font-size:12px; margin-top:4px;">PDF, obrázky, dokumenty, videa...</div>
+                        <input type="file" id="modal-file-input" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+                    </div>
+                    <div id="modal-files" class="task-detail-files"></div>
+                </div>
+            </div>
+            
+            <div class="task-detail-actions">
+                <button class="btn-secondary" onclick="deleteTaskFromModal()">🗑️ Smazat</button>
+                <button class="btn-secondary" onclick="closeTaskDetailModal()">Zrušit</button>
+                <button class="btn-primary" onclick="saveTaskDetails()">💾 Uložit změny</button>
+            </div>
+        </div>
+    </div>
+    
+    <link rel="stylesheet" href="/static/css/task-detail-modal.css">
+    <script src="/static/js/task-detail-modal.js"></script>
+    
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
     <link rel="stylesheet" href="/static/icons.css">
