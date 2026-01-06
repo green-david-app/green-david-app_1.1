@@ -48,12 +48,10 @@
                             Role
                         </label>
                         <select id="new-member-role" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;cursor:pointer;">
-                            <option value="worker">Zaměstnanec</option>
-                            <option value="zahradník">Zahradník</option>
-                            <option value="svářeč">Svářeč</option>
-                            <option value="brigádník">Brigádník</option>
+                            <option value="worker">Worker</option>
+                            <option value="lander">Lander</option>
                             <option value="manager">Manager</option>
-                            <option value="admin">Admin</option>
+                            <option value="owner">Owner</option>
                         </select>
                     </div>
                     
@@ -557,6 +555,12 @@
             if (!modal || !modalTitle || !modalBody) return;
             
             modalTitle.textContent = emp.name || 'Detail zaměstnance';
+
+            // Delegace (jména pro zobrazení)
+            const delegateEmp = allEmployees.find(e => e && e.id === emp.delegate_employee_id);
+            const approverDelegateEmp = allEmployees.find(e => e && e.id === emp.approver_delegate_employee_id);
+            const delegateName = delegateEmp ? delegateEmp.name : '—';
+            const approverDelegateName = approverDelegateEmp ? approverDelegateEmp.name : '—';
             
             // Vypočítej statistiky
             const today = new Date();
@@ -761,6 +765,14 @@
                             <div class="info-item">
                                 <div class="info-label">Pozice</div>
                                 <div class="info-value">${escapeHtml(emp.role || '—')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Delegát (úkoly/problémy)</div>
+                                <div class="info-value">${escapeHtml(delegateName)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Delegát (schvalování)</div>
+                                <div class="info-value">${escapeHtml(approverDelegateName)}</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Typ smlouvy</div>
@@ -1036,7 +1048,9 @@
                     'mzda': 'salary',
                     'plát': 'salary',
                     'dovednosti': 'skills',
-                    'lokace': 'location'
+                    'lokace': 'location',
+                    'delegát (úkoly/problémy)': 'delegate_employee_id',
+                    'delegát (schvalování)': 'approver_delegate_employee_id'
                 };
                 
                 const mappedField = fieldMap[fieldName] || fieldName;
@@ -1096,18 +1110,51 @@
                     item.appendChild(select);
                     return; // Přeskočit zbytek
                 }
-                
+
+                // Delegace: výběr jiného zaměstnance (nebo žádný)
+                if (fieldName.includes('delegát')) {
+                    const select = document.createElement('select');
+                    select.dataset.field = mappedField;
+                    select.className = 'inline-edit-input';
+                    select.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;';
+
+                    const noneOpt = document.createElement('option');
+                    noneOpt.value = '';
+                    noneOpt.textContent = '—';
+                    select.appendChild(noneOpt);
+
+                    const currentDelegateId = (mappedField === 'delegate_employee_id')
+                        ? (originalEmployeeData?.delegate_employee_id)
+                        : (originalEmployeeData?.approver_delegate_employee_id);
+
+                    const currentId = empId;
+                    (Array.isArray(allEmployees) ? allEmployees : [])
+                        .filter(e => e && e.id && e.id !== currentId)
+                        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
+                        .forEach(e => {
+                            const option = document.createElement('option');
+                            option.value = String(e.id);
+                            option.textContent = e.name || `#${e.id}`;
+                            if (currentDelegateId && Number(currentDelegateId) === Number(e.id)) option.selected = true;
+                            select.appendChild(option);
+                        });
+
+                    item.innerHTML = '';
+                    item.appendChild(select);
+                    return;
+                }
+
                 if (fieldName.includes('pozice') || fieldName.includes('role')) {
                     const select = document.createElement('select');
                     select.dataset.field = mappedField;
                     select.className = 'inline-edit-input';
                     select.style.cssText = 'width:100%;padding:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:6px;color:var(--text-primary);font-size:14px;';
-                    const options = ['zahradník', 'brigádník', 'manager', 'supervizor', 'řidič', 'operátor'];
+                    const options = ['worker', 'lander', 'manager', 'owner'];
                     options.forEach(opt => {
                         const option = document.createElement('option');
                         option.value = opt;
                         option.textContent = opt;
-                        if (opt === inputValue || (inputValue === '—' && opt === 'zahradník')) {
+                        if (opt === inputValue || (inputValue === '—' && opt === 'worker')) {
                             option.selected = true;
                         }
                         select.appendChild(option);
@@ -1171,6 +1218,11 @@
                 if (!value || value === '—' || value === '' || value === 'Vlastní...') {
                     value = null;
                 } else {
+                    // Pro ID polí (delegace) převést na integer
+                    if (field === 'delegate_employee_id' || field === 'approver_delegate_employee_id') {
+                        const idVal = parseInt(value, 10);
+                        value = isNaN(idVal) ? null : idVal;
+                    }
                     // Pro číselná pole převést na číslo
                     if (input.type === 'number') {
                         const numValue = parseFloat(value);

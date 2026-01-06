@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Notifikace • green david app</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <link rel="stylesheet" href="/static/icons.css"/>
+    <script src="/app-settings.js"></script>
+    <script src="/static/app-header.js"></script>
+    <script src="/static/global-search.js"></script>
+    <style>
+      .notif-wrap{max-width:1000px;margin:0 auto;}
+      .notif-head{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:18px 0;}
+      .notif-head h1{margin:0;font-size:22px;}
+      .notif-actions{display:flex;gap:10px;flex-wrap:wrap;}
+      .notif-list{display:flex;flex-direction:column;gap:10px;}
+      .notif-item{border:1px solid rgba(255,255,255,0.10);background:rgba(17,24,39,0.35);border-radius:14px;padding:12px 14px;}
+      .notif-item.unread{border-color: rgba(46,125,50,0.65);}
+      .notif-top{display:flex;gap:10px;align-items:center;justify-content:space-between;}
+      .notif-title{font-weight:700;}
+      .notif-meta{color:#9ca8b3;font-size:12px;white-space:nowrap;}
+      .notif-body{margin-top:6px;color:#e8eef2;opacity:0.95;}
+      .notif-kind{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,0.08);color:#e8eef2;margin-right:8px;}
+      .empty{color:#9ca8b3;padding:10px 0;}
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="notif-wrap">
+        <div class="notif-head">
+          <h1>Notifikace</h1>
+          <div class="notif-actions">
+            <button class="btn btn-secondary" id="btn-refresh">Obnovit</button>
+            <button class="btn btn-secondary" id="btn-mark-all">Označit vše jako přečtené</button>
+          </div>
+        </div>
+
+        <div id="notif-list" class="notif-list"></div>
+        <div class="small footer">© green david s.r.o.</div>
+      </div>
+    </main>
+
+    <script>
+      function fmtDate(s){
+        try{
+          const d = new Date((s||'').replace(' ','T')+'Z');
+          if (isNaN(d.getTime())) return s||'';
+          return d.toLocaleString('cs-CZ');
+        }catch(_){return s||'';}
+      }
+
+      async function api(path, opts){
+        const res = await fetch(path, Object.assign({credentials:'same-origin'}, opts||{}));
+        const j = await res.json().catch(()=>null);
+        if (!res.ok) throw new Error((j&&j.error)||res.statusText);
+        return j;
+      }
+
+      function render(rows){
+        const el = document.getElementById('notif-list');
+        el.innerHTML = '';
+        if (!rows || rows.length===0){
+          el.innerHTML = '<div class="empty">Žádné notifikace.</div>';
+          return;
+        }
+        for (const n of rows){
+          const item = document.createElement('div');
+          item.className = 'notif-item' + (n.is_read ? '' : ' unread');
+          item.innerHTML = `
+            <div class="notif-top">
+              <div>
+                <span class="notif-kind">${(n.kind||'info')}</span>
+                <span class="notif-title">${(n.title||'')}</span>
+              </div>
+              <div class="notif-meta">${fmtDate(n.created_at)}</div>
+            </div>
+            <div class="notif-body">${(n.body||'')}</div>
+            <div style="margin-top:10px;display:flex;gap:10px;justify-content:flex-end;">
+              ${n.is_read ? '' : '<button class="btn btn-ghost btn-sm" data-action="read">Označit jako přečtené</button>'}
+            </div>
+          `;
+          if (!n.is_read){
+            const btn = item.querySelector('[data-action="read"]');
+            btn && btn.addEventListener('click', async ()=>{
+              try{
+                await api('/api/notifications', {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id:n.id})});
+                await load();
+                if (window.appHeader && typeof window.appHeader.refreshUserBox==='function'){
+                  window.appHeader.refreshUserBox();
+                }
+              }catch(e){alert('Chyba: '+e.message);}
+            });
+          }
+          el.appendChild(item);
+        }
+      }
+
+      async function load(){
+        try{
+          const j = await api('/api/notifications?limit=200');
+          render(j.rows||[]);
+        }catch(e){
+          document.getElementById('notif-list').innerHTML = '<div class="empty">Nepodařilo se načíst notifikace.</div>';
+        }
+      }
+
+      document.getElementById('btn-refresh').addEventListener('click', load);
+      document.getElementById('btn-mark-all').addEventListener('click', async ()=>{
+        try{
+          await api('/api/notifications', {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({all:true})});
+          await load();
+          if (window.appHeader && typeof window.appHeader.refreshUserBox==='function'){
+            window.appHeader.refreshUserBox();
+          }
+        }catch(e){alert('Chyba: '+e.message);}
+      });
+
+      load();
+    </script>
+  </body>
+</html>

@@ -2,41 +2,58 @@
 function createBottomNav() {
     const currentPath = window.location.pathname;
     const currentSearch = window.location.search;
+
+// I18N helper (falls back to original Czech if unavailable)
+function navLabel(key, fallback) {
+    try {
+        if (window.AppI18n && typeof window.AppI18n.t === 'function') {
+            const v = window.AppI18n.t(key);
+            return v || fallback;
+        }
+    } catch (_) {}
+    return fallback;
+}
     
     const navItems = [
         {
             href: '/',
             icon: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,
+            labelKey: 'nav.home',
             label: 'Domů',
             paths: ['/index.html', '/', '/?tab=dashboard']
         },
         {
             href: '/jobs.html',
             icon: `<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h6"/>`,
+            labelKey: 'nav.jobs',
             label: 'Zakázky',
             paths: ['/jobs.html', '/?tab=jobs']
         },
         {
             href: '/timesheets.html',
             icon: `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+            labelKey: 'nav.timesheets',
             label: 'Výkazy',
             paths: ['/timesheets.html', '/templates/timesheets.html']
         },
         {
             href: '/calendar.html',
             icon: `<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
+            labelKey: 'nav.calendar',
             label: 'Kalendář',
             paths: ['/calendar.html']
         },
         {
             href: '/reports.html',
             icon: `<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
+            labelKey: 'nav.reports',
             label: 'Přehledy',
             paths: ['/reports.html', '/?tab=reports']
         },
         {
             href: '#',
             icon: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`,
+            labelKey: 'nav.more',
             label: 'Více',
             paths: [],
             isMoreMenu: true
@@ -47,6 +64,8 @@ function createBottomNav() {
     nav.className = 'bottom-nav';
     
     nav.innerHTML = navItems.map(item => {
+        const label = navLabel(item.labelKey, item.label);
+
         // Lepší detekce aktivní stránky
         let isActive = false;
         if (item.paths.length > 0) {
@@ -73,11 +92,11 @@ function createBottomNav() {
         const onclickAttr = item.isMoreMenu ? `onclick="event.preventDefault(); toggleMoreMenu();"` : '';
         
         return `
-            <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" ${onclickAttr} data-nav-item="${item.label}">
+            <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" ${onclickAttr} data-nav-item="${item.labelKey || item.label}">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     ${item.icon}
                 </svg>
-                <span>${item.label}</span>
+                <span>${item.labelKey ? navLabel(item.labelKey, item.label) : item.label}</span>
             </a>
         `;
     }).join('');
@@ -209,57 +228,46 @@ document.addEventListener('click', (e) => {
 function createMoreMenu() {
     // Pokud už existuje, nemaž ho
     if (document.getElementById('more-menu')) return;
-    
+
     const menu = document.createElement('div');
     menu.id = 'more-menu';
     menu.className = 'more-menu';
+
+    // I18N helper
+    const tt = (key, fallback) => {
+        try {
+            if (window.AppI18n && typeof window.AppI18n.t === 'function') {
+                const v = window.AppI18n.t(key);
+                return v || fallback;
+            }
+        } catch (_) {}
+        return fallback;
+    };
+
     menu.innerHTML = `
         <div class="more-menu-panel">
             <div class="more-menu-header">
-                <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+                <div style="font-size:18px;font-weight:600;color:#e8eef2;">${tt('more.title','Navigace')}</div>
                 <button onclick="toggleMoreMenu()" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
             <div class="more-menu-content">
-                <a href="/" class="more-menu-item">
-                    <span>přehled</span>
-                </a>
-                <a href="/calendar.html" class="more-menu-item">
-                    <span>kalendář</span>
-                </a>
-                <a href="/timesheets.html" class="more-menu-item">
-                    <span>výkazy hodin</span>
-                </a>
-                <a href="/jobs.html" class="more-menu-item">
-                    <span>zakázky</span>
-                </a>
-                <a href="/tasks.html" class="more-menu-item">
-                    <span>úkoly</span>
-                </a>
-                <a href="/employees.html" class="more-menu-item">
-                    <span>zaměstnanci</span>
-                </a>
-                <a href="/warehouse.html" class="more-menu-item">
-                    <span>sklad</span>
-                </a>
-                <a href="/finance.html" class="more-menu-item">
-                    <span>finance</span>
-                </a>
-                <a href="/documents.html" class="more-menu-item">
-                    <span>dokumenty</span>
-                </a>
-                <a href="/reports.html" class="more-menu-item">
-                    <span>reporty</span>
-                </a>
-                <a href="/archive.html" class="more-menu-item">
-                    <span>archiv</span>
-                </a>
-                <a href="/settings.html" class="more-menu-item">
-                    <span>nastavení</span>
-                </a>
+                <a href="/" class="more-menu-item"><span>${tt('more.dashboard','přehled')}</span></a>
+                <a href="/inbox.html" class="more-menu-item"><span>${tt('more.inbox','moje práce')}</span></a>
+                <a href="/calendar.html" class="more-menu-item"><span>${tt('more.calendar','kalendář')}</span></a>
+                <a href="/timesheets.html" class="more-menu-item"><span>${tt('more.timesheets','výkazy hodin')}</span></a>
+                <a href="/jobs.html" class="more-menu-item"><span>${tt('more.jobs','zakázky')}</span></a>
+                <a href="/tasks.html" class="more-menu-item"><span>${tt('more.tasks','úkoly')}</span></a>
+                <a href="/employees.html" class="more-menu-item"><span>${tt('more.employees','zaměstnanci')}</span></a>
+                <a href="/warehouse.html" class="more-menu-item"><span>${tt('more.warehouse','sklad')}</span></a>
+                <a href="/finance.html" class="more-menu-item"><span>${tt('more.finance','finance')}</span></a>
+                <a href="/documents.html" class="more-menu-item"><span>${tt('more.documents','dokumenty')}</span></a>
+                <a href="/reports.html" class="more-menu-item"><span>${tt('more.reports','reporty')}</span></a>
+                <a href="/archive.html" class="more-menu-item"><span>${tt('more.archive','archiv')}</span></a>
+                <a href="/settings.html" class="more-menu-item"><span>${tt('more.settings','nastavení')}</span></a>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(menu);
 }
 

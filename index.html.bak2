@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="/static/css/global-search.css"/>
     <link rel="stylesheet" href="/static/icons.css"/>
     <script src="/app-settings.js"></script>
-    <script src="/static/app-header.js"></script>
-    <script src="/static/global-search.js"></script>
+    <script src="/static/app-header.js" defer></script>
+    <script src="/static/global-search.js" defer></script>
     <style>
       @keyframes slideIn {
         from { transform: translateX(100%); opacity: 0; }
@@ -138,9 +138,6 @@
 
     <script type="text/babel" data-presets="env,react">
       const { useState, useEffect, useMemo } = React;
-      
-      // Translation helper
-      const t = (key) => (window.AppI18n && window.AppI18n.t) ? window.AppI18n.t(key) : key;
 
       function Login({onLogged}){
         const [email,setEmail]=useState(""); const [pass,setPass]=useState(""); const [err,setErr]=useState("");
@@ -781,20 +778,11 @@
             .admin-card .admin-search input { width: 100%; padding: 12px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; }
             .admin-card .admin-search input:focus { outline: none; border-color: var(--mint); }
             .admin-card .admin-search input::placeholder { color: #6b7580; }
-            .admin-card .admin-right { display: flex; align-items: center; gap: 18px; }
             .admin-card .admin-stats { display: flex; gap: 32px; }
             .admin-stat { text-align: center; cursor: pointer; transition: opacity 0.2s; }
             .admin-stat:hover { opacity: 0.8; }
             .admin-stat .value { font-size: 32px; font-weight: 700; color: #e8eef2; display: block; }
             .admin-stat .label { font-size: 14px; color: #9ca8b3; margin-top: 4px; }
-
-            .admin-inbox-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius: 14px; border:1px solid var(--border-primary); background: rgba(255,255,255,0.02); cursor:pointer; user-select:none; transition: all 0.2s; }
-            .admin-inbox-link:hover { border-color: var(--mint); box-shadow: 0 6px 14px rgba(0,0,0,0.25); transform: translateY(-1px); }
-            .admin-inbox-link .ico { width:32px; height:32px; border-radius: 50%; background: rgba(159,212,161,0.16); display:flex; align-items:center; justify-content:center; }
-            .admin-inbox-link .ico svg { width:18px; height:18px; stroke: var(--mint); }
-            .admin-inbox-link .t { display:flex; flex-direction:column; line-height:1.1; }
-            .admin-inbox-link .t .a { font-weight: 700; color: #e8eef2; font-size: 14px; }
-            .admin-inbox-link .t .b { color:#9ca8b3; font-size: 12px; margin-top: 3px; }
             
             .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
             .action-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
@@ -807,7 +795,6 @@
             @media (max-width: 768px) {
               .admin-card { flex-direction: column; text-align: center; }
               .admin-card .admin-search { max-width: 100%; width: 100%; }
-              .admin-card .admin-right { justify-content: center; flex-wrap: wrap; }
               .admin-card .admin-stats { justify-content: center; flex-wrap: wrap; }
               .action-grid { grid-template-columns: repeat(2, 1fr); }
             }
@@ -819,34 +806,18 @@
               <div className="admin-title">Admin</div>
               <div className="admin-role">admin</div>
               </div>
-            <div className="admin-right">
-              <div className="admin-stats">
-                <div className="admin-stat" onClick={()=>{window.location.href="/jobs.html";}}>
-                  <span className="value">{stats.jobs}</span>
-                  <span className="label">zakázky</span>
-                </div>
-                <div className="admin-stat" onClick={()=>window.location.href="/employees.html"}>
-                  <span className="value">{stats.employees}</span>
-                  <span className="label">tým</span>
-                </div>
-                <div className="admin-stat" onClick={()=>window.location.href="/tasks.html"}>
-                  <span className="value">{stats.tasks}</span>
-                  <span className="label">úkoly</span>
-                </div>
+            <div className="admin-stats">
+              <div className="admin-stat" onClick={()=>{window.location.href="/jobs.html";}}>
+                <span className="value">{stats.jobs}</span>
+                <span className="label">zakázky</span>
               </div>
-
-              <div className="admin-inbox-link" role="button" title={(window.AppI18n&&window.AppI18n.t)?window.AppI18n.t('inbox.link'):'Moje práce'} onClick={()=>window.location.href="/inbox.html"}>
-                <div className="ico">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16v12H4z"/>
-                    <path d="M22 16H2"/>
-                    <path d="M8 20h8"/>
-                  </svg>
-                </div>
-                <div className="t">
-                  <div className="a">{(window.AppI18n&&window.AppI18n.t)?window.AppI18n.t('inbox.link'):'Moje práce'}</div>
-                  <div className="b">{(window.AppI18n&&window.AppI18n.t)?window.AppI18n.t('inbox.sub'):'Work inbox'}</div>
-                </div>
+              <div className="admin-stat" onClick={()=>window.location.href="/employees.html"}>
+                <span className="value">{stats.employees}</span>
+                <span className="label">tým</span>
+              </div>
+              <div className="admin-stat" onClick={()=>window.location.href="/tasks.html"}>
+                <span className="value">{stats.tasks}</span>
+                <span className="label">úkoly</span>
               </div>
             </div>
           </div>
@@ -860,8 +831,8 @@
                   <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
               </div>
-              <h3>{t('home.quick.new_job')}</h3>
-              <p>{t('home.quick.create')}</p>
+              <h3>Nová zakázka</h3>
+              <p>Vytvořit</p>
             </div>
             <div className="action-card" onClick={()=>window.location.href="/timesheets.html"}>
               <div className="icon-circle">
@@ -870,8 +841,8 @@
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </div>
-              <h3>{t('home.quick.timesheet')}</h3>
-              <p>{t('home.quick.add_time')}</p>
+              <h3>Výkaz hodin</h3>
+              <p>Přidat čas</p>
             </div>
             <div className="action-card" onClick={()=>{window.location.href="/jobs.html";}}>
               <div className="icon-circle">
@@ -882,8 +853,8 @@
                   <path d="M9 16h6"/>
                 </svg>
               </div>
-              <h3>{t('nav.jobs')}</h3>
-              <p>{t('home.quick.overview')}</p>
+              <h3>Zakázky</h3>
+              <p>Přehled</p>
             </div>
             <div className="action-card" onClick={()=>window.location.href="/tasks.html"}>
               <div className="icon-circle">
@@ -892,8 +863,8 @@
                   <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                 </svg>
               </div>
-              <h3>{t('tasks.title')}</h3>
-              <p>{t('home.quick.overview')}</p>
+              <h3>Úkoly</h3>
+              <p>Přehled</p>
             </div>
             <div className="action-card" onClick={()=>window.location.href="/employees.html"}>
               <div className="icon-circle">
@@ -903,8 +874,8 @@
                   <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
                 </svg>
               </div>
-              <h3>{t('home.quick.team')}</h3>
-              <p>{t('home.quick.manage')}</p>
+              <h3>Tým</h3>
+              <p>Spravovat</p>
             </div>
             <div className="action-card" onClick={()=>{if(window.setAppTab) window.setAppTab('reports'); else window.location.href="/reports.html";}}>
               <div className="icon-circle">
@@ -914,8 +885,8 @@
                   <line x1="6" y1="20" x2="6" y2="14"/>
                 </svg>
               </div>
-              <h3>{t('home.quick.statistics')}</h3>
-              <p>{t('home.quick.reports')}</p>
+              <h3>Statistiky</h3>
+              <p>Přehledy</p>
             </div>
           </div>
         </div>);

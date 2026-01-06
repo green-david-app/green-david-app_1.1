@@ -15,9 +15,7 @@ if os.environ.get("DB_PATH"):
     DB_PATH = os.environ.get("DB_PATH")
 elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
     # Render platform detected - try persistent disk paths
-    if os.path.exists("/var/data"):
-        DB_PATH = "/var/data/app.db"
-    elif os.path.exists("/persistent"):
+    if os.path.exists("/persistent"):
         DB_PATH = "/persistent/app.db"
     elif os.path.exists("/data"):
         DB_PATH = "/data/app.db"
@@ -27,31 +25,34 @@ elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
 else:
     # Local development
     DB_PATH = "app.db"
-
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
-
-# Upload directory configuration - use same logic as DB_PATH
-if os.environ.get("UPLOAD_DIR"):
-    UPLOAD_DIR = os.environ.get("UPLOAD_DIR")
-elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
-    if os.path.exists("/var/data"):
-        UPLOAD_DIR = "/var/data/uploads"
-    elif os.path.exists("/persistent"):
-        UPLOAD_DIR = "/persistent/uploads"
-    elif os.path.exists("/data"):
-        UPLOAD_DIR = "/data/uploads"
-    else:
-        UPLOAD_DIR = "/tmp/uploads"
-else:
-    UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 app = Flask(__name__, static_folder=".", static_url_path="")
+# Disable aggressive caching in development so UI settings (language/theme) apply immediately
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+@app.after_request
+def _disable_cache_for_static(resp):
+    try:
+        path = request.path or ""
+        if path.startswith("/static/") or path.endswith(".js") or path.endswith(".css"):
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+    except Exception:
+        pass
+    return resp
+
 app.secret_key = SECRET_KEY
 
 # ----------------- Role definitions -----------------
 # Pozn.: role 'team_lead' byla v předchozích verzích; pro kompatibilitu ji mapujeme na 'lander'.
 ROLES = ("owner", "admin", "manager", "lander", "worker")
 WRITE_ROLES = ("owner", "admin", "manager", "lander")
+
+# Role pro zaměstnance v UI (enterprise: jednotné a jednoduché)
+EMPLOYEE_ROLES = ("owner", "manager", "lander", "worker")
 
 def normalize_role(role):
     """Normalizace role pro zpětnou kompatibilitu a konzistentní autorizaci."""
@@ -61,6 +62,22 @@ def normalize_role(role):
     if role == "team_lead":
         return "lander"
     return role
+
+
+def normalize_employee_role(role: str) -> str:
+    """Normalizace role zaměstnance.
+
+    - zachová kompatibilitu se staršími hodnotami (admin -> owner, team_lead -> lander)
+    - pokud je hodnota neznámá, vrací 'worker'
+    """
+    if not role:
+        return "worker"
+    r = str(role).strip().lower()
+    if r in ("admin",):
+        r = "owner"
+    if r == "team_lead":
+        r = "lander"
+    return r if r in EMPLOYEE_ROLES else "worker"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ----------------- Database utilities -----------------
@@ -77,187 +94,269 @@ def get_db():
         
         # Log database path (only once at startup)
         if not hasattr(get_db, '_logged'):
-            print(f"[DB] ==================== DATABASE DEBUG ====================")
             print(f"[DB] Using database: {DB_PATH}")
-            print(f"[DB] Database file exists: {os.path.exists(DB_PATH)}")
-            if os.path.exists(DB_PATH):
-                print(f"[DB] Database file size: {os.path.getsize(DB_PATH)} bytes")
-            print(f"[DB] RENDER env var: {os.environ.get('RENDER', 'NOT SET')}")
-            print(f"[DB] /var/data exists: {os.path.exists('/var/data')}")
-            if os.path.exists('/var/data'):
-                print(f"[DB] /var/data contents: {os.listdir('/var/data')}")
-            print(f"[DB] =========================================================")
             get_db._logged = True
         
         # Connect with WAL mode for better concurrency
-        g.db = sqlite3.connect(DB_PATH, check_same_thread=False)
+        # Use a small timeout to reduce 'database is locked' errors under concurrent requests
+        g.db = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=5)
         g.db.row_factory = sqlite3.Row
-        
         # Enable WAL mode for better performance and durability
         try:
             g.db.execute("PRAGMA journal_mode=WAL")
         except Exception:
             pass
-        
-        # Run migrations once per app instance
-        if not hasattr(get_db, '_migrations_done'):
-            print("[DB] Running migrations...")
-            try:
-                # Create missing tables
-                g.db.executescript("""
-                    CREATE TABLE IF NOT EXISTS issues (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        job_id INTEGER NOT NULL,
-                        title TEXT NOT NULL,
-                        description TEXT,
-                        type TEXT NOT NULL DEFAULT 'blocker',
-                        status TEXT NOT NULL DEFAULT 'open',
-                        severity TEXT,
-                        assigned_to INTEGER,
-                        created_by INTEGER NOT NULL,
-                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                        updated_at TEXT DEFAULT (datetime('now')),
-                        resolved_at TEXT,
-                        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
-                        FOREIGN KEY (assigned_to) REFERENCES employees(id) ON DELETE SET NULL,
-                        FOREIGN KEY (created_by) REFERENCES users(id)
-                    );
-                    
-                    CREATE INDEX IF NOT EXISTS idx_issues_job_id ON issues(job_id);
-                    CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to);
-                    CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
-                    
-                    CREATE TABLE IF NOT EXISTS issue_assignments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        issue_id INTEGER NOT NULL,
-                        employee_id INTEGER NOT NULL,
-                        is_primary BOOLEAN DEFAULT 0,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
-                        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-                        UNIQUE(issue_id, employee_id)
-                    );
-                    
-                    CREATE INDEX IF NOT EXISTS idx_issue_assignments_issue_id ON issue_assignments(issue_id);
-                    CREATE INDEX IF NOT EXISTS idx_issue_assignments_employee_id ON issue_assignments(employee_id);
-                    
-                    CREATE TABLE IF NOT EXISTS task_assignments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        task_id INTEGER NOT NULL,
-                        employee_id INTEGER NOT NULL,
-                        is_primary BOOLEAN DEFAULT 0,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-                        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-                        UNIQUE(task_id, employee_id)
-                    );
-                    
-                    CREATE INDEX IF NOT EXISTS idx_task_assignments_task_id ON task_assignments(task_id);
-                    CREATE INDEX IF NOT EXISTS idx_task_assignments_employee_id ON task_assignments(employee_id);
-                    
-                    CREATE TABLE IF NOT EXISTS issue_attachments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        issue_id INTEGER,
-                        filename TEXT NOT NULL,
-                        original_filename TEXT NOT NULL,
-                        file_path TEXT NOT NULL,
-                        file_size INTEGER,
-                        mime_type TEXT,
-                        uploaded_by INTEGER,
-                        uploaded_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
-                        FOREIGN KEY (uploaded_by) REFERENCES employees(id)
-                    );
-                    
-                    CREATE TABLE IF NOT EXISTS task_attachments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        task_id INTEGER,
-                        filename TEXT NOT NULL,
-                        original_filename TEXT NOT NULL,
-                        file_path TEXT NOT NULL,
-                        file_size INTEGER,
-                        mime_type TEXT,
-                        uploaded_by INTEGER,
-                        uploaded_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-                        FOREIGN KEY (uploaded_by) REFERENCES employees(id)
-                    );
-                    
-                    CREATE TABLE IF NOT EXISTS issue_comments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        issue_id INTEGER NOT NULL,
-                        user_id INTEGER,
-                        comment TEXT NOT NULL,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
-                        FOREIGN KEY (user_id) REFERENCES employees(id)
-                    );
-                    
-                    CREATE TABLE IF NOT EXISTS task_comments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        task_id INTEGER NOT NULL,
-                        user_id INTEGER,
-                        comment TEXT NOT NULL,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-                        FOREIGN KEY (user_id) REFERENCES employees(id)
-                    );
-                    
-                    CREATE TABLE IF NOT EXISTS issue_locations (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        issue_id INTEGER,
-                        latitude REAL NOT NULL,
-                        longitude REAL NOT NULL,
-                        address TEXT,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
-                    );
-                    
-                    CREATE TABLE IF NOT EXISTS task_locations (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        task_id INTEGER,
-                        latitude REAL NOT NULL,
-                        longitude REAL NOT NULL,
-                        address TEXT,
-                        created_at TEXT DEFAULT (datetime('now')),
-                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
-                    );
-                """)
-                g.db.commit()
-                print("[DB] ✓ Migrations completed")
-            except Exception as e:
-                print(f"[DB] ✗ Migration error: {e}")
-                g.db.rollback()
-            
-            get_db._migrations_done = True
-        
-        # Debug: Count records in key tables
-        if not hasattr(get_db, '_count_logged'):
-            try:
-                jobs_count = g.db.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-                print(f"[DB] Jobs count: {jobs_count}")
-            except Exception as e:
-                print(f"[DB] Error counting jobs: {e}")
-            
-            try:
-                employees_count = g.db.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
-                print(f"[DB] Employees count: {employees_count}")
-            except Exception as e:
-                print(f"[DB] Error counting employees: {e}")
-            
-            get_db._count_logged = True
     return g.db
 
+def _table_has_column(db, table: str, column: str) -> bool:
+    try:
+        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(r[1] == column for r in rows)
+    except Exception:
+        return False
+
+
+def _table_exists(db, table: str) -> bool:
+    """Return True if a table exists in the current SQLite database."""
+    try:
+        r = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
+            (table,),
+        ).fetchone()
+        return bool(r)
+    except Exception:
+        return False
+
+
 @app.teardown_appcontext
-def close_db(error=None):
-    db = g.pop("db", None)
+def close_db(exception=None):
+    """Close the database connection at the end of the request."""
+    db = g.pop('db', None)
     if db is not None:
         try:
-            # Ensure all changes are committed before closing
-            db.commit()
+            db.close()
         except Exception:
             pass
-        db.close()
+
+def apply_migrations():
+    """Lightweight, non-breaking migration runner.
+
+    Tracks applied versions in schema_migrations and applies idempotent ALTERs when needed.
+    """
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT (datetime('now')))")
+    applied = {r[0] for r in db.execute("SELECT version FROM schema_migrations").fetchall()}
+
+    migrations = [
+        # v1: baseline (existing ensure_schema creates core tables)
+        (1, []),
+
+        # v2: employees extra contact fields (safe idempotent)
+        (2, [
+            ("employees", "phone",   "ALTER TABLE employees ADD COLUMN phone TEXT DEFAULT ''"),
+            ("employees", "email",   "ALTER TABLE employees ADD COLUMN email TEXT DEFAULT ''"),
+            ("employees", "address", "ALTER TABLE employees ADD COLUMN address TEXT DEFAULT ''"),
+        ]),
+
+        # v3: core search stability (jobs/tasks/issues timestamps + assignment tables)
+        (3, [
+            ("jobs", "created_at", "ALTER TABLE jobs ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ("tasks", "created_at", "ALTER TABLE tasks ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"),
+            """
+            CREATE TABLE IF NOT EXISTS task_assignments (
+                task_id INTEGER NOT NULL,
+                employee_id INTEGER NOT NULL,
+                is_primary INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (task_id, employee_id)
+            );
+            CREATE TABLE IF NOT EXISTS issues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                type TEXT DEFAULT 'issue',
+                status TEXT NOT NULL DEFAULT 'open',
+                severity TEXT DEFAULT '',
+                assigned_to INTEGER,
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS issue_assignments (
+                issue_id INTEGER NOT NULL,
+                employee_id INTEGER NOT NULL,
+                is_primary INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (issue_id, employee_id)
+            );
+            """,
+        ]),
+
+        # v4: assignment tables primary flag (backward compatibility)
+        (4, [
+            ("task_assignments", "is_primary", "ALTER TABLE task_assignments ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0"),
+            ("issue_assignments", "is_primary", "ALTER TABLE issue_assignments ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0"),
+        ]),
+
+        # v5: notifications (safe create)
+        (5, [
+            """
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                employee_id INTEGER,
+                kind TEXT NOT NULL DEFAULT 'info',
+                title TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                entity_type TEXT,
+                entity_id INTEGER,
+                is_read INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read, created_at);
+            CREATE INDEX IF NOT EXISTS idx_notifications_emp_read ON notifications(employee_id, is_read, created_at);
+            """,
+        ]),
+    ]
+
+    for version, alters in migrations:
+        if version in applied:
+            continue
+        for item in alters:
+            # Allow either (table, col, sql) ALTERs or raw DDL scripts as strings
+            if isinstance(item, str):
+                try:
+                    db.executescript(item)
+                except Exception:
+                    pass
+                continue
+            table, col, sql = item
+            # Skip ALTERs for tables that do not exist yet (fresh DB before ensure_schema).
+            if not _table_exists(db, table):
+                continue
+            if not _table_has_column(db, table, col):
+                try:
+                    db.execute(sql)
+                except Exception:
+                    # last-resort: ignore to avoid breaking startup
+                    pass
+        db.execute("INSERT OR IGNORE INTO schema_migrations(version) VALUES (?)", (version,))
+        db.commit()
+
+def audit_event(user_id, action: str, entity_type: str, entity_id=None, before=None, after=None, meta=None):
+    """Write a single audit log entry. Never raises (to avoid breaking user flows)."""
+    try:
+        db = get_db()
+        db.execute(
+            "INSERT INTO audit_log(user_id, action, entity_type, entity_id, before_json, after_json, meta_json) VALUES (?,?,?,?,?,?,?)",
+            (
+                user_id,
+                action,
+                entity_type,
+                entity_id,
+                json.dumps(before, ensure_ascii=False) if before is not None else None,
+                json.dumps(after, ensure_ascii=False) if after is not None else None,
+                json.dumps(meta, ensure_ascii=False) if meta is not None else None,
+            ),
+        )
+        db.commit()
+    except Exception:
+        pass
+
+
+# ----------------- Notifications & Delegation -----------------
+def _employee_user_id(db, employee_id: int):
+    """Return linked user_id for an employee, or None."""
+    try:
+        r = db.execute("SELECT user_id FROM employees WHERE id=?", (int(employee_id),)).fetchone()
+        return int(r[0]) if r and r[0] is not None else None
+    except Exception:
+        return None
+
+
+def create_notification(*, user_id=None, employee_id=None, kind="info", title="", body="", entity_type=None, entity_id=None):
+    """Create an in-app notification. Never raises."""
+    try:
+        db = get_db()
+        if employee_id is not None and user_id is None:
+            user_id = _employee_user_id(db, int(employee_id))
+        db.execute(
+            "INSERT INTO notifications(user_id, employee_id, kind, title, body, entity_type, entity_id) VALUES (?,?,?,?,?,?,?)",
+            (
+                int(user_id) if user_id is not None else None,
+                int(employee_id) if employee_id is not None else None,
+                str(kind or "info"),
+                str(title or ""),
+                str(body or ""),
+                str(entity_type) if entity_type is not None else None,
+                int(entity_id) if entity_id is not None else None,
+            ),
+        )
+        db.commit()
+    except Exception:
+        pass
+
+
+def _expand_assignees_with_delegate(db, employee_ids):
+    """Expand assignees by adding one-hop delegates.
+
+    Returns: (expanded_ids, delegations)
+      - expanded_ids: list[int]
+      - delegations: list[{'from': int, 'to': int}]
+
+    Note: intentionally non-recursive to avoid cycles and surprises.
+    """
+    try:
+        ids = [int(x) for x in (employee_ids or []) if str(x).strip()]
+    except Exception:
+        ids = []
+    seen = set(ids)
+    delegations = []
+
+    for eid in list(ids):
+        try:
+            r = db.execute(
+                "SELECT delegate_employee_id FROM employees WHERE id=?",
+                (int(eid),),
+            ).fetchone()
+            did = int(r[0]) if r and r[0] is not None else None
+        except Exception:
+            did = None
+
+        if did and did != eid and did not in seen:
+            ids.append(did)
+            seen.add(did)
+            delegations.append({"from": int(eid), "to": int(did)})
+
+    return ids, delegations
+
+
+def _notify_assignees(entity_type: str, entity_id: int, assignee_ids, title: str, body: str, actor_user_id=None):
+    """Notify assignees (employees) - skips actor if mapped to same employee user."""
+    db = get_db()
+    # Map actor user_id -> employee_id (best-effort)
+    actor_employee_id = None
+    try:
+        if actor_user_id:
+            r = db.execute("SELECT id FROM employees WHERE user_id=?", (int(actor_user_id),)).fetchone()
+            actor_employee_id = int(r[0]) if r else None
+    except Exception:
+        actor_employee_id = None
+
+    for eid in assignee_ids or []:
+        try:
+            eid = int(eid)
+        except Exception:
+            continue
+        if actor_employee_id and eid == actor_employee_id:
+            continue
+        create_notification(
+            employee_id=eid,
+            kind="assignment",
+            title=title,
+            body=body,
+            entity_type=entity_type,
+            entity_id=int(entity_id),
+        )
+
 
 # ----------------- Utility functions -----------------
 def _normalize_date(v):
@@ -373,6 +472,8 @@ def _migrate_completed_at():
     """Add missing columns to jobs table if they don't exist"""
     db = get_db()
     try:
+        if not _table_exists(db, "jobs"):
+            return
         cols = [r[1] for r in db.execute("PRAGMA table_info(jobs)").fetchall()]
         if "completed_at" not in cols:
             db.execute("ALTER TABLE jobs ADD COLUMN completed_at TEXT")
@@ -397,6 +498,8 @@ def _migrate_employees_enhanced():
     """Add enhanced columns to employees table and create new tables"""
     db = get_db()
     try:
+        if not _table_exists(db, "employees"):
+            return
         cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
         
         # Add new columns to employees table
@@ -411,6 +514,9 @@ def _migrate_employees_enhanced():
             "status": "TEXT DEFAULT 'active'",
             "rating": "REAL DEFAULT 0",
             "avatar_url": "TEXT"
+
+            ,"delegate_employee_id": "INTEGER NULL"
+            ,"approver_delegate_employee_id": "INTEGER NULL"
         
             ,"user_id": "INTEGER NULL"
         }
@@ -456,6 +562,8 @@ def _migrate_roles_and_hierarchy():
     """Migrace: přidání sloupců role a manager_id do users tabulky"""
     db = get_db()
     try:
+        if not _table_exists(db, "users"):
+            return
         # Zkontrolovat existující sloupce
         cols = [r[1] for r in db.execute("PRAGMA table_info(users)").fetchall()]
         
@@ -527,14 +635,8 @@ def _migrate_roles_and_hierarchy():
     except Exception as e:
         print(f"[DB] Roles migration warning: {e}")
 
-# Run migration after all functions are defined
-try:
-    with app.app_context():
-        _migrate_completed_at()
-        _migrate_employees_enhanced()
-        _migrate_roles_and_hierarchy()
-except Exception as e:
-    print(f"[DB] Migration failed: {e}")
+# NOTE: DB initialization is handled by init_db_once() (defined later),
+# which ensures base schema exists before applying any migrations.
 
 # ----------------- Authentication functions -----------------
 def current_user():
@@ -649,10 +751,33 @@ def ensure_schema():
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         manager_id INTEGER NULL
     );
-    CREATE TABLE IF NOT EXISTS employees (
+    
+
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id INTEGER,
+        before_json TEXT,
+        after_json TEXT,
+        meta_json TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker',
+        -- delegace: kam přesměrovat úkoly/problémy (např. při nepřítomnosti)
+        delegate_employee_id INTEGER NULL,
+        -- delegace: kam přesměrovat schvalování (výkazy apod.)
+        approver_delegate_employee_id INTEGER NULL,
         phone TEXT DEFAULT '',
         email TEXT DEFAULT '',
         address TEXT DEFAULT '',
@@ -668,7 +793,8 @@ def ensure_schema():
         city TEXT NOT NULL DEFAULT '',
         code TEXT NOT NULL DEFAULT '',
         date TEXT,
-        note TEXT
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     
     CREATE TABLE IF NOT EXISTS job_assignments (
@@ -697,8 +823,35 @@ def ensure_schema():
         title TEXT NOT NULL,
         description TEXT DEFAULT '',
         status TEXT NOT NULL DEFAULT 'open',
-        due_date TEXT
+        due_date TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS task_assignments (
+        task_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        is_primary INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (task_id, employee_id)
+    );
+    CREATE TABLE IF NOT EXISTS issues (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        type TEXT DEFAULT 'issue',
+        status TEXT NOT NULL DEFAULT 'open',
+        severity TEXT DEFAULT '',
+        assigned_to INTEGER,
+        created_by INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS issue_assignments (
+        issue_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        is_primary INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (issue_id, employee_id)
+    );
+
     CREATE TABLE IF NOT EXISTS timesheets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         employee_id INTEGER NOT NULL,
@@ -719,6 +872,21 @@ def ensure_schema():
         note TEXT DEFAULT '',
         color TEXT DEFAULT '#2e7d32'
     );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        employee_id INTEGER,
+        kind TEXT NOT NULL DEFAULT 'info',
+        title TEXT NOT NULL DEFAULT '',
+        body TEXT NOT NULL DEFAULT '',
+        entity_type TEXT,
+        entity_id INTEGER,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read, created_at);
+    CREATE INDEX IF NOT EXISTS idx_notifications_emp_read ON notifications(employee_id, is_read, created_at);
     """)
     # Migrace: přidání sloupců phone, email, address do employees (pokud neexistují)
     try:
@@ -801,7 +969,22 @@ def seed_employees():
 
 @app.before_request
 def _ensure():
-    ensure_schema()
+    # Run schema checks / migrations once per process to avoid unnecessary locking
+    if not getattr(_ensure, "_schema_ready", False):
+        ensure_schema()
+        try:
+            apply_migrations()
+        except Exception as e:
+            # Never break the app startup/runtime on a migration helper issue
+            print(f"[DB] Migration failed: {e}")
+        # Legacy migrations (kept for backward compatibility with older app.db variants)
+        try:
+            _migrate_completed_at()
+            _migrate_employees_enhanced()
+            _migrate_roles_and_hierarchy()
+        except Exception as e:
+            print(f"[DB] Migration warning: {e}")
+        _ensure._schema_ready = True
     seed_admin()
     _auto_upgrade_admins_to_owner()
     seed_employees()
@@ -868,6 +1051,13 @@ def _job_title_update_set(params_list, title_value):
 def index():
     return send_from_directory(".", "index.html")
 
+# Work inbox (safe standalone page)
+@app.route("/inbox")
+@app.route("/inbox/")
+@app.route("/inbox.html")
+def work_inbox_page():
+    return send_from_directory(".", "inbox.html")
+
 @app.route("/static/<path:filename>")
 def static_files(filename):
     """Serve static files from static/ directory"""
@@ -889,7 +1079,121 @@ def health():
 @app.route("/api/me")
 def api_me():
     u = current_user()
-    return jsonify({"ok": True, "authenticated": bool(u), "user": u, "tasks_count": 0})
+    unread = 0
+    emp = None
+    if u:
+        try:
+            db = get_db()
+            # Current employee mapping (optional)
+            try:
+                erow = db.execute(
+                    "SELECT id, name, role FROM employees WHERE user_id=? LIMIT 1",
+                    (int(u["id"]),),
+                ).fetchone()
+                if erow:
+                    emp = {"id": int(erow["id"]), "name": erow["name"], "role": erow["role"]}
+                    # Backward-compatible field used by some frontends
+                    u["employee_id"] = emp["id"]
+            except Exception:
+                emp = None
+            # Prefer user_id binding; fallback also checks employee mapping.
+            # NOTE: notifications table is created in ensure_schema; if legacy DB lacks it, this is safe.
+            unread = db.execute(
+                "SELECT COUNT(1) FROM notifications WHERE (user_id=? OR employee_id IN (SELECT id FROM employees WHERE user_id=?)) AND is_read=0",
+                (int(u["id"]), int(u["id"])),
+            ).fetchone()[0]
+            unread = int(unread or 0)
+        except Exception:
+            unread = 0
+    return jsonify({"ok": True, "authenticated": bool(u), "user": u, "employee": emp, "tasks_count": 0, "unread_notifications": unread})
+
+
+@app.route("/api/notifications", methods=["GET", "PATCH", "DELETE"])
+def api_notifications():
+    """In-app notifications for the current signed-in user.
+
+    GET: list notifications
+      - unread_only=1
+      - limit=50 (max 200)
+    PATCH: mark read
+      - id: single notification id
+      - all=1: mark all as read
+    DELETE: delete
+      - id: single id
+      - all=1: delete all (dangerous - owner only)
+    """
+    u, err = require_auth()
+    if err:
+        return err
+    db = get_db()
+
+    if request.method == "GET":
+        unread_only = str(request.args.get("unread_only") or "").strip() in ("1", "true", "yes")
+        limit = request.args.get("limit", type=int) or 50
+        limit = max(1, min(int(limit), 200))
+
+        conds = ["(n.user_id=? OR n.employee_id IN (SELECT id FROM employees WHERE user_id=?))"]
+        params = [int(u["id"]), int(u["id"])]
+        if unread_only:
+            conds.append("n.is_read=0")
+
+        q = "SELECT n.* FROM notifications n WHERE " + " AND ".join(conds) + " ORDER BY datetime(n.created_at) DESC, n.id DESC LIMIT ?"
+        params.append(limit)
+        rows = [dict(r) for r in db.execute(q, params).fetchall()]
+        return jsonify({"ok": True, "rows": rows})
+
+    if request.method == "PATCH":
+        data = request.get_json(force=True, silent=True) or {}
+        nid = data.get("id") or request.args.get("id", type=int)
+        mark_all = str(data.get("all") or request.args.get("all") or "").strip() in ("1", "true", "yes")
+
+        try:
+            if mark_all:
+                db.execute(
+                    "UPDATE notifications SET is_read=1 WHERE (user_id=? OR employee_id IN (SELECT id FROM employees WHERE user_id=?))",
+                    (int(u["id"]), int(u["id"])),
+                )
+                db.commit()
+                return jsonify({"ok": True})
+            if not nid:
+                return jsonify({"ok": False, "error": "missing_id"}), 400
+            db.execute(
+                "UPDATE notifications SET is_read=1 WHERE id=? AND (user_id=? OR employee_id IN (SELECT id FROM employees WHERE user_id=?))",
+                (int(nid), int(u["id"]), int(u["id"])),
+            )
+            db.commit()
+            return jsonify({"ok": True})
+        except Exception as e:
+            db.rollback()
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # DELETE
+    data = request.get_json(force=True, silent=True) or {}
+    nid = data.get("id") or request.args.get("id", type=int)
+    delete_all = str(data.get("all") or request.args.get("all") or "").strip() in ("1", "true", "yes")
+
+    # For safety: allow deleting all only for owner.
+    if delete_all and normalize_role(u.get("role")) not in ("owner", "admin"):
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    try:
+        if delete_all:
+            db.execute(
+                "DELETE FROM notifications WHERE (user_id=? OR employee_id IN (SELECT id FROM employees WHERE user_id=?))",
+                (int(u["id"]), int(u["id"])),
+            )
+            db.commit()
+            return jsonify({"ok": True})
+        if not nid:
+            return jsonify({"ok": False, "error": "missing_id"}), 400
+        db.execute(
+            "DELETE FROM notifications WHERE id=? AND (user_id=? OR employee_id IN (SELECT id FROM employees WHERE user_id=?))",
+            (int(nid), int(u["id"]), int(u["id"])),
+        )
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 # auth
 @app.route("/api/login", methods=["POST"])
@@ -967,6 +1271,9 @@ def api_employees():
             emp = dict(r)
             emp_id = emp["id"]
 
+            # Normalizace role zaměstnance (aby UI bylo konzistentní)
+            emp["role"] = normalize_employee_role(emp.get("role"))
+
             # Účet zaměstnance (pokud je navázaný přes employees.user_id)
             emp["has_account"] = emp.get("account_user_id") is not None
             if emp.get("account_role") is not None:
@@ -1020,7 +1327,7 @@ def api_employees():
             if not name: return jsonify({"ok": False, "error":"invalid_input"}), 400
             
             # Get all fields with defaults
-            role = data.get("role") or "worker"
+            role = normalize_employee_role(data.get("role") or "worker")
             phone = data.get("phone") or ""
             email = data.get("email") or ""
             address = data.get("address") or ""
@@ -1034,6 +1341,10 @@ def api_employees():
             status = data.get("status") or "active"
             rating = data.get("rating") or 0
             avatar_url = data.get("avatar_url") or ""
+
+            # Delegace (volitelné)
+            delegate_employee_id = data.get("delegate_employee_id")
+            approver_delegate_employee_id = data.get("approver_delegate_employee_id")
             
             # Build INSERT query with all available columns
             cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
@@ -1041,7 +1352,8 @@ def api_employees():
             insert_vals = [name, role]
             
             for col in ["phone", "email", "address", "birth_date", "contract_type", "start_date", 
-                       "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url"]:
+                       "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url",
+                       "delegate_employee_id", "approver_delegate_employee_id"]:
                 if col in cols:
                     insert_cols.append(col)
                     if col == "hourly_rate" or col == "salary" or col == "rating":
@@ -1073,13 +1385,16 @@ def api_employees():
             # Get all available columns from schema
             cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
             allowed = ["name", "role", "phone", "email", "address", "birth_date", "contract_type", 
-                      "start_date", "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url"]
+                      "start_date", "hourly_rate", "salary", "skills", "location", "status", "rating", "avatar_url",
+                      "delegate_employee_id", "approver_delegate_employee_id"]
             for k in allowed:
                 if k in data and k in cols:
                     updates.append(f"{k}=?")
                     # Handle numeric fields
                     if k in ["hourly_rate", "salary", "rating"]:
                         params.append(float(data[k]) if data[k] is not None else None)
+                    elif k == "role":
+                        params.append(normalize_employee_role(data[k]))
                     else:
                         params.append(data[k] if data[k] is not None else "")
             if not updates: return jsonify({"ok": False, "error":"no_updates"}), 400
@@ -1304,8 +1619,10 @@ def api_jobs():
                 return jsonify({"ok": False, "error":"missing_fields"}), 400
             cols, vals = _job_insert_cols_and_vals(title, client, status, city, code, dt, note, owner_id=u["id"])
             sql = "INSERT INTO jobs(" + ",".join(cols) + ") VALUES (" + ",".join(["?"]*len(vals)) + ")"
-            db.execute(sql, vals)
+            cur = db.execute(sql, vals)
+            job_id = cur.lastrowid
             db.commit()
+            audit_event(u.get("id"), "create", "job", job_id, after={"title": title, "client": client, "status": status, "city": city, "code": code, "date": dt})
             print(f"✓ Job '{title}' created successfully")
             return jsonify({"ok": True})
         except Exception as e:
@@ -1369,8 +1686,12 @@ def api_jobs():
     try:
         jid = request.args.get("id", type=int)
         if not jid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        # audit snapshot
+        before = db.execute("SELECT id, COALESCE(title,name,'') as title, client, status, city, code, date, note FROM jobs WHERE id=?", (jid,)).fetchone()
+        before = dict(before) if before else None
         db.execute("DELETE FROM jobs WHERE id=?", (jid,))
         db.commit()
+        audit_event(u.get("id"), "delete", "job", jid, before=before)
         print(f"✓ Job {jid} deleted successfully")
         return jsonify({"ok": True})
     except Exception as e:
@@ -1558,9 +1879,33 @@ def api_tasks():
             primary_id = data.get("primary_employee")
             
             if assigned_ids:
-                assign_employees_to_task(db, task_id, assigned_ids, primary_id)
+                # Expand assignees with one-hop delegates (employee card settings)
+                expanded_ids, delegations = _expand_assignees_with_delegate(db, assigned_ids)
+                assign_employees_to_task(db, task_id, expanded_ids, primary_id)
                 db.commit()
+
+                # Notify assignees
+                _notify_assignees(
+                    "task",
+                    task_id,
+                    expanded_ids,
+                    title="Nový úkol přiřazen",
+                    body=f"Úkol: {title}",
+                    actor_user_id=u.get("id"),
+                )
+
+                # Notify delegate explicitly (so it's clear it's by delegation)
+                for d in delegations:
+                    create_notification(
+                        employee_id=d.get("to"),
+                        kind="delegation",
+                        title="Úkol delegován",
+                        body=f"Úkol '{title}' byl delegován od zaměstnance ID {d.get('from')}",
+                        entity_type="task",
+                        entity_id=task_id,
+                    )
             
+            audit_event(u.get("id"), "create", "task", task_id, after={"title": title, "job_id": data.get("job_id"), "employee_id": data.get("employee_id"), "status": data.get("status"), "due_date": data.get("due_date")})
             print(f"✓ Task '{title}' created successfully (ID: {task_id})")
             return jsonify({"ok": True, "id": task_id})
         except Exception as e:
@@ -1584,6 +1929,7 @@ def api_tasks():
             if sets:
                 vals.append(int(tid))
                 db.execute("UPDATE tasks SET " + ", ".join(sets) + " WHERE id=?", vals)
+                audit_event(u.get("id"), "update", "task", int(tid), meta={"fields": [s.split("=")[0] for s in sets]})
             
             # Update assignments if provided
             if "assigned_employees" in data:
@@ -1594,7 +1940,26 @@ def api_tasks():
                 assigned_ids = data.get("assigned_employees", [])
                 primary_id = data.get("primary_employee")
                 if assigned_ids:
-                    assign_employees_to_task(db, tid, assigned_ids, primary_id)
+                    expanded_ids, delegations = _expand_assignees_with_delegate(db, assigned_ids)
+                    assign_employees_to_task(db, tid, expanded_ids, primary_id)
+
+                    _notify_assignees(
+                        "task",
+                        int(tid),
+                        expanded_ids,
+                        title="Úkol aktualizován",
+                        body=f"Úkol byl upraven: {data.get('title') or ''}".strip() or "Úkol byl upraven",
+                        actor_user_id=u.get("id"),
+                    )
+                    for d in delegations:
+                        create_notification(
+                            employee_id=d.get("to"),
+                            kind="delegation",
+                            title="Úkol delegován",
+                            body=f"Úkol ID {tid} byl delegován od zaměstnance ID {d.get('from')}",
+                            entity_type="task",
+                            entity_id=int(tid),
+                        )
             
             db.commit()
             print(f"✓ Task {tid} updated successfully")
@@ -1607,8 +1972,12 @@ def api_tasks():
     try:
         tid = request.args.get("id", type=int)
         if not tid: return jsonify({"ok": False, "error":"missing_id"}), 400
+        # audit snapshot
+        before = db.execute("SELECT id, job_id, employee_id, title, description, status, due_date FROM tasks WHERE id=?", (tid,)).fetchone()
+        before = dict(before) if before else None
         db.execute("DELETE FROM tasks WHERE id=?", (tid,))
         db.commit()
+        audit_event(u.get("id"), "delete", "task", tid, before=before)
         print(f"✓ Task {tid} deleted successfully")
         return jsonify({"ok": True})
     except Exception as e:
@@ -1721,9 +2090,29 @@ def api_issues():
             primary_id = data.get("primary_employee")
             
             if assigned_ids:
-                assign_employees_to_issue(db, new_id, assigned_ids, primary_id)
+                expanded_ids, delegations = _expand_assignees_with_delegate(db, assigned_ids)
+                assign_employees_to_issue(db, new_id, expanded_ids, primary_id)
                 db.commit()
+
+                _notify_assignees(
+                    "issue",
+                    new_id,
+                    expanded_ids,
+                    title="Nový problém přiřazen",
+                    body=f"Problém: {title}",
+                    actor_user_id=u.get("id"),
+                )
+                for d in delegations:
+                    create_notification(
+                        employee_id=d.get("to"),
+                        kind="delegation",
+                        title="Problém delegován",
+                        body=f"Problém '{title}' byl delegován od zaměstnance ID {d.get('from')}",
+                        entity_type="issue",
+                        entity_id=new_id,
+                    )
             
+            audit_event(u.get("id"), "create", "issue", new_id, after={"title": title, "job_id": int(job_id), "status": data.get("status") or "open", "type": data.get("type") or "blocker"})
             print(f"✓ Issue '{title}' created (ID: {new_id})")
             return jsonify({"ok": True, "id": new_id})
         except Exception as e:
@@ -1772,7 +2161,26 @@ def api_issues():
                 assigned_ids = data.get("assigned_employees", [])
                 primary_id = data.get("primary_employee")
                 if assigned_ids:
-                    assign_employees_to_issue(db, issue_id, assigned_ids, primary_id)
+                    expanded_ids, delegations = _expand_assignees_with_delegate(db, assigned_ids)
+                    assign_employees_to_issue(db, issue_id, expanded_ids, primary_id)
+
+                    _notify_assignees(
+                        "issue",
+                        int(issue_id),
+                        expanded_ids,
+                        title="Problém aktualizován",
+                        body=f"Problém byl upraven: {data.get('title') or ''}".strip() or "Problém byl upraven",
+                        actor_user_id=u.get("id"),
+                    )
+                    for d in delegations:
+                        create_notification(
+                            employee_id=d.get("to"),
+                            kind="delegation",
+                            title="Problém delegován",
+                            body=f"Problém ID {issue_id} byl delegován od zaměstnance ID {d.get('from')}",
+                            entity_type="issue",
+                            entity_id=int(issue_id),
+                        )
             
             db.commit()
             print(f"✓ Issue {issue_id} updated")
@@ -1788,8 +2196,12 @@ def api_issues():
             if not issue_id:
                 return jsonify({"ok": False, "error": "missing_id"}), 400
             
+            # audit snapshot
+            before = db.execute("SELECT id, job_id, title, description, type, status, severity, assigned_to FROM issues WHERE id=?", (issue_id,)).fetchone()
+            before = dict(before) if before else None
             db.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
             db.commit()
+            audit_event(u.get("id"), "delete", "issue", issue_id, before=before)
             print(f"✓ Issue {issue_id} deleted")
             return jsonify({"ok": True})
         except Exception as e:
@@ -2021,27 +2433,6 @@ def api_admin_export_all():
 
 
 
-@app.route("/api/search", methods=["GET"])
-def api_search():
-    q = (request.args.get("q") or "").strip()
-    if not q:
-        return jsonify([])
-    like = f"%{q}%"
-    db = get_db()
-    out = []
-    try:
-        # Use title column if available, fallback to name
-        title_col = _job_title_col()
-        cur = db.execute(f"SELECT id, {title_col} AS title, city, code, date FROM jobs WHERE ({title_col} LIKE ? COLLATE NOCASE OR city LIKE ? COLLATE NOCASE OR code LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like, like))
-        for r in cur.fetchall():
-            out.append({"type":"Zakázka","id":r["id"],"title":r["title"] or "", "sub":" • ".join([x for x in [r["city"], r["code"]] if x]),"date":r["date"],"url": f"/?tab=jobs&jobId={r['id']}"})
-    except Exception: pass
-    try:
-        cur = db.execute("SELECT id, name, role FROM employees WHERE (name LIKE ? COLLATE NOCASE OR role LIKE ? COLLATE NOCASE) ORDER BY id DESC LIMIT 50", (like, like))
-        for r in cur.fetchall():
-            out.append({"type":"Zaměstnanec","id":r["id"],"title":r["name"],"sub":r["role"] or "","date":"","url": "/?tab=employees"})
-    except Exception: pass
-    return jsonify(out)
 
 @app.route("/search", methods=["GET"])
 def search_page():
@@ -2472,27 +2863,849 @@ def gd_api_calendar_delete(event_id):
     return api_calendar_delete(event_id)
 
 
-# ----------------- run -----------------
+# Přidej tyto endpointy do main.py
+
+# ----------------- GLOBAL SEARCH -----------------
+@app.route("/api/search", methods=["GET"])
+def api_global_search():
+    """Globální vyhledávání napříč zakázkami, úkoly, issues a zaměstnanci"""
+    u, err = require_role()
+    if err: return err
+    
+    query = request.args.get("q", "").strip()
+    if not query or len(query) < 2:
+        return jsonify({"ok": True, "results": {"jobs": [], "tasks": [], "issues": [], "employees": []}})
+    
+    db = get_db()
+    search_term = f"%{query}%"
+    
+    # Choose best available timestamp for ordering jobs (schema differs across versions)
+    if _table_has_column(db, "jobs", "created_at"):
+        jobs_order = "datetime(created_at) DESC, id DESC"
+    elif _table_has_column(db, "jobs", "created_date"):
+        jobs_order = "datetime(created_date) DESC, id DESC"
+    elif _table_has_column(db, "jobs", "date"):
+        jobs_order = "date(date) DESC, id DESC"
+    else:
+        jobs_order = "id DESC"
+
+    # Search Jobs
+    # NOTE: Schéma "jobs" se v různých verzích liší. V této aplikaci má tabulka jobs
+    # typicky sloupce: name/title, client, city, note, code, created_at. Původní varianta
+    # používala description/customer/address, které v DB nejsou.
+    jobs = db.execute(f"""
+        SELECT
+            id,
+            COALESCE(title, name, '') AS name,
+            note AS description,
+            client AS customer,
+            city AS address,
+            status
+        FROM jobs
+        WHERE COALESCE(title, name, '') LIKE ?
+           OR client LIKE ?
+           OR city LIKE ?
+           OR note LIKE ?
+           OR code LIKE ?
+        ORDER BY {jobs_order}
+        LIMIT 10
+    """, (search_term, search_term, search_term, search_term, search_term)).fetchall()
+    
+    # Search Tasks (including assigned employees)
+    tasks = db.execute("""
+        SELECT DISTINCT t.id, t.job_id, t.title, t.description, t.status, t.due_date,
+               COALESCE(j.title, j.name, '') as job_name
+        FROM tasks t
+        LEFT JOIN jobs j ON j.id = t.job_id
+        LEFT JOIN task_assignments ta ON ta.task_id = t.id
+        LEFT JOIN employees e ON e.id = ta.employee_id
+        WHERE t.title LIKE ? 
+           OR t.description LIKE ?
+           OR e.name LIKE ?
+        ORDER BY t.created_at DESC
+        LIMIT 10
+    """, (search_term, search_term, search_term)).fetchall()
+    
+    # Search Issues (including assigned employees)
+    issues = db.execute("""
+        SELECT DISTINCT i.id, i.job_id, i.title, i.description, i.type, i.status, i.severity,
+               COALESCE(j.title, j.name, '') as job_name
+        FROM issues i
+        LEFT JOIN jobs j ON j.id = i.job_id
+        LEFT JOIN issue_assignments ia ON ia.issue_id = i.id
+        LEFT JOIN employees e ON e.id = ia.employee_id
+        WHERE i.title LIKE ? 
+           OR i.description LIKE ?
+           OR e.name LIKE ?
+        ORDER BY i.created_at DESC
+        LIMIT 10
+    """, (search_term, search_term, search_term)).fetchall()
+    
+    # Search Employees
+    employees = db.execute("""
+        SELECT id, name, email, phone, role
+        FROM employees
+        WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?
+        ORDER BY name
+        LIMIT 10
+    """, (search_term, search_term, search_term)).fetchall()
+    
+    return jsonify({
+        "ok": True,
+        "query": query,
+        "results": {
+            "jobs": [dict(r) for r in jobs],
+            "tasks": [dict(r) for r in tasks],
+            "issues": [dict(r) for r in issues],
+            "employees": [dict(r) for r in employees]
+        },
+        "total": len(jobs) + len(tasks) + len(issues) + len(employees)
+    })
 
 
-@app.route("/api/_routes", methods=["GET"])
-def api_routes():
-    """Debug helper: returns registered routes so you can verify endpoints exist."""
+# ----------------- SMART FILTERS -----------------
+@app.route("/api/filters/tasks", methods=["GET"])
+def api_task_filters():
+    """Chytré filtry pro úkoly"""
+    u, err = require_role()
+    if err: return err
+    
+    filter_type = request.args.get("filter", "all")
+    db = get_db()
+    
+    # Base query
+    base_query = """
+        SELECT t.*, j.name as job_name
+        FROM tasks t
+        LEFT JOIN jobs j ON j.id = t.job_id
+    """
+    
+    # Apply filters
+    if filter_type == "my_today":
+        # Moje úkoly s deadlinem dnes
+        rows = db.execute(base_query + """
+            INNER JOIN task_assignments ta ON ta.task_id = t.id
+            WHERE ta.employee_id = ?
+            AND DATE(t.deadline) = DATE('now')
+            AND t.status != 'completed'
+            ORDER BY t.priority DESC, t.deadline ASC
+        """, (u["id"],)).fetchall()
+    
+    elif filter_type == "my_overdue":
+        # Moje přetažené úkoly
+        rows = db.execute(base_query + """
+            INNER JOIN task_assignments ta ON ta.task_id = t.id
+            WHERE ta.employee_id = ?
+            AND DATE(t.deadline) < DATE('now')
+            AND t.status != 'completed'
+            ORDER BY t.deadline ASC
+        """, (u["id"],)).fetchall()
+    
+    elif filter_type == "my_week":
+        # Moje úkoly tento týden
+        rows = db.execute(base_query + """
+            INNER JOIN task_assignments ta ON ta.task_id = t.id
+            WHERE ta.employee_id = ?
+            AND DATE(t.deadline) BETWEEN DATE('now') AND DATE('now', '+7 days')
+            AND t.status != 'completed'
+            ORDER BY t.deadline ASC
+        """, (u["id"],)).fetchall()
+    
+    elif filter_type == "high_priority":
+        # Vysoká priorita
+        rows = db.execute(base_query + """
+            WHERE t.priority = 'high'
+            AND t.status != 'completed'
+            ORDER BY t.deadline ASC
+        """).fetchall()
+    
+    elif filter_type == "unassigned":
+        # Nepřiřazené úkoly
+        rows = db.execute(base_query + """
+            LEFT JOIN task_assignments ta ON ta.task_id = t.id
+            WHERE ta.id IS NULL
+            AND t.status != 'completed'
+            ORDER BY t.created_at DESC
+        """).fetchall()
+    
+    else:
+        # All tasks
+        rows = db.execute(base_query + """
+            WHERE t.status != 'completed'
+            ORDER BY t.created_at DESC
+            LIMIT 50
+        """).fetchall()
+    
+    tasks = []
+    for task in rows:
+        task_dict = dict(task)
+        task_dict["assignees"] = get_task_assignees(db, task["id"])
+        tasks.append(task_dict)
+    
+    return jsonify({"ok": True, "tasks": tasks, "filter": filter_type})
+
+
+@app.route("/api/filters/issues", methods=["GET"])
+def api_issue_filters():
+    """Chytré filtry pro issues"""
+    u, err = require_role()
+    if err: return err
+    
+    filter_type = request.args.get("filter", "all")
+    db = get_db()
+    
+    base_query = """
+        SELECT i.*, j.name as job_name
+        FROM issues i
+        LEFT JOIN jobs j ON j.id = i.job_id
+    """
+    
+    if filter_type == "blockers":
+        # Blokující issues
+        rows = db.execute(base_query + """
+            WHERE i.type = 'blocker'
+            AND i.status = 'open'
+            ORDER BY i.created_at DESC
+        """).fetchall()
+    
+    elif filter_type == "my_issues":
+        # Moje issues
+        rows = db.execute(base_query + """
+            INNER JOIN issue_assignments ia ON ia.issue_id = i.id
+            WHERE ia.employee_id = ?
+            AND i.status = 'open'
+            ORDER BY i.created_at DESC
+        """, (u["id"],)).fetchall()
+    
+    elif filter_type == "critical":
+        # Kritické severity
+        rows = db.execute(base_query + """
+            WHERE i.severity = 'critical'
+            AND i.status = 'open'
+            ORDER BY i.created_at DESC
+        """).fetchall()
+    
+    elif filter_type == "recent":
+        # Nedávno vytvořené (48h)
+        rows = db.execute(base_query + """
+            WHERE datetime(i.created_at) >= datetime('now', '-2 days')
+            ORDER BY i.created_at DESC
+        """).fetchall()
+    
+    else:
+        # All open issues
+        rows = db.execute(base_query + """
+            WHERE i.status = 'open'
+            ORDER BY i.created_at DESC
+            LIMIT 50
+        """).fetchall()
+    
+    issues = []
+    for issue in rows:
+        issue_dict = dict(issue)
+        issue_dict["assignees"] = get_issue_assignees(db, issue["id"])
+        issues.append(issue_dict)
+    
+    return jsonify({"ok": True, "issues": issues, "filter": filter_type})
+
+
+# ----------------- BULK OPERATIONS -----------------
+@app.route("/api/bulk/tasks", methods=["POST"])
+def api_bulk_tasks():
+    """Hromadné operace na úkolech"""
+    u, err = require_role(write=True)
+    if err: return err
+    
+    data = request.get_json(force=True, silent=True) or {}
+    task_ids = data.get("task_ids", [])
+    action = data.get("action", "")
+    
+    if not task_ids or not action:
+        return jsonify({"ok": False, "error": "missing_params"}), 400
+    
+    db = get_db()
+    affected = 0
+    
     try:
-        routes = []
-        for rule in app.url_map.iter_rules():
-            if rule.endpoint == 'static':
-                continue
-            routes.append({
-                "rule": str(rule),
-                "methods": sorted([m for m in rule.methods if m not in ("HEAD","OPTIONS")]),
-                "endpoint": rule.endpoint,
-            })
-        return jsonify({"ok": True, "routes": sorted(routes, key=lambda r: r["rule"])})
+        if action == "complete":
+            # Označit jako dokončené
+            placeholders = ','.join('?' * len(task_ids))
+            db.execute(f"""
+                UPDATE tasks 
+                SET status = 'completed', completed_at = datetime('now')
+                WHERE id IN ({placeholders})
+            """, task_ids)
+            affected = db.total_changes
+        
+        elif action == "delete":
+            # Smazat úkoly
+            placeholders = ','.join('?' * len(task_ids))
+            db.execute(f"DELETE FROM tasks WHERE id IN ({placeholders})", task_ids)
+            affected = db.total_changes
+        
+        elif action == "assign":
+            # Přiřadit zaměstnance
+            employee_ids = data.get("employee_ids", [])
+            if not employee_ids:
+                return jsonify({"ok": False, "error": "missing_employees"}), 400
+            
+            for task_id in task_ids:
+                # Remove old assignments
+                db.execute("DELETE FROM task_assignments WHERE task_id = ?", (task_id,))
+                # Add new assignments
+                for idx, emp_id in enumerate(employee_ids):
+                    db.execute("""
+                        INSERT INTO task_assignments (task_id, employee_id, is_primary)
+                        VALUES (?, ?, ?)
+                    """, (task_id, emp_id, 1 if idx == 0 else 0))
+            affected = len(task_ids)
+        
+        elif action == "change_status":
+            # Změnit stav
+            new_status = data.get("status", "")
+            if new_status not in ["pending", "in_progress", "completed", "blocked"]:
+                return jsonify({"ok": False, "error": "invalid_status"}), 400
+            
+            placeholders = ','.join('?' * len(task_ids))
+            db.execute(f"""
+                UPDATE tasks 
+                SET status = ?
+                WHERE id IN ({placeholders})
+            """, [new_status] + task_ids)
+            affected = db.total_changes
+        
+        elif action == "change_priority":
+            # Změnit prioritu
+            new_priority = data.get("priority", "")
+            if new_priority not in ["low", "medium", "high"]:
+                return jsonify({"ok": False, "error": "invalid_priority"}), 400
+            
+            placeholders = ','.join('?' * len(task_ids))
+            db.execute(f"""
+                UPDATE tasks 
+                SET priority = ?
+                WHERE id IN ({placeholders})
+            """, [new_priority] + task_ids)
+            affected = db.total_changes
+        
+        else:
+            return jsonify({"ok": False, "error": "unknown_action"}), 400
+        
+        db.commit()
+        return jsonify({"ok": True, "affected": affected})
+    
     except Exception as e:
+        db.rollback()
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/bulk/issues", methods=["POST"])
+def api_bulk_issues():
+    """Hromadné operace na issues"""
+    u, err = require_role(write=True)
+    if err: return err
+    
+    data = request.get_json(force=True, silent=True) or {}
+    issue_ids = data.get("issue_ids", [])
+    action = data.get("action", "")
+    
+    if not issue_ids or not action:
+        return jsonify({"ok": False, "error": "missing_params"}), 400
+    
+    db = get_db()
+    affected = 0
+    
+    try:
+        if action == "resolve":
+            # Vyřešit issues
+            placeholders = ','.join('?' * len(issue_ids))
+            db.execute(f"""
+                UPDATE issues 
+                SET status = 'resolved', resolved_at = datetime('now')
+                WHERE id IN ({placeholders})
+            """, issue_ids)
+            affected = db.total_changes
+        
+        elif action == "delete":
+            # Smazat issues
+            placeholders = ','.join('?' * len(issue_ids))
+            db.execute(f"DELETE FROM issues WHERE id IN ({placeholders})", issue_ids)
+            affected = db.total_changes
+        
+        elif action == "assign":
+            # Přiřadit zaměstnance
+            employee_ids = data.get("employee_ids", [])
+            if not employee_ids:
+                return jsonify({"ok": False, "error": "missing_employees"}), 400
+            
+            for issue_id in issue_ids:
+                db.execute("DELETE FROM issue_assignments WHERE issue_id = ?", (issue_id,))
+                for idx, emp_id in enumerate(employee_ids):
+                    db.execute("""
+                        INSERT INTO issue_assignments (issue_id, employee_id, is_primary)
+                        VALUES (?, ?, ?)
+                    """, (issue_id, emp_id, 1 if idx == 0 else 0))
+            affected = len(issue_ids)
+        
+        elif action == "change_severity":
+            # Změnit závažnost
+            new_severity = data.get("severity", "")
+            if new_severity not in ["low", "medium", "high", "critical"]:
+                return jsonify({"ok": False, "error": "invalid_severity"}), 400
+            
+            placeholders = ','.join('?' * len(issue_ids))
+            db.execute(f"""
+                UPDATE issues 
+                SET severity = ?
+                WHERE id IN ({placeholders})
+            """, [new_severity] + issue_ids)
+            affected = db.total_changes
+        
+        else:
+            return jsonify({"ok": False, "error": "unknown_action"}), 400
+        
+        db.commit()
+        return jsonify({"ok": True, "affected": affected})
+    
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ============================================================================
+# JOBS EXTENDED API - Rozšířené zakázky
+# ============================================================================
+
+def dict_from_db_row(row):
+    """Převede sqlite3.Row na dict"""
+    if row is None:
+        return None
+    try:
+        return dict(row)
+    except:
+        # Fallback pro starší verze
+        return {key: row[key] for key in row.keys()}
+
+@app.route('/api/jobs/<int:job_id>/complete', methods=['GET'])
+def get_job_complete(job_id):
+    """Získá kompletní informace o zakázce"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
+        job = dict_from_db_row(cursor.fetchone())
+        
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+        
+        cursor.execute("SELECT * FROM job_clients WHERE job_id = ?", (job_id,))
+        client = dict_from_db_row(cursor.fetchone())
+        
+        cursor.execute("SELECT * FROM job_locations WHERE job_id = ?", (job_id,))
+        location = dict_from_db_row(cursor.fetchone())
+        
+        cursor.execute("SELECT * FROM job_milestones WHERE job_id = ? ORDER BY order_num, planned_date", (job_id,))
+        milestones = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_materials WHERE job_id = ?", (job_id,))
+        materials = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_equipment WHERE job_id = ? ORDER BY date_from", (job_id,))
+        equipment = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("""
+            SELECT jta.*, e.name as employee_name, e.position as employee_position
+            FROM job_team_assignments jta
+            LEFT JOIN employees e ON jta.employee_id = e.id
+            WHERE jta.job_id = ? AND jta.is_active = 1
+        """, (job_id,))
+        team = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_subcontractors WHERE job_id = ?", (job_id,))
+        subcontractors = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_risks WHERE job_id = ? AND status != 'closed'", (job_id,))
+        risks = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_payments WHERE job_id = ? ORDER BY planned_date", (job_id,))
+        payments = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT * FROM job_photos WHERE job_id = ? LIMIT 50", (job_id,))
+        photos = [dict_from_db_row(row) for row in cursor.fetchall()]
+        
+        result = {
+            "job": job,
+            "client": client,
+            "location": location,
+            "milestones": milestones,
+            "materials": materials,
+            "equipment": equipment,
+            "team": team,
+            "subcontractors": subcontractors,
+            "risks": risks,
+            "payments": payments,
+            "photos": photos,
+            "summary": {
+                "milestones_count": len(milestones),
+                "materials_count": len(materials),
+                "team_size": len(team),
+                "photos_count": len(photos)
+            }
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>', methods=['PUT'])
+def update_job(job_id):
+    """Aktualizace základních údajů zakázky (pouze owner/manager/leader)"""
+    db = get_db()
+    
+    try:
+        # Kontrola oprávnění
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        cursor = db.cursor()
+        cursor.execute("SELECT role FROM employees WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user or user[0] not in ['owner', 'manager', 'leader']:
+            return jsonify({"error": "Forbidden - requires owner/manager/leader role"}), 403
+        
+        data = request.get_json()
+        
+        # Sestavit UPDATE query dynamicky podle toho co je v data
+        allowed_fields = ['title', 'client', 'city', 'address', 'date', 'deadline', 
+                         'start_date', 'description', 'status', 'estimated_value', 
+                         'actual_value', 'priority', 'type']
+        
+        updates = []
+        values = []
+        
+        for field in allowed_fields:
+            if field in data:
+                updates.append(f"{field} = ?")
+                values.append(data[field])
+        
+        if not updates:
+            return jsonify({"error": "No fields to update"}), 400
+        
+        values.append(job_id)
+        query = f"UPDATE jobs SET {', '.join(updates)} WHERE id = ?"
+        
+        db.execute(query, values)
+        db.commit()
+        
+        return jsonify({"success": True}), 200
+        
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/client', methods=['GET', 'POST', 'PUT'])
+def manage_job_client(job_id):
+    """Správa klienta"""
+    db = get_db()
+    
+    try:
+        if request.method == 'GET':
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM job_clients WHERE job_id = ?", (job_id,))
+            client = dict_from_db_row(cursor.fetchone())
+            return jsonify(client if client else {}), 200
+            
+        elif request.method in ['POST', 'PUT']:
+            data = request.get_json()
+            
+            if not data.get('name'):
+                return jsonify({"error": "Name is required"}), 400
+            
+            cursor = db.cursor()
+            cursor.execute("SELECT id FROM job_clients WHERE job_id = ?", (job_id,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                db.execute("""
+                    UPDATE job_clients SET
+                        name = ?, company = ?, ico = ?, dic = ?,
+                        email = ?, phone = ?, phone_secondary = ?,
+                        billing_street = ?, billing_city = ?, billing_zip = ?
+                    WHERE job_id = ?
+                """, (
+                    data.get('name'), data.get('company'), data.get('ico'), data.get('dic'),
+                    data.get('email'), data.get('phone'), data.get('phone_secondary'),
+                    data.get('billing_street'), data.get('billing_city'), data.get('billing_zip'),
+                    job_id
+                ))
+            else:
+                db.execute("""
+                    INSERT INTO job_clients (
+                        job_id, name, company, ico, dic, email, phone, 
+                        phone_secondary, billing_street, billing_city, billing_zip
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    job_id, data.get('name'), data.get('company'), data.get('ico'), data.get('dic'),
+                    data.get('email'), data.get('phone'), data.get('phone_secondary'),
+                    data.get('billing_street'), data.get('billing_city'), data.get('billing_zip')
+                ))
+            
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/location', methods=['GET', 'POST', 'PUT'])
+def manage_job_location(job_id):
+    """Správa lokace"""
+    db = get_db()
+    
+    try:
+        if request.method == 'GET':
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM job_locations WHERE job_id = ?", (job_id,))
+            location = dict_from_db_row(cursor.fetchone())
+            return jsonify(location if location else {}), 200
+            
+        elif request.method in ['POST', 'PUT']:
+            data = request.get_json()
+            
+            cursor = db.cursor()
+            cursor.execute("SELECT id FROM job_locations WHERE job_id = ?", (job_id,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                db.execute("""
+                    UPDATE job_locations SET
+                        street = ?, city = ?, zip = ?, lat = ?, lng = ?,
+                        parking = ?, access_notes = ?, gate_code = ?
+                    WHERE job_id = ?
+                """, (
+                    data.get('street'), data.get('city'), data.get('zip'),
+                    data.get('lat'), data.get('lng'), data.get('parking'),
+                    data.get('access_notes'), data.get('gate_code'), job_id
+                ))
+            else:
+                db.execute("""
+                    INSERT INTO job_locations (
+                        job_id, street, city, zip, lat, lng,
+                        parking, access_notes, gate_code
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    job_id, data.get('street'), data.get('city'), data.get('zip'),
+                    data.get('lat'), data.get('lng'), data.get('parking'),
+                    data.get('access_notes'), data.get('gate_code')
+                ))
+            
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/milestones', methods=['GET', 'POST'])
+def manage_milestones(job_id):
+    """Seznam a vytvoření milníků"""
+    db = get_db()
+    
+    try:
+        if request.method == 'GET':
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM job_milestones WHERE job_id = ? ORDER BY order_num", (job_id,))
+            milestones = [dict_from_db_row(row) for row in cursor.fetchall()]
+            return jsonify(milestones), 200
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            
+            if not data.get('name'):
+                return jsonify({"error": "Name is required"}), 400
+            
+            cursor = db.cursor()
+            cursor.execute("SELECT COALESCE(MAX(order_num), 0) + 1 FROM job_milestones WHERE job_id = ?", (job_id,))
+            next_order = cursor.fetchone()[0]
+            
+            db.execute("""
+                INSERT INTO job_milestones (
+                    job_id, name, description, planned_date, status, order_num
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                job_id, data.get('name'), data.get('description'),
+                data.get('planned_date'), data.get('status', 'pending'), next_order
+            ))
+            
+            db.commit()
+            return jsonify({"success": True, "id": db.cursor().lastrowid}), 201
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/milestones/<int:milestone_id>', methods=['PUT', 'DELETE'])
+def manage_milestone(job_id, milestone_id):
+    """Update nebo delete milníku"""
+    db = get_db()
+    
+    try:
+        if request.method == 'PUT':
+            data = request.get_json()
+            
+            db.execute("""
+                UPDATE job_milestones SET
+                    name = ?, description = ?, planned_date = ?,
+                    actual_date = ?, status = ?, completion_percent = ?
+                WHERE id = ? AND job_id = ?
+            """, (
+                data.get('name'), data.get('description'), data.get('planned_date'),
+                data.get('actual_date'), data.get('status'), data.get('completion_percent', 0),
+                milestone_id, job_id
+            ))
+            
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+        elif request.method == 'DELETE':
+            db.execute("DELETE FROM job_milestones WHERE id = ? AND job_id = ?", (milestone_id, job_id))
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/materials', methods=['GET', 'POST'])
+def manage_materials(job_id):
+    """Seznam a vytvoření materiálu"""
+    db = get_db()
+    
+    try:
+        if request.method == 'GET':
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM job_materials WHERE job_id = ?", (job_id,))
+            materials = [dict_from_db_row(row) for row in cursor.fetchall()]
+            
+            total_cost = sum(m.get('total_price', 0) or 0 for m in materials)
+            
+            return jsonify({
+                "materials": materials,
+                "summary": {"total": len(materials), "total_cost": total_cost}
+            }), 200
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            
+            if not data.get('name'):
+                return jsonify({"error": "Name is required"}), 400
+            
+            quantity = float(data.get('quantity', 0))
+            price_per_unit = float(data.get('price_per_unit', 0))
+            total_price = quantity * price_per_unit
+            
+            db.execute("""
+                INSERT INTO job_materials (
+                    job_id, name, quantity, unit, price_per_unit, 
+                    total_price, supplier, ordered, delivery_status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                job_id, data.get('name'), quantity, data.get('unit', 'ks'),
+                price_per_unit, total_price, data.get('supplier'),
+                data.get('ordered', False), data.get('delivery_status', 'pending')
+            ))
+            
+            db.commit()
+            return jsonify({"success": True, "id": db.cursor().lastrowid}), 201
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/materials/<int:material_id>', methods=['PUT', 'DELETE'])
+def manage_material(job_id, material_id):
+    """Update nebo delete materiálu"""
+    db = get_db()
+    
+    try:
+        if request.method == 'PUT':
+            data = request.get_json()
+            
+            quantity = float(data.get('quantity', 0))
+            price_per_unit = float(data.get('price_per_unit', 0))
+            total_price = quantity * price_per_unit
+            
+            db.execute("""
+                UPDATE job_materials SET
+                    name = ?, quantity = ?, unit = ?,
+                    price_per_unit = ?, total_price = ?,
+                    supplier = ?, ordered = ?, delivery_status = ?
+                WHERE id = ? AND job_id = ?
+            """, (
+                data.get('name'), quantity, data.get('unit'),
+                price_per_unit, total_price, data.get('supplier'),
+                data.get('ordered'), data.get('delivery_status'),
+                material_id, job_id
+            ))
+            
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+        elif request.method == 'DELETE':
+            db.execute("DELETE FROM job_materials WHERE id = ? AND job_id = ?", (material_id, job_id))
+            db.commit()
+            return jsonify({"success": True}), 200
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/jobs/<int:job_id>/team', methods=['GET', 'POST'])
+def manage_team(job_id):
+    """Seznam a přiřazení týmu"""
+    db = get_db()
+    
+    try:
+        if request.method == 'GET':
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT jta.*, e.name as employee_name, e.position as employee_position
+                FROM job_team_assignments jta
+                LEFT JOIN employees e ON jta.employee_id = e.id
+                WHERE jta.job_id = ? AND jta.is_active = 1
+            """, (job_id,))
+            team = [dict_from_db_row(row) for row in cursor.fetchall()]
+            return jsonify({"team": team, "summary": {"size": len(team)}}), 200
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            
+            if not data.get('employee_id'):
+                return jsonify({"error": "Employee ID is required"}), 400
+            
+            db.execute("""
+                INSERT INTO job_team_assignments (
+                    job_id, employee_id, role, hours_planned, hours_actual
+                ) VALUES (?, ?, ?, ?, ?)
+            """, (
+                job_id, data.get('employee_id'), data.get('role', 'worker'),
+                data.get('hours_planned', 0), data.get('hours_actual', 0)
+            ))
+            
+            db.commit()
+            return jsonify({"success": True}), 201
+            
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+print("✅ Jobs Extended API loaded")
+
+# ----------------- Main Entry Point -----------------
 if __name__ == "__main__":
     # Pro lokální vývoj použij 127.0.0.1, pro Render použij 0.0.0.0
     is_render = os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -2502,5 +3715,3 @@ if __name__ == "__main__":
     
     print(f"[Server] Starting Flask app on {host}:{port} (debug={debug})")
     app.run(host=host, port=port, debug=debug)
-
-

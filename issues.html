@@ -3,30 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Issues - Green David</title>
+    <title data-i18n="issues.title">Issues - Green David</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/icons.css">
+    <script src="/app-settings.js"></script>
 </head>
 <body>
     <div id="app-header"></div>
     
     <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h1 style="margin: 0; font-size: 28px;">Issues</h1>
+            <h1 data-i18n="issues.title">Issues</h1>
             <div style="display: flex; gap: 12px;">
                 <select id="filter-status" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a1a; color: #fff;">
-                    <option value="">Vše</option>
-                    <option value="open" selected>Otevřené</option>
-                    <option value="in_progress">Řeší se</option>
-                    <option value="resolved">Vyřešené</option>
+                    <option value="" data-i18n="issues.filter.all">Vše</option>
+                    <option value="open" selected data-i18n="issues.status.open">Otevřené</option>
+                    <option value="in_progress" data-i18n="issues.status.in_progress">Řeší se</option>
+                    <option value="resolved" data-i18n="issues.status.resolved">Vyřešené</option>
                 </select>
                 
                 <select id="filter-type" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a1a; color: #fff;">
-                    <option value="">Všechny typy</option>
-                    <option value="blocker">Blokuje</option>
-                    <option value="todo">To-Do</option>
-                    <option value="note">Poznámka</option>
+                    <option value="" data-i18n="issues.filter.all_types">Všechny typy</option>
+                    <option value="blocker" data-i18n="issues.type.blocker">Blokuje</option>
+                    <option value="todo" data-i18n="issues.type.todo">To-Do</option>
+                    <option value="note" data-i18n="issues.type.note">Poznámka</option>
                 </select>
             </div>
         </div>
@@ -34,15 +35,15 @@
         <!-- Stats -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
             <div style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); padding: 20px; border-radius: 12px;">
-                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Blokující</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.blockers">Blokující</div>
                 <div style="font-size: 32px; font-weight: 700;" id="stat-blockers">0</div>
             </div>
             <div style="background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%); padding: 20px; border-radius: 12px;">
-                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Řeší se</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.in_progress">Řeší se</div>
                 <div style="font-size: 32px; font-weight: 700;" id="stat-progress">0</div>
             </div>
             <div style="background: linear-gradient(135deg, #00cc66 0%, #009944 100%); padding: 20px; border-radius: 12px;">
-                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Vyřešené dnes</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.resolved_today">Vyřešené dnes</div>
                 <div style="font-size: 32px; font-weight: 700;" id="stat-resolved">0</div>
             </div>
         </div>
@@ -50,10 +51,10 @@
         <!-- My Issues -->
         <div style="margin-bottom: 32px;">
             <h2 style="font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <span style="color: #B2FBA5;">●</span> Přiřazené mně
+                <span style="color: #B2FBA5;">●</span> <span data-i18n="issues.assigned_to_me">Přiřazené mně</span>
             </h2>
             <div id="my-issues-list" style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 40px; text-align: center; opacity: 0.5;">
+                <div style="padding: 40px; text-align: center; opacity: 0.5;" data-i18n="msg.loading">
                     Načítám...
                 </div>
             </div>
@@ -61,9 +62,9 @@
 
         <!-- All Issues -->
         <div>
-            <h2 style="font-size: 20px; margin-bottom: 16px;">Všechny issues</h2>
+            <h2 style="font-size: 20px; margin-bottom: 16px;" data-i18n="issues.all">Všechny issues</h2>
             <div id="all-issues-list" style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 40px; text-align: center; opacity: 0.5;">
+                <div style="padding: 40px; text-align: center; opacity: 0.5;" data-i18n="msg.loading">
                     Načítám...
                 </div>
             </div>

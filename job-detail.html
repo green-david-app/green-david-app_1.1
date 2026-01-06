@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail zakázky - Green David</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script src="/app-settings.js"></script>
+    <style>
+        .job-detail-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .job-header {
+            background: linear-gradient(135deg, #1a2332 0%, #2d3748 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .job-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+        }
+        
+        .job-meta {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .meta-item svg {
+            width: 20px;
+            height: 20px;
+            stroke: #9fd4a1;
+        }
+        
+        .job-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2d3748;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: #9fd4a1;
+            border-bottom-color: #9fd4a1;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: #1a2332;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2d3748;
+        }
+        
+        .info-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #9fd4a1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d3748;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #a0aec0;
+        }
+        
+        .info-value {
+            color: white;
+            font-weight: 500;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            margin: 0;
+            color: white;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #2d3748;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background: #1a2332;
+            border-radius: 8px;
+            border-left: 3px solid #9fd4a1;
+        }
+        
+        .timeline-item.completed {
+            border-left-color: #48bb78;
+        }
+        
+        .timeline-item.pending {
+            border-left-color: #ecc94b;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 20px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #9fd4a1;
+            border: 3px solid #0d1117;
+        }
+        
+        .timeline-date {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        .timeline-title {
+            color: white;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+        
+        .table-container {
+            background: #1a2332;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th {
+            background: #2d3748;
+            color: #9fd4a1;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .table td {
+            padding: 12px;
+            color: white;
+            border-bottom: 1px solid #2d3748;
+        }
+        
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #ecc94b;
+            color: #1a2332;
+        }
+        
+        .badge-info {
+            background: #4299e1;
+            color: white;
+        }
+        
+        .badge-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0aec0;
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            stroke: #4a5568;
+            margin-bottom: 20px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon-edit {
+            background: #4299e1;
+        }
+        
+        .btn-icon-delete {
+            background: #f56565;
+        }
+        
+        .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #2d3748;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9fd4a1, #48bb78);
+            transition: width 0.3s;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a2332;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: white;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            color: #a0aec0;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #9fd4a1;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="job-detail-container">
+            <a href="/jobs.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Zpět na zakázky
+            </a>
+            
+            <!-- Job Header -->
+            <div class="job-header">
+                <h1 id="job-title">Načítám...</h1>
+                <div class="job-meta">
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span id="job-client">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span id="job-location">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="job-date">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span id="job-status-badge" class="badge">—</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="job-tabs">
+                <button class="tab-btn active" data-tab="overview">Přehled</button>
+                <button class="tab-btn" data-tab="client">Klient</button>
+                <button class="tab-btn" data-tab="location">Lokace</button>
+                <button class="tab-btn" data-tab="milestones">Milníky</button>
+                <button class="tab-btn" data-tab="materials">Materiál</button>
+                <button class="tab-btn" data-tab="team">Tým</button>
+                <button class="tab-btn" data-tab="photos">Fotky</button>
+            </div>
+            
+            <!-- Tab: Overview -->
+            <div class="tab-content active" id="tab-overview">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Finance
+                        </h3>
+                        <div class="info-row">
+                            <span class="info-label">Odhadovaná hodnota:</span>
+                            <span class="info-value" id="overview-estimated">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Skutečné náklady:</span>
+                            <span class="info-value" id="overview-actual">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Zbývá rozpočet:</span>
+                            <span class="info-value" id="overview-remaining">—</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Časová osa
+                        </h3>
+                        <div class="info-row">
+                            <span class="info-label">Začátek:</span>
+                            <span class="info-value" id="overview-start">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Deadline:</span>
+                            <span class="info-value" id="overview-deadline">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Dokončení:</span>
+                            <span class="info-value" id="overview-completion">—</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Tým
+                        </h3>
+                        <div class="info-row">
+                            <span class="info-label">Velikost týmu:</span>
+                            <span class="info-value" id="overview-team-size">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Milníků:</span>
+                            <span class="info-value" id="overview-milestones">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Materiálů:</span>
+                            <span class="info-value" id="overview-materials">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Client -->
+            <div class="tab-content" id="tab-client">
+                <div class="section-header">
+                    <h2>Informace o klientovi</h2>
+                    <button class="btn-primary" onclick="openClientModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Upravit
+                    </button>
+                </div>
+                
+                <div class="info-card" id="client-info">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <p>Žádné informace o klientovi</p>
+                        <button class="btn-primary" onclick="openClientModal()">Přidat informace</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Location -->
+            <div class="tab-content" id="tab-location">
+                <div class="section-header">
+                    <h2>Lokace staveniště</h2>
+                    <button class="btn-primary" onclick="openLocationModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Upravit
+                    </button>
+                </div>
+                
+                <div class="info-card" id="location-info">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <p>Žádné informace o lokaci</p>
+                        <button class="btn-primary" onclick="openLocationModal()">Přidat informace</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Milestones -->
+            <div class="tab-content" id="tab-milestones">
+                <div class="section-header">
+                    <h2>Milníky projektu</h2>
+                    <button class="btn-primary" onclick="openMilestoneModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Přidat milník
+                    </button>
+                </div>
+                
+                <div class="timeline" id="milestones-list">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        <p>Žádné milníky</p>
+                        <button class="btn-primary" onclick="openMilestoneModal()">Přidat první milník</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Materials -->
+            <div class="tab-content" id="tab-materials">
+                <div class="section-header">
+                    <h2>Seznam materiálu</h2>
+                    <button class="btn-primary" onclick="openMaterialModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Přidat materiál
+                    </button>
+                </div>
+                
+                <div class="table-container" id="materials-table">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <p>Žádný materiál</p>
+                        <button class="btn-primary" onclick="openMaterialModal()">Přidat materiál</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Team -->
+            <div class="tab-content" id="tab-team">
+                <div class="section-header">
+                    <h2>Přiřazený tým</h2>
+                    <button class="btn-primary" onclick="openTeamModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Přiřadit člena
+                    </button>
+                </div>
+                
+                <div class="table-container" id="team-table">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <p>Žádný tým</p>
+                        <button class="btn-primary" onclick="openTeamModal()">Přiřadit první členy</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Photos -->
+            <div class="tab-content" id="tab-photos">
+                <div class="section-header">
+                    <h2>Fotodokumentace</h2>
+                    <button class="btn-primary" onclick="alert('Nahrávaní fotek bude v další verzi')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        Nahrát fotku
+                    </button>
+                </div>
+                
+                <div id="photos-grid">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p>Zatím žádné fotky</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Client -->
+    <div class="modal" id="modal-client">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Informace o klientovi</h2>
+                <button class="btn-close" onclick="closeModal('modal-client')">&times;</button>
+            </div>
+            <form id="form-client" onsubmit="saveClient(event)">
+                <div class="form-group">
+                    <label>Jméno klienta *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Firma</label>
+                    <input type="text" name="company">
+                </div>
+                <div class="form-group">
+                    <label>IČO</label>
+                    <input type="text" name="ico">
+                </div>
+                <div class="form-group">
+                    <label>DIČ</label>
+                    <input type="text" name="dic">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email">
+                </div>
+                <div class="form-group">
+                    <label>Telefon</label>
+                    <input type="tel" name="phone">
+                </div>
+                <div class="form-group">
+                    <label>Alternativní telefon</label>
+                    <input type="tel" name="phone_secondary">
+                </div>
+                <div class="form-group">
+                    <label>Fakturační adresa</label>
+                    <input type="text" name="billing_street" placeholder="Ulice a číslo">
+                </div>
+                <div class="form-group">
+                    <input type="text" name="billing_city" placeholder="Město">
+                </div>
+                <div class="form-group">
+                    <input type="text" name="billing_zip" placeholder="PSČ">
+                </div>
+                <button type="submit" class="btn-primary">Uložit</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Location -->
+    <div class="modal" id="modal-location">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Lokace staveniště</h2>
+                <button class="btn-close" onclick="closeModal('modal-location')">&times;</button>
+            </div>
+            <form id="form-location" onsubmit="saveLocation(event)">
+                <div class="form-group">
+                    <label>Ulice a číslo</label>
+                    <input type="text" name="street">
+                </div>
+                <div class="form-group">
+                    <label>Město</label>
+                    <input type="text" name="city">
+                </div>
+                <div class="form-group">
+                    <label>PSČ</label>
+                    <input type="text" name="zip">
+                </div>
+                <div class="form-group">
+                    <label>GPS - Latitude</label>
+                    <input type="text" name="lat" placeholder="50.0755">
+                </div>
+                <div class="form-group">
+                    <label>GPS - Longitude</label>
+                    <input type="text" name="lng" placeholder="14.4378">
+                </div>
+                <div class="form-group">
+                    <label>Parkování</label>
+                    <textarea name="parking" placeholder="Popis možností parkování"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Poznámky k přístupu</label>
+                    <textarea name="access_notes" placeholder="Klíče, kódy brány, atd."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Kód brány</label>
+                    <input type="text" name="gate_code">
+                </div>
+                <button type="submit" class="btn-primary">Uložit</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Milestone -->
+    <div class="modal" id="modal-milestone">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nový milník</h2>
+                <button class="btn-close" onclick="closeModal('modal-milestone')">&times;</button>
+            </div>
+            <form id="form-milestone" onsubmit="saveMilestone(event)">
+                <div class="form-group">
+                    <label>Název milníku *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Popis</label>
+                    <textarea name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Plánované datum</label>
+                    <input type="date" name="planned_date">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="pending">Čeká</option>
+                        <option value="in_progress">Probíhá</option>
+                        <option value="completed">Dokončeno</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Přidat milník</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Material -->
+    <div class="modal" id="modal-material">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nový materiál</h2>
+                <button class="btn-close" onclick="closeModal('modal-material')">&times;</button>
+            </div>
+            <form id="form-material" onsubmit="saveMaterial(event)">
+                <div class="form-group">
+                    <label>Název materiálu *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Množství</label>
+                    <input type="number" name="quantity" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Jednotka</label>
+                    <select name="unit">
+                        <option value="ks">ks</option>
+                        <option value="m">m</option>
+                        <option value="m2">m²</option>
+                        <option value="m3">m³</option>
+                        <option value="kg">kg</option>
+                        <option value="t">t</option>
+                        <option value="l">l</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cena za jednotku (Kč)</label>
+                    <input type="number" name="price_per_unit" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Dodavatel</label>
+                    <input type="text" name="supplier">
+                </div>
+                <button type="submit" class="btn-primary">Přidat materiál</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Team -->
+    <div class="modal" id="modal-team">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Přiřadit člena týmu</h2>
+                <button class="btn-close" onclick="closeModal('modal-team')">&times;</button>
+            </div>
+            <form id="form-team" onsubmit="saveTeamMember(event)">
+                <div class="form-group">
+                    <label>Zaměstnanec *</label>
+                    <select name="employee_id" required id="select-employee">
+                        <option value="">Vyberte zaměstnance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select name="role">
+                        <option value="worker">Pracovník</option>
+                        <option value="manager">Vedoucí</option>
+                        <option value="supervisor">Dozor</option>
+                        <option value="assistant">Pomocník</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Plánované hodiny</label>
+                    <input type="number" name="hours_planned" value="0">
+                </div>
+                <button type="submit" class="btn-primary">Přiřadit</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let currentJobId = null;
+        let jobData = null;
+        
+        // Get job ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentJobId = urlParams.get('id');
+        
+        if (!currentJobId) {
+            alert('Chybí ID zakázky');
+            window.location.href = '/jobs.html';
+        }
+        
+        // Load job data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadJobData();
+            loadEmployees();
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                
+                // Update buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+            });
+        });
+        
+        async function loadJobData() {
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/complete`);
+                if (!response.ok) throw new Error('Failed to load job');
+                
+                jobData = await response.json();
+                renderJobData();
+            } catch (error) {
+                console.error('Error loading job:', error);
+                alert('Nepodařilo se načíst zakázku');
+            }
+        }
+        
+        function renderJobData() {
+            const { job, client, location, milestones, materials, team, summary } = jobData;
+            
+            // Header
+            document.getElementById('job-title').textContent = job.title || 'Bez názvu';
+            document.getElementById('job-client').textContent = client?.name || job.client || '—';
+            document.getElementById('job-location').textContent = location?.city || job.city || '—';
+            document.getElementById('job-date').textContent = job.date || '—';
+            
+            const statusBadge = document.getElementById('job-status-badge');
+            statusBadge.textContent = job.status || 'Neznámý';
+            statusBadge.className = 'badge ' + getStatusClass(job.status);
+            
+            // Overview
+            document.getElementById('overview-estimated').textContent = formatCurrency(job.estimated_value);
+            document.getElementById('overview-actual').textContent = formatCurrency(job.actual_value);
+            document.getElementById('overview-remaining').textContent = formatCurrency((job.estimated_value || 0) - (job.actual_value || 0));
+            document.getElementById('overview-start').textContent = job.start_date || job.date || '—';
+            document.getElementById('overview-deadline').textContent = job.deadline || '—';
+            document.getElementById('overview-completion').textContent = job.actual_end_date || '—';
+            document.getElementById('overview-team-size').textContent = summary.team_size || 0;
+            document.getElementById('overview-milestones').textContent = `${summary.milestones_completed || 0} / ${summary.milestones_count || 0}`;
+            document.getElementById('overview-materials').textContent = summary.materials_count || 0;
+            
+            // Client
+            renderClient(client);
+            
+            // Location
+            renderLocation(location);
+            
+            // Milestones
+            renderMilestones(milestones);
+            
+            // Materials
+            renderMaterials(materials);
+            
+            // Team
+            renderTeam(team);
+        }
+        
+        function renderClient(client) {
+            const container = document.getElementById('client-info');
+            if (!client || !client.name) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Žádné informace o klientovi</p>
+                        <button class="btn-primary" onclick="openClientModal()">Přidat informace</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Jméno:</span>
+                    <span class="info-value">${client.name}</span>
+                </div>
+                ${client.company ? `<div class="info-row"><span class="info-label">Firma:</span><span class="info-value">${client.company}</span></div>` : ''}
+                ${client.ico ? `<div class="info-row"><span class="info-label">IČO:</span><span class="info-value">${client.ico}</span></div>` : ''}
+                ${client.dic ? `<div class="info-row"><span class="info-label">DIČ:</span><span class="info-value">${client.dic}</span></div>` : ''}
+                ${client.email ? `<div class="info-row"><span class="info-label">Email:</span><span class="info-value">${client.email}</span></div>` : ''}
+                ${client.phone ? `<div class="info-row"><span class="info-label">Telefon:</span><span class="info-value">${client.phone}</span></div>` : ''}
+                ${client.phone_secondary ? `<div class="info-row"><span class="info-label">Alt. telefon:</span><span class="info-value">${client.phone_secondary}</span></div>` : ''}
+                ${client.billing_street ? `<div class="info-row"><span class="info-label">Adresa:</span><span class="info-value">${client.billing_street}, ${client.billing_city} ${client.billing_zip}</span></div>` : ''}
+            `;
+        }
+        
+        function renderLocation(location) {
+            const container = document.getElementById('location-info');
+            if (!location || !location.street) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Žádné informace o lokaci</p>
+                        <button class="btn-primary" onclick="openLocationModal()">Přidat informace</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Adresa:</span>
+                    <span class="info-value">${location.street}, ${location.city} ${location.zip || ''}</span>
+                </div>
+                ${location.lat && location.lng ? `<div class="info-row"><span class="info-label">GPS:</span><span class="info-value">${location.lat}, ${location.lng}</span></div>` : ''}
+                ${location.parking ? `<div class="info-row"><span class="info-label">Parkování:</span><span class="info-value">${location.parking}</span></div>` : ''}
+                ${location.gate_code ? `<div class="info-row"><span class="info-label">Kód brány:</span><span class="info-value">${location.gate_code}</span></div>` : ''}
+                ${location.access_notes ? `<div class="info-row"><span class="info-label">Přístup:</span><span class="info-value">${location.access_notes}</span></div>` : ''}
+            `;
+        }
+        
+        function renderMilestones(milestones) {
+            const container = document.getElementById('milestones-list');
+            if (!milestones || milestones.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Žádné milníky</p>
+                        <button class="btn-primary" onclick="openMilestoneModal()">Přidat první milník</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = milestones.map(m => `
+                <div class="timeline-item ${m.status}">
+                    <div class="timeline-date">${m.planned_date || '—'}</div>
+                    <div class="timeline-title">${m.name}</div>
+                    ${m.description ? `<p>${m.description}</p>` : ''}
+                    <span class="badge ${getStatusClass(m.status)}">${getStatusLabel(m.status)}</span>
+                </div>
+            `).join('');
+        }
+        
+        function renderMaterials(materials) {
+            const container = document.getElementById('materials-table');
+            if (!materials || materials.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Žádný materiál</p>
+                        <button class="btn-primary" onclick="openMaterialModal()">Přidat materiál</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Název</th>
+                            <th>Množství</th>
+                            <th>Cena/ks</th>
+                            <th>Celkem</th>
+                            <th>Dodavatel</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${materials.map(m => `
+                            <tr>
+                                <td>${m.name}</td>
+                                <td>${m.quantity} ${m.unit}</td>
+                                <td>${formatCurrency(m.price_per_unit)}</td>
+                                <td>${formatCurrency(m.total_price)}</td>
+                                <td>${m.supplier || '—'}</td>
+                                <td><span class="badge ${getStatusClass(m.delivery_status)}">${m.delivery_status || 'pending'}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        function renderTeam(team) {
+            const container = document.getElementById('team-table');
+            if (!team || team.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Žádný tým</p>
+                        <button class="btn-primary" onclick="openTeamModal()">Přiřadit první členy</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Jméno</th>
+                            <th>Pozice</th>
+                            <th>Role</th>
+                            <th>Hodiny</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${team.map(t => `
+                            <tr>
+                                <td>${t.employee_name || '—'}</td>
+                                <td>${t.position || '—'}</td>
+                                <td>${t.role || '—'}</td>
+                                <td>${t.hours_actual || 0} / ${t.hours_planned || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // Modal functions
+        function openClientModal() {
+            const modal = document.getElementById('modal-client');
+            const form = document.getElementById('form-client');
+            
+            if (jobData.client) {
+                form.name.value = jobData.client.name || '';
+                form.company.value = jobData.client.company || '';
+                form.ico.value = jobData.client.ico || '';
+                form.dic.value = jobData.client.dic || '';
+                form.email.value = jobData.client.email || '';
+                form.phone.value = jobData.client.phone || '';
+                form.phone_secondary.value = jobData.client.phone_secondary || '';
+                form.billing_street.value = jobData.client.billing_street || '';
+                form.billing_city.value = jobData.client.billing_city || '';
+                form.billing_zip.value = jobData.client.billing_zip || '';
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        function openLocationModal() {
+            const modal = document.getElementById('modal-location');
+            const form = document.getElementById('form-location');
+            
+            if (jobData.location) {
+                form.street.value = jobData.location.street || '';
+                form.city.value = jobData.location.city || '';
+                form.zip.value = jobData.location.zip || '';
+                form.lat.value = jobData.location.lat || '';
+                form.lng.value = jobData.location.lng || '';
+                form.parking.value = jobData.location.parking || '';
+                form.access_notes.value = jobData.location.access_notes || '';
+                form.gate_code.value = jobData.location.gate_code || '';
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        function openMilestoneModal() {
+            document.getElementById('modal-milestone').classList.add('active');
+        }
+        
+        function openMaterialModal() {
+            document.getElementById('modal-material').classList.add('active');
+        }
+        
+        function openTeamModal() {
+            document.getElementById('modal-team').classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // Save functions
+        async function saveClient(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/client`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                
+                closeModal('modal-client');
+                loadJobData();
+                alert('Klient uložen');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Chyba při ukládání');
+            }
+        }
+        
+        async function saveLocation(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/location`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                
+                closeModal('modal-location');
+                loadJobData();
+                alert('Lokace uložena');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Chyba při ukládání');
+            }
+        }
+        
+        async function saveMilestone(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/milestones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                
+                closeModal('modal-milestone');
+                e.target.reset();
+                loadJobData();
+                alert('Milník přidán');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Chyba při ukládání');
+            }
+        }
+        
+        async function saveMaterial(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/materials`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                
+                closeModal('modal-material');
+                e.target.reset();
+                loadJobData();
+                alert('Materiál přidán');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Chyba při ukládání');
+            }
+        }
+        
+        async function saveTeamMember(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/team`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                
+                closeModal('modal-team');
+                e.target.reset();
+                loadJobData();
+                alert('Člen týmu přiřazen');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Chyba při ukládání');
+            }
+        }
+        
+        async function loadEmployees() {
+            try {
+                const response = await fetch('/api/employees');
+                const data = await response.json();
+                const employees = Array.isArray(data) ? data : (data.employees || []);
+                
+                const select = document.getElementById('select-employee');
+                select.innerHTML = '<option value="">Vyberte zaměstnance</option>' +
+                    employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+        
+        // Helper functions
+        function formatCurrency(value) {
+            if (!value) return '0 Kč';
+            return new Intl.NumberFormat('cs-CZ', {
+                style: 'currency',
+                currency: 'CZK',
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+        
+        function getStatusClass(status) {
+            const map = {
+                'completed': 'badge-success',
+                'in_progress': 'badge-info',
+                'pending': 'badge-warning',
+                'delivered': 'badge-success',
+                'Aktivní': 'badge-success',
+                'Dokončené': 'badge-info',
+                'Plán': 'badge-warning'
+            };
+            return map[status] || 'badge-info';
+        }
+        
+        function getStatusLabel(status) {
+            const map = {
+                'pending': 'Čeká',
+                'in_progress': 'Probíhá',
+                'completed': 'Hotovo'
+            };
+            return map[status] || status;
+        }
+    </script>
+</body>
+</html>
