@@ -11,6 +11,8 @@ window.addProblem = async function(jobId) {
     const note = (noteEl?.value || '').trim();
     const severity = (sevEl?.value || 'blocking');
     
+    const logMyWork = document.getElementById('ops-issue-log-mywork')?.checked || false;
+
     // Get selected employees
     const assignedEmployees = window.issueSelectedEmployees || [];
     const primaryEmployee = assignedEmployees.length > 0 ? assignedEmployees[0] : null;
@@ -32,7 +34,8 @@ window.addProblem = async function(jobId) {
                 severity: severity,
                 assigned_to: primaryEmployee,
                 assigned_employees: assignedEmployees,
-                primary_employee: primaryEmployee
+                primary_employee: primaryEmployee,
+                log_to_mywork: logMyWork
             })
         });
 
@@ -40,6 +43,7 @@ window.addProblem = async function(jobId) {
             titleEl.value = '';
             noteEl.value = '';
             window.issueSelectedEmployees = [];
+            const cb = document.getElementById('ops-issue-log-mywork'); if (cb) cb.checked = false;
             if (window.renderOperativa) window.renderOperativa(jobId);
             if (window.showToast) window.showToast('Issue přidán', 'success');
         } else {

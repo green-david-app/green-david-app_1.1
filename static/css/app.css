@@ -6114,3 +6114,79 @@ width:100%;}
 .ops-actions .btn-secondary{
   padding:8px 10px;
 }
+
+/* Notifications icon in header */
+.app-header-notifications{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: #e8eef2;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.app-header-notifications:hover{
+  background: rgba(255,255,255,0.08);
+}
+.app-header-notifications svg{
+  width: 20px;
+  height: 20px;
+}
+.notif-badge{
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e53935;
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   Voice input (speech-to-text)
+   - Progressive enhancement (only used when JS enables it)
+======================================== */
+.voice-parent { position: relative; }
+.voice-input-enabled { padding-right: 44px !important; }
+
+.voice-mic-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+}
+
+.voice-parent textarea + .voice-mic-btn {
+  top: 12px;
+  transform: none;
+}
+
+.voice-mic-btn:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.12);
+}
+
+.voice-mic-btn.is-listening {
+  background: rgba(145, 255, 145, 0.16);
+  border-color: rgba(145, 255, 145, 0.35);
+}

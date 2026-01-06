@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>green david app · Výkazy hodin</title>
+  <title data-i18n="timesheets.title">green david app · Výkazy hodin</title>
   <link rel="stylesheet" href="/static/style.css"/>
   <link rel="stylesheet" href="/static/css/app.css"/>
   <link rel="stylesheet" href="/static/icons.css"/>
@@ -13,45 +13,45 @@
 <body>
   <div id="app-header"></div>
   <div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
-    <h1 style="margin:0 0 6px;font-size:28px;letter-spacing:-0.02em">Výkazy hodin</h1>
+    <h1 style="margin:0 0 6px;font-size:28px;letter-spacing:-0.02em" data-i18n="timesheets.title">Výkazy hodin</h1>
     <div style="opacity:.75;margin:0 0 16px">Přehled a správa odpracovaného času</div>
 
     <div class="card" style="background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden">
       <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d">
-        <div style="font-weight:600">Výkazy</div>
+        <div style="font-weight:600" data-i18n="timesheets.title">Výkazy</div>
         <div>
-          <button id="btnAdd"   style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">+ Přidat záznam</button>
-          <button id="btnReload"style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">↻ Obnovit</button>
-          <button id="btnCSV"   style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Export CSV</button>
-          <button id="btnXLSX"  style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Export XLSX</button>
+          <button id="btnAdd" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer" data-i18n="timesheets.add">+ Přidat záznam</button>
+          <button id="btnReload" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="timesheets.refresh">↻ Obnovit</button>
+          <button id="btnCSV" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="timesheets.export.csv">Export CSV</button>
+          <button id="btnXLSX" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="timesheets.export.xlsx">Export XLSX</button>
         </div>
       </div>
       <div class="card-b" style="padding:16px">
         <div class="filters" style="background:#1f2629;border:1px solid #3b4549;border-radius:12px;padding:12px;margin-bottom:12px">
           <div style="display:flex;gap:12px;flex-wrap:wrap">
             <div style="flex:1">
-              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Od</label>
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.from">Od</label>
               <input type="date" id="fltFrom" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
             </div>
             <div style="flex:1">
-              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Do</label>
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.to">Do</label>
               <input type="date" id="fltTo" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
             </div>
             <div style="flex:1">
-              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Zaměstnanec</label>
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.employee">Zaměstnanec</label>
               <select id="fltEmp" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Všichni</option></select>
             </div>
             <div style="flex:1">
-              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Zakázka</label>
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.job">Zakázka</label>
               <select id="fltJob" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Vše</option></select>
             </div>
             <div style="flex:1">
-              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px">Text</label>
-              <input type="text" id="fltText" placeholder="poznámka, název…" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.text">Text</label>
+              <input type="text" id="fltText" data-i18n-placeholder="timesheets.filter.placeholder" placeholder="poznámka, název…" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
             </div>
             <div style="display:flex;align-items:flex-end;gap:8px">
-              <button id="btnClear" class="ghost" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer">Vymazat</button>
-              <button id="btnApply" class="btn" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer">Filtrovat</button>
+              <button id="btnClear" class="ghost" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="action.clear">Vymazat</button>
+              <button id="btnApply" class="btn" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer" data-i18n="action.filter">Filtrovat</button>
             </div>
           </div>
         </div>
@@ -61,12 +61,12 @@
           <table id="tbl" style="width:100%;border-collapse:collapse">
             <thead>
               <tr>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Datum</th>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Zaměstnanec</th>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Zakázka</th>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Hodin</th>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left">Pozn.</th>
-                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left"></th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.date">Datum</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.employee">Zaměstnanec</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.job">Zakázka</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.hours">Hodin</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.note">Pozn.</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.actions"></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -113,6 +113,9 @@
 
   <script>
   const $ = s => document.querySelector(s);
+  
+  // Translation helper - použije AppI18n.t z app-settings.js
+  const t = (key) => (window.AppI18n && window.AppI18n.t) ? window.AppI18n.t(key) : key;
 
   function firstArrayDeep(x, depth=0){
     if(!x || depth>4) return null;
@@ -197,10 +200,10 @@
         <td style="border-bottom:1px solid #3b4549;padding:10px">${jobName(r.job_id)}</td>
         <td style="border-bottom:1px solid #3b4549;padding:10px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165">${hours.toFixed(2)}</span></td>
         <td style="border-bottom:1px solid #3b4549;padding:10px">${r.note||''}</td>
-        <td style="border-bottom:1px solid #3b4549;padding:10px;text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:6px 10px;cursor:pointer">Smazat</button>`:''}</td>`;
+        <td style="border-bottom:1px solid #3b4549;padding:10px;text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:6px 10px;cursor:pointer">${t('timesheets.delete')}</button>`:''}</td>`;
       tb.appendChild(tr);
     });
-    document.querySelector('#summary').textContent = `Záznamů: ${state.filtered.length} · Celkem hodin: ${total.toFixed(2)}`;
+    document.querySelector('#summary').textContent = `${t('timesheets.no_data').replace('Žádné záznamy', 'Záznamů')}: ${state.filtered.length} · ${t('timesheets.total')} ${t('timesheets.col.hours').toLowerCase()}: ${total.toFixed(2)}`;
     tb.querySelectorAll('button[data-del]').forEach(btn=>{
       btn.onclick=async()=>{ if(!confirm('Smazat výkaz?'))return; await api.remove(btn.getAttribute('data-del')); await loadAll(); };
     });

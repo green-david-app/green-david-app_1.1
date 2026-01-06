@@ -4,45 +4,8 @@ class AppHeader {
     this.render();
     this.cleanupLegacyHeaders();
     this.initBackButton();
-    // initSearch() removed - using global-search.js instead
-    this.ensureGlobalSearchAssets();
+    this.initSearch();
     this.initUserBox();
-  }
-
-  ensureGlobalSearchAssets() {
-    // Zajistí, že globální vyhledávání funguje na VŠECH stránkách,
-    // i když některé HTML soubory nezahrnují global-search.css/js.
-    try {
-      // CSS
-      const cssHref = '/static/css/global-search.css';
-      const hasCss = Array.from(document.styleSheets || []).some((s) => {
-        try { return (s.href || '').includes(cssHref); } catch (_) { return false; }
-      });
-      if (!hasCss && !document.querySelector(`link[href="${cssHref}"]`)) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssHref;
-        document.head.appendChild(link);
-      }
-
-      // JS
-      const jsSrc = '/static/global-search.js';
-      const hasScript = !!document.querySelector(`script[src="${jsSrc}"]`);
-      if (!hasScript) {
-        const s = document.createElement('script');
-        s.src = jsSrc;
-        s.defer = true;
-        document.head.appendChild(s);
-      } else {
-        // Pokud je script už načtený, ale instance nevznikla (např. protože container nebyl v DOMu),
-        // zkusíme ji vytvořit.
-        if (!window.globalSearch && typeof window.GlobalSearch === 'function') {
-          try { window.globalSearch = new window.GlobalSearch(); } catch (_) {}
-        }
-      }
-    } catch (e) {
-      // no-op
-    }
   }
 
   initBackButton() {
@@ -152,19 +115,18 @@ class AppHeader {
       </div>
     </a>
 
-    <div class="global-search-container"></div>
+    <form class="app-header-search" id="app-header-search-form" role="search">
+      <button class="app-header-search-toggle" id="app-header-search-toggle" type="button" title="Vyhledávání">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M20 20l-3.5-3.5"></path>
+        </svg>
+      </button>
+      <input class="app-header-search-input" id="app-header-search-input" type="search" placeholder="Vyhledat v aplikaci…" autocomplete="off" />
+    </form>
 
     <div class="app-header-actions">
       <div id="userbox" class="app-header-user"></div>
-
-      <a href="/notifications.html" class="app-header-notifications" title="Notifikace" aria-label="Notifikace">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 01-3.46 0" />
-        </svg>
-        <span id="notif-badge" class="notif-badge" style="display:none">0</span>
-      </a>
-
       <a href="/settings.html" class="app-header-settings" title="Nastavení">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"></circle>
@@ -270,16 +232,6 @@ class AppHeader {
         if (logoutBtn) {
           logoutBtn.addEventListener('click', () => this.handleLogout());
         }
-
-        // Update notifications badge
-        try {
-          const cnt = Number(j.unread_notifications || 0) || 0;
-          const badge = document.getElementById('notif-badge');
-          if (badge) {
-            badge.textContent = String(cnt);
-            badge.style.display = cnt > 0 ? 'inline-flex' : 'none';
-          }
-        } catch (_) {}
       } else {
         box.innerHTML = '<span style="color:#9ca8b3;">Nepřihlášen</span>';
       }

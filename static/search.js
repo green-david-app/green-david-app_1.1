@@ -4,136 +4,132 @@
     return (params.get('q') || '').trim();
   }
 
-  function norm(s) {
-    return (s || '').toString().toLowerCase();
+  function esc(s) {
+    return (s || '').toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  function includesAny(hay, q) {
-    return norm(hay).includes(norm(q));
+  function icon(label) {
+    // lightweight inline icons (avoid dependency issues on this page)
+    const map = {
+      jobs: '📁',
+      tasks: '✅',
+      issues: '⚠️',
+      employees: '👤'
+    };
+    return map[label] || '•';
   }
 
   async function fetchJSON(url) {
     const r = await fetch(url, { credentials: 'include' });
-    if (!r.ok) throw new Error(`${url} => ${r.status}`);
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (!r.ok) {
+      // try to extract server message
+      let body = '';
+      try { body = await r.text(); } catch (e) {}
+      throw new Error(`HTTP ${r.status} ${r.statusText}${body ? ' - ' + body.slice(0, 200) : ''}`);
+    }
+    if (!ct.includes('application/json')) {
+      const t = await r.text();
+      throw new Error('Server did not return JSON (got ' + ct + '). ' + t.slice(0, 200));
+    }
     return await r.json();
   }
 
   function renderGroup(title, itemsHtml) {
     return `
       <div class="search-group">
-        <h2>${title}</h2>
+        <h2>${esc(title)}</h2>
         ${itemsHtml}
       </div>
     `;
   }
 
-  function emptyHtml() {
-    return '<div class="search-empty">Žádné výsledky.</div>';
+  function renderEmpty() {
+    return `<div class="search-empty">Žádné výsledky.</div>`;
   }
 
-  function jobLink(job) {
-    // Přesměrování na zakázky; detail je v aplikaci řešen JS. Odkaz vede na přehled s hash/id.
-    const id = job.id || job.job_id || '';
-    return `/jobs.html#job=${encodeURIComponent(id)}`;
-  }
+  function renderItems(items, type) {
+    if (!items || items.length === 0) return renderEmpty();
 
-  function employeeLink(emp) {
-    const id = emp.id || emp.employee_id || '';
-    return `/employee-detail.html?id=${encodeURIComponent(id)}`;
-  }
+    return items.map(it => {
+      let href = '#';
+      let name = '';
+      let muted = '';
 
-  function taskLink(task) {
-    // Úkoly mají vlastní přehled; použijeme hash/id pro případné zvýraznění později
-    const id = task.id || task.task_id || '';
-    return `/tasks.html#task=${encodeURIComponent(id)}`;
-  }
-
-  function renderItems(results, kind) {
-    if (!results.length) return emptyHtml();
-    return results.slice(0, 20).map(r => {
-      if (kind === 'jobs') {
-        const title = r.name || r.title || r.job_name || `Zakázka ${r.id ?? ''}`;
-        const meta = [r.customer, r.client, r.code, r.status].filter(Boolean).join(' • ');
-        return `
-          <div class="search-item">
-            <a href="${jobLink(r)}">${title}</a>
-            ${meta ? `<div class="muted">${meta}</div>` : ``}
-          </div>
-        `;
+      if (type === 'jobs') {
+        href = `/jobs.html?id=${encodeURIComponent(it.id)}`;
+        name = it.name || it.title || '';
+        muted = [it.customer || it.client || '', it.status || ''].filter(Boolean).join(' • ');
+      } else if (type === 'tasks') {
+        href = `/tasks.html?id=${encodeURIComponent(it.id)}`;
+        name = it.title || it.name || '';
+        muted = [it.job_name || '', it.status || ''].filter(Boolean).join(' • ');
+      } else if (type === 'issues') {
+        // issues in dropdown open job detail (consistent with global-search dropdown)
+        href = it.job_id ? `/jobs.html?id=${encodeURIComponent(it.job_id)}` : '#';
+        name = it.title || '';
+        muted = [it.job_name || '', it.type || it.severity || ''].filter(Boolean).join(' • ');
+      } else if (type === 'employees') {
+        href = `/employees.html?id=${encodeURIComponent(it.id)}`;
+        name = it.name || '';
+        muted = [it.email || '', it.role || ''].filter(Boolean).join(' • ');
       }
-      if (kind === 'employees') {
-        const title = r.name || r.full_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || `Zaměstnanec ${r.id ?? ''}`;
-        const meta = [r.role, r.position, (r.account_email ? `Účet: ${r.account_email} (${r.account_role || ''})` : null)].filter(Boolean).join(' • ');
-        return `
-          <div class="search-item">
-            <a href="${employeeLink(r)}">${title}</a>
-            ${meta ? `<div class="muted">${meta}</div>` : ``}
-          </div>
-        `;
-      }
-      if (kind === 'tasks') {
-        const title = r.title || r.name || `Úkol ${r.id ?? ''}`;
-        const meta = [r.status, r.assignee_name, r.due_date].filter(Boolean).join(' • ');
-        const desc = r.description || r.note || '';
-        return `
-          <div class="search-item">
-            <a href="${taskLink(r)}">${title}</a>
-            ${meta ? `<div class="muted">${meta}</div>` : ``}
-            ${desc ? `<div class="muted">${String(desc).slice(0, 120)}${String(desc).length > 120 ? '…' : ''}</div>` : ``}
-          </div>
-        `;
-      }
-      return '';
+
+      return `
+        <div class="search-item">
+          <a href="${href}">${esc(name)}</a>
+          ${muted ? `<div class="muted">${esc(muted)}</div>` : ''}
+        </div>
+      `;
     }).join('');
   }
 
-  async function runSearch(q) {
+  function setMeta(q, totals) {
     const metaEl = document.getElementById('search-meta');
-    const groupsEl = document.getElementById('search-groups');
-    if (!metaEl || !groupsEl) return;
+    if (!metaEl) return;
+    const total = (totals.jobs || 0) + (totals.tasks || 0) + (totals.issues || 0) + (totals.employees || 0);
+    metaEl.textContent = q ? `Výraz: "${q}" • Nalezeno: ${total}` : 'Zadejte výraz pro vyhledávání.';
+  }
 
-    if (!q) {
-      metaEl.textContent = 'Zadej výraz do vyhledávání v horním panelu.';
-      groupsEl.innerHTML = renderGroup('Zakázky', emptyHtml()) + renderGroup('Tým', emptyHtml()) + renderGroup('Úkoly', emptyHtml());
+  async function runSearch(q) {
+    const groupsEl = document.getElementById('search-groups');
+    if (!groupsEl) return;
+
+    if (!q || q.length < 2) {
+      setMeta(q, { jobs: 0, tasks: 0, issues: 0, employees: 0 });
+      groupsEl.innerHTML = '';
       return;
     }
 
-    metaEl.textContent = `Vyhledávám: "${q}"`;
+    groupsEl.innerHTML = renderGroup('Načítám…', '<div class="search-empty">Načítám…</div>');
 
-    let jobs = [];
-    let employees = [];
-    let tasks = [];
+    try {
+      const data = await fetchJSON(`/api/search?q=${encodeURIComponent(q)}`);
+      const results = (data && (data.results || data.data || data)) || {};
+      const jobs = results.jobs || [];
+      const tasks = results.tasks || [];
+      const issues = results.issues || [];
+      const employees = results.employees || [];
 
-    // Paralelní načtení, ať je UI rychlé
-    const calls = [
-      fetchJSON('/api/jobs').then(d => { jobs = (d.jobs || d || []); }).catch(() => {}),
-      fetchJSON('/api/employees').then(d => { employees = (d.employees || d || []); }).catch(() => {}),
-      fetchJSON('/api/tasks').then(d => { tasks = (d.tasks || d || []); }).catch(() => {}),
-    ];
+      setMeta(q, { jobs: jobs.length, tasks: tasks.length, issues: issues.length, employees: employees.length });
 
-    await Promise.allSettled(calls);
+      const html =
+        renderGroup(`${icon('jobs')} Zakázky (${jobs.length})`, renderItems(jobs, 'jobs')) +
+        renderGroup(`${icon('employees')} Tým (${employees.length})`, renderItems(employees, 'employees')) +
+        renderGroup(`${icon('tasks')} Úkoly (${tasks.length})`, renderItems(tasks, 'tasks')) +
+        renderGroup(`${icon('issues')} Issues (${issues.length})`, renderItems(issues, 'issues'));
 
-    const qn = norm(q);
-
-    const jobsFound = jobs.filter(j => {
-      return includesAny(j.name, qn) || includesAny(j.title, qn) || includesAny(j.customer, qn) || includesAny(j.client, qn) || includesAny(j.code, qn) || includesAny(j.status, qn);
-    });
-
-    const employeesFound = employees.filter(e => {
-      return includesAny(e.name, qn) || includesAny(e.full_name, qn) || includesAny(e.first_name, qn) || includesAny(e.last_name, qn) || includesAny(e.position, qn) || includesAny(e.role, qn) || includesAny(e.account_email, qn) || includesAny(e.account_role, qn);
-    });
-
-    const tasksFound = tasks.filter(t => {
-      return includesAny(t.title, qn) || includesAny(t.name, qn) || includesAny(t.description, qn) || includesAny(t.note, qn) || includesAny(t.status, qn) || includesAny(t.assignee_name, qn);
-    });
-
-    const total = jobsFound.length + employeesFound.length + tasksFound.length;
-    metaEl.textContent = `Výraz: "${q}" • Nalezeno: ${total}`;
-
-    groupsEl.innerHTML =
-      renderGroup(`Zakázky (${jobsFound.length})`, renderItems(jobsFound, 'jobs')) +
-      renderGroup(`Tým (${employeesFound.length})`, renderItems(employeesFound, 'employees')) +
-      renderGroup(`Úkoly (${tasksFound.length})`, renderItems(tasksFound, 'tasks'));
+      groupsEl.innerHTML = html;
+    } catch (err) {
+      console.error('Search page error:', err);
+      setMeta(q, { jobs: 0, tasks: 0, issues: 0, employees: 0 });
+      groupsEl.innerHTML = renderGroup('Chyba', `<div class="search-empty">Vyhledávání selhalo: ${esc(err.message || err)}</div>`);
+    }
   }
 
   // initial
@@ -142,6 +138,12 @@
   // support header "global-search" event
   window.addEventListener('global-search', (e) => {
     const q = (e.detail && e.detail.q) ? e.detail.q : getQuery();
+    // keep URL in sync
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('q', q);
+      window.history.replaceState({}, '', u.toString());
+    } catch (_) {}
     runSearch(q);
   });
 })();

@@ -118,12 +118,17 @@
   
   function applyTheme() {
     const isDark = currentSettings.theme === 'dark';
+
+    // Source of truth for theming is <html data-theme="dark|light"> with CSS variables in static/style.css
+    document.documentElement.setAttribute('data-theme', currentSettings.theme);
+
+    // Keep existing inline background/color as a safe fallback
     document.body.style.background = isDark ? '#1a1a1a' : '#ffffff';
     document.body.style.color = isDark ? '#ffffff' : '#0a0e11';
-    
+
     const toggle = document.getElementById('darkModeToggle');
     if (toggle) toggle.checked = isDark;
-    
+
     const icon = document.getElementById('theme-icon');
     if (icon) icon.textContent = isDark ? '🌙' : '☀️';
   }
@@ -378,6 +383,12 @@
       userLanguage.addEventListener('change', (e) => {
         currentSettings.userLanguage = e.target.value;
         saveSettings();
+        // Apply language immediately
+        if (window.AppI18n && typeof window.AppI18n.setLanguage === 'function') {
+          window.AppI18n.setLanguage(currentSettings.userLanguage);
+        }
+        // Reload to ensure all pages/components re-render in the selected language
+        window.location.reload();
       });
     }
     
@@ -619,32 +630,9 @@
     currentSettings.lastExport = new Date().toISOString();
     saveSettings();
     const lastExport = document.getElementById('lastExport');
-    if (lastExport) lastExport.textContent = formatDate(currentSettings.lastExport);
+    if (lastExport) lastExport.textContent = new Date().toLocaleString('cs-CZ');
 
     window.location.href = '/api/admin/export-all';
-};
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `green-david-export-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      currentSettings.lastExport = new Date().toISOString();
-      saveSettings();
-      
-      const lastExport = document.getElementById('lastExport');
-      if (lastExport) {
-        lastExport.textContent = new Date().toLocaleString('cs-CZ');
-      }
-      
-      alert('Data byla úspěšně exportována');
-    } catch (e) {
-      console.error('Export error:', e);
-      alert('Chyba při exportu dat');
-    }
   }
   
   function handleCSVImport(file) {

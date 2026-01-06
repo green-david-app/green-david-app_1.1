@@ -5,9 +5,12 @@
 window.addTodo = async function(jobId) {
     const titleEl = document.getElementById('ops-todo-title');
 
-    const title = (titleEl?.value || '').trim();
-    
-    // Get selected employees
+        const noteEl = document.getElementById('ops-todo-note');
+    const logMyWork = document.getElementById('ops-task-log-mywork')?.checked || false;
+const title = (titleEl?.value || '').trim();
+    const note = (noteEl?.value || '').trim();
+
+// Get selected employees
     const assignedEmployees = window.taskSelectedEmployees || [];
     const primaryEmployee = assignedEmployees.length > 0 ? assignedEmployees[0] : null;
 
@@ -26,13 +29,17 @@ window.addTodo = async function(jobId) {
                 status: 'open',
                 employee_id: primaryEmployee,
                 assigned_employees: assignedEmployees,
-                primary_employee: primaryEmployee
+                primary_employee: primaryEmployee,
+                description: note,
+                log_to_mywork: logMyWork
             })
         });
 
         if (res.ok) {
             titleEl.value = '';
+            if (noteEl) noteEl.value = '';
             window.taskSelectedEmployees = [];
+            const cb = document.getElementById('ops-task-log-mywork'); if (cb) cb.checked = false;
             if (window.renderOperativa) window.renderOperativa(jobId);
             if (window.showToast) window.showToast('Úkol přidán', 'success');
         } else {

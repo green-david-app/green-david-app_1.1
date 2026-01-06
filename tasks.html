@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Úkoly - Green David</title>
+    <title data-i18n="tasks.title">Úkoly - Green David</title>
     <link rel="stylesheet" href="/static/style.css"/>
     <link rel="stylesheet" href="/static/css/app.css"/>
     <script src="/app-settings.js"></script>
 </head>
 <body>
         <div class="page">
-            <h1>✅ Úkoly & Issues</h1>
+            <h1><span data-i18n="tasks.title">✅ Úkoly</span> & <span data-i18n="issues.title">Issues</span></h1>
             <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                <button class="btn-primary" id="btn-new-task">+ Nový úkol</button>
+                <button class="btn-primary" id="btn-new-task"><span data-i18n="tasks.add">+ Nový úkol</span></button>
                 <a href="/issues" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; padding: 10px 20px;">
-                    🚨 Zobrazit Issues
+                    <span data-i18n="tasks.show_issues">🚨 Zobrazit Issues</span>
                 </a>
             </div>
         </header>
@@ -22,36 +22,36 @@
         <!-- My Issues Section -->
         <div id="my-issues-section" style="margin-bottom: 32px; padding: 20px; background: #1a1a1a; border-radius: 12px; border-left: 4px solid #ff4444;">
             <h2 style="margin: 0 0 16px 0; font-size: 20px; display: flex; align-items: center; gap: 8px;">
-                <span>🚨</span> Moje Issues
+                <span>🚨</span> <span data-i18n="tasks.my_issues">Moje Issues</span>
                 <span id="my-issues-count" style="background: #ff4444; padding: 2px 8px; border-radius: 12px; font-size: 14px;">0</span>
             </h2>
             <div id="my-issues-list" style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="opacity: 0.5; text-align: center; padding: 20px;">Načítám...</div>
+                <div style="opacity: 0.5; text-align: center; padding: 20px;" data-i18n="msg.loading">Načítám...</div>
             </div>
         </div>
 
         <!-- Filtry -->
         <div class="filters-bar">
-            <button class="filter-btn active" data-filter="all">Všechny</button>
-            <button class="filter-btn" data-filter="my">Moje úkoly</button>
-            <button class="filter-btn" data-filter="high">🔴 Vysoká priorita</button>
-            <button class="filter-btn" data-filter="today">Dnes</button>
+            <button class="filter-btn active" data-filter="all"><span data-i18n="tasks.filter.all">Všechny</span></button>
+            <button class="filter-btn" data-filter="my"><span data-i18n="tasks.filter.my">Moje úkoly</span></button>
+            <button class="filter-btn" data-filter="high"><span data-i18n="tasks.filter.high">🔴 Vysoká priorita</span></button>
+            <button class="filter-btn" data-filter="today"><span data-i18n="tasks.filter.today">Dnes</span></button>
         </div>
 
         <!-- Kanban -->
         <div class="tasks-kanban">
             <div class="task-column">
-                <h3>📝 K dokončení <span class="count">0</span></h3>
+                <h3><span data-i18n="tasks.status.todo">📝 K dokončení</span> <span class="count">0</span></h3>
                 <div class="task-list" id="tasks-todo"></div>
             </div>
 
             <div class="task-column">
-                <h3>🔄 Probíhá <span class="count">0</span></h3>
+                <h3><span data-i18n="tasks.status.in_progress">🔄 Probíhá</span> <span class="count">0</span></h3>
                 <div class="task-list" id="tasks-progress"></div>
             </div>
 
             <div class="task-column">
-                <h3>✅ Hotovo <span class="count">0</span></h3>
+                <h3><span data-i18n="tasks.status.done">✅ Hotovo</span> <span class="count">0</span></h3>
                 <div class="task-list" id="tasks-done"></div>
             </div>
         </div>
@@ -61,21 +61,21 @@
     <div id="task-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Nový úkol</h2>
+                <h2 data-i18n="tasks.add">Nový úkol</h2>
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="task-form">
-                    <input type="text" id="task-title" placeholder="Název úkolu" required>
-                    <textarea id="task-desc" placeholder="Popis" rows="3"></textarea>
-                    <input type="date" id="task-deadline" placeholder="Deadline">
+                    <input type="text" id="task-title" data-i18n-placeholder="tasks.placeholder.name" placeholder="Název úkolu" required>
+                    <textarea id="task-desc" data-i18n-placeholder="tasks.placeholder.desc" placeholder="Popis" rows="3"></textarea>
+                    <input type="date" id="task-deadline" data-i18n-placeholder="tasks.placeholder.deadline" placeholder="Deadline">
                     <select id="task-priority">
-                        <option value="low">🟢 Nízká</option>
-                        <option value="medium" selected>🟡 Střední</option>
-                        <option value="high">🔴 Vysoká</option>
+                        <option value="low" data-i18n="tasks.priority.low">🟢 Nízká</option>
+                        <option value="medium" selected data-i18n="tasks.priority.medium">🟡 Střední</option>
+                        <option value="high" data-i18n="tasks.priority.high">🔴 Vysoká</option>
                     </select>
                     <select id="task-assignee">
-                        <option value="">Vyberte zaměstnance</option>
+                        <option value="" data-i18n="tasks.placeholder.assignee">Vyberte zaměstnance</option>
                         <option>Petr Novák</option>
                         <option>Jana Svobodová</option>
                         <option>Martin Dvořák</option>
@@ -83,8 +83,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary close-modal">Zrušit</button>
-                <button class="btn-primary" id="btn-save-task">Vytvořit</button>
+                <button class="btn-secondary close-modal" data-i18n="action.cancel">Zrušit</button>
+                <button class="btn-primary" id="btn-save-task" data-i18n="action.create">Vytvořit</button>
             </div>
         </div>
     </div>
@@ -423,7 +423,7 @@
                     <select id="modal-task-status" class="task-detail-input">
                         <option value="open">K dokončení</option>
                         <option value="in_progress">Probíhá</option>
-                        <option value="done">Hotovo</option>
+                        <option value="done"data-i18n="tasks.status.done">Hotovo</option>
                     </select>
                 </div>
                 

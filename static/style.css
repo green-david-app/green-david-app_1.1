@@ -68,6 +68,38 @@
   --transition: 200ms ease;
 }
 
+
+
+/* ========================================
+   LIGHT THEME (prepared for future)
+   Activated by: <html data-theme="light">
+   ======================================== */
+html[data-theme="light"] {
+  --bg-primary: #f4f6f8;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef2f6;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f3f6fa;
+  --bg-elevated: #ffffff;
+
+  --text-primary: #0a0e11;
+  --text-secondary: #2f3a43;
+  --text-tertiary: #5b6a76;
+  --text-muted: #6b7a86;
+  --text-disabled: rgba(10, 14, 17, 0.35);
+
+  --border-primary: rgba(10, 14, 17, 0.14);
+  --border-medium: rgba(10, 14, 17, 0.10);
+  --border-dark: rgba(10, 14, 17, 0.18);
+
+  /* Shadows tuned for light surfaces */
+  --shadow-sm: 0 2px 8px rgba(10, 14, 17, 0.06);
+  --shadow-md: 0 6px 18px rgba(10, 14, 17, 0.08);
+  --shadow-lg: 0 14px 32px rgba(10, 14, 17, 0.10);
+
+  /* Mint palette remains the same for brand consistency */
+}
 /* ========================================
    RESET & BASE
    ======================================== */
