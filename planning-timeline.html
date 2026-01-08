@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline - Projekty | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <style>
+        :root {
+            --bg-primary: #0a0e11;
+            --bg-card: #151a1e;
+            --bg-elevated: #1a2027;
+            --border-primary: #2d3439;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #9FD4A1;
+            --mint-dim: rgba(159, 212, 161, 0.16);
+            
+            /* Project type colors - UNIVERSAL */
+            --project-active: #9FD4A1;
+            --project-planned: #60a5fa;
+            --project-done: #6b7580;
+            --project-overdue: #ff6b6b;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        .timeline-container {
+            padding: 20px;
+            padding-bottom: 100px;
+            max-width: 100%;
+        }
+        
+        /* Header */
+        .timeline-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .timeline-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-controls button,
+        .timeline-controls select {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .timeline-controls button:hover,
+        .timeline-controls select:hover {
+            background: var(--mint-dim);
+            border-color: var(--mint);
+        }
+        
+        .timeline-controls button.active {
+            background: var(--mint);
+            color: #0a0e11;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 3px solid var(--mint);
+        }
+        
+        .stat-card .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        /* Gantt Chart */
+        .gantt-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .gantt-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 400px;
+        }
+        
+        /* Left sidebar - Projects */
+        .gantt-sidebar {
+            border-right: 1px solid var(--border-primary);
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        
+        .gantt-sidebar-header {
+            padding: 16px;
+            font-weight: 700;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-primary);
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 5;
+        }
+        
+        .gantt-project-row {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-primary);
+            cursor: pointer;
+            transition: background 0.2s;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .gantt-project-row:hover {
+            background: var(--bg-elevated);
+        }
+        
+        .gantt-project-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .gantt-project-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .gantt-project-meta .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .badge.status-plan { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .badge.status-progress { background: var(--mint-dim); color: var(--mint); }
+        .badge.status-done { background: rgba(107, 117, 128, 0.15); color: #9ca8b3; }
+        
+        /* Right side - Timeline bars */
+        .gantt-timeline {
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .gantt-timeline-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-primary);
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 5;
+        }
+        
+        .gantt-timeline-date {
+            min-width: 80px;
+            padding: 12px 8px;
+            text-align: center;
+            border-right: 1px solid var(--border-primary);
+            font-size: 11px;
+        }
+        
+        .gantt-timeline-date.today {
+            background: rgba(96, 165, 250, 0.1);
+            border-left: 2px solid #60a5fa;
+            border-right: 2px solid #60a5fa;
+        }
+        
+        .gantt-timeline-date .day-num {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .gantt-timeline-date .day-name {
+            color: var(--text-secondary);
+            font-size: 10px;
+            margin-top: 2px;
+        }
+        
+        .gantt-bars-container {
+            position: relative;
+        }
+        
+        .gantt-bar-row {
+            height: 60px;
+            position: relative;
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .gantt-bar {
+            position: absolute;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .gantt-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+        
+        .gantt-bar.status-plan {
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(96, 165, 250, 0.7));
+            border: 1px solid #60a5fa;
+        }
+        
+        .gantt-bar.status-progress {
+            background: linear-gradient(135deg, rgba(159, 212, 161, 0.9), rgba(159, 212, 161, 0.7));
+            border: 1px solid var(--mint);
+        }
+        
+        .gantt-bar.status-done {
+            background: linear-gradient(135deg, rgba(107, 117, 128, 0.6), rgba(107, 117, 128, 0.4));
+            border: 1px solid var(--text-tertiary);
+        }
+        
+        .gantt-bar.overdue {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(255, 107, 107, 0.7));
+            border: 1px solid #ff6b6b;
+        }
+        
+        .gantt-bar-content {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #0a0e11;
+        }
+        
+        .gantt-bar-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-right: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+            stroke: currentColor;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loader-spinner {
+            border: 3px solid var(--border-primary);
+            border-top: 3px solid var(--mint);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header style="background: var(--bg-card); border-bottom: 1px solid var(--border-primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100;">
+        <div style="max-width: 100%; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <a href="javascript:history.back()" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; text-decoration: none; color: var(--text-primary);">
+                <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span style="font-weight: 600; font-size: 14px;">Zpět</span>
+            </a>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Timeline
+            </h1>
+            <div style="display: flex; gap: 8px; margin-left: auto;">
+                <a href="/planning/daily" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
+                <a href="/planning/timeline" style="padding: 8px 16px; background: var(--mint); color: #0a0e11; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
+                <a href="/planning/week" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Týden</a>
+                <a href="/planning/costs" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="timeline-container">
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="label">Aktivní projekty</div>
+                <div class="value" id="activeCount">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Dokončeno</div>
+                <div class="value" id="doneCount">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Blíží se deadline</div>
+                <div class="value" id="upcomingCount">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Opožděné</div>
+                <div class="value" id="overdueCount">-</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="timeline-header-bar">
+            <div class="timeline-controls">
+                <button class="active" onclick="setTimeRange('month')">Měsíc</button>
+                <button onclick="setTimeRange('quarter')">Kvartál</button>
+                <select id="statusFilter" onchange="filterData()">
+                    <option value="">Všechny stavy</option>
+                    <option value="Plán">Plán</option>
+                    <option value="Probíhá">Probíhá</option>
+                    <option value="Dokončeno">Dokončeno</option>
+                </select>
+            </div>
+            <button onclick="exportTimeline()" style="padding: 10px 20px; background: var(--mint); color: #0a0e11; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+            </button>
+        </div>
+
+        <!-- Gantt Chart -->
+        <div id="ganttContent">
+            <div class="loader">
+                <div class="loader-spinner"></div>
+                <p style="color: var(--text-secondary);">Načítám projekty...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timelineData = [];
+        let timeRange = 'month';
+        let filterStatus = '';
+        
+        async function loadTimeline() {
+            try {
+                const response = await fetch('/api/planning/timeline');
+                const data = await response.json();
+                
+                if (data.success) {
+                    timelineData = data.timeline;
+                    updateStats();
+                    renderGantt();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('ganttContent').innerHTML = 
+                    '<div class="empty-state"><p>Chyba při načítání dat</p></div>';
+            }
+        }
+        
+        function updateStats() {
+            const active = timelineData.filter(p => ['Plán', 'Probíhá'].includes(p.project.status)).length;
+            const done = timelineData.filter(p => p.project.status === 'Dokončeno').length;
+            
+            const now = new Date();
+            const upcoming = timelineData.filter(p => {
+                if (!p.project.deadline || p.project.status === 'Dokončeno') return false;
+                const deadline = new Date(p.project.deadline);
+                const daysUntil = (deadline - now) / (1000 * 60 * 60 * 24);
+                return daysUntil > 0 && daysUntil <= 7;
+            }).length;
+            
+            const overdue = timelineData.filter(p => {
+                if (!p.project.deadline || p.project.status === 'Dokončeno') return false;
+                return new Date(p.project.deadline) < now;
+            }).length;
+            
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('doneCount').textContent = done;
+            document.getElementById('upcomingCount').textContent = upcoming;
+            document.getElementById('overdueCount').textContent = overdue;
+        }
+        
+        function renderGantt() {
+            const filtered = timelineData.filter(p => {
+                if (filterStatus && p.project.status !== filterStatus) return false;
+                return true;
+            });
+            
+            if (filtered.length === 0) {
+                document.getElementById('ganttContent').innerHTML = 
+                    '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>Žádné projekty k zobrazení</p></div>';
+                return;
+            }
+            
+            // Calculate date range
+            const today = new Date();
+            let startDate, endDate;
+            if (timeRange === 'month') {
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            } else {
+                const quarter = Math.floor(today.getMonth() / 3);
+                startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+            }
+            
+            // Generate weeks
+            const weeks = [];
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 7)) {
+                weeks.push(new Date(d));
+            }
+            
+            let html = '<div class="gantt-wrapper"><div class="gantt-grid">';
+            
+            // Left sidebar
+            html += '<div class="gantt-sidebar"><div class="gantt-sidebar-header">Projekty</div>';
+            filtered.forEach(item => {
+                const p = item.project;
+                const statusClass = p.status === 'Plán' ? 'status-plan' : 
+                                   p.status === 'Probíhá' ? 'status-progress' : 'status-done';
+                html += `<div class="gantt-project-row" onclick="openProject(${p.id})">`;
+                html += `<div class="gantt-project-name">${p.name}</div>`;
+                html += `<div class="gantt-project-meta">`;
+                html += `<span class="badge ${statusClass}">${p.status}</span>`;
+                if (p.code) html += `<span>${p.code}</span>`;
+                if (item.task_count) html += `<span>${item.completed_tasks}/${item.task_count} úkolů</span>`;
+                html += '</div></div>';
+            });
+            html += '</div>';
+            
+            // Timeline
+            html += '<div class="gantt-timeline"><div class="gantt-timeline-header">';
+            weeks.forEach(week => {
+                const isToday = week.toDateString() === today.toDateString();
+                html += `<div class="gantt-timeline-date ${isToday ? 'today' : ''}">`;
+                html += `<div class="day-num">${week.getDate()}.${week.getMonth()+1}</div>`;
+                html += `<div class="day-name">${week.toLocaleDateString('cs-CZ', {month:'short'})}</div>`;
+                html += '</div>';
+            });
+            html += '</div>';
+            
+            // Bars
+            html += '<div class="gantt-bars-container">';
+            const totalDays = (endDate - startDate) / (1000*60*60*24);
+            const dayWidth = 80 / 7; // 80px per week / 7 days
+            
+            filtered.forEach(item => {
+                const p = item.project;
+                html += '<div class="gantt-bar-row">';
+                
+                const projStart = p.start_date ? new Date(p.start_date) : startDate;
+                const projEnd = p.planned_end_date ? new Date(p.planned_end_date) : 
+                               (p.deadline ? new Date(p.deadline) : endDate);
+                
+                const startOffset = Math.max(0, (projStart - startDate) / (1000*60*60*24)) * dayWidth;
+                const duration = ((projEnd - projStart) / (1000*60*60*24)) * dayWidth;
+                
+                const statusClass = p.status === 'Plán' ? 'status-plan' : 
+                                   p.status === 'Probíhá' ? 'status-progress' : 'status-done';
+                const isOverdue = p.deadline && new Date(p.deadline) < today && p.status !== 'Dokončeno';
+                
+                html += `<div class="gantt-bar ${statusClass} ${isOverdue ? 'overdue' : ''}" 
+                            style="left:${startOffset}px; width:${Math.max(60, duration)}px" 
+                            onclick="openProject(${p.id})">`;
+                if (p.progress) html += `<div class="gantt-bar-progress" style="width:${p.progress}%"></div>`;
+                html += `<div class="gantt-bar-content">${p.name}</div>`;
+                html += '</div>';
+                
+                html += '</div>';
+            });
+            html += '</div></div></div></div>';
+            
+            document.getElementById('ganttContent').innerHTML = html;
+        }
+        
+        function setTimeRange(range) {
+            timeRange = range;
+            document.querySelectorAll('.timeline-controls button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGantt();
+        }
+        
+        function filterData() {
+            filterStatus = document.getElementById('statusFilter').value;
+            renderGantt();
+        }
+        
+        function openProject(id) {
+            window.location.href = `/job-detail.html?id=${id}`;
+        }
+        
+        function exportTimeline() {
+            // Export as CSV
+            let csv = 'Projekt,Kód,Status,Start,Konec,Progress,Úkoly Hotovo,Úkoly Celkem\n';
+            timelineData.forEach(item => {
+                const p = item.project;
+                csv += `"${p.name}","${p.code || ''}","${p.status}","${p.start_date || ''}","${p.planned_end_date || p.deadline || ''}","${p.progress || 0}%","${item.completed_tasks}","${item.task_count}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `timeline_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadTimeline);
+    </script>
+</body>
+</html>
+        :root {
+            --bg-primary: #0a0e11;
+            --bg-card: #151a1e;
+            --bg-elevated: #1a2027;
+            --border-primary: #2d3439;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #9FD4A1;
+            --mint-dim: rgba(159, 212, 161, 0.16);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        .timeline-container {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .timeline-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-controls button,
+        .timeline-controls select {
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .timeline-controls button:hover {
+            background: var(--mint-dim);
+            border-color: var(--mint);
+        }
+        
+        .timeline-controls button.active {
+            background: var(--mint);
+            color: #0a0e11;
+            font-weight: 600;
+        }
+        
+        .timeline-grid {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-primary);
+            overflow-x: auto;
+        }
+        
+        .timeline-header {
+            display: flex;
+            border-bottom: 2px solid var(--border-primary);
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 10;
+        }
+        
+        .timeline-header-project {
+            min-width: 250px;
+            padding: 16px;
+            font-weight: 700;
+            border-right: 1px solid var(--border-primary);
+        }
+        
+        .timeline-header-dates {
+            display: flex;
+            flex: 1;
+        }
+        
+        .timeline-date-cell {
+            min-width: 80px;
+            padding: 12px 8px;
+            text-align: center;
+            border-right: 1px solid var(--border-primary);
+            font-size: 12px;
+        }
+        
+        .timeline-date-cell.today {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 2px solid #3b82f6;
+            border-right: 2px solid #3b82f6;
+        }
+        
+        .timeline-date-cell .day-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .timeline-date-cell .day-date {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .timeline-row {
+            display: flex;
+            border-bottom: 1px solid var(--border-primary);
+            min-height: 60px;
+            transition: background 0.2s;
+        }
+        
+        .timeline-row:hover {
+            background: var(--bg-elevated);
+        }
+        
+        .timeline-row-project {
+            min-width: 250px;
+            padding: 12px 16px;
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .project-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .project-code {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .project-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-row-dates {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+        
+        .timeline-bar-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .timeline-bar {
+            position: absolute;
+            height: 36px;
+            top: 12px;
+            border-radius: 6px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .timeline-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        
+        .timeline-bar.status-plan {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(59, 130, 246, 0.6));
+            border: 1px solid rgba(59, 130, 246, 1);
+        }
+        
+        .timeline-bar.status-progress {
+            background: linear-gradient(135deg, rgba(159, 212, 161, 0.8), rgba(159, 212, 161, 0.6));
+            border: 1px solid var(--mint);
+        }
+        
+        .timeline-bar.status-done {
+            background: linear-gradient(135deg, rgba(107, 117, 128, 0.6), rgba(107, 117, 128, 0.4));
+            border: 1px solid var(--text-tertiary);
+        }
+        
+        .timeline-bar.overdue {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.8), rgba(244, 67, 54, 0.6));
+            border: 1px solid #f44336;
+        }
+        
+        .timeline-milestone {
+            position: absolute;
+            top: 18px;
+            width: 12px;
+            height: 12px;
+            background: #ffd700;
+            transform: rotate(45deg);
+            border: 2px solid #0a0e11;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .timeline-milestone:hover {
+            transform: rotate(45deg) scale(1.3);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge.priority-high { background: rgba(244, 67, 54, 0.15); color: #ff6b6b; }
+        .badge.priority-medium { background: rgba(255, 152, 0, 0.15); color: #ffa726; }
+        .badge.priority-low { background: var(--mint-dim); color: var(--mint); }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loader-spinner {
+            border: 3px solid var(--border-primary);
+            border-top: 3px solid var(--mint);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header style="background: var(--bg-card); border-bottom: 1px solid var(--border-primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100;">
+        <div style="max-width: 100%; margin: 0 auto; display: flex; align-items: center; gap: 16px;">
+            <a href="javascript:history.back()" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; text-decoration: none; color: var(--text-primary); transition: all 0.2s;">
+                <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span style="font-weight: 600; font-size: 14px;">Zpět</span>
+            </a>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: var(--text-primary);">📊 Timeline - Všechny projekty</h1>
+        </div>
+    </header>
+
+    <div class="timeline-container">
+        <!-- Summary Stats -->
+        <div class="summary-stats" id="summaryStats">
+            <div class="stat-card">
+                <div class="label">Aktivní projekty</div>
+                <div class="value" id="activeProjects">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Dokončeno tento měsíc</div>
+                <div class="value" id="completedMonth">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Blíží se deadline</div>
+                <div class="value" id="upcomingDeadlines">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Opožděné</div>
+                <div class="value" id="overdueProjects">-</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="timeline-controls">
+            <button class="active" onclick="setTimeRange('month')">Měsíc</button>
+            <button onclick="setTimeRange('quarter')">Kvartál</button>
+            <button onclick="setTimeRange('year')">Rok</button>
+            <select id="statusFilter" onchange="filterByStatus()">
+                <option value="">Všechny stavy</option>
+                <option value="Plán">Plán</option>
+                <option value="Probíhá">Probíhá</option>
+                <option value="Dokončeno">Dokončeno</option>
+            </select>
+            <select id="priorityFilter" onchange="filterByPriority()">
+                <option value="">Všechny priority</option>
+                <option value="high">Vysoká</option>
+                <option value="medium">Střední</option>
+                <option value="low">Nízká</option>
+            </select>
+        </div>
+
+        <!-- Timeline Grid -->
+        <div id="timelineContent">
+            <div class="loader">
+                <div class="loader-spinner"></div>
+                <p style="color: var(--text-secondary);">Načítám timeline...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timelineData = [];
+        let timeRange = 'month';
+        let filters = { status: '', priority: '' };
+
+        async function loadTimeline() {
+            try {
+                const response = await fetch('/api/planning/timeline');
+                const data = await response.json();
+                
+                if (data.success) {
+                    timelineData = data.timeline;
+                    updateStats();
+                    renderTimeline();
+                }
+            } catch (error) {
+                console.error('Error loading timeline:', error);
+                document.getElementById('timelineContent').innerHTML = 
+                    '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Chyba při načítání dat</div>';
+            }
+        }
+
+        function updateStats() {
+            const active = timelineData.filter(p => ['Plán', 'Probíhá'].includes(p.project.status)).length;
+            const completedMonth = timelineData.filter(p => {
+                if (p.project.status !== 'Dokončeno') return false;
+                const completed = new Date(p.project.completed_at || p.project.actual_end_date);
+                const monthAgo = new Date();
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return completed >= monthAgo;
+            }).length;
+            
+            const now = new Date();
+            const upcoming = timelineData.filter(p => {
+                if (!p.project.deadline) return false;
+                const deadline = new Date(p.project.deadline);
+                const daysUntil = (deadline - now) / (1000 * 60 * 60 * 24);
+                return daysUntil > 0 && daysUntil <= 7 && p.project.status !== 'Dokončeno';
+            }).length;
+            
+            const overdue = timelineData.filter(p => {
+                if (!p.project.deadline || p.project.status === 'Dokončeno') return false;
+                return new Date(p.project.deadline) < now;
+            }).length;
+            
+            document.getElementById('activeProjects').textContent = active;
+            document.getElementById('completedMonth').textContent = completedMonth;
+            document.getElementById('upcomingDeadlines').textContent = upcoming;
+            document.getElementById('overdueProjects').textContent = overdue;
+        }
+
+        function renderTimeline() {
+            const filtered = timelineData.filter(p => {
+                if (filters.status && p.project.status !== filters.status) return false;
+                if (filters.priority && p.project.priority !== filters.priority) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                document.getElementById('timelineContent').innerHTML = 
+                    '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Žádné projekty k zobrazení</div>';
+                return;
+            }
+
+            // Calculate date range
+            const today = new Date();
+            let startDate, endDate;
+            
+            if (timeRange === 'month') {
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            } else if (timeRange === 'quarter') {
+                const quarter = Math.floor(today.getMonth() / 3);
+                startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+            } else {
+                startDate = new Date(today.getFullYear(), 0, 1);
+                endDate = new Date(today.getFullYear(), 11, 31);
+            }
+
+            // Generate date cells
+            const dates = [];
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 7)) {
+                dates.push(new Date(d));
+            }
+
+            let html = '<div class="timeline-grid"><div class="timeline-header">';
+            html += '<div class="timeline-header-project">Projekt</div>';
+            html += '<div class="timeline-header-dates">';
+            
+            dates.forEach(date => {
+                const isToday = date.toDateString() === today.toDateString();
+                html += `<div class="timeline-date-cell ${isToday ? 'today' : ''}">`;
+                html += `<div class="day-name">${date.toLocaleDateString('cs-CZ', {month: 'short'})}</div>`;
+                html += `<div class="day-date">${date.getDate()}</div>`;
+                html += '</div>';
+            });
+            
+            html += '</div></div>';
+
+            // Render project rows
+            filtered.forEach(item => {
+                const proj = item.project;
+                const projStart = proj.start_date ? new Date(proj.start_date) : startDate;
+                const projEnd = proj.planned_end_date ? new Date(proj.planned_end_date) : 
+                               (proj.deadline ? new Date(proj.deadline) : endDate);
+                
+                const isOverdue = proj.deadline && new Date(proj.deadline) < today && proj.status !== 'Dokončeno';
+                
+                html += '<div class="timeline-row">';
+                html += '<div class="timeline-row-project">';
+                html += `<div class="project-name">${proj.name}</div>`;
+                html += `<div class="project-code">${proj.code || ''}</div>`;
+                html += '<div class="project-meta">';
+                html += `<span class="badge">${proj.status}</span>`;
+                if (proj.priority) {
+                    html += `<span class="badge priority-${proj.priority}">${proj.priority}</span>`;
+                }
+                if (proj.progress) {
+                    html += `<span style="font-size:11px;color:var(--text-secondary)">${proj.progress}%</span>`;
+                }
+                html += '</div></div>';
+                
+                html += '<div class="timeline-row-dates">';
+                html += '<div class="timeline-bar-container">';
+                
+                // Calculate bar position and width
+                const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+                const startOffset = ((projStart - startDate) / (1000 * 60 * 60 * 24)) / totalDays * 100;
+                const duration = ((projEnd - projStart) / (1000 * 60 * 60 * 24)) / totalDays * 100;
+                
+                const statusClass = proj.status === 'Plán' ? 'status-plan' : 
+                                   proj.status === 'Probíhá' ? 'status-progress' : 'status-done';
+                
+                html += `<div class="timeline-bar ${statusClass} ${isOverdue ? 'overdue' : ''}" 
+                            style="left:${Math.max(0, startOffset)}%; width:${Math.min(100 - startOffset, duration)}%"
+                            onclick="openProject(${proj.id})">`;
+                html += `<span>${proj.name}</span>`;
+                if (item.tasks && item.tasks.length > 0) {
+                    html += `<span style="opacity:0.7">${item.completed_tasks}/${item.task_count}</span>`;
+                }
+                html += '</div>';
+                
+                html += '</div></div></div>';
+            });
+            
+            html += '</div>';
+            document.getElementById('timelineContent').innerHTML = html;
+        }
+
+        function setTimeRange(range) {
+            timeRange = range;
+            document.querySelectorAll('.timeline-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderTimeline();
+        }
+
+        function filterByStatus() {
+            filters.status = document.getElementById('statusFilter').value;
+            renderTimeline();
+        }
+
+        function filterByPriority() {
+            filters.priority = document.getElementById('priorityFilter').value;
+            renderTimeline();
+        }
+
+        function openProject(id) {
+            window.location.href = `/job-detail.html?id=${id}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadTimeline);
+    </script>
+</body>
+</html>

@@ -1,107 +1,167 @@
-# Návod na nahrání do GitHubu a deployment na Render
+# 🚀 DEPLOYMENT GUIDE - GITHUB + RENDER
 
-## Krok 1: Nahrání do GitHubu
+## ✅ PŘIPRAVENO K NAHRÁNÍ!
 
-### A) Pokud máš už GitHub repozitář:
+Všechny deployment soubory jsou ready:
+- ✅ `.gitignore` - ignoruje DB backups, cache, Mac files
+- ✅ `requirements.txt` - Flask 3.0, gunicorn, werkzeug, openpyxl
+- ✅ `runtime.txt` - Python 3.12.6
+- ✅ `render.yaml` - Render config s persistent disk
+
+---
+
+## 📦 GITHUB UPLOAD - KROK ZA KROKEM
+
+### 1️⃣ PŘIPRAV GIT REPO (pokud ještě nemáš)
 
 ```bash
-cd /cesta/k/green-david-WORK
-git remote -v  # Zkontroluj, že máš správný remote
+cd /Users/greendavid/Desktop/green-david-WORK
+
+# Inicializuj Git (pokud nemáš)
+git init
+
+# Přidej remote (pokud nemáš)
+git remote add origin https://github.com/tvoje-username/green-david-app.git
+```
+
+### 2️⃣ COMMIT & PUSH
+
+```bash
+# Stage všechno
+git add .
+
+# Commit s popisem
+git commit -m "Warehouse update + Planning module + Materials system"
+
+# Push na GitHub
 git push origin main
 ```
 
-### B) Pokud NEMÁŠ ještě GitHub repozitář:
+**NEBO ALTERNATIVNĚ - GitHub Desktop:**
+1. Otevři GitHub Desktop
+2. Vyber "green-david-WORK" repo
+3. Uvidíš changes
+4. Napiš commit message: "Warehouse + Planning modules"
+5. Klikni "Commit to main"
+6. Klikni "Push origin"
 
-1. Jdi na GitHub.com a vytvoř nový repozitář (zelené tlačítko "New")
-2. Pojmenuj ho např. "green-david-app"
-3. NEVOLEJ "Initialize with README" (už máme soubory)
-4. Po vytvoření ti GitHub ukáže příkazy - použij tyto:
+---
+
+## 🌐 RENDER DEPLOYMENT
+
+### 1️⃣ CONNECT GITHUB REPO
+
+1. Přihlas se na **https://render.com**
+2. Klikni **"New +"** → **"Web Service"**
+3. Connect tvůj GitHub repo: `green-david-app`
+4. Render najde `render.yaml` automaticky ✅
+
+### 2️⃣ CONFIGURE
+
+Render použije `render.yaml` config:
+- ✅ **Runtime:** Python 3.12.6
+- ✅ **Build:** `pip install -r requirements.txt`
+- ✅ **Start:** `gunicorn main:app`
+- ✅ **Persistent Disk:** 1GB pro database
+
+### 3️⃣ DEPLOY
+
+1. Klikni **"Create Web Service"**
+2. Render začne deployment (5-10 min)
+3. Status: Building → Deploying → Live ✅
+
+### 4️⃣ DATABASE INIT (PRVNÍ DEPLOY)
+
+Po prvním deployi musíš inicializovat DB:
 
 ```bash
-cd /cesta/k/green-david-WORK
-git remote add origin https://github.com/TVOJE_USERNAME/green-david-app.git
-git push -u origin main
+# V Render Shell (Dashboard → Shell)
+python3 run_extended_migration.py
 ```
 
-## Krok 2: Deployment na Render.com
+Nebo nahraj `app.db` přes Render Dashboard → Files.
 
-1. Jdi na https://render.com a přihlaš se
-2. Klikni na "New +" → "Web Service"
-3. Připoj svůj GitHub účet (pokud ještě není)
-4. Vyber repozitář "green-david-app"
-5. Nastav následující:
+---
 
-### Základní nastavení:
-- **Name**: green-david-app (nebo jak chceš)
-- **Region**: Frankfurt (EU) - nejblíže k ČR
-- **Branch**: main
-- **Runtime**: Python 3
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn -w 4 -b 0.0.0.0:$PORT main:app`
+## 🔧 PO DEPLOYI - TEST
 
-### Environment Variables (DŮLEŽITÉ!):
-Klikni na "Add Environment Variable" a přidej:
+### ✅ Check List:
 
+1. **Homepage** → https://your-app.onrender.com/
+   - ✅ Zobrazí login
+
+2. **Login** → `david@greendavid.cz` / tvoje heslo
+   - ✅ Přihlásí se
+
+3. **Warehouse** → `/warehouse`
+   - ✅ Stats cards
+   - ✅ Položky se načtou
+   - ✅ +/- tlačítka fungují
+   - ✅ Edit funguje
+
+4. **Planning** → `/planning/timeline`
+   - ✅ Zobrazí timeline
+   - ✅ Nursery funguje
+   - ✅ Materials tracking funguje
+
+---
+
+## 🆘 TROUBLESHOOTING
+
+### Problem: "ModuleNotFoundError"
+**Fix:** Check `requirements.txt` má všechny packages
+
+### Problem: "Database locked"
+**Fix:** Render používá persistent disk - restart service
+
+### Problem: "502 Bad Gateway"
+**Fix:** Check Render logs: Dashboard → Logs
+
+### Problem: "Permission denied"
+**Fix:** Check main.py má `app.run()` s `host='0.0.0.0'`
+
+---
+
+## 🔄 UPDATE WORKFLOW
+
+**Když děláš změny v budoucnu:**
+
+```bash
+# 1. Změň kód lokálně
+# 2. Test lokálně: python3 main.py
+# 3. Commit
+git add .
+git commit -m "Fix XYZ"
+
+# 4. Push
+git push origin main
+
+# 5. Render auto-deploy! ✅
 ```
-SECRET_KEY = [vygeneruj náhodný string, např. použij: python -c "import os; print(os.urandom(32).hex())"]
-DB_PATH = /tmp/app.db
-RENDER = true
-```
 
-### Instance Type:
-- **Free** (pro testování)
-- **Starter** ($7/měsíc - pro produkční použití s lepším výkonem)
+Render automaticky detekuje push a re-deployuje!
 
-6. Klikni "Create Web Service"
+---
 
-## Krok 3: První spuštění
+## 📊 RENDER FEATURES
 
-Po deploymentu (trvá 2-5 minut):
+- ✅ **Auto-deploy** z GitHub
+- ✅ **Persistent disk** pro database
+- ✅ **HTTPS** automaticky
+- ✅ **Custom domain** možné
+- ✅ **Environment variables** v dashboard
+- ✅ **Logs** real-time
+- ✅ **Shell access** pro debugging
 
-1. Render ti dá URL jako: `https://green-david-app.onrender.com`
-2. Otevři URL v prohlížeči
-3. **DŮLEŽITÉ**: První spuštění vytvoří databázi - může trvat 30-60 sekund
-4. Aplikace by měla běžet!
+---
 
-## Důležité poznámky:
+## 🎉 HOTOVO!
 
-### ⚠️ Databáze na Free plánu:
-- Na FREE plánu se databáze resetuje po 15 minutách nečinnosti
-- Pro trvalou databázi potřebuješ:
-  - Buď **Starter plán** ($7/měsíc)
-  - Nebo přidat **Persistent Disk** k Free plánu ($1/měsíc za 1GB)
+**Po deployi máš:**
+- 🌐 Live app na `https://your-app.onrender.com`
+- 🔄 Auto-deploy z GitHub
+- 💾 Persistent database
+- 🔒 HTTPS secured
+- 📊 Professional hosting
 
-### Persistent Disk (pro zachování dat):
-1. V Render Dashboard → Tvoje služba → Settings
-2. Scroll dolů na "Disks"
-3. Klikni "Add Disk"
-4. Mount Path: `/persistent`
-5. Size: 1 GB
-6. V Environment Variables změň: `DB_PATH=/persistent/app.db`
-
-### Automatické updaty:
-- Každý `git push` na GitHub spustí nový deployment
-- Build trvá 2-5 minut
-- Render ti pošle email když je hotovo
-
-## Řešení problémů:
-
-### Aplikace nejde načíst:
-1. V Render Dashboard → tvoje služba → "Logs"
-2. Podívej se na chybové hlášky
-3. Nejčastější problémy:
-   - Chybí environment proměnné
-   - Špatný START command
-   - Chyba v kódu
-
-### Databáze je prázdná:
-- Je potřeba vytvořit admina ručně nebo importovat data
-- Můžeš použít script pro inicializaci
-
-### Timeout při načítání:
-- Free plán "usíná" po 15 minutách
-- První request po probuzení trvá 30-60 sekund
-
-## Kontakt a podpora:
-- Render dokumentace: https://render.com/docs
-- Flask dokumentace: https://flask.palletsprojects.com/
+**Užij si svou app online!** 🚀

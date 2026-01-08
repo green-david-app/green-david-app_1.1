@@ -3705,6 +3705,192 @@ def manage_team(job_id):
 
 print("✅ Jobs Extended API loaded")
 
+# ----------------- Planning Module API -----------------
+# Import planning functions directly
+import planning_api
+
+# Make get_db available to planning_api
+planning_api.get_db = get_db
+
+# Planning routes
+@app.route("/api/planning/timeline")
+def api_planning_timeline():
+    return planning_api.get_planning_timeline()
+
+@app.route("/api/planning/daily")
+@app.route("/api/planning/daily/<target_date>")
+def api_planning_daily(target_date=None):
+    return planning_api.get_planning_daily(target_date)
+
+@app.route("/api/planning/week")
+def api_planning_week():
+    return planning_api.get_planning_week()
+
+@app.route("/api/planning/costs")
+@app.route("/api/planning/costs/<int:job_id>")
+def api_planning_costs(job_id=None):
+    return planning_api.get_planning_costs(job_id)
+
+@app.route("/api/action-items", methods=["POST"])
+def api_create_action_item():
+    return planning_api.create_action_item()
+
+@app.route("/api/planning/actions/my")
+def api_my_action_items():
+    return planning_api.get_my_action_items()
+
+@app.route("/api/material-delivery", methods=["POST"])
+def api_create_material_delivery():
+    return planning_api.create_material_delivery()
+
+@app.route("/api/planning/assign", methods=["POST"])
+def api_assign_employee():
+    return planning_api.assign_employee_to_day()
+
+@app.route("/api/planning/employee/<int:employee_id>")
+def api_employee_dashboard(employee_id):
+    return planning_api.get_employee_dashboard(employee_id)
+
+@app.route("/api/planning/notifications")
+def api_planning_notifications():
+    return planning_api.get_planning_notifications()
+
+@app.route("/api/planning/action-items/<int:id>/complete", methods=["POST"])
+def api_complete_action_item(id):
+    request.view_args = {'id': id}
+    return planning_api.quick_complete_action_item()
+
+@app.route("/api/planning/tasks/<int:id>/reschedule", methods=["POST"])
+def api_reschedule_task(id):
+    request.view_args = {'id': id}
+    return planning_api.reschedule_task()
+
+@app.route("/api/planning/suggestions")
+def api_planning_suggestions():
+    return planning_api.get_smart_suggestions()
+
+# Planning HTML pages
+@app.route("/planning/timeline")
+def planning_timeline_page():
+    return send_from_directory(".", "planning-timeline.html")
+
+@app.route("/planning/daily")
+def planning_daily_page():
+    return send_from_directory(".", "planning-daily.html")
+
+@app.route("/planning/week")
+def planning_week_page():
+    return send_from_directory(".", "planning-week.html")
+
+@app.route("/planning/costs")
+def planning_costs_page():
+    return send_from_directory(".", "planning-costs.html")
+
+print("✅ Planning Module loaded")
+
+# ================================================================
+# PLANNING EXTENDED ROUTES - All New Features
+# ================================================================
+import planning_extended_api as ext_api
+ext_api.get_db = get_db
+
+# Nursery - Trvalkové školka 🌸
+@app.route('/nursery')
+def nursery_page():
+    return send_from_directory('.', 'nursery-complete.html')
+
+@app.route('/api/nursery/overview')
+def api_nursery_overview():
+    return ext_api.get_nursery_overview()
+
+@app.route('/api/nursery/plants')
+def api_nursery_plants():
+    return ext_api.get_nursery_plants()
+
+@app.route('/api/nursery/plants', methods=['POST'])
+def api_create_nursery_plant():
+    return ext_api.create_nursery_plant()
+
+@app.route('/api/nursery/watering', methods=['POST'])
+def api_log_watering():
+    return ext_api.log_watering()
+
+# Recurring tasks 🔄
+@app.route('/recurring-tasks')
+def recurring_tasks_page():
+    return send_from_directory('.', 'recurring-tasks.html')
+
+@app.route('/api/recurring/templates')
+def api_recurring_templates():
+    return ext_api.get_recurring_templates()
+
+@app.route('/api/recurring/templates', methods=['POST'])
+def api_create_recurring_template():
+    return ext_api.create_recurring_template()
+
+@app.route('/api/recurring/generate', methods=['POST'])
+def api_generate_recurring():
+    return ext_api.generate_recurring_tasks()
+
+# Materials 📦  
+@app.route('/materials')
+@app.route('/warehouse.html')
+@app.route('/warehouse')
+def materials_page():
+    return send_from_directory('.', 'warehouse.html')
+
+@app.route('/api/materials')
+def api_materials():
+    return ext_api.get_materials()
+
+@app.route('/api/materials', methods=['POST'])
+def api_create_material():
+    return ext_api.create_material()
+
+@app.route('/api/materials/<int:material_id>', methods=['PUT'])
+def api_update_material(material_id):
+    request.view_args = {'material_id': material_id}
+    return ext_api.update_material()
+
+@app.route('/api/materials/movement', methods=['POST'])
+def api_material_movement():
+    return ext_api.add_material_movement()
+
+@app.route('/api/materials/movements')
+def api_material_movements():
+    return ext_api.get_material_movements()
+
+# Photos 📸
+@app.route('/api/tasks/<int:task_id>/photos', methods=['POST'])
+def api_upload_task_photo(task_id):
+    request.view_args = {'task_id': task_id}
+    return ext_api.upload_task_photo()
+
+@app.route('/api/tasks/<int:task_id>/photos')
+def api_get_task_photos(task_id):
+    return ext_api.get_task_photos(task_id)
+
+# Plant database 🌺
+@app.route('/plant-database')
+def plant_database_page():
+    return send_from_directory('.', 'plant-database.html')
+
+@app.route('/api/plant-species')
+def api_plant_species():
+    return ext_api.get_plant_species()
+
+# Maintenance contracts 📋
+@app.route('/api/contracts')
+def api_contracts():
+    return ext_api.get_maintenance_contracts()
+
+# Seasonal planner 🌱
+@app.route('/api/seasonal-tasks')
+def api_seasonal():
+    return ext_api.get_seasonal_tasks()
+
+print("✅ Planning Extended Routes loaded")
+
 # ----------------- Main Entry Point -----------------
 if __name__ == "__main__":
     # Pro lokální vývoj použij 127.0.0.1, pro Render použij 0.0.0.0

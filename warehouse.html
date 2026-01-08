@@ -7,6 +7,16 @@
   <link rel="stylesheet" href="/static/style.css"/>
   <link rel="stylesheet" href="/static/css/app.css"/>
   <script src="/app-settings.js"></script>
+  <style>
+    /* Compact rows */
+    .item-row { padding: 6px 12px !important; }
+    .item-info h4 { font-size: 13px !important; margin: 0 !important; }
+    .item-info p { font-size: 11px !important; margin: 2px 0 0 0 !important; }
+    .item-quantity { font-size: 14px !important; }
+    .item-price { font-size: 12px !important; }
+    .badge { font-size: 11px !important; padding: 3px 8px !important; }
+    .btn-icon { width: 28px !important; height: 28px !important; font-size: 14px !important; }
+  </style>
 </head>
 <body>
   <div id="app-header"></div>
@@ -219,28 +229,21 @@
     // Load data
     async function loadItems() {
       try {
-        // Try to load from /api/items, fallback to localStorage
-        try {
-          const res = await fetch('/api/items?site=warehouse');
-          const data = await res.json();
-          items = data.items || [];
-        } catch (e) {
-          // Fallback to localStorage
-          const stored = localStorage.getItem('warehouse_items');
-          items = stored ? JSON.parse(stored) : [];
+        const res = await fetch('/api/materials');
+        const data = await res.json();
+        
+        if (data.success) {
+          items = data.materials || [];
+        } else {
+          items = [];
         }
         
-        // Load extended data from localStorage
-        items.forEach(item => {
-          const extended = getItemExtended(item.id);
-          if (extended) {
-            Object.assign(item, extended);
-          }
-        });
-        
         // Load history
-        const storedHistory = localStorage.getItem('warehouse_history');
-        history = storedHistory ? JSON.parse(storedHistory) : [];
+        const histRes = await fetch('/api/materials/movements');
+        const histData = await histRes.json();
+        if (histData.success) {
+          history = histData.movements || [];
+        }
         
         renderItems();
         updateStats();
@@ -250,9 +253,7 @@
         renderExcessItems();
       } catch (e) {
         console.error('Error loading items:', e);
-        // Fallback to localStorage
-        const stored = localStorage.getItem('warehouse_items');
-        items = stored ? JSON.parse(stored) : [];
+        items = [];
         renderItems();
         updateStats();
       }
@@ -323,13 +324,13 @@
           </div>
           <div class="item-info">
             <h4 onclick="window.openItemDetail(${item.id})" style="cursor:pointer;">${escapeHtml(item.name || 'Bez názvu')}</h4>
-            <p class="item-code">SKU: ${escapeHtml(item.sku || '—')}</p>
+            <p class="item-code">${item.location ? escapeHtml(item.location) : 'Sklad'}</p>
           </div>
           <div class="item-quantity">
-            <span class="stock">${(item.qty || 0).toFixed(1)}</span>
+            <span class="stock">${(item.current_stock || 0).toFixed(1)}</span>
             <span class="unit">${escapeHtml(item.unit || 'ks')}</span>
           </div>
-          <div class="item-price">${item.price ? (item.price + ' Kč/' + (item.unit || 'ks')) : '—'}</div>
+          <div class="item-price">${item.unit_price ? (item.unit_price + ' Kč/' + (item.unit || 'ks')) : '—'}</div>
           <div class="item-status">
             <span class="badge ${statusClass}">${statusText}</span>
           </div>
@@ -343,8 +344,8 @@
     }
 
     function getItemStatus(item) {
-      const qty = item.qty || 0;
-      const minStock = item.minStock || 10;
+      const qty = item.current_stock || 0;
+      const minStock = item.min_stock || 10;
       
       if (qty === 0) return 'out_of_stock';
       if (qty < minStock) return 'low_stock';
@@ -367,34 +368,30 @@
       const item = items.find(i => i.id === itemId);
       if (!item) return;
       
-      const oldQty = item.qty || 0;
-      const newQty = Math.max(0, oldQty + delta);
-      item.qty = newQty;
-      
-      // Add to history
-      addToHistory({
-        itemId: itemId,
-        itemName: item.name,
-        change: delta > 0 ? `+${delta}` : `${delta}`,
-        oldQty: oldQty,
-        newQty: newQty,
-        date: new Date().toISOString(),
-        type: delta > 0 ? 'add' : 'remove'
-      });
-      
-      // Save to localStorage
-      saveItems();
-      saveHistory();
-      
-      // Try to save to API
       try {
-        await fetch('/api/items', {
-          method: 'PATCH',
+        await fetch('/api/materials/movement', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: itemId, qty: newQty })
+          body: JSON.stringify({
+            material_id: itemId,
+            movement_type: delta > 0 ? 'in' : 'out',
+            quantity: Math.abs(delta),
+            movement_date: new Date().toISOString().split('T')[0],
+            notes: delta > 0 ? 'Příjem' : 'Spotřeba'
+          })
         });
+        
+        // Reload data
+        await loadItems();
+        
+        if (window.showToast) {
+          window.showToast(delta > 0 ? '✓ Přidáno' : '✓ Odebráno', 'success');
+        }
       } catch (e) {
-        // Fallback to localStorage only
+        console.error('Error adjusting quantity:', e);
+        if (window.showToast) {
+          window.showToast('Chyba při změně stavu', 'error');
+        }
       }
       
       renderItems();

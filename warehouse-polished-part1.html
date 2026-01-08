@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sklad - Green David</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <script src="/app-settings.js"></script>
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <div class="warehouse-page">
+    <h1 style="display:flex;align-items:center;gap:12px;">
+      <svg style="width:32px;height:32px;" viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      Sklad
+    </h1>
+    <div class="header-actions">
+      <button class="btn-secondary" onclick="exportData()">
+        <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn-primary" onclick="openNewItemModal()">+ Nová položka</button>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="warehouse-stats">
+    <div class="stat-box">
+      <div class="stat-number" id="statTotalValue">0 Kč</div>
+      <div class="stat-label">Celková hodnota</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="statTotalItems">0</div>
+      <div class="stat-label">Celkem položek</div>
+    </div>
+    <div class="stat-box warning">
+      <div class="stat-number" id="statLowStock">0</div>
+      <div class="stat-label" style="display:flex;align-items:center;gap:6px;">
+        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Nízký stav
+      </div>
+    </div>
+    <div class="stat-box danger">
+      <div class="stat-number" id="statOutOfStock">0</div>
+      <div class="stat-label" style="display:flex;align-items:center;gap:6px;">
+        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Nedostupné
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <input type="search" id="searchInput" placeholder="Hledat položky..." oninput="filterItems()">
+    </div>
+    <select class="filter-select" id="filterCategory" onchange="filterItems()">
+      <option value="">Všechny kategorie</option>
+      <option value="substrát">Substrát</option>
+      <option value="hnojivo">Hnojivo</option>
+      <option value="mulč">Mulč</option>
+      <option value="rostliny">Rostliny</option>
+      <option value="nářadí">Nářadí</option>
+      <option value="ostatní">Ostatní</option>
+    </select>
+    <select class="filter-select" id="filterStatus" onchange="filterItems()">
+      <option value="">Všechny stavy</option>
+      <option value="in_stock">Skladem</option>
+      <option value="low_stock">Málo</option>
+      <option value="out_of_stock">Nedostupné</option>
+    </select>
+  </div>
+
+  <!-- Inventory Table -->
+  <div class="inventory-table">
+    <div class="table-header">
+      <div>Položka</div>
+      <div>Kategorie</div>
+      <div>Množství</div>
+      <div>Jednotka</div>
+      <div>Cena/j</div>
+      <div>Status</div>
+      <div style="text-align:right;">Akce</div>
+    </div>
+    <div id="itemsList"></div>
+  </div>
+
+  <!-- Movement History + Top Items -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:24px;margin-top:32px;">
+    <div class="history-section">
+      <div class="section-header">
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
+          </svg>
+          Historie pohybů
+        </h3>
+        <button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="clearHistory()">Vymazat</button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+
+    <div class="history-section">
+      <div class="section-header">
+        <h3 style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          Nejpoužívanější položky
+        </h3>
+      </div>
+      <div id="topItemsList" class="top-items-list"></div>
+    </div>
+  </div>

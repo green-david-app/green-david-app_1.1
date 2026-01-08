@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Trvalkové školka | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <style>
+        :root {
+            --bg-primary: #0a0e11; --bg-card: #151a1e; --border-primary: #2d3439;
+            --text-primary: #e8eef2; --text-secondary: #9ca8b3; --mint: #9FD4A1;
+        }
+        body { background: var(--bg-primary); color: var(--text-primary); margin: 0; 
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .container { padding: 20px; max-width: 1600px; margin: 0 auto; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; }
+        .stat-card .icon { font-size: 32px; margin-bottom: 12px; }
+        .stat-card .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; }
+        
+        .plants-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .plant-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 16px; transition: all 0.2s; }
+        .plant-card:hover { transform: translateY(-2px); border-color: var(--mint); }
+        .plant-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .plant-name { font-weight: 700; font-size: 16px; }
+        .plant-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .badge-semínko { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .badge-sazenice { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .badge-prodejní { background: rgba(159, 212, 161, 0.15); color: var(--mint); }
+        
+        .watering-section { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+        .watering-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-primary); border-radius: 8px; margin-bottom: 8px; }
+        
+        button { padding: 10px 20px; background: var(--mint); color: #0a0e11; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <header style="background: var(--bg-card); border-bottom: 1px solid var(--border-primary); padding: 16px 20px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <a href="javascript:history.back()" style="padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; text-decoration: none; color: var(--text-primary); font-weight: 600;">← Zpět</a>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700;">🌸 Trvalkové školka</h1>
+            <button onclick="showAddPlantModal()" style="margin-left: auto;">+ Přidat rostlinu</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">🌱</div>
+                <div class="label">CELKEM ROSTLIN</div>
+                <div class="value" id="totalPlants">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">✅</div>
+                <div class="label">READY NA PRODEJ</div>
+                <div class="value" id="readySale">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🌿</div>
+                <div class="label">PĚSTOVÁNÍ</div>
+                <div class="value" id="growing">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="label">HODNOTA SKLADU</div>
+                <div class="value" id="stockValue">0 Kč</div>
+            </div>
+        </div>
+
+        <!-- Watering today -->
+        <div class="watering-section" id="wateringSection" style="display:none;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px;">💧 Zalít dnes</h2>
+            <div id="wateringList"></div>
+        </div>
+
+        <!-- Plants -->
+        <div style="margin-bottom: 16px; display: flex; gap: 12px;">
+            <button onclick="filterPlants('all')" id="filterAll" class="active">Všechny</button>
+            <button onclick="filterPlants('semínko')" id="filterSeed">Semínka</button>
+            <button onclick="filterPlants('sazenice')" id="filterSeedling">Sazenice</button>
+            <button onclick="filterPlants('prodejní')" id="filterSale">Prodejní</button>
+        </div>
+
+        <div class="plants-grid" id="plantsGrid">
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-secondary);">
+                Načítám rostliny...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPlants = [];
+        let currentFilter = 'all';
+
+        async function loadData() {
+            try {
+                const [overviewResp, plantsResp] = await Promise.all([
+                    fetch('/api/nursery/overview'),
+                    fetch('/api/nursery/plants')
+                ]);
+                
+                const overview = await overviewResp.json();
+                const plants = await plantsResp.json();
+
+                if (overview.success) {
+                    document.getElementById('totalPlants').textContent = overview.stats.total_plants || 0;
+                    document.getElementById('readySale').textContent = overview.stats.ready_for_sale || 0;
+                    document.getElementById('growing').textContent = overview.stats.growing || 0;
+                    
+                    // Watering
+                    if (overview.watering_today && overview.watering_today.length > 0) {
+                        document.getElementById('wateringSection').style.display = 'block';
+                        let html = '';
+                        overview.watering_today.forEach(w => {
+                            html += `<div class="watering-item">`;
+                            html += `<div><strong>${w.species}</strong> - ${w.location} (${w.quantity} ks)</div>`;
+                            html += `<button onclick="logWatering(${w.id})">✓ Zalito</button>`;
+                            html += `</div>`;
+                        });
+                        document.getElementById('wateringList').innerHTML = html;
+                    }
+                }
+
+                if (plants.success) {
+                    allPlants = plants.plants;
+                    renderPlants();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function filterPlants(stage) {
+            currentFilter = stage;
+            document.querySelectorAll('button[id^="filter"]').forEach(b => b.classList.remove('active'));
+            document.getElementById('filter' + (stage === 'all' ? 'All' : stage === 'semínko' ? 'Seed' : stage === 'sazenice' ? 'Seedling' : 'Sale')).classList.add('active');
+            renderPlants();
+        }
+
+        function renderPlants() {
+            const filtered = currentFilter === 'all' ? allPlants : allPlants.filter(p => p.stage === currentFilter);
+            
+            if (filtered.length === 0) {
+                document.getElementById('plantsGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-secondary);">Žádné rostliny</div>';
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(p => {
+                html += `<div class="plant-card">`;
+                html += `<div class="plant-header">`;
+                html += `<div class="plant-name">${p.species}</div>`;
+                html += `<span class="plant-badge badge-${p.stage}">${p.stage}</span>`;
+                html += `</div>`;
+                if (p.variety) html += `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${p.variety}</div>`;
+                html += `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px;">`;
+                html += `<div><div style="font-size: 11px; color: var(--text-secondary);">Množství</div><div style="font-weight: 700;">${p.quantity} ks</div></div>`;
+                html += `<div><div style="font-size: 11px; color: var(--text-secondary);">Lokace</div><div style="font-weight: 700;">${p.location || '-'}</div></div>`;
+                if (p.selling_price) html += `<div><div style="font-size: 11px; color: var(--text-secondary);">Cena</div><div style="font-weight: 700;">${p.selling_price} Kč</div></div>`;
+                html += `</div>`;
+                html += `</div>`;
+            });
+            document.getElementById('plantsGrid').innerHTML = html;
+        }
+
+        async function logWatering(plantId) {
+            try {
+                const response = await fetch('/api/nursery/watering', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({plant_id: plantId, date: new Date().toISOString().split('T')[0]})
+                });
+                if (response.ok) {
+                    alert('✓ Zalito!');
+                    loadData();
+                }
+            } catch (error) {
+                alert('Chyba: ' + error);
+            }
+        }
+
+        function showAddPlantModal() {
+            alert('Add plant modal - TODO: Implement form');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
