@@ -939,6 +939,44 @@ CREATE TABLE IF NOT EXISTS employees (
     CREATE INDEX IF NOT EXISTS idx_nursery_plants_species ON nursery_plants(species);
     CREATE INDEX IF NOT EXISTS idx_nursery_plants_status ON nursery_plants(status);
     """)
+    
+    # Vytvoření FTS (Full-Text Search) tabulky pro katalog rostlin
+    try:
+        db.executescript("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS plant_catalog_fts USING fts5(
+            latin_name,
+            variety,
+            flower_color,
+            notes,
+            content=plant_catalog,
+            content_rowid=id
+        );
+        
+        -- Trigger pro automatickou aktualizaci FTS při INSERT
+        CREATE TRIGGER IF NOT EXISTS plant_catalog_ai AFTER INSERT ON plant_catalog BEGIN
+            INSERT INTO plant_catalog_fts(rowid, latin_name, variety, flower_color, notes)
+            VALUES (new.id, new.latin_name, new.variety, new.flower_color, new.notes);
+        END;
+        
+        -- Trigger pro automatickou aktualizaci FTS při DELETE
+        CREATE TRIGGER IF NOT EXISTS plant_catalog_ad AFTER DELETE ON plant_catalog BEGIN
+            DELETE FROM plant_catalog_fts WHERE rowid = old.id;
+        END;
+        
+        -- Trigger pro automatickou aktualizaci FTS při UPDATE
+        CREATE TRIGGER IF NOT EXISTS plant_catalog_au AFTER UPDATE ON plant_catalog BEGIN
+            UPDATE plant_catalog_fts SET 
+                latin_name = new.latin_name,
+                variety = new.variety,
+                flower_color = new.flower_color,
+                notes = new.notes
+            WHERE rowid = new.id;
+        END;
+        """)
+        db.commit()
+    except Exception as fts_err:
+        print(f"[DB] FTS setup note: {fts_err}")
+    
     # Migrace: přidání sloupců phone, email, address do employees (pokud neexistují)
     try:
         db.execute("ALTER TABLE employees ADD COLUMN phone TEXT DEFAULT ''")
@@ -1018,6 +1056,66 @@ def seed_employees():
             db.execute("INSERT INTO employees(name,role) VALUES (?,?)", (name, role))
         db.commit()
 
+def seed_plant_catalog():
+    """Automaticky naplní katalog rostlin z JSON souboru pokud je prázdný"""
+    db = get_db()
+    cur = db.execute("SELECT COUNT(*) c FROM plant_catalog")
+    if cur.fetchone()["c"] == 0:
+        # Hledej JSON soubor s daty
+        import json
+        json_paths = [
+            'plant_catalog_data.json',
+            os.path.join(os.path.dirname(__file__), 'plant_catalog_data.json'),
+            '/app/plant_catalog_data.json',
+        ]
+        
+        for json_path in json_paths:
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r', encoding='utf-8') as f:
+                        plants = json.load(f)
+                    
+                    imported = 0
+                    for plant in plants:
+                        try:
+                            db.execute('''
+                                INSERT OR IGNORE INTO plant_catalog 
+                                (latin_name, variety, container_size, flower_color, flowering_time,
+                                 leaf_color, height, light_requirements, site_type, plants_per_m2,
+                                 hardiness_zone, notes)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                plant.get('latin_name'),
+                                plant.get('variety'),
+                                plant.get('container_size'),
+                                plant.get('flower_color'),
+                                plant.get('flowering_time'),
+                                plant.get('leaf_color'),
+                                plant.get('height'),
+                                plant.get('light_requirements'),
+                                plant.get('site_type'),
+                                plant.get('plants_per_m2'),
+                                plant.get('hardiness_zone'),
+                                plant.get('notes')
+                            ))
+                            imported += 1
+                        except Exception as e:
+                            pass  # Skip duplicates or errors
+                    
+                    db.commit()
+                    
+                    # Rebuild FTS index
+                    try:
+                        db.execute("INSERT INTO plant_catalog_fts(plant_catalog_fts) VALUES('rebuild')")
+                        db.commit()
+                    except Exception:
+                        pass
+                    
+                    print(f"[DB] Imported {imported} plants from {json_path}")
+                    break
+                except Exception as e:
+                    print(f"[DB] Error importing plant catalog: {e}")
+
 @app.before_request
 def _ensure():
     # Run schema checks / migrations once per process to avoid unnecessary locking
@@ -1039,6 +1137,7 @@ def _ensure():
     seed_admin()
     _auto_upgrade_admins_to_owner()
     seed_employees()
+    seed_plant_catalog()
 
 # ----------------- helpers for jobs schema compat -----------------
 def _jobs_info():
