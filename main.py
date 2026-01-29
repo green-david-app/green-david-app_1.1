@@ -887,6 +887,57 @@ CREATE TABLE IF NOT EXISTS employees (
     );
     CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read, created_at);
     CREATE INDEX IF NOT EXISTS idx_notifications_emp_read ON notifications(employee_id, is_read, created_at);
+
+    -- Katalog rostlin pro autocomplete
+    CREATE TABLE IF NOT EXISTS plant_catalog (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        latin_name TEXT NOT NULL,
+        variety TEXT,
+        container_size TEXT,
+        flower_color TEXT,
+        flowering_time TEXT,
+        leaf_color TEXT,
+        height TEXT,
+        light_requirements TEXT,
+        site_type TEXT,
+        plants_per_m2 TEXT,
+        hardiness_zone TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(latin_name, variety)
+    );
+    CREATE INDEX IF NOT EXISTS idx_plant_catalog_latin ON plant_catalog(latin_name);
+    CREATE INDEX IF NOT EXISTS idx_plant_catalog_variety ON plant_catalog(variety);
+
+    -- Rostliny ve školce (inventář)
+    CREATE TABLE IF NOT EXISTS nursery_plants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        species TEXT NOT NULL,
+        variety TEXT,
+        quantity INTEGER DEFAULT 0,
+        unit TEXT DEFAULT 'ks',
+        stage TEXT DEFAULT 'sazenice',
+        location TEXT,
+        planted_date TEXT,
+        ready_date TEXT,
+        purchase_price REAL DEFAULT 0,
+        selling_price REAL DEFAULT 0,
+        flower_color TEXT,
+        flowering_time TEXT,
+        height TEXT,
+        light_requirements TEXT,
+        leaf_color TEXT,
+        hardiness_zone TEXT,
+        site_type TEXT,
+        plants_per_m2 TEXT,
+        botanical_notes TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_nursery_plants_species ON nursery_plants(species);
+    CREATE INDEX IF NOT EXISTS idx_nursery_plants_status ON nursery_plants(status);
     """)
     # Migrace: přidání sloupců phone, email, address do employees (pokud neexistují)
     try:
@@ -5006,17 +5057,31 @@ def api_plant_catalog_search():
     try:
         db = get_db()
         
-        # Použij FTS pro rychlé vyhledávání
-        results = db.execute('''
-            SELECT pc.id, pc.latin_name, pc.variety, pc.container_size,
-                   pc.flower_color, pc.flowering_time, pc.height,
-                   pc.light_requirements, pc.hardiness_zone
-            FROM plant_catalog_fts fts
-            JOIN plant_catalog pc ON pc.id = fts.rowid
-            WHERE plant_catalog_fts MATCH ?
-            ORDER BY rank
-            LIMIT ?
-        ''', (f'{query}*', limit)).fetchall()
+        # Pokus o FTS, pokud není dostupné, použij LIKE
+        try:
+            results = db.execute('''
+                SELECT pc.id, pc.latin_name, pc.variety, pc.container_size,
+                       pc.flower_color, pc.flowering_time, pc.height,
+                       pc.light_requirements, pc.hardiness_zone
+                FROM plant_catalog_fts fts
+                JOIN plant_catalog pc ON pc.id = fts.rowid
+                WHERE plant_catalog_fts MATCH ?
+                ORDER BY rank
+                LIMIT ?
+            ''', (f'{query}*', limit)).fetchall()
+        except Exception as fts_error:
+            # FTS není dostupné, použij LIKE fallback
+            print(f"[INFO] FTS not available, using LIKE: {fts_error}")
+            search_pattern = f'%{query}%'
+            results = db.execute('''
+                SELECT id, latin_name, variety, container_size,
+                       flower_color, flowering_time, height,
+                       light_requirements, hardiness_zone
+                FROM plant_catalog
+                WHERE latin_name LIKE ? OR variety LIKE ? OR notes LIKE ?
+                ORDER BY latin_name
+                LIMIT ?
+            ''', (search_pattern, search_pattern, search_pattern, limit)).fetchall()
         
         plants = []
         for row in results:
