@@ -1,41 +1,187 @@
-# green-david-app – Calendar Buttons Hotfix (DELETE / EDIT / DETAIL)
+# Green David App 🌿
 
-This bundle contains **surgical patches** that fix the calendar buttons without touching layout/CSS.
+**Komplexní webová aplikace pro správu stavební/zahradnické firmy**
 
-## What’s fixed
-
-1) **Wrong path `/gd/api/*` → 404/405**  
-   Adds alias routes so `/gd/api/tasks` works the same as `/api/tasks` (GET, POST, PATCH/PUT, DELETE).
-
-2) **`POST /api/tasks` 500: `NOT NULL constraint failed: tasks.created_at`**  
-   The insert now sets `created_at` to `CURRENT_TIMESTAMP` so schema changes are not required.
-
-3) **PATCH/PUT update for Edit button**  
-   Accepts partial body for fields (`title`, `description`, `status`, `due_date`, `job_id`, `employee_id`).
-
-4) **GET detail by `?id=`**  
-   Returns a single task when `id` is provided, keeping current list behaviour otherwise.
-
-## Files in this hotfix
-
-- `patches/api_tasks_patch.py` – drop‑in replacement for your `api_tasks` view function in `main.py`.
-- `patches/gd_api_alias_patch.py` – add once near your Flask routes to expose `/gd/api/tasks` as an alias.
-- `sql/migration.sql` – optional safety migration if you prefer a DB default for `created_at`.
-- `test/http_examples.http` – ready-to-run HTTP examples (Insomnia/VS Code REST Client format).
-
-## Apply
-
-1. **Open `main.py`** and replace your existing `api_tasks` function with the one from
-   `patches/api_tasks_patch.py` (it has the same endpoint: `/api/tasks`).
-
-2. **Add the alias route** from `patches/gd_api_alias_patch.py` (anywhere after `api_tasks`), so old
-   frontend calls to `/gd/api/tasks` keep working.
-
-3. (Optional) If you want DB-level defaults as well, run `sql/migration.sql` once on your SQLite DB.
-
-4. **Redeploy**. No template/CSS changes required; existing buttons calling
-   `DELETE /gd/api/tasks?id=…`, `PATCH /gd/api/tasks`, etc., will work immediately.
+*A comprehensive web application for construction/landscaping business management*
 
 ---
 
-**Tip:** If your frontend calls `PUT` instead of `PATCH` for edits, the new handler supports both.
+## 🇨🇿 Česky
+
+### O aplikaci
+
+Green David App je moderní Flask webová aplikace navržená pro správu všech aspektů stavební nebo zahradnické firmy:
+
+- **Zakázky** - Kompletní správa projektů s rozpočty, materiály a termíny
+- **Zaměstnanci** - Evidence pracovníků, docházky a výkonů  
+- **Timesheety** - Sledování odpracovaných hodin
+- **Sklad** - Správa materiálů s rezervacemi pro zakázky
+- **Plánování** - Denní, týdenní a timeline pohledy
+- **Školka rostlin** - Katalog a správa rostlin
+- **Finance** - Přehled nákladů a fakturace
+- **Reporty** - Exporty do Excelu
+
+### Rychlý start
+
+```bash
+# 1. Klonování repozitáře
+git clone https://github.com/YOUR_USERNAME/green-david-app.git
+cd green-david-app
+
+# 2. Vytvoření virtuálního prostředí
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# nebo: venv\Scripts\activate  # Windows
+
+# 3. Instalace závislostí
+pip install -r requirements.txt
+
+# 4. Spuštění aplikace
+python main.py
+
+# Aplikace běží na http://localhost:5000
+```
+
+### Výchozí přihlašovací údaje
+
+| Uživatel | Heslo | Role |
+|----------|-------|------|
+| admin | admin | owner |
+
+### Požadavky
+
+- Python 3.9+
+- Flask 3.0+
+- SQLite (vestavěná databáze)
+
+---
+
+## 🇬🇧 English
+
+### About
+
+Green David App is a modern Flask web application designed for managing all aspects of a construction or landscaping business:
+
+- **Jobs** - Complete project management with budgets, materials and deadlines
+- **Employees** - Worker records, attendance and performance tracking
+- **Timesheets** - Working hours tracking
+- **Warehouse** - Material management with job reservations
+- **Planning** - Daily, weekly and timeline views
+- **Plant Nursery** - Plant catalog and management
+- **Finance** - Cost overview and invoicing
+- **Reports** - Excel exports
+
+### Quick Start
+
+```bash
+# 1. Clone repository
+git clone https://github.com/YOUR_USERNAME/green-david-app.git
+cd green-david-app
+
+# 2. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# or: venv\Scripts\activate  # Windows
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run application
+python main.py
+
+# App runs on http://localhost:5000
+```
+
+### Default Login
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin | owner |
+
+### Requirements
+
+- Python 3.9+
+- Flask 3.0+
+- SQLite (built-in database)
+
+---
+
+## 🚀 Deployment
+
+### Render.com
+
+Aplikace je připravena pro deployment na Render.com:
+
+1. Vytvořte nový Web Service
+2. Připojte GitHub repozitář
+3. Nastavte:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn main:app`
+4. Přidejte Disk pro perzistentní databázi (`/persistent`)
+
+### Environment Variables
+
+| Proměnná | Popis | Výchozí |
+|----------|-------|---------|
+| `SECRET_KEY` | Tajný klíč pro sessions | auto-generated |
+| `DB_PATH` | Cesta k SQLite databázi | `app.db` |
+| `UPLOAD_DIR` | Adresář pro nahrané soubory | `uploads` |
+
+---
+
+## 📱 Mobilní podpora
+
+Aplikace je plně responzivní a optimalizovaná pro mobilní zařízení s:
+- Adaptivním layoutem pro všechny velikosti obrazovek
+- Touch-friendly ovládacími prvky
+- Dolní navigační lištou pro snadný přístup
+- PWA-ready strukturou
+
+---
+
+## 📁 Struktura projektu
+
+```
+green-david-app/
+├── main.py              # Hlavní Flask aplikace
+├── wsgi.py              # WSGI entry point
+├── requirements.txt     # Python závislosti
+├── Dockerfile           # Docker konfigurace
+├── Procfile             # Render/Heroku konfigurace
+├── static/              # CSS, JS, obrázky
+│   ├── style.css
+│   ├── js/
+│   └── img/
+├── templates/           # HTML šablony (Jinja2)
+├── *.html               # Hlavní stránky aplikace
+└── migrations/          # SQL migrace
+```
+
+---
+
+## 🔧 API Endpoints
+
+Aplikace poskytuje REST API pro všechny moduly:
+
+- `/api/jobs` - CRUD operace pro zakázky
+- `/api/employees` - Správa zaměstnanců
+- `/api/timesheets` - Docházka
+- `/api/warehouse` - Sklad materiálů
+- `/api/planning` - Plánování
+- `/api/nursery` - Školka rostlin
+
+---
+
+## 📝 License
+
+MIT License - volně použitelné pro komerční i nekomerční účely.
+
+---
+
+## 👨‍💻 Autor
+
+Green David s.r.o. - Příbram, Česká republika
+
+---
+
+*Vytvořeno s ❤️ pro české stavební a zahradnické firmy*
