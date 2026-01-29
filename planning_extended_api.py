@@ -115,6 +115,159 @@ def create_nursery_plant():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def update_nursery_plant():
+    """PUT /api/nursery/plants/<id>"""
+    try:
+        plant_id = request.view_args.get('plant_id')
+        data = request.json
+        db = get_db()
+        
+        db.execute("""
+            UPDATE nursery_plants
+            SET species = ?, variety = ?, quantity = ?, stage = ?,
+                location = ?, planted_date = ?, purchase_price = ?,
+                selling_price = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (
+            data['species'],
+            data.get('variety'),
+            data.get('quantity', 0),
+            data.get('stage', 'semínko'),
+            data.get('location'),
+            data.get('planted_date'),
+            data.get('purchase_price'),
+            data.get('selling_price'),
+            data.get('notes'),
+            plant_id
+        ))
+        db.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def move_to_warehouse():
+    """POST /api/nursery/plants/<id>/to-warehouse - Přesun rostlin do skladu"""
+    try:
+        plant_id = request.view_args.get('plant_id')
+        data = request.json
+        db = get_db()
+        
+        quantity_to_move = int(data.get('quantity', 0))
+        if quantity_to_move <= 0:
+            return jsonify({'success': False, 'error': 'Množství musí být větší než 0'}), 400
+        
+        # Získat rostlinu ze školky
+        plant = db.execute("SELECT * FROM nursery_plants WHERE id = ? AND status = 'active'", (plant_id,)).fetchone()
+        if not plant:
+            return jsonify({'success': False, 'error': 'Rostlina nenalezena'}), 404
+        
+        plant = dict(plant)
+        
+        if quantity_to_move > plant['quantity']:
+            return jsonify({'success': False, 'error': f"Nelze přesunout více než {plant['quantity']} ks"}), 400
+        
+        # Vytvořit název pro sklad
+        warehouse_name = plant['species']
+        if plant.get('variety'):
+            warehouse_name += f" '{plant['variety']}'"
+        
+        # Zjistit jestli už existuje ve skladu
+        existing = db.execute("""
+            SELECT id, qty FROM warehouse_items 
+            WHERE name = ? AND status = 'active'
+        """, (warehouse_name,)).fetchone()
+        
+        if existing:
+            # Přidat k existující položce
+            db.execute("""
+                UPDATE warehouse_items 
+                SET qty = qty + ?, updated_at = datetime('now')
+                WHERE id = ?
+            """, (quantity_to_move, existing['id']))
+            warehouse_item_id = existing['id']
+        else:
+            # Vytvořit novou položku ve skladu
+            cursor = db.execute("""
+                INSERT INTO warehouse_items 
+                (name, sku, category, qty, unit, price, minStock, note, location, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            """, (
+                warehouse_name,
+                f"PLANT-{plant_id}",
+                'Rostliny',
+                quantity_to_move,
+                plant.get('unit', 'ks'),
+                plant.get('selling_price', 0),
+                5,  # min stock
+                f"Ze školky: {plant.get('notes', '')}",
+                data.get('warehouse_location', 'Prodejní sklad')
+            ))
+            warehouse_item_id = cursor.lastrowid
+        
+        # Zaznamenat pohyb ve skladu
+        db.execute("""
+            INSERT INTO warehouse_movements 
+            (item_id, movement_type, qty, to_location, note, created_at)
+            VALUES (?, 'in', ?, ?, ?, datetime('now'))
+        """, (
+            warehouse_item_id,
+            quantity_to_move,
+            data.get('warehouse_location', 'Prodejní sklad'),
+            f"Přesun ze školky - {plant['species']}"
+        ))
+        
+        # Snížit množství ve školce
+        new_quantity = plant['quantity'] - quantity_to_move
+        if new_quantity <= 0:
+            # Označit jako přesunuté (ne smazat kvůli historii)
+            db.execute("""
+                UPDATE nursery_plants 
+                SET quantity = 0, status = 'moved_to_warehouse', updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (plant_id,))
+        else:
+            db.execute("""
+                UPDATE nursery_plants 
+                SET quantity = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (new_quantity, plant_id))
+        
+        db.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Přesunuto {quantity_to_move} ks do skladu',
+            'warehouse_item_id': warehouse_item_id,
+            'remaining_in_nursery': new_quantity
+        })
+    except Exception as e:
+        print(f"[ERROR] Move to warehouse: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_warehouse_transfer_history():
+    """GET /api/nursery/warehouse-transfers - Historie přesunů do skladu"""
+    try:
+        db = get_db()
+        
+        transfers = db.execute("""
+            SELECT wm.*, wi.name as item_name
+            FROM warehouse_movements wm
+            JOIN warehouse_items wi ON wm.item_id = wi.id
+            WHERE wm.note LIKE '%školky%'
+            ORDER BY wm.created_at DESC
+            LIMIT 50
+        """).fetchall()
+        
+        return jsonify({
+            'success': True,
+            'transfers': [dict(t) for t in transfers]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def log_watering():
     """POST /api/nursery/watering"""
     try:

@@ -405,9 +405,23 @@
             </a>
             
             <!-- Job Header -->
-            <div class="job-header">
+            <div class="job-header" style="position:relative;">
+                <button onclick="editJob()" style="position:absolute;top:20px;right:20px;padding:10px 20px;background:#4299e1;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Upravit
+                </button>
                 <h1 id="job-title">Načítám...</h1>
                 <div class="job-meta">
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <path d="M8 12h8M12 8v8"></path>
+                        </svg>
+                        <span id="job-code">—</span>
+                    </div>
                     <div class="meta-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -812,35 +826,41 @@
                 <button class="btn-close" onclick="closeModal('modal-material')">&times;</button>
             </div>
             <form id="form-material" onsubmit="saveMaterial(event)">
-                <div class="form-group">
-                    <label>Název materiálu *</label>
-                    <input type="text" name="name" required>
+                <div class="form-group" style="position:relative;">
+                    <label>Název materiálu * (začni psát pro vyhledání ve skladu)</label>
+                    <input type="text" id="material-name-input" name="name" autocomplete="off" required 
+                           placeholder="Např. štípa, kniphofia...">
+                    <div id="material-autocomplete" style="
+                        position: absolute;
+                        width: 100%;
+                        max-height: 300px;
+                        overflow-y: auto;
+                        background: #1a2332;
+                        border: 1px solid #2d3748;
+                        border-radius: 8px;
+                        display: none;
+                        z-index: 1000;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                    "></div>
+                    <div id="material-info" style="display:none; margin-top:8px;"></div>
                 </div>
                 <div class="form-group">
-                    <label>Množství</label>
-                    <input type="number" name="quantity" step="0.01">
+                    <label>Množství *</label>
+                    <input type="number" id="material-qty-input" name="quantity" step="0.01" required>
                 </div>
                 <div class="form-group">
                     <label>Jednotka</label>
-                    <select name="unit">
-                        <option value="ks">ks</option>
-                        <option value="m">m</option>
-                        <option value="m2">m²</option>
-                        <option value="m3">m³</option>
-                        <option value="kg">kg</option>
-                        <option value="t">t</option>
-                        <option value="l">l</option>
-                    </select>
+                    <input type="text" id="material-unit-input" name="unit" value="ks" readonly>
                 </div>
                 <div class="form-group">
                     <label>Cena za jednotku (Kč)</label>
-                    <input type="number" name="price_per_unit" step="0.01">
+                    <input type="number" id="material-price-input" name="price_per_unit" step="0.01" readonly>
                 </div>
                 <div class="form-group">
                     <label>Dodavatel</label>
                     <input type="text" name="supplier">
                 </div>
-                <button type="submit" class="btn-primary">Přidat materiál</button>
+                <button type="submit" class="btn-primary">Přidat materiál a rezervovat</button>
             </form>
         </div>
     </div>
@@ -929,9 +949,10 @@
             
             // Header
             document.getElementById('job-title').textContent = job.title || 'Bez názvu';
+            document.getElementById('job-code').textContent = job.code || '—';
             document.getElementById('job-client').textContent = client?.name || job.client || '—';
             document.getElementById('job-location').textContent = location?.city || job.city || '—';
-            document.getElementById('job-date').textContent = job.date || '—';
+            document.getElementById('job-date').textContent = job.date || job.deadline || '—';
             
             const statusBadge = document.getElementById('job-status-badge');
             statusBadge.textContent = job.status || 'Neznámý';
@@ -1041,40 +1062,281 @@
             const container = document.getElementById('materials-table');
             if (!materials || materials.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <p>Žádný materiál</p>
-                        <button class="btn-primary" onclick="openMaterialModal()">Přidat materiál</button>
+                    <div style="padding:60px;text-align:center;color:#9ca3af;">
+                        <div style="font-size:48px;margin-bottom:16px;">📦</div>
+                        <div style="font-size:16px;margin-bottom:16px;">Zatím žádný materiál</div>
+                        <button class="btn-primary" onclick="openMaterialModal()">Přidat první materiál</button>
                     </div>
                 `;
                 return;
             }
             
+            // UŽŠÍ elegantní tabulka
             container.innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Název</th>
-                            <th>Množství</th>
-                            <th>Cena/ks</th>
-                            <th>Celkem</th>
-                            <th>Dodavatel</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${materials.map(m => `
-                            <tr>
-                                <td>${m.name}</td>
-                                <td>${m.quantity} ${m.unit}</td>
-                                <td>${formatCurrency(m.price_per_unit)}</td>
-                                <td>${formatCurrency(m.total_price)}</td>
-                                <td>${m.supplier || '—'}</td>
-                                <td><span class="badge ${getStatusClass(m.delivery_status)}">${m.delivery_status || 'pending'}</span></td>
+                <div style="background:#1e293b;border-radius:8px;overflow:hidden;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#0f172a;border-bottom:1px solid #334155;">
+                                <th style="padding:8px 12px;text-align:left;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Materiál</th>
+                                <th style="padding:8px 12px;text-align:center;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:100px;">Množství</th>
+                                <th style="padding:8px 12px;text-align:center;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:90px;">Cena/jedn</th>
+                                <th style="padding:8px 12px;text-align:center;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:100px;">Celkem</th>
+                                <th style="padding:8px 12px;text-align:left;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:140px;">Dodavatel</th>
+                                <th style="padding:8px 12px;text-align:center;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:120px;">Status</th>
+                                <th style="padding:8px 12px;text-align:center;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;width:60px;">Akce</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${materials.map(m => {
+                                const qty = m.qty || m.quantity || 0;
+                                const price = m.price || m.price_per_unit || 0;
+                                const total = qty * price;
+                                const isReserved = m.warehouse_item_id ? true : false;
+                                const status = m.status || 'planned';
+                                
+                                const statusColors = {
+                                    'planned': '#9ca3af',
+                                    'ordered': '#60a5fa',
+                                    'delivered': '#34d399',
+                                    'used': '#a78bfa'
+                                };
+                                
+                                const statusLabels = {
+                                    'planned': 'Plánováno',
+                                    'ordered': 'Objednáno',
+                                    'delivered': 'Dodáno',
+                                    'used': 'Použito'
+                                };
+                                
+                                return `
+                                <tr style="border-bottom:1px solid #334155;" onmouseenter="this.style.background='#334155'" onmouseleave="this.style.background='transparent'">
+                                    <td style="padding:10px 12px;">
+                                        <div style="display:flex;align-items:center;gap:6px;">
+                                            ${isReserved ? '<span style="font-size:16px;">📦</span>' : '<span style="font-size:16px;">📋</span>'}
+                                            <div>
+                                                <div style="font-weight:600;color:white;">${escapeHtml(m.name)}</div>
+                                                <div style="font-size:11px;color:#9ca3af;margin-top:2px;">
+                                                    ${isReserved ? '<span style="color:#9fd4a1;">Ze skladu</span>' : ''}
+                                                    ${m.warehouse_location ? ` • 📍${escapeHtml(m.warehouse_location)}` : ''}
+                                                    ${isReserved && m.reserved_qty ? ` • 🔒${m.reserved_qty}${m.unit}` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="padding:8px 10px;text-align:center;">
+                                        <div id="material-qty-${m.id}" 
+                                              onclick="editMaterialField(${m.id}, 'qty', ${qty})"
+                                              style="cursor:pointer;padding:3px 6px;font-weight:600;color:white;border-radius:4px;display:inline-block;background:#0f172a;border:2px solid transparent;"
+                                              onmouseenter="this.style.borderColor='#9fd4a1'"
+                                              onmouseleave="this.style.borderColor='transparent'">
+                                            ${qty.toFixed(2)} ${escapeHtml(m.unit || 'ks')}
+                                        </div>
+                                    </td>
+                                    <td style="padding:8px 10px;text-align:center;">
+                                        <div id="material-price-${m.id}" 
+                                              onclick="editMaterialField(${m.id}, 'price', ${price})"
+                                              style="cursor:pointer;padding:3px 6px;font-weight:600;color:white;border-radius:4px;display:inline-block;background:#0f172a;border:2px solid transparent;"
+                                              onmouseenter="this.style.borderColor='#9fd4a1'"
+                                              onmouseleave="this.style.borderColor='transparent'">
+                                            ${price.toFixed(2)} Kč
+                                        </div>
+                                    </td>
+                                    <td style="padding:10px 12px;text-align:center;">
+                                        <span style="font-weight:700;color:#9fd4a1;">${total.toFixed(2)} Kč</span>
+                                    </td>
+                                    <td style="padding:8px 10px;">
+                                        <div id="material-supplier-${m.id}" 
+                                              onclick="editMaterialField(${m.id}, 'supplier', '${escapeHtml(m.supplier || '')}')"
+                                              style="cursor:pointer;padding:4px 8px;color:white;border-radius:4px;display:inline-block;background:#0f172a;border:2px solid transparent;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                              onmouseenter="this.style.borderColor='#9fd4a1'"
+                                              onmouseleave="this.style.borderColor='transparent'"
+                                              title="${escapeHtml(m.supplier || 'Klikni pro úpravu')}">
+                                            ${m.supplier ? escapeHtml(m.supplier) : '<span style="color:#6b7280;">klikni</span>'}
+                                        </div>
+                                    </td>
+                                    <td style="padding:10px 12px;text-align:center;">
+                                        <select onchange="updateMaterialStatus(${m.id}, this.value)" 
+                                                style="background:${statusColors[status]};color:white;border:none;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;width:100%;">
+                                            ${Object.keys(statusLabels).map(s => 
+                                                `<option value="${s}" ${s === status ? 'selected' : ''}>${statusLabels[s]}</option>`
+                                            ).join('')}
+                                        </select>
+                                    </td>
+                                    <td style="padding:10px 12px;text-align:center;">
+                                        <button onclick="deleteMaterial(${m.id})" 
+                                                style="background:#ef4444;color:white;border:none;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:12px;"
+                                                onmouseenter="this.style.background='#dc2626'"
+                                                onmouseleave="this.style.background='#ef4444'"
+                                                title="Smazat${isReserved ? ' a uvolnit rezervaci' : ''}">
+                                            🗑️
+                                        </button>
+                                    </td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
+        }
+        
+        // Editace pole materiálu
+        let editingMaterialField = null;
+        
+        function editMaterialField(materialId, field, currentValue) {
+            if (editingMaterialField) {
+                cancelMaterialEdit();
+            }
+            
+            const div = document.getElementById(`material-${field}-${materialId}`);
+            if (!div) return;
+            
+            const originalHTML = div.innerHTML;
+            const inputType = (field === 'qty' || field === 'price') ? 'number' : 'text';
+            
+            editingMaterialField = { materialId, field, div, originalValue: currentValue, originalHTML };
+            
+            const input = document.createElement('input');
+            input.type = inputType;
+            input.value = currentValue;
+            input.style.cssText = `
+                width: 100%;
+                padding: 4px 8px;
+                background: #0f172a;
+                border: 2px solid #9fd4a1;
+                border-radius: 4px;
+                color: white;
+                font-size: 13px;
+                font-weight: 600;
+                box-shadow: 0 0 0 3px rgba(159,212,161,0.2);
+            `;
+            
+            if (inputType === 'number') {
+                input.step = '0.01';
+                input.min = '0';
+            }
+            
+            div.innerHTML = '';
+            div.appendChild(input);
+            
+            input.focus();
+            if (inputType === 'text') input.select();
+            
+            input.onblur = () => saveMaterialField();
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveMaterialField();
+                } else if (e.key === 'Escape') {
+                    cancelMaterialEdit();
+                }
+            };
+        }
+        
+        async function saveMaterialField() {
+            if (!editingMaterialField) return;
+            
+            const { materialId, field, div } = editingMaterialField;
+            const input = div.querySelector('input');
+            if (!input) return;
+            
+            const newValue = input.type === 'number' ? parseFloat(input.value) || 0 : input.value.trim();
+            
+            if (newValue === editingMaterialField.originalValue) {
+                cancelMaterialEdit();
+                return;
+            }
+            
+            // Mapování názvů polí pro API
+            const fieldMapping = {
+                'qty': 'quantity',
+                'price': 'price_per_unit',
+                'supplier': 'supplier'
+            };
+            const apiField = fieldMapping[field] || field;
+            
+            try {
+                const jobId = new URLSearchParams(window.location.search).get('id');
+                const response = await fetch(`/api/jobs/${jobId}/materials/${materialId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [apiField]: newValue })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to update');
+                }
+                
+                await loadJobData();
+                editingMaterialField = null;
+            } catch (error) {
+                console.error('Update error:', error);
+                alert('Chyba: ' + error.message);
+                cancelMaterialEdit();
+            }
+        }
+        
+        function cancelMaterialEdit() {
+            if (!editingMaterialField) return;
+            editingMaterialField.div.innerHTML = editingMaterialField.originalHTML;
+            editingMaterialField = null;
+        }
+        
+        async function updateMaterialStatus(materialId, newStatus) {
+            try {
+                const jobId = new URLSearchParams(window.location.search).get('id');
+                const response = await fetch(`/api/jobs/${jobId}/materials/${materialId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to update status');
+                }
+                
+                await loadJobData();
+            } catch (error) {
+                console.error('Status update error:', error);
+                alert('Chyba při změně statusu: ' + error.message);
+                await loadJobData();
+            }
+        }
+        
+        async function deleteMaterial(materialId) {
+            const material = jobData.materials.find(m => m.id === materialId);
+            const isReserved = material && material.warehouse_item_id;
+            
+            const confirmMsg = isReserved 
+                ? 'Opravdu smazat tento materiál?\n\n⚠️ Rezervace ze skladu bude automaticky uvolněna.' 
+                : 'Opravdu smazat tento materiál?';
+            
+            if (!confirm(confirmMsg)) return;
+            
+            try {
+                const jobId = new URLSearchParams(window.location.search).get('id');
+                const response = await fetch(`/api/jobs/${jobId}/materials/${materialId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to delete');
+                }
+                
+                await loadJobData();
+                alert(isReserved ? 'Materiál smazán a rezervace uvolněna' : 'Materiál smazán');
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Chyba při mazání: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
         }
         
         function renderTeam(team) {
@@ -1241,25 +1503,67 @@
         
         async function saveMaterial(e) {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
+            const form = e.target;
+            const nameInput = document.getElementById('material-name-input');
+            const qtyInput = document.getElementById('material-qty-input');
+            const warehouseItemId = nameInput.dataset.warehouseItemId;
+            const jobId = new URLSearchParams(window.location.search).get('id');
             
-            try {
-                const response = await fetch(`/api/jobs/${currentJobId}/materials`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (!response.ok) throw new Error('Failed to save');
-                
-                closeModal('modal-material');
-                e.target.reset();
-                loadJobData();
-                alert('Materiál přidán');
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Chyba při ukládání');
+            if (!jobId) return;
+            
+            const data = {
+                name: form.name.value,
+                quantity: parseFloat(form.quantity.value) || 0,
+                unit: form.unit.value,
+                price_per_unit: parseFloat(form.price_per_unit.value) || 0,
+                supplier: form.supplier.value
+            };
+            
+            // Pokud je vybrána položka ze skladu, použij rezervační endpoint
+            if (warehouseItemId) {
+                try {
+                    const response = await fetch(`/api/jobs/${jobId}/materials/reserve`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            warehouse_item_id: parseInt(warehouseItemId),
+                            qty: data.quantity
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert('Materiál rezervován ze skladu!');
+                        closeModal('modal-material');
+                        form.reset();
+                        delete nameInput.dataset.warehouseItemId;
+                        document.getElementById('material-info').style.display = 'none';
+                        loadJobData(); // Reload data
+                    } else {
+                        alert('Chyba: ' + (result.error || 'Nepodařilo se rezervovat'));
+                    }
+                } catch (error) {
+                    console.error('Reserve error:', error);
+                    alert('Chyba při rezervaci materiálu');
+                }
+            } else {
+                // Standardní přidání bez rezervace
+                try {
+                    const response = await fetch(`/api/jobs/${jobId}/materials`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (response.ok) {
+                        alert('Materiál přidán!');
+                        closeModal('modal-material');
+                        form.reset();
+                        loadJobData();
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                }
             }
         }
         
@@ -1332,6 +1636,19 @@
             };
             return map[status] || status;
         }
+        
+        // Edit job function
+        function editJob() {
+            const jobId = new URLSearchParams(window.location.search).get('id');
+            if (!jobId) return;
+            
+            // Redirect to jobs.html with edit modal open
+            window.location.href = `/jobs.html?edit=${jobId}`;
+        }
+        
+        // Initialize on load
+        loadJobData();
     </script>
+<script src="/static/js/job-materials-autocomplete.js"></script>
 </body>
 </html>

@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trvalkové školka | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <style>
+        :root {
+            --bg-primary: #0a0e11;
+            --bg-card: #151a1e;
+            --bg-modal: #1a1f24;
+            --border-primary: #2d3439;
+            --border-hover: #3d4449;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-muted: #6b7580;
+            --mint: #9FD4A1;
+            --mint-dark: #7ab87c;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-primary);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            border-color: var(--mint);
+            color: var(--mint);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Container */
+        .container {
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* Watering Section */
+        .watering-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .watering-section h2 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .watering-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-primary);
+        }
+
+        .watering-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .watering-info strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .watering-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Search */
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--mint);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        /* Plants Grid */
+        .plants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .plant-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .plant-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--mint);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .plant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .plant-name {
+            font-weight: 700;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        .plant-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .plant-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-semínko {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .badge-sazenice {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+
+        .badge-prodejní {
+            background: rgba(159, 212, 161, 0.15);
+            color: var(--mint);
+            border: 1px solid rgba(159, 212, 161, 0.3);
+        }
+
+        .badge-low-stock {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .plant-variety {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .plant-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .plant-stat {
+            background: var(--bg-primary);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .plant-stat-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .plant-stat-value {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .plant-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-primary);
+        }
+
+        .plant-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .plant-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            background: var(--mint);
+            color: #0a0e11;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: var(--mint-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--mint);
+            color: var(--mint);
+        }
+
+        .btn-filter {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .btn-filter:hover {
+            border-color: var(--mint);
+            color: var(--text-primary);
+        }
+
+        .btn-filter.active {
+            background: var(--mint);
+            color: #0a0e11;
+            border-color: var(--mint);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-modal);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--mint);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            grid-column: 1/-1;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            grid-column: 1/-1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .plants-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="javascript:history.back()" class="back-btn">← Zpět</a>
+            <h1>🌸 Trvalkové školka</h1>
+            <button class="btn" onclick="showAddPlantModal()" style="margin-left: auto;">
+                + Přidat rostlinu
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">🌱</div>
+                <div class="label">Celkem rostlin</div>
+                <div class="value" id="totalPlants">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">✅</div>
+                <div class="label">Ready na prodej</div>
+                <div class="value" id="readySale">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🌿</div>
+                <div class="label">Pěstování</div>
+                <div class="value" id="growing">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="label">Hodnota skladu</div>
+                <div class="value" id="stockValue">0 Kč</div>
+            </div>
+        </div>
+
+        <!-- Watering Section -->
+        <div class="watering-section" id="wateringSection" style="display:none;">
+            <h2>💧 Zalít dnes</h2>
+            <div id="wateringList"></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Hledat rostlinu..." onkeyup="handleSearch()">
+            </div>
+            
+            <div class="filter-group">
+                <button class="btn-filter active" onclick="filterPlants('all')" id="filterAll">
+                    Všechny
+                </button>
+                <button class="btn-filter" onclick="filterPlants('semínko')" id="filterSeed">
+                    Semínka
+                </button>
+                <button class="btn-filter" onclick="filterPlants('sazenice')" id="filterSeedling">
+                    Sazenice
+                </button>
+                <button class="btn-filter" onclick="filterPlants('prodejní')" id="filterSale">
+                    Prodejní
+                </button>
+            </div>
+
+            <button class="btn-secondary btn-sm" onclick="showSortOptions()">
+                🔄 Seřadit
+            </button>
+        </div>
+
+        <!-- Plants Grid -->
+        <div class="plants-grid" id="plantsGrid">
+            <div class="loading">
+                Načítám rostliny...
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Plant Modal -->
+    <div class="modal" id="plantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Přidat rostlinu</h2>
+                <button class="modal-close" onclick="closePlantModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="plantForm" onsubmit="savePlant(event)">
+                    <input type="hidden" id="plantId">
+                    
+                    <div class="form-group">
+                        <label>Název druhu *</label>
+                        <input type="text" id="species" required placeholder="např. Echinacea purpurea">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Odrůda</label>
+                        <input type="text" id="variety" placeholder="např. Magnus">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Množství *</label>
+                            <input type="number" id="quantity" required min="0" value="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fáze *</label>
+                            <select id="stage" required>
+                                <option value="semínko">Semínko</option>
+                                <option value="sazenice">Sazenice</option>
+                                <option value="prodejní">Prodejní</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Lokace</label>
+                        <input type="text" id="location" placeholder="např. Skleník 1, Police A3">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Datum zasazení</label>
+                        <input type="date" id="plantedDate">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nákupní cena (Kč)</label>
+                            <input type="number" id="purchasePrice" min="0" step="0.01" placeholder="0.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Prodejní cena (Kč)</label>
+                            <input type="number" id="sellingPrice" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poznámky</label>
+                        <textarea id="notes" placeholder="Další informace o rostlině..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closePlantModal()">Zrušit</button>
+                <button class="btn" onclick="document.getElementById('plantForm').requestSubmit()">
+                    Uložit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plant Detail Modal -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle">Detail rostliny</h2>
+                <button class="modal-close" onclick="closeDetailModal()">×</button>
+            </div>
+            <div class="modal-body" id="detailContent">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDetailModal()">Zavřít</button>
+                <button class="btn" onclick="editCurrentPlant()">Upravit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPlants = [];
+        let currentFilter = 'all';
+        let currentSort = 'name';
+        let currentPlant = null;
+
+        // Load data on page load
+        async function loadData() {
+            try {
+                const [overviewResp, plantsResp] = await Promise.all([
+                    fetch('/api/nursery/overview'),
+                    fetch('/api/nursery/plants')
+                ]);
+                
+                const overview = await overviewResp.json();
+                const plants = await plantsResp.json();
+
+                if (overview.success) {
+                    // Update stats
+                    document.getElementById('totalPlants').textContent = overview.stats.total_plants || 0;
+                    document.getElementById('readySale').textContent = overview.stats.ready_for_sale || 0;
+                    document.getElementById('growing').textContent = overview.stats.growing || 0;
+                    
+                    // Calculate stock value
+                    const value = plants.plants?.reduce((sum, p) => {
+                        return sum + ((p.selling_price || 0) * p.quantity);
+                    }, 0) || 0;
+                    document.getElementById('stockValue').textContent = value.toLocaleString('cs-CZ') + ' Kč';
+                    
+                    // Watering section
+                    if (overview.watering_today && overview.watering_today.length > 0) {
+                        document.getElementById('wateringSection').style.display = 'block';
+                        renderWateringList(overview.watering_today);
+                    } else {
+                        document.getElementById('wateringSection').style.display = 'none';
+                    }
+                }
+
+                if (plants.success) {
+                    allPlants = plants.plants || [];
+                    renderPlants();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('plantsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div>Chyba při načítání dat</div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderWateringList(watering) {
+            let html = '';
+            watering.forEach(w => {
+                html += `
+                    <div class="watering-item">
+                        <div class="watering-info">
+                            <strong>${w.species}</strong>
+                            <div class="watering-details">
+                                ${w.location || 'Bez lokace'} • ${w.quantity} ks
+                            </div>
+                        </div>
+                        <button class="btn btn-sm" onclick="logWatering(${w.id})">
+                            ✓ Zalito
+                        </button>
+                    </div>
+                `;
+            });
+            document.getElementById('wateringList').innerHTML = html;
+        }
+
+        function filterPlants(stage) {
+            currentFilter = stage;
+            
+            // Update active button
+            document.querySelectorAll('.btn-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const buttonMap = {
+                'all': 'filterAll',
+                'semínko': 'filterSeed',
+                'sazenice': 'filterSeedling',
+                'prodejní': 'filterSale'
+            };
+            
+            document.getElementById(buttonMap[stage])?.classList.add('active');
+            
+            renderPlants();
+        }
+
+        function handleSearch() {
+            renderPlants();
+        }
+
+        function renderPlants() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allPlants;
+            
+            // Apply stage filter
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(p => p.stage === currentFilter);
+            }
+            
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(p => {
+                    return (p.species || '').toLowerCase().includes(searchTerm) ||
+                           (p.variety || '').toLowerCase().includes(searchTerm) ||
+                           (p.location || '').toLowerCase().includes(searchTerm);
+                });
+            }
+            
+            // Sort
+            filtered.sort((a, b) => {
+                if (currentSort === 'name') {
+                    return (a.species || '').localeCompare(b.species || '');
+                } else if (currentSort === 'quantity') {
+                    return (b.quantity || 0) - (a.quantity || 0);
+                } else if (currentSort === 'date') {
+                    return (b.planted_date || '').localeCompare(a.planted_date || '');
+                }
+                return 0;
+            });
+            
+            const grid = document.getElementById('plantsGrid');
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🌱</div>
+                        <div>Žádné rostliny nenalezeny</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(p => {
+                const isLowStock = p.quantity < 10 && p.stage === 'prodejní';
+                const badges = [];
+                
+                badges.push(`<span class="plant-badge badge-${p.stage}">${p.stage}</span>`);
+                
+                if (isLowStock) {
+                    badges.push(`<span class="plant-badge badge-low-stock">Nízký stav</span>`);
+                }
+                
+                html += `
+                    <div class="plant-card" onclick="showPlantDetail(${p.id})">
+                        <div class="plant-header">
+                            <div class="plant-name">${p.species || 'Bez názvu'}</div>
+                            <div class="plant-badges">
+                                ${badges.join('')}
+                            </div>
+                        </div>
+                        ${p.variety ? `<div class="plant-variety">${p.variety}</div>` : ''}
+                        
+                        <div class="plant-stats">
+                            <div class="plant-stat">
+                                <div class="plant-stat-label">Množství</div>
+                                <div class="plant-stat-value">${p.quantity || 0} ks</div>
+                            </div>
+                            <div class="plant-stat">
+                                <div class="plant-stat-label">Lokace</div>
+                                <div class="plant-stat-value">${p.location || '-'}</div>
+                            </div>
+                            ${p.selling_price ? `
+                                <div class="plant-stat">
+                                    <div class="plant-stat-label">Cena</div>
+                                    <div class="plant-stat-value">${p.selling_price} Kč</div>
+                                </div>
+                            ` : ''}
+                            ${p.planted_date ? `
+                                <div class="plant-stat">
+                                    <div class="plant-stat-label">Zasazeno</div>
+                                    <div class="plant-stat-value">${formatDate(p.planted_date)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="plant-footer">
+                            <div class="plant-date">
+                                Vytvořeno ${formatDateTime(p.created_at)}
+                            </div>
+                            <div class="plant-actions" onclick="event.stopPropagation()">
+                                <button class="btn-secondary btn-sm" onclick="editPlant(${p.id})">
+                                    ✏️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        function showSortOptions() {
+            const options = ['name', 'quantity', 'date'];
+            const labels = {
+                'name': 'Název',
+                'quantity': 'Množství',
+                'date': 'Datum'
+            };
+            
+            const nextIndex = (options.indexOf(currentSort) + 1) % options.length;
+            currentSort = options[nextIndex];
+            
+            alert(`Seřazeno podle: ${labels[currentSort]}`);
+            renderPlants();
+        }
+
+        function showAddPlantModal() {
+            document.getElementById('modalTitle').textContent = 'Přidat rostlinu';
+            document.getElementById('plantForm').reset();
+            document.getElementById('plantId').value = '';
+            document.getElementById('plantModal').classList.add('active');
+        }
+
+        function closePlantModal() {
+            document.getElementById('plantModal').classList.remove('active');
+        }
+
+        async function savePlant(event) {
+            event.preventDefault();
+            
+            const plantId = document.getElementById('plantId').value;
+            const data = {
+                species: document.getElementById('species').value,
+                variety: document.getElementById('variety').value || null,
+                quantity: parseInt(document.getElementById('quantity').value) || 0,
+                stage: document.getElementById('stage').value,
+                location: document.getElementById('location').value || null,
+                planted_date: document.getElementById('plantedDate').value || null,
+                purchase_price: parseFloat(document.getElementById('purchasePrice').value) || null,
+                selling_price: parseFloat(document.getElementById('sellingPrice').value) || null,
+                notes: document.getElementById('notes').value || null
+            };
+            
+            try {
+                const url = plantId ? `/api/nursery/plants/${plantId}` : '/api/nursery/plants';
+                const method = plantId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    closePlantModal();
+                    loadData();
+                } else {
+                    alert('Chyba při ukládání');
+                }
+            } catch (error) {
+                alert('Chyba: ' + error.message);
+            }
+        }
+
+        function editPlant(id) {
+            const plant = allPlants.find(p => p.id === id);
+            if (!plant) return;
+            
+            document.getElementById('modalTitle').textContent = 'Upravit rostlinu';
+            document.getElementById('plantId').value = plant.id;
+            document.getElementById('species').value = plant.species || '';
+            document.getElementById('variety').value = plant.variety || '';
+            document.getElementById('quantity').value = plant.quantity || 0;
+            document.getElementById('stage').value = plant.stage || 'semínko';
+            document.getElementById('location').value = plant.location || '';
+            document.getElementById('plantedDate').value = plant.planted_date || '';
+            document.getElementById('purchasePrice').value = plant.purchase_price || '';
+            document.getElementById('sellingPrice').value = plant.selling_price || '';
+            document.getElementById('notes').value = plant.notes || '';
+            
+            document.getElementById('plantModal').classList.add('active');
+        }
+
+        function showPlantDetail(id) {
+            const plant = allPlants.find(p => p.id === id);
+            if (!plant) return;
+            
+            currentPlant = plant;
+            
+            document.getElementById('detailTitle').textContent = plant.species;
+            
+            const content = `
+                <div style="margin-bottom: 20px;">
+                    ${plant.variety ? `<div style="font-size: 16px; color: var(--text-secondary); font-style: italic; margin-bottom: 20px;">${plant.variety}</div>` : ''}
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                        <div class="plant-stat">
+                            <div class="plant-stat-label">Fáze</div>
+                            <div class="plant-stat-value">
+                                <span class="plant-badge badge-${plant.stage}">${plant.stage}</span>
+                            </div>
+                        </div>
+                        <div class="plant-stat">
+                            <div class="plant-stat-label">Množství</div>
+                            <div class="plant-stat-value">${plant.quantity} ks</div>
+                        </div>
+                        <div class="plant-stat">
+                            <div class="plant-stat-label">Lokace</div>
+                            <div class="plant-stat-value">${plant.location || '-'}</div>
+                        </div>
+                        ${plant.planted_date ? `
+                            <div class="plant-stat">
+                                <div class="plant-stat-label">Zasazeno</div>
+                                <div class="plant-stat-value">${formatDate(plant.planted_date)}</div>
+                            </div>
+                        ` : ''}
+                        ${plant.purchase_price ? `
+                            <div class="plant-stat">
+                                <div class="plant-stat-label">Nákupní cena</div>
+                                <div class="plant-stat-value">${plant.purchase_price} Kč</div>
+                            </div>
+                        ` : ''}
+                        ${plant.selling_price ? `
+                            <div class="plant-stat">
+                                <div class="plant-stat-label">Prodejní cena</div>
+                                <div class="plant-stat-value">${plant.selling_price} Kč</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${plant.notes ? `
+                        <div style="margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-primary);">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Poznámky</div>
+                            <div style="color: var(--text-primary);">${plant.notes}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('detailContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+            currentPlant = null;
+        }
+
+        function editCurrentPlant() {
+            if (currentPlant) {
+                closeDetailModal();
+                editPlant(currentPlant.id);
+            }
+        }
+
+        async function logWatering(plantId) {
+            try {
+                const response = await fetch('/api/nursery/watering', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        plant_id: plantId,
+                        date: new Date().toISOString().split('T')[0]
+                    })
+                });
+                
+                if (response.ok) {
+                    loadData(); // Reload to update watering list
+                } else {
+                    alert('Chyba při zaznamenání zalévání');
+                }
+            } catch (error) {
+                alert('Chyba: ' + error.message);
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('cs-CZ');
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('cs-CZ');
+        }
+
+        // Close modals on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePlantModal();
+                closeDetailModal();
+            }
+        });
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>

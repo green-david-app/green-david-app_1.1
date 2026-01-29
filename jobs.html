@@ -277,25 +277,45 @@
             </div>
             <div class="modal-body">
                 <form id="job-form">
-                    <input type="text" id="job-title" placeholder="Název zakázky *" required>
+                    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
+                        <input type="text" id="job-title" placeholder="Název zakázky *" required>
+                        <input type="text" id="job-code" placeholder="Kód *" required>
+                    </div>
                     <input type="text" id="job-client" placeholder="Klient">
-                    <input type="text" id="job-address" placeholder="Adresa / Lokace">
+                    <input type="text" id="job-address" placeholder="Místo / Město *" required>
+                    
+                    <div style="margin:16px 0 8px 0;font-size:14px;font-weight:600;color:var(--text-primary);">📅 Termíny</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:block;">Datum zadání</label>
+                            <input type="date" id="job-created-date" placeholder="Datum zadání">
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:block;">Datum začátku</label>
+                            <input type="date" id="job-start-date" placeholder="Datum začátku">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:block;">Deadline *</label>
+                        <input type="date" id="job-deadline" placeholder="Deadline" required>
+                    </div>
+                    
+                    <div style="margin:16px 0 8px 0;font-size:14px;font-weight:600;color:var(--text-primary);">⚙️ Další informace</div>
                     <div class="form-row">
-                        <input type="date" id="job-deadline" placeholder="Deadline">
                         <select id="job-priority">
                             <option value="medium">Střední priorita</option>
                             <option value="high">Vysoká priorita</option>
                             <option value="low">Nízká priorita</option>
                         </select>
+                        <select id="job-type">
+                            <option value="">Typ zakázky</option>
+                            <option value="reconstruction">Rekonstrukce</option>
+                            <option value="new-build">Novostavba</option>
+                            <option value="repair">Oprava</option>
+                            <option value="renovation">Renovace</option>
+                            <option value="maintenance">Údržba</option>
+                        </select>
                     </div>
-                    <select id="job-type">
-                        <option value="">Typ zakázky</option>
-                        <option value="reconstruction">Rekonstrukce</option>
-                        <option value="new-build">Novostavba</option>
-                        <option value="repair">Oprava</option>
-                        <option value="renovation">Renovace</option>
-                        <option value="maintenance">Údržba</option>
-                    </select>
                     <input type="number" id="job-budget" placeholder="Rozpočet (Kč)">
                     <textarea id="job-description" placeholder="Popis" rows="4"></textarea>
                 </form>
@@ -338,9 +358,15 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Název zakázky *</label>
-                    <input type="text" id="edit-title" class="form-input" required>
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
+                    <div class="form-group">
+                        <label>Název zakázky *</label>
+                        <input type="text" id="edit-title" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kód *</label>
+                        <input type="text" id="edit-code" class="form-input" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Klient</label>
@@ -374,6 +400,10 @@
                             <option value="Dokončeno">Dokončeno</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Odhadovaná cena (Kč)</label>
+                    <input type="number" id="edit-budget" class="form-input" min="0" step="1000" placeholder="0">
                 </div>
                 <div class="form-group">
                     <label>Progress (%)</label>
@@ -432,6 +462,7 @@
                     const empData = await employeesRes.json();
                     employees = empData.employees || [];
                 }
+    if (window.hideLoading) window.hideLoading();
                 
                 // Mapuj data z API
                 jobs = apiJobs.map(job => ({
@@ -660,7 +691,7 @@
                     ${job.progress !== undefined ? `<span style="color: var(--mint); font-weight: bold; font-size: 12px;">${job.progress}%</span>` : ''}
                 </div>
                 <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="event.stopPropagation(); assignEmployee(${job.id})" title="Upravit zakázku" aria-label="Upravit">
+                    <button class="quick-action-btn" onclick="event.stopPropagation(); openEditJobModal(${job.id})" title="Upravit zakázku" aria-label="Upravit">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; max-width: 23px !important; max-height: 23px !important;">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1440,7 +1471,7 @@
         document.getElementById('btn-save-job')?.addEventListener('click', async () => {
             const title = document.getElementById('job-title').value.trim();
             const city = document.getElementById('job-address').value.trim();
-            const code = ''; // Může být prázdný
+            const code = document.getElementById('job-code')?.value.trim() || '';
             const date = document.getElementById('job-deadline').value;
             
             // DEBUG: Zkontroluj všechna datum pole
@@ -1467,6 +1498,11 @@
             
             if (!city) {
                 if (window.showToast) window.showToast('Vyplňte adresu/lokaci', 'warning');
+                return;
+            }
+            
+            if (!code) {
+                if (window.showToast) window.showToast('Vyplňte kód zakázky', 'warning');
                 return;
             }
             
@@ -2277,12 +2313,14 @@ function openEditJobModal(jobId) {
             };
             
             document.getElementById('edit-title').value = job.title || '';
+            document.getElementById('edit-code').value = job.code || '';
             document.getElementById('edit-client').value = job.client || '';
             document.getElementById('edit-address').value = job.address || '';
             document.getElementById('edit-deadline').value = job.deadline ? job.deadline.split('T')[0] : '';
             document.getElementById('edit-created-date').value = job.created_date ? job.created_date.split('T')[0] : '';
             document.getElementById('edit-start-date').value = job.start_date ? job.start_date.split('T')[0] : '';
             document.getElementById('edit-status').value = statusMap[job.status] || 'Plán';
+            document.getElementById('edit-budget').value = job.estimated_value || job.budget || 0;
             document.getElementById('edit-progress').value = job.progress || 0;
             document.getElementById('edit-notes').value = job.notes || '';
             
@@ -2349,9 +2387,12 @@ function openEditJobModal(jobId) {
             };
             const mappedStatus = statusMapReverse[statusValue] || 'new';
             
+            const budget = parseInt(document.getElementById('edit-budget').value) || 0;
+            
             const updateData = {
                 id: currentJobId,
                 title: title,
+                code: document.getElementById('edit-code').value.trim(),
                 client: document.getElementById('edit-client').value.trim(),
                 city: document.getElementById('edit-address').value.trim(),
                 date: deadline,
@@ -2359,7 +2400,8 @@ function openEditJobModal(jobId) {
                 start_date: startDate || null,
                 status: mappedStatus, // Použij mapovanou hodnotu (new, active, atd.)
                 note: document.getElementById('edit-notes').value.trim(),
-                progress: progressValue
+                progress: progressValue,
+                estimated_value: budget
             };
             
             try {
@@ -3428,6 +3470,30 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add after the original button
         btnNewJob.parentNode.insertBefore(btnExtended, btnNewJob.nextSibling);
+    }
+});
+
+// Check for ?edit=ID parameter and open edit modal
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    if (editId) {
+        // Wait for jobs to load
+        const checkLoaded = setInterval(() => {
+            if (jobs && jobs.length > 0) {
+                clearInterval(checkLoaded);
+                // Hide loading spinner
+                if (window.hideLoading) window.hideLoading();
+                // Open edit modal
+                openEditJobModal(parseInt(editId));
+            }
+        }, 100);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            clearInterval(checkLoaded);
+            if (window.hideLoading) window.hideLoading();
+        }, 5000);
     }
 });
 </script>
