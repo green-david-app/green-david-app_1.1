@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Vyhledávání - Green David</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <script src="/app-settings.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
+  <style>
+    .search-page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .search-meta { color: #9ca8b3; margin: 6px 0 18px; }
+    .search-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .search-group { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; }
+    .search-group h2 { margin: 0 0 12px; font-size: 16px; color: #e7eef6; display:flex; align-items:center; gap:10px;}
+    .search-item { padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; }
+    .search-item:last-child { margin-bottom: 0; }
+    .search-item a { color: #9FD4A1; text-decoration: none; font-weight: 600; }
+    .search-item a:hover { text-decoration: underline; }
+    .search-item .muted { color: #9ca8b3; font-size: 13px; margin-top: 4px; }
+    .search-empty { padding: 14px 12px; color: #9ca8b3; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.18); border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="search-page">
+      <h1>Vyhledávání</h1>
+      <div class="search-meta" id="search-meta">Načítám…</div>
+      <div class="search-groups" id="search-groups"></div>
+    </div>
+  </div>
+
+  <div id="bottom-nav-container"></div>
+  <script src="/static/bottom-nav.js"></script>
+  <script src="/static/js/components/header.js"></script>
+  <script src="/static/search.js"></script>
+</body>
+</html>

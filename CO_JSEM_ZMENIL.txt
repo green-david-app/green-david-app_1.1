@@ -1,0 +1,113 @@
+# CO JSEM PŘESNĚ ZMĚNIL
+
+## EMPLOYEES.HTML:
+
+### 1. CSS - ODSTRANIL jsem width/height (řádek ~303-310):
+```css
+PŘED:
+.quick-action-btn-small svg {
+    width: 90px;
+    height: 90px;
+    ...
+}
+
+PO:
+.quick-action-btn-small svg {
+    /* width and height set inline in HTML */
+    stroke: #000000 !important;
+    fill: none;
+    stroke-width: 2 !important;
+    display: block;
+}
+```
+
+### 2. CSS Desktop - ODSTRANIL width/height (řádek ~318-323):
+```css
+PŘED:
+.quick-action-btn-small svg {
+    width: 180px !important;
+    height: 180px !important;
+    ...
+}
+
+PO:
+.quick-action-btn-small svg {
+    /* width and height removed */
+    stroke-width: 2 !important;
+    stroke: #000000 !important;
+}
+```
+
+### 3. HTML - SVG tagy (řádky ~1230, 1237, 1244, 1251):
+```html
+PŘED:
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5">
+
+PO:
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" style="width: 35px !important; height: 35px !important; min-width: 35px !important; min-height: 35px !important; max-width: 35px !important; max-height: 35px !important;">
+```
+
+---
+
+## JOBS.HTML:
+
+### 1. CSS - ODSTRANIL width/height (řádek ~727-737):
+```css
+PŘED:
+.quick-action-btn svg {
+    width: 125px !important;
+    height: 125px !important;
+    stroke-width: 4 !important;
+    ...
+}
+
+PO:
+.quick-action-btn svg {
+    /* width and height removed */
+    stroke: #000000 !important;
+    stroke-width: 2 !important;
+    ...
+}
+```
+
+### 2. CSS paths - ZMĚNIL stroke-width (řádek ~739-747):
+```css
+PŘED:
+stroke-width: 4 !important;
+
+PO:
+stroke-width: 2 !important;
+```
+
+### 3. HTML - SVG tagy s inline style:
+```html
+PŘED:
+<svg style="width:18px;height:18px">
+
+PO:
+<svg style="width:35px !important;height:35px !important;min-width:35px !important;min-height:35px !important;max-width:35px !important;max-height:35px !important">
+```
+
+---
+
+## SHRNUTÍ ZMĚN:
+
+✅ **Ikony mají 35px** (ne 18px, 90px, 125px nebo 180px)
+✅ **Vynuceno pomocí min/max** aby to CSS nepřepsalo
+✅ **stroke-width: 2** (ne 4 nebo 5) - tenčí čáry
+✅ **Barva černá** (#000000)
+
+---
+
+## JAK TESTOVAT:
+
+1. Nahraj soubory na server
+2. HARD REFRESH (Cmd+Shift+R)
+3. Otevři Developer Tools → Elements
+4. Klikni na SVG ikonu
+5. V Computed styles by mělo být: **width: 35px, height: 35px**
+
+Pokud NE, problém je v:
+- Cachování
+- Jiný CSS soubor co to přepisuje
+- JavaScript co mění velikosti
