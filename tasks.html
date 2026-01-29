@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="tasks.title">Úkoly - Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <script src="/app-settings.js"></script>
+</head>
+<body>
+        <div class="page">
+            <h1><span data-i18n="tasks.title">✅ Úkoly</span> & <span data-i18n="issues.title">Issues</span></h1>
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <button class="btn-primary" id="btn-new-task"><span data-i18n="tasks.add">+ Nový úkol</span></button>
+                <a href="/issues" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; padding: 10px 20px;">
+                    <span data-i18n="tasks.show_issues">🚨 Zobrazit Issues</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- My Issues Section -->
+        <div id="my-issues-section" style="margin-bottom: 32px; padding: 20px; background: #1a1a1a; border-radius: 12px; border-left: 4px solid #ff4444;">
+            <h2 style="margin: 0 0 16px 0; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                <span>🚨</span> <span data-i18n="tasks.my_issues">Moje Issues</span>
+                <span id="my-issues-count" style="background: #ff4444; padding: 2px 8px; border-radius: 12px; font-size: 14px;">0</span>
+            </h2>
+            <div id="my-issues-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="opacity: 0.5; text-align: center; padding: 20px;" data-i18n="msg.loading">Načítám...</div>
+            </div>
+        </div>
+
+        <!-- Filtry -->
+        <div class="filters-bar">
+            <button class="filter-btn active" data-filter="all"><span data-i18n="tasks.filter.all">Všechny</span></button>
+            <button class="filter-btn" data-filter="my"><span data-i18n="tasks.filter.my">Moje úkoly</span></button>
+            <button class="filter-btn" data-filter="high"><span data-i18n="tasks.filter.high">🔴 Vysoká priorita</span></button>
+            <button class="filter-btn" data-filter="today"><span data-i18n="tasks.filter.today">Dnes</span></button>
+        </div>
+
+        <!-- Kanban -->
+        <div class="tasks-kanban">
+            <div class="task-column">
+                <h3><span data-i18n="tasks.status.todo">📝 K dokončení</span> <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-todo"></div>
+            </div>
+
+            <div class="task-column">
+                <h3><span data-i18n="tasks.status.in_progress">🔄 Probíhá</span> <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-progress"></div>
+            </div>
+
+            <div class="task-column">
+                <h3><span data-i18n="tasks.status.done">✅ Hotovo</span> <span class="count">0</span></h3>
+                <div class="task-list" id="tasks-done"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="tasks.add">Nový úkol</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <input type="text" id="task-title" data-i18n-placeholder="tasks.placeholder.name" placeholder="Název úkolu" required>
+                    <textarea id="task-desc" data-i18n-placeholder="tasks.placeholder.desc" placeholder="Popis" rows="3"></textarea>
+                    <input type="date" id="task-deadline" data-i18n-placeholder="tasks.placeholder.deadline" placeholder="Deadline">
+                    <select id="task-priority">
+                        <option value="low" data-i18n="tasks.priority.low">🟢 Nízká</option>
+                        <option value="medium" selected data-i18n="tasks.priority.medium">🟡 Střední</option>
+                        <option value="high" data-i18n="tasks.priority.high">🔴 Vysoká</option>
+                    </select>
+                    <select id="task-assignee">
+                        <option value="" data-i18n="tasks.placeholder.assignee">Vyberte zaměstnance</option>
+                        <option>Petr Novák</option>
+                        <option>Jana Svobodová</option>
+                        <option>Martin Dvořák</option>
+                    </select>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal" data-i18n="action.cancel">Zrušit</button>
+                <button class="btn-primary" id="btn-save-task" data-i18n="action.create">Vytvořit</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="/static/toast.js"></script>
+    <script src="/static/loading.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script src="/static/keyboard-shortcuts.js"></script>
+    <script>
+        const mockTasks = [
+            {
+                id: 1,
+                title: "Objednat materiál na Třebonice",
+                description: "Obklady, lepidlo, spárovací hmota",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-15",
+                assignee: "Petr Novák"
+            },
+            {
+                id: 2,
+                title: "Kontrola elektroinstalace",
+                status: "progress",
+                priority: "medium",
+                deadline: "2026-01-20",
+                assignee: "Jana Svobodová"
+            },
+            {
+                id: 3,
+                title: "Zavolat klientovi",
+                status: "done",
+                priority: "low",
+                deadline: "2026-01-10",
+                assignee: "Martin Dvořák"
+            },
+            {
+                id: 4,
+                title: "Připravit fakturu",
+                description: "Faktura za dokončenou zakázku",
+                status: "todo",
+                priority: "high",
+                deadline: "2026-01-18",
+                assignee: "Eva Nováková"
+            },
+            {
+                id: 5,
+                title: "Aktualizovat web",
+                status: "progress",
+                priority: "low",
+                deadline: null,
+                assignee: null
+            }
+        ];
+
+        let tasks = [];
+        let currentFilter = 'all';
+        let employees = [];
+
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const res = await fetch('/api/employees');
+                if (res.ok) {
+                    const data = await res.json();
+                    employees = data.employees || [];
+                    console.log('Employees loaded:', employees.length);
+                }
+            } catch (e) {
+                console.error('Error loading employees:', e);
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                if (res.ok) {
+                    const data = await res.json();
+                    tasks = (data.tasks || []).map(t => {
+                        // Normalize API payload to UI expectations
+                        const nt = { ...t };
+                        if (!nt.assignee) nt.assignee = nt.employee_name || null;
+                        if (!nt.priority) nt.priority = 'medium';
+                        // Backend historically used arbitrary statuses; map common ones.
+                        if (nt.status === 'open' || nt.status === 'new' || nt.status === null || nt.status === undefined) nt.status = 'todo';
+                        if (nt.status === 'in_progress') nt.status = 'progress';
+                        if (nt.status === 'resolved' || nt.status === 'closed') nt.status = 'done';
+                        return nt;
+                    });
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (e) {
+                console.warn('API not available, using mock data:', e);
+                tasks = [...mockTasks];
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const statusMap = {
+                todo: 'tasks-todo',
+                progress: 'tasks-progress',
+                done: 'tasks-done'
+            };
+
+            Object.keys(statusMap).forEach(status => {
+                const container = document.getElementById(statusMap[status]);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                let filteredTasks = tasks.filter(t => {
+                    if (t.status !== status) return false;
+                    
+                    // Apply filters
+                    if (currentFilter === 'my') {
+                        // Mock - would check current user
+                        return t.assignee !== null;
+                    }
+                    if (currentFilter === 'high') {
+                        return t.priority === 'high';
+                    }
+                    if (currentFilter === 'today') {
+                        if (!t.deadline) return false;
+                        const today = new Date().toISOString().slice(0, 10);
+                        return t.deadline === today;
+                    }
+                    return true;
+                });
+                
+                filteredTasks.forEach(task => {
+                    const item = createTaskItem(task);
+                    container.appendChild(item);
+                });
+                
+                // Update count
+                const column = container.closest('.task-column');
+                if (column) {
+                    column.querySelector('.count').textContent = filteredTasks.length;
+                }
+            });
+        }
+
+        function createTaskItem(task) {
+            const item = document.createElement('div');
+            item.className = `task-item ${task.status === 'done' ? 'completed' : ''}`;
+            item.dataset.taskId = task.id;
+            
+            const priorityIcon = {
+                high: '🔴',
+                medium: '🟡',
+                low: '🟢'
+            }[task.priority] || '🟡';
+            
+            item.innerHTML = `
+                <h4>${escapeHtml(task.title)}</h4>
+                ${task.description ? `<p style="color: rgba(255,255,255,0.6); font-size: 12px; margin: 4px 0;">${escapeHtml(task.description)}</p>` : ''}
+                <div class="task-meta">
+                    <span>${priorityIcon}</span>
+                    ${task.deadline ? `<span>📅 ${task.deadline}</span>` : ''}
+                    ${task.assignee ? `<span>👤 ${escapeHtml(task.assignee)}</span>` : ''}
+                </div>
+            `;
+            
+            // Click to open detail modal
+            item.addEventListener('click', () => {
+                openTaskDetail(null, task.id);
+            });
+            
+            return item;
+        }
+
+        // Modal
+        document.getElementById('btn-new-task')?.addEventListener('click', () => {
+            document.getElementById('task-modal').classList.add('active');
+        });
+
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('task-modal').classList.remove('active');
+            });
+        });
+
+        document.getElementById('btn-save-task')?.addEventListener('click', () => {
+            const title = document.getElementById('task-title').value.trim();
+            if (!title) {
+                showToast('Vyplňte název úkolu', 'warning');
+                return;
+            }
+            
+            const newTask = {
+                id: Math.max(...tasks.map(t => t.id), 0) + 1,
+                title: title,
+                description: document.getElementById('task-desc').value.trim(),
+                status: 'todo',
+                priority: document.getElementById('task-priority').value,
+                deadline: document.getElementById('task-deadline').value || null,
+                assignee: document.getElementById('task-assignee').value || null
+            };
+            
+            tasks.push(newTask);
+            renderTasks();
+            document.getElementById('task-modal').classList.remove('active');
+            document.getElementById('task-form').reset();
+            showToast('Úkol vytvořen', 'success');
+        });
+
+        // Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderTasks();
+            });
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load my issues
+        async function loadMyIssues() {
+            try {
+                // Get current user
+                const meRes = await fetch('/api/me');
+                const meData = await meRes.json();
+                
+                if (!meData.authenticated || !meData.user || !meData.user.employee_id) {
+                    document.getElementById('my-issues-section').style.display = 'none';
+                    return;
+                }
+                
+                const employeeId = meData.user.employee_id;
+                
+                // Load issues assigned to me
+                const res = await fetch(`/api/issues?assigned_to=${employeeId}&status=open`);
+                const data = await res.json();
+                
+                if (data.ok) {
+                    const issues = data.issues || [];
+                    const count = issues.length;
+                    
+                    document.getElementById('my-issues-count').textContent = count;
+                    
+                    const container = document.getElementById('my-issues-list');
+                    
+                    if (count === 0) {
+                        container.innerHTML = '<div style="opacity: 0.5; text-align: center; padding: 20px;">Žádné přiřazené issues</div>';
+                    } else {
+                        container.innerHTML = issues.map(issue => `
+                            <div style="background: #222; padding: 12px 16px; border-radius: 8px; cursor: pointer; border-left: 3px solid ${issue.type === 'blocker' ? '#ff4444' : '#ffa500'};"
+                                 onclick="window.location.href='/jobs/${issue.job_id}'">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(issue.title)}</div>
+                                        <div style="font-size: 13px; opacity: 0.7;">
+                                            ${escapeHtml(issue.job_name || 'Bez zakázky')}
+                                            ${issue.description ? ' • ' + escapeHtml(issue.description).substring(0, 50) + '...' : ''}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <span style="background: ${issue.type === 'blocker' ? '#ff4444' : '#ffa500'}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                            ${issue.type === 'blocker' ? 'Blokuje' : 'To-Do'}
+                                        </span>
+                                        <button onclick="event.stopPropagation(); resolveIssue(${issue.id})" 
+                                                style="background: #00cc66; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                            Vyřešit
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading issues:', e);
+            }
+        }
+        
+        async function resolveIssue(issueId) {
+            try {
+                const res = await fetch('/api/issues', {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: issueId, status: 'resolved'})
+                });
+                
+                if (res.ok) {
+                    loadMyIssues();
+                }
+            } catch (e) {
+                console.error('Error resolving issue:', e);
+            }
+        }
+
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                loadEmployees();
+                loadTasks();
+                loadMyIssues();
+            });
+        } else {
+            loadEmployees();
+            loadTasks();
+            loadMyIssues();
+        }
+    </script>
+    
+    <!-- Task Detail Modal -->
+    <div id="task-detail-modal" class="task-detail-modal">
+        <div class="task-detail-content">
+            <div class="task-detail-header">
+                <div class="task-detail-title" id="modal-title">Detail úkolu</div>
+                <button class="task-detail-close" onclick="closeTaskDetailModal()">×</button>
+            </div>
+            
+            <div class="task-detail-body">
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Název</div>
+                    <input type="text" id="modal-task-title" class="task-detail-input" placeholder="Název úkolu">
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Popis</div>
+                    <textarea id="modal-task-description" class="task-detail-textarea" placeholder="Podrobný popis..."></textarea>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Stav</div>
+                    <select id="modal-task-status" class="task-detail-input">
+                        <option value="open">K dokončení</option>
+                        <option value="in_progress">Probíhá</option>
+                        <option value="done"data-i18n="tasks.status.done">Hotovo</option>
+                    </select>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Přiřazení zaměstnanci</div>
+                    <select id="modal-add-employee" class="task-detail-input" style="margin-bottom: 12px;" onchange="modalAddEmployee(this.value); this.value='';">
+                        <option value="">+ Přidat zaměstnance</option>
+                    </select>
+                    <div id="modal-employees-list" class="task-detail-employee-list"></div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Poznámky & Komentáře</div>
+                    <div id="modal-comments" class="task-detail-comments"></div>
+                    <div class="task-detail-add-comment">
+                        <textarea id="modal-new-comment" class="task-detail-input" placeholder="Přidat poznámku..." style="flex:1; min-height: 60px;"></textarea>
+                        <button class="btn-secondary" onclick="addTaskComment()" style="align-self: flex-end;">Přidat</button>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📍 Poloha GPS</div>
+                    <div id="modal-location-container">
+                        <div id="modal-location-display" style="display:none;">
+                            <div id="modal-map" style="width:100%; height:200px; border-radius:6px; margin-bottom:12px; background:#0d0d0d;"></div>
+                            <div style="display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:8px;">
+                                <span id="modal-coords"></span>
+                                <a id="modal-gmaps-link" href="#" target="_blank" style="color:#B2FBA5;">Otevřít v Google Maps</a>
+                            </div>
+                            <button class="btn-secondary" onclick="removeLocation()" style="padding:6px 12px; font-size:13px;">Smazat polohu</button>
+                        </div>
+                        <div id="modal-location-actions" style="display:flex; gap:8px;">
+                            <button class="btn-secondary" onclick="getCurrentLocation()" style="padding:8px 12px;">📍 Získat aktuální polohu</button>
+                            <button class="btn-secondary" onclick="selectLocationOnMap()" style="padding:8px 12px;">🗺️ Vybrat na mapě</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📎 Přílohy</div>
+                    <div id="modal-file-drop-zone" style="border:2px dashed #333; border-radius:6px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer; transition:all 0.2s;"
+                         onclick="document.getElementById('modal-file-input').click()"
+                         ondragover="event.preventDefault(); this.style.borderColor='#B2FBA5';"
+                         ondragleave="this.style.borderColor='#333';"
+                         ondrop="handleFileDrop(event)">
+                        <div style="opacity:0.7; font-size:14px;">📎 Klikni nebo přetáhni soubory</div>
+                        <div style="opacity:0.5; font-size:12px; margin-top:4px;">PDF, obrázky, dokumenty, videa...</div>
+                        <input type="file" id="modal-file-input" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+                    </div>
+                    <div id="modal-files" class="task-detail-files"></div>
+                </div>
+            </div>
+            
+            <div class="task-detail-actions">
+                <button class="btn-secondary" onclick="deleteTaskFromModal()">🗑️ Smazat</button>
+                <button class="btn-secondary" onclick="closeTaskDetailModal()">Zrušit</button>
+                <button class="btn-primary" onclick="saveTaskDetails()">💾 Uložit změny</button>
+            </div>
+        </div>
+    </div>
+    
+    <link rel="stylesheet" href="/static/css/task-detail-modal.css">
+    <script src="/static/js/task-detail-modal.js"></script>
+    
+    <div id="bottom-nav-container"></div>
+    <script src="/static/bottom-nav.js"></script>
+    <link rel="stylesheet" href="/static/icons.css">
+    <script src="/static/js/components/header.js"></script>
+</body>
+</html>
