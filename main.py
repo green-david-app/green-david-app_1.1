@@ -16,6 +16,14 @@ except ImportError:
     CREW_API_AVAILABLE = False
     print("[INFO] Crew API module not available")
 
+# AI Operator Draft Actions API
+try:
+    from ai_operator_drafts import draft_actions_bp, init_draft_actions
+    DRAFT_ACTIONS_AVAILABLE = True
+except ImportError:
+    DRAFT_ACTIONS_AVAILABLE = False
+    print("[INFO] AI Operator Draft Actions module not available")
+
 # Database path configuration
 # Priority: 1. DB_PATH env var, 2. Persistent disk detection, 3. Default
 if os.environ.get("DB_PATH"):
@@ -44,6 +52,11 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 if CREW_API_AVAILABLE:
     app.register_blueprint(crew_bp)
     print("[INFO] Crew Control System API registered")
+
+# Register AI Operator Draft Actions API blueprint
+if DRAFT_ACTIONS_AVAILABLE:
+    app.register_blueprint(draft_actions_bp)
+    print("[INFO] AI Operator Draft Actions API registered")
 
 @app.after_request
 def _disable_cache_for_static(resp):
@@ -1151,6 +1164,13 @@ def _ensure():
             _migrate_crew_control_tables()  # New: Crew Control System tables
         except Exception as e:
             print(f"[DB] Migration warning: {e}")
+        # Initialize AI Operator Draft Actions
+        try:
+            if DRAFT_ACTIONS_AVAILABLE:
+                init_draft_actions(get_db)
+                print("[INFO] AI Operator Draft Actions initialized")
+        except Exception as e:
+            print(f"[AI] Draft Actions init warning: {e}")
         _ensure._schema_ready = True
     seed_admin()
     _auto_upgrade_admins_to_owner()

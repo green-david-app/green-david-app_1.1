@@ -590,11 +590,13 @@
         <div class="page-header">
             <h1>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/>
-                    <path d="M16 14h.01M8 14h.01"/>
-                    <path d="M12 17v3"/>
-                    <path d="M20 12c0 4.418-3.582 8-8 8s-8-3.582-8-8"/>
                     <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="6"/>
+                    <circle cx="12" cy="12" r="2"/>
+                    <line x1="12" y1="2" x2="12" y2="6"/>
+                    <line x1="12" y1="18" x2="12" y2="22"/>
+                    <line x1="2" y1="12" x2="6" y2="12"/>
+                    <line x1="18" y1="12" x2="22" y2="12"/>
                 </svg>
                 <span>AI Operátor</span>
             </h1>
@@ -1755,5 +1757,6 @@
             setInterval(loadNotificationCount, 60000);
         });
     </script>
+    <script src="/static/js/ai-operator-loader.js"></script>
 </body>
 </html>

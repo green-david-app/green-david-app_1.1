@@ -224,6 +224,9 @@ function createMoreMenu() {
                 <a href="/" class="more-menu-item">
                     <span>přehled</span>
                 </a>
+                <a href="/ai-operator.html" class="more-menu-item" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%); border-left: 3px solid #8b5cf6;">
+                    <span>🎯 AI Operátor</span>
+                </a>
                 <a href="/calendar.html" class="more-menu-item">
                     <span>kalendář</span>
                 </a>
