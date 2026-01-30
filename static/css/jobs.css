@@ -1,6 +1,0 @@
-/* static/css/jobs.css nebo přidat do tvého hlavního style.css */
-
-/* zvýraznění vybrané zakázky v tabulce */
-#jobs-table-body tr.selected-job {
-  background-color: #e0f3ff;
-}
