@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tým - Správa týmu | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <script src="/app-settings.js"></script>
+    <style>
+        /* ====================================
+           CREW CONTROL SYSTEM STYLES
+           ==================================== */
+        
+        .crew-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        /* View Mode Tabs */
+        .view-mode-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 6px;
+            width: fit-content;
+        }
+        
+        .view-mode-tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .view-mode-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .view-mode-tab.active {
+            background: var(--mint);
+            color: #000;
+        }
+        
+        .view-mode-tab svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Stats Overview Cards */
+        .crew-stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 1200px) {
+            .crew-stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .crew-stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .crew-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .crew-stat-card .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .crew-stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .crew-stat-card .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .crew-stat-card .stat-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .crew-stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .crew-stat-card .stat-change {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-change.positive { color: var(--mint); }
+        .stat-change.negative { color: var(--danger); }
+        .stat-change.neutral { color: var(--text-tertiary); }
+        
+        /* AI Asistent týmu Panel */
+        .ai-assistant-panel {
+            background: linear-gradient(135deg, rgba(178, 251, 165, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+            border: 1px solid rgba(178, 251, 165, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        
+        .ai-assistant-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--mint) 0%, var(--accent-blue) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .ai-assistant-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: #000;
+        }
+        
+        .ai-assistant-content {
+            flex: 1;
+        }
+        
+        .ai-assistant-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ai-badge {
+            font-size: 10px;
+            background: var(--mint);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .ai-assistant-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .ai-message {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .ai-message-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .ai-message.warning .ai-message-icon { color: var(--warning); }
+        .ai-message.success .ai-message-icon { color: var(--mint); }
+        .ai-message.info .ai-message-icon { color: var(--accent-blue); }
+        
+        /* Capacity Heatmap */
+        .capacity-heatmap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .heatmap-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .heatmap-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+        
+        .legend-dot.green { background: var(--mint); }
+        .legend-dot.orange { background: var(--warning); }
+        .legend-dot.blue { background: var(--accent-blue); }
+        .legend-dot.red { background: var(--danger); }
+        
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 150px repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .heatmap-day-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 8px 4px;
+        }
+        
+        .heatmap-row {
+            display: contents;
+        }
+        
+        .heatmap-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        
+        .heatmap-name-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--mint);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .heatmap-cell {
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #000;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .heatmap-cell.available { background: var(--mint); }
+        .heatmap-cell.partial { background: var(--warning); }
+        .heatmap-cell.overloaded { background: var(--danger); }
+        .heatmap-cell.underutilized { background: var(--accent-blue); }
+        .heatmap-cell.vacation { background: #9ca3af; color: #fff; }
+        .heatmap-cell.empty { background: rgba(255,255,255,0.05); color: var(--text-tertiary); }
+        
+        /* Team Members Grid */
+        .team-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .team-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .team-count-badge {
+            background: var(--bg-elevated);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .team-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .search-input {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            min-width: 200px;
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        
+        .team-members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        
+        /* Crew Member Card - Enhanced */
+        .crew-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .crew-card:hover {
+            border-color: var(--mint);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        
+        .crew-card-header {
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+        }
+        
+        .crew-avatar-container {
+            position: relative;
+        }
+        
+        .crew-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--mint) 0%, var(--accent-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            overflow: hidden;
+        }
+        
+        .crew-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .crew-status-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid var(--bg-card);
+        }
+        
+        .crew-status-indicator.online { background: var(--mint); }
+        .crew-status-indicator.partial { background: var(--warning); }
+        .crew-status-indicator.offline { background: #6b7280; }
+        .crew-status-indicator.vacation { background: var(--accent-blue); }
+        
+        .crew-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .crew-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .crew-role {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        /* Skill Badges */
+        .skill-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .skill-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .skill-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .skill-badge.planting { color: var(--mint); }
+        .skill-badge.wood { color: #d4a574; }
+        .skill-badge.logistics { color: var(--accent-blue); }
+        .skill-badge.planning { color: var(--accent-purple); }
+        .skill-badge.maintenance { color: var(--warning); }
+        
+        /* Account & Permission Badges */
+        .crew-account-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .account-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .account-badge svg {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .account-badge.owner {
+            background: rgba(178, 251, 165, 0.2);
+            color: var(--mint);
+            border: 1px solid rgba(178, 251, 165, 0.4);
+        }
+        
+        .account-badge.manager {
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--accent-purple);
+            border: 1px solid rgba(167, 139, 250, 0.4);
+        }
+        
+        .account-badge.lander {
+            background: rgba(96, 165, 250, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid rgba(96, 165, 250, 0.4);
+        }
+        
+        .account-badge.worker {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .account-badge.no-account {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--text-tertiary);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .permission-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-tertiary);
+        }
+        
+        .permission-badge svg {
+            width: 10px;
+            height: 10px;
+        }
+        
+        .permission-badge.can-view { color: var(--text-secondary); }
+        .permission-badge.can-edit { color: var(--mint); }
+        .permission-badge.can-manage { color: var(--accent-purple); }
+        
+        /* Contact Info Row */
+        .crew-contact-info {
+            padding: 0 20px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .contact-item svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+        
+        .contact-item a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .contact-item a:hover {
+            color: var(--mint);
+        }
+        
+        /* Contract Type Badge */
+        .contract-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-tertiary);
+        }
+        
+        .contract-badge.hpp { background: rgba(178, 251, 165, 0.15); color: var(--mint); }
+        .contract-badge.dpp { background: rgba(96, 165, 250, 0.15); color: var(--accent-blue); }
+        .contract-badge.osvc { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
+        .contract-badge.brigadnik { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+        
+        /* Member Detail Modal Styles */
+        .member-detail-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .member-detail-header {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            padding: 32px;
+            background: linear-gradient(135deg, rgba(178, 251, 165, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%);
+            border-bottom: 1px solid var(--border-primary);
+            position: relative;
+        }
+        
+        .member-detail-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--mint), var(--accent-blue));
+        }
+        
+        .member-detail-header .crew-avatar {
+            width: 88px;
+            height: 88px;
+            font-size: 36px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        
+        .member-detail-header-info {
+            flex: 1;
+        }
+        
+        .member-detail-header-info h2 {
+            margin: 0 0 4px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        
+        .member-detail-header-info > p {
+            margin: 0 0 12px;
+            font-size: 15px;
+        }
+        
+        .member-detail-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .member-detail-actions {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 600px) {
+            .member-detail-actions {
+                flex-direction: row;
+            }
+        }
+        
+        .member-detail-actions .btn-primary,
+        .member-detail-actions .btn-danger {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .member-detail-actions .btn-primary {
+            background: var(--mint);
+            color: #000;
+        }
+        
+        .member-detail-actions .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .member-detail-actions .btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .status-badge.online { background: rgba(178, 251, 165, 0.2); color: var(--mint); }
+        .status-badge.offline { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+        .status-badge.vacation { background: rgba(96, 165, 250, 0.2); color: var(--accent-blue); }
+        
+        .member-detail-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 24px;
+            background: rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        
+        .member-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .member-tab svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .member-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.08);
+        }
+        
+        .member-tab.active {
+            color: var(--mint);
+            background: rgba(178, 251, 165, 0.1);
+            border-color: rgba(178, 251, 165, 0.3);
+        }
+        
+        .member-tab-content {
+            padding: 28px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+        
+        .member-section {
+            margin-bottom: 36px;
+        }
+        
+        .member-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .member-section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .member-section-title svg {
+            width: 22px;
+            height: 22px;
+            color: var(--mint);
+        }
+        
+        .member-info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 900px) {
+            .member-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .member-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .member-info-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 16px 18px;
+            transition: all 0.2s;
+        }
+        
+        .member-info-item:hover {
+            border-color: rgba(178, 251, 165, 0.3);
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .member-info-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .member-info-value {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .member-info-value a {
+            color: var(--mint);
+            text-decoration: none;
+        }
+        
+        .member-info-value a:hover {
+            text-decoration: underline;
+        }
+        
+        .member-info-value.restricted {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-tertiary);
+            font-style: italic;
+            font-size: 12px;
+        }
+        
+        .member-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 700px) {
+            .member-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .member-stat-card {
+            background: linear-gradient(135deg, rgba(178, 251, 165, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .member-stat-card:hover {
+            border-color: rgba(178, 251, 165, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .member-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .member-stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Permissions List */
+        .permissions-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 600px) {
+            .permissions-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        
+        .permission-item:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .permission-item.granted {
+            border-color: rgba(178, 251, 165, 0.3);
+        }
+        
+        .permission-item.denied {
+            opacity: 0.5;
+        }
+        
+        .permission-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .permission-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .permission-item.granted .permission-icon {
+            background: rgba(178, 251, 165, 0.15);
+            color: var(--mint);
+        }
+        
+        .permission-item.denied .permission-icon {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        .perproject-info {
+            flex: 1;
+        }
+        
+        .perproject-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .permission-desc {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* Capacity Ring */
+        .crew-card-body {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        .capacity-ring-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+        }
+        
+        .capacity-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .capacity-ring-bg {
+            fill: none;
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 8;
+        }
+        
+        .capacity-ring-fill {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.5s ease;
+        }
+        
+        .capacity-ring-fill.green { stroke: var(--mint); }
+        .capacity-ring-fill.orange { stroke: var(--warning); }
+        .capacity-ring-fill.red { stroke: var(--danger); }
+        .capacity-ring-fill.blue { stroke: var(--accent-blue); }
+        
+        .capacity-ring-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .capacity-ring-percent {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        
+        .capacity-ring-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+        
+        /* Stats Mini Grid */
+        .crew-stats-mini {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .crew-stat-mini {
+            text-align: center;
+        }
+        
+        .crew-stat-mini-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        
+        .crew-stat-mini-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        /* Performance Spark Line */
+        .performance-spark {
+            padding: 0 20px 16px;
+        }
+        
+        .spark-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .spark-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .spark-trend {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .spark-trend.up { color: var(--mint); }
+        .spark-trend.down { color: var(--danger); }
+        .spark-trend.stable { color: var(--text-tertiary); }
+        
+        .spark-line-container {
+            height: 32px;
+            position: relative;
+        }
+        
+        .spark-line-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .spark-line-path {
+            fill: none;
+            stroke: var(--mint);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .spark-line-area {
+            fill: url(#sparkGradient);
+            opacity: 0.3;
+        }
+        
+        /* Micro Indicators Row */
+        .crew-indicators {
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-primary);
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .crew-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .crew-indicator svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .crew-indicator.warning svg { color: var(--warning); }
+        .crew-indicator.ok svg { color: var(--mint); }
+        
+        /* Quick Actions */
+        .crew-card-actions {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 16px;
+        }
+        
+        .crew-action-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        
+        .crew-action-btn:hover {
+            background: var(--mint);
+            border-color: var(--mint);
+            color: #000;
+        }
+        
+        .crew-action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .crew-stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .team-members-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .heatmap-grid {
+                grid-template-columns: 100px repeat(7, 1fr);
+                font-size: 10px;
+            }
+            
+            .view-mode-tabs {
+                width: 100%;
+                overflow-x: auto;
+            }
+            
+            .ai-assistant-panel {
+                flex-direction: column;
+            }
+        }
+        
+        /* Worker View Specific */
+        .worker-dashboard {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1024px) {
+            .worker-dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .my-projects {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .project-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .project-card:hover {
+            border-color: var(--mint);
+        }
+        
+        .project-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .project-status.active { background: var(--mint); }
+        .project-status.pending { background: var(--warning); }
+        .project-status.completed { background: #6b7280; }
+        
+        .project-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .project-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .project-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .project-time {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* Today's Schedule Panel */
+        .today-schedule {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        
+        .schedule-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        
+        .schedule-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .schedule-item:last-child {
+            border-bottom: none;
+        }
+        
+        .schedule-time {
+            width: 60px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--mint);
+        }
+        
+        .schedule-content {
+            flex: 1;
+        }
+        
+        .schedule-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .schedule-location {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <!-- Generated by header.js -->
+    </header>
+    
+    <div class="page crew-dashboard">
+        <!-- Page Title Bar -->
+        <div class="page-title-bar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+            <h1 style="display:flex;align-items:center;gap:12px;margin:0;font-size:28px;">
+                <svg style="width:32px;height:32px;stroke:#B2FBA5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+                Tým
+            </h1>
+            <button class="btn-primary" onclick="showAddMemberModal()" style="display:flex;align-items:center;gap:8px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Přidat člena
+            </button>
+        </div>
+        
+        <!-- View Mode Tabs -->
+        <div class="view-mode-tabs" id="viewModeTabs">
+            <button class="view-mode-tab active" data-mode="manager" onclick="switchViewMode('manager')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Manažer
+            </button>
+            <button class="view-mode-tab" data-mode="leader" onclick="switchViewMode('leader')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+                Vedoucí
+            </button>
+            <button class="view-mode-tab" data-mode="worker" onclick="switchViewMode('worker')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Pracovník
+            </button>
+        </div>
+        
+        <!-- Manager View Content -->
+        <div id="managerView" class="view-content">
+            <!-- Stats Overview -->
+            <div class="crew-stats-row">
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Aktivní členové</span>
+                        <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statActiveMembers">0</div>
+                    <div class="stat-change positive" id="statActiveMembersChange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        </svg>
+                        <span>+2 tento týden</span>
+                    </div>
+                </div>
+                
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Průměrné vytížení</span>
+                        <div class="stat-icon" style="background:rgba(96,165,250,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statAvgUtilization">0%</div>
+                    <div class="stat-change neutral" id="statUtilizationChange">
+                        <span>Optimální rozsah: 70-85%</span>
+                    </div>
+                </div>
+                
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Přetížení</span>
+                        <div class="stat-icon" style="background:rgba(248,113,113,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statOverloaded">0</div>
+                    <div class="stat-change negative" id="statOverloadedChange">
+                        <span>Vyžaduje pozornost</span>
+                    </div>
+                </div>
+                
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">AI Balance Skóre</span>
+                        <div class="stat-icon" style="background:rgba(167,139,250,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statAIScore">--</div>
+                    <div class="stat-change positive" id="statAIScoreChange">
+                        <span>Výborná rovnováha</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Asistent týmu -->
+            <div class="ai-assistant-panel" id="aiAssistantPanel">
+                <div class="ai-assistant-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                </div>
+                <div class="ai-assistant-content">
+                    <div class="ai-assistant-title">
+                        Asistent týmu
+                        <span class="ai-badge">AI</span>
+                    </div>
+                    <div class="ai-assistant-messages" id="aiMessages">
+                        <!-- AI messages will be loaded here -->
+                        <div class="ai-message info">
+                            <svg class="ai-message-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <span>Analyzuji data týmu...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Capacity Heatmap -->
+            <div class="capacity-heatmap" id="capacityHeatmap">
+                <div class="heatmap-header">
+                    <span class="heatmap-title">Heatmapa kapacit - Tento týden</span>
+                    <div class="heatmap-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot green"></div>
+                            <span>OK (70-85%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot orange"></div>
+                            <span>Přetížení (85-100%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot red"></div>
+                            <span>Kritické (&gt;100%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot blue"></div>
+                            <span>Nevyužitý (&lt;50%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="heatmap-grid" id="heatmapGrid">
+                    <!-- Will be generated by JS -->
+                </div>
+            </div>
+            
+            <!-- Team Members Section -->
+            <div class="team-section">
+                <div class="team-section-header">
+                    <div class="team-section-title">
+                        Členové týmu
+                        <span class="team-count-badge" id="teamCountBadge">0 členů</span>
+                    </div>
+                    <div class="team-filters">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Hledat člena..." oninput="filterTeamMembers()">
+                        <select class="filter-select" id="roleFilter" onchange="filterTeamMembers()">
+                            <option value="">Všechny role</option>
+                            <option value="worker">Worker</option>
+                            <option value="lander">Lander</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                        <select class="filter-select" id="statusFilter" onchange="filterTeamMembers()">
+                            <option value="">Všechny stavy</option>
+                            <option value="available">Dostupný</option>
+                            <option value="partial">Částečně</option>
+                            <option value="overloaded">Přetížený</option>
+                            <option value="vacation">Dovolená</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="team-members-grid" id="teamMembersGrid">
+                    <!-- Crew cards will be generated by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leader View Content -->
+        <div id="leaderView" class="view-content" style="display:none;">
+            <div class="crew-stats-row">
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Můj tým dnes</span>
+                        <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="leaderTeamToday">0</div>
+                </div>
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Aktivní úkoly</span>
+                        <div class="stat-icon" style="background:rgba(96,165,250,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="leaderActiveTasks">0</div>
+                </div>
+                <div class="crew-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Dostupnost</span>
+                        <div class="stat-icon" style="background:rgba(251,146,60,0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="leaderAvailability">--%</div>
+                </div>
+            </div>
+            
+            <div class="team-section">
+                <div class="team-section-header">
+                    <div class="team-section-title">Můj tým</div>
+                </div>
+                <div class="team-members-grid" id="leaderTeamGrid">
+                    <!-- Leader's team cards -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Worker View Content -->
+        <div id="workerView" class="view-content" style="display:none;">
+            <div class="worker-dashboard">
+                <div class="main-content">
+                    <div class="crew-stats-row" style="margin-bottom:24px;">
+                        <div class="crew-stat-card">
+                            <div class="stat-header">
+                                <span class="stat-label">Moje projekty</span>
+                                <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                        <path d="M2 17l10 5 10-5"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="workerProjects">0</div>
+                        </div>
+                        <div class="crew-stat-card">
+                            <div class="stat-header">
+                                <span class="stat-label">Hodiny tento týden</span>
+                                <div class="stat-icon" style="background:rgba(96,165,250,0.2);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="workerHours">0h</div>
+                        </div>
+                        <div class="crew-stat-card">
+                            <div class="stat-header">
+                                <span class="stat-label">Můj výkon</span>
+                                <div class="stat-icon" style="background:rgba(167,139,250,0.2);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" id="workerPerformance">--%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="team-section">
+                        <div class="team-section-header">
+                            <div class="team-section-title">Moje projekty</div>
+                        </div>
+                        <div class="my-missions" id="workerProjectsGrid">
+                            <!-- Worker's missions -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="today-schedule">
+                    <div class="schedule-header">Dnešní plán</div>
+                    <div id="workerSchedule">
+                        <!-- Today's schedule items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="employee-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;overflow-y:auto;padding:40px 20px;align-items:flex-start;justify-content:center;">
+        <div class="modal-content" style="background:var(--bg-secondary);border-radius:16px;max-width:600px;width:100%;max-height:calc(100vh - 80px);overflow-y:auto;border:1px solid var(--border-primary);margin:0 auto;">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--border-primary);">
+                <h2 id="memberFormTitle" style="margin:0;font-size:20px;color:var(--text-primary);">Přidat člena týmu</h2>
+                <button onclick="closeAddMemberModal()" style="background:none;border:none;color:var(--text-secondary);font-size:28px;cursor:pointer;line-height:1;">×</button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <form id="memberForm" onsubmit="saveMember(event)">
+                    <input type="hidden" id="editMemberId" value="">
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div style="grid-column:1/-1;">
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
+                                Jméno <span style="color:var(--danger);">*</span>
+                            </label>
+                            <input type="text" id="memberName" required style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Role</label>
+                            <select id="memberRole" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                                <option value="worker">Worker</option>
+                                <option value="lander">Lander</option>
+                                <option value="manager">Manager</option>
+                                <option value="owner">Owner</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Typ smlouvy</label>
+                            <select id="memberContractType" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                                <option value="">-- Vyberte --</option>
+                                <option value="HPP">HPP</option>
+                                <option value="DPP">DPP</option>
+                                <option value="DPČ">DPČ</option>
+                                <option value="OSVČ">OSVČ</option>
+                                <option value="Brigádník">Brigádník</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
+                                Telefon <span style="color:var(--danger);">*</span>
+                            </label>
+                            <input type="tel" id="memberPhone" required style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Email</label>
+                            <input type="email" id="memberEmail" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Datum nástupu</label>
+                            <input type="date" id="memberStartDate" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Narozeniny</label>
+                            <input type="date" id="memberBirthdate" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Hodinová sazba (Kč)</label>
+                            <input type="number" id="memberHourlyRate" step="1" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Mzda (Kč)</label>
+                            <input type="number" id="memberSalary" step="1" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div style="grid-column:1/-1;">
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Adresa / Lokace</label>
+                            <input type="text" id="memberLocation" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                        
+                        <div style="grid-column:1/-1;">
+                            <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Dovednosti</label>
+                            <input type="text" id="memberSkills" placeholder="např. planting, wood, logistics" style="width:100%;padding:12px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border-primary);">
+                        <button type="button" onclick="closeAddMemberModal()" style="padding:12px 24px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);cursor:pointer;font-size:14px;font-weight:500;">
+                            Zrušit
+                        </button>
+                        <button type="submit" style="padding:12px 24px;background:var(--mint);border:none;border-radius:8px;color:#000;cursor:pointer;font-size:14px;font-weight:600;">
+                            Uložit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Member Detail Modal -->
+    <div id="memberDetailModal" class="employee-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;overflow-y:auto;padding:20px;align-items:flex-start;justify-content:center;">
+        <div class="modal-content" style="background:var(--bg-secondary);border-radius:16px;max-width:900px;width:100%;max-height:95vh;overflow-y:auto;border:1px solid var(--border-primary);margin:20px 0;">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--border-primary);">
+                <h2 id="memberModalTitle" style="margin:0;font-size:24px;color:var(--text-primary);">Detail člena</h2>
+                <button onclick="closeMemberDetailModal()" style="background:none;border:none;color:var(--text-secondary);font-size:32px;cursor:pointer;">×</button>
+            </div>
+            <div id="memberModalBody" style="padding:24px;">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/toast.js"></script>
+    <script src="/static/loading.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script>
+        // =====================================
+        // CREW CONTROL SYSTEM - JavaScript
+        // =====================================
+        
+        // Global state
+        let allEmployees = [];
+        let filteredEmployees = [];
+        let allJobs = [];
+        let allTasks = [];
+        let allTimesheets = [];
+        let currentViewMode = 'manager';
+        let currentUser = null;
+        
+        // Skill icons mapping (SVG paths)
+        const skillIcons = {
+            planting: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-7l-2-2"/><path d="M15 12l-3 3-3-3"/><path d="M12 2C6.5 2 2 6.5 2 12c0 3 2 5.5 5 7"/><path d="M12 2c5.5 0 10 4.5 10 10 0 3-2 5.5-5 7"/></svg>',
+            wood: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M8 12l-4-4v8l4-4"/><path d="M16 12l4-4v8l-4-4"/></svg>',
+            logistics: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+            planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+            maintenance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>',
+            heavy_work: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v20"/><path d="M18 2v20"/><path d="M6 12h12"/><path d="M6 6h12"/><path d="M6 18h12"/></svg>',
+            communication: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
+        };
+        
+        const skillLabels = {
+            planting: 'Výsadba',
+            wood: 'Dřevo',
+            logistics: 'Logistika',
+            planning: 'Plánování',
+            maintenance: 'Údržba',
+            heavy_work: 'Těžká práce',
+            communication: 'Komunikace'
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCurrentUser();
+            await loadAllData();
+            renderCurrentView();
+            generateAIInsights();
+        });
+        
+        async function loadCurrentUser() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    currentUser = await res.json();
+                }
+            } catch (e) {
+                console.log('No current user session');
+            }
+        }
+        
+        async function loadAllData(showLoadingIndicator = true) {
+            try {
+                if (showLoadingIndicator && window.showLoading) window.showLoading('Načítám data týmu...');
+                
+                const [empRes, jobsRes, tasksRes, tsRes] = await Promise.all([
+                    fetch('/api/employees'),
+                    fetch('/api/jobs'),
+                    fetch('/api/tasks').catch(() => ({ ok: false })),
+                    fetch('/api/timesheets').catch(() => ({ ok: false }))
+                ]);
+                
+                if (empRes.ok) {
+                    const data = await empRes.json();
+                    allEmployees = data.employees || [];
+                }
+                
+                if (jobsRes.ok) {
+                    const data = await jobsRes.json();
+                    allJobs = Array.isArray(data) ? data : (data.jobs || []);
+                }
+                
+                if (tasksRes.ok) {
+                    const data = await tasksRes.json();
+                    allTasks = data.tasks || data || [];
+                }
+                
+                if (tsRes.ok) {
+                    const data = await tsRes.json();
+                    allTimesheets = Array.isArray(data) ? data : (data.timesheets || []);
+                }
+                
+                if (showLoadingIndicator && window.hideLoading) window.hideLoading();
+                
+                filteredEmployees = [...allEmployees];
+                updateStats();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                if (showLoadingIndicator && window.hideLoading) window.hideLoading();
+                if (window.showToast) window.showToast('Chyba při načítání dat', 'error');
+            }
+        }
+        
+        function switchViewMode(mode) {
+            currentViewMode = mode;
+            
+            // Update tabs
+            document.querySelectorAll('.view-mode-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.mode === mode);
+            });
+            
+            // Show/hide views
+            document.querySelectorAll('.view-content').forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            const viewMap = {
+                'manager': 'managerView',
+                'leader': 'leaderView',
+                'worker': 'workerView'
+            };
+            
+            document.getElementById(viewMap[mode]).style.display = 'block';
+            renderCurrentView();
+        }
+        
+        function renderCurrentView() {
+            updateStats();  // Always update stats first
+            switch (currentViewMode) {
+                case 'manager':
+                    renderManagerView();
+                    break;
+                case 'leader':
+                    renderLeaderView();
+                    break;
+                case 'worker':
+                    renderWorkerView();
+                    break;
+            }
+        }
+        
+        function updateStats() {
+            const active = allEmployees.filter(e => e.status !== 'inactive').length;
+            document.getElementById('statActiveMembers').textContent = active;
+            
+            // Calculate average utilization
+            const utilizations = allEmployees.map(e => calculateUtilization(e.id));
+            const avgUtil = utilizations.length ? Math.round(utilizations.reduce((a, b) => a + b, 0) / utilizations.length) : 0;
+            document.getElementById('statAvgUtilization').textContent = avgUtil + '%';
+            
+            // Overloaded count
+            const overloaded = utilizations.filter(u => u > 100).length;
+            document.getElementById('statOverloaded').textContent = overloaded;
+            
+            // AI Score (calculated based on balance)
+            const aiScore = calculateAIBalanceScore();
+            document.getElementById('statAIScore').textContent = aiScore;
+            
+            // Update badge
+            document.getElementById('teamCountBadge').textContent = `${allEmployees.length} členů`;
+        }
+        
+        function calculateUtilization(empId) {
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+            
+            const weekHours = allTimesheets
+                .filter(ts => ts.employee_id === empId && new Date(ts.date) >= weekStart)
+                .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
+            
+            return Math.round((weekHours / 40) * 100);
+        }
+        
+        function calculateAIBalanceScore() {
+            if (allEmployees.length === 0) return '--';
+            
+            const utilizations = allEmployees.map(e => calculateUtilization(e.id));
+            const optimalRange = utilizations.filter(u => u >= 60 && u <= 90).length;
+            const score = Math.round((optimalRange / allEmployees.length) * 100);
+            
+            return score + '/100';
+        }
+        
+        // Manager View
+        function renderManagerView() {
+            renderHeatmap();
+            renderTeamCards(filteredEmployees, 'teamMembersGrid');
+        }
+        
+        function renderHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            if (!grid) return;
+            
+            const days = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+            const shortDays = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+            
+            let html = '<div class="heatmap-day-header"></div>';
+            shortDays.forEach(d => {
+                html += `<div class="heatmap-day-header">${d}</div>`;
+            });
+            
+            allEmployees.slice(0, 8).forEach(emp => {
+                html += `
+                    <div class="heatmap-name">
+                        <div class="heatmap-name-avatar">${getInitials(emp.name)}</div>
+                        <span>${emp.name.split(' ')[0]}</span>
+                    </div>
+                `;
+                
+                for (let i = 0; i < 7; i++) {
+                    const util = Math.floor(Math.random() * 140); // Simulate data
+                    const status = util > 100 ? 'overloaded' : (util > 85 ? 'partial' : (util < 50 ? 'underutilized' : 'available'));
+                    const displayVal = util > 0 ? util + '%' : '';
+                    
+                    html += `<div class="heatmap-cell ${status}" title="${days[i]}: ${util}%">${displayVal}</div>`;
+                }
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        function renderTeamCards(employees, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (employees.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-tertiary);">
+                        <svg style="width:64px;height:64px;margin-bottom:16px;opacity:0.3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                        </svg>
+                        <p style="font-size:16px;margin:0;">Žádní členové týmu</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = employees.map(emp => renderCrewCard(emp)).join('');
+        }
+        
+        function renderCrewCard(emp) {
+            const initials = getInitials(emp.name);
+            const utilization = calculateUtilization(emp.id);
+            const statusClass = getStatusClass(utilization);
+            const ringColor = getRingColor(utilization);
+            const circumference = 2 * Math.PI * 32;
+            const dashArray = (utilization / 100) * circumference;
+            
+            // Mock skills for demo
+            const skills = (emp.skills || 'planting,maintenance').split(',').slice(0, 3);
+            
+            // Mock performance data
+            const perfTrend = Math.random() > 0.5 ? 'up' : (Math.random() > 0.5 ? 'down' : 'stable');
+            const sparkData = generateSparkData();
+            
+            // Calculate missions count
+            const projectCount = allJobs.filter(j => {
+                return j.employee_ids?.includes(emp.id) || j.employee_id === emp.id;
+            }).length;
+            
+            // Monthly hours
+            const monthlyHours = calculateMonthlyHours(emp.id);
+            
+            // Account & Permission logic
+            const hasAccount = emp.has_account;
+            const accountRole = emp.account_role || emp.role || 'worker';
+            
+            // Permission icons based on role
+            const getPermissions = (role) => {
+                const perms = {
+                    owner: ['all', 'manage', 'edit', 'view'],
+                    manager: ['manage', 'edit', 'view'],
+                    lander: ['edit', 'view'],
+                    worker: ['view']
+                };
+                return perms[role?.toLowerCase()] || perms.worker;
+            };
+            
+            const permissions = hasAccount ? getPermissions(accountRole) : [];
+            
+            // Contract type
+            const contractType = emp.contract_type || '';
+            const contractClass = contractType.toLowerCase().replace('í', 'i').replace(' ', '');
+            
+            return `
+                <div class="crew-card" onclick="showMemberDetail(${emp.id})">
+                    <div class="crew-card-header">
+                        <div class="crew-avatar-container">
+                            <div class="crew-avatar">
+                                ${emp.avatar_url ? `<img src="${escapeHtml(emp.avatar_url)}" alt="${escapeHtml(emp.name)}">` : initials}
+                            </div>
+                            <div class="crew-status-indicator ${statusClass}"></div>
+                        </div>
+                        <div class="crew-info">
+                            <div class="crew-name">${escapeHtml(emp.name)}</div>
+                            <div class="crew-role">${escapeHtml(emp.role || 'Člen týmu')}</div>
+                            <div class="crew-account-row">
+                                ${hasAccount ? `
+                                    <span class="account-badge ${accountRole.toLowerCase()}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                        ${accountRole}
+                                    </span>
+                                ` : `
+                                    <span class="account-badge no-account">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                        </svg>
+                                        Bez účtu
+                                    </span>
+                                `}
+                                ${contractType ? `
+                                    <span class="contract-badge ${contractClass}">${escapeHtml(contractType)}</span>
+                                ` : ''}
+                            </div>
+                            ${hasAccount && permissions.length > 0 ? `
+                                <div class="crew-account-row" style="margin-top:4px;">
+                                    ${permissions.includes('manage') ? `
+                                        <span class="permission-badge can-manage">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                                <path d="M2 17l10 5 10-5"/>
+                                                <path d="M2 12l10 5 10-5"/>
+                                            </svg>
+                                            Správa
+                                        </span>
+                                    ` : ''}
+                                    ${permissions.includes('edit') ? `
+                                        <span class="permission-badge can-edit">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                            </svg>
+                                            Úpravy
+                                        </span>
+                                    ` : ''}
+                                    ${permissions.includes('view') ? `
+                                        <span class="permission-badge can-view">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                            Náhled
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                            <div class="skill-badges" style="margin-top:8px;">
+                                ${skills.map(s => `
+                                    <span class="skill-badge ${s.trim()}">
+                                        ${skillIcons[s.trim()] || ''}
+                                        ${skillLabels[s.trim()] || s}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${(emp.phone || emp.email || emp.location) ? `
+                        <div class="crew-contact-info">
+                            ${emp.phone ? `
+                                <div class="contact-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                                    </svg>
+                                    <a href="tel:${escapeHtml(emp.phone)}" onclick="event.stopPropagation()">${escapeHtml(emp.phone)}</a>
+                                </div>
+                            ` : ''}
+                            ${emp.email ? `
+                                <div class="contact-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                    <a href="mailto:${escapeHtml(emp.email)}" onclick="event.stopPropagation()">${escapeHtml(emp.email)}</a>
+                                </div>
+                            ` : ''}
+                            ${emp.location ? `
+                                <div class="contact-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                    <span>${escapeHtml(emp.location)}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="crew-card-body">
+                        <div class="capacity-ring-container">
+                            <svg class="capacity-ring" viewBox="0 0 80 80" width="80" height="80">
+                                <circle class="capacity-ring-bg" cx="40" cy="40" r="32"/>
+                                <circle class="capacity-ring-fill ${ringColor}" cx="40" cy="40" r="32"
+                                    stroke-dasharray="${dashArray} ${circumference}"
+                                    stroke-dashoffset="0"/>
+                            </svg>
+                            <div class="capacity-ring-value">
+                                <div class="capacity-ring-percent">${utilization}%</div>
+                                <div class="capacity-ring-label">kapacita</div>
+                            </div>
+                        </div>
+                        
+                        <div class="crew-stats-mini">
+                            <div class="crew-stat-mini">
+                                <div class="crew-stat-mini-value">${projectCount}</div>
+                                <div class="crew-stat-mini-label">Projekty</div>
+                            </div>
+                            <div class="crew-stat-mini">
+                                <div class="crew-stat-mini-value">${monthlyHours.toFixed(0)}h</div>
+                                <div class="crew-stat-mini-label">Měsíc</div>
+                            </div>
+                            <div class="crew-stat-mini">
+                                <div class="crew-stat-mini-value">${emp.rating ? emp.rating.toFixed(1) : '—'}</div>
+                                <div class="crew-stat-mini-label">Hodnocení</div>
+                            </div>
+                            <div class="crew-stat-mini">
+                                <div class="crew-stat-mini-value">${Math.floor(Math.random() * 30) + 70}%</div>
+                                <div class="crew-stat-mini-label">Spolehlivost</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="performance-spark">
+                        <div class="spark-header">
+                            <span class="spark-label">Výkon (4 týdny)</span>
+                            <span class="spark-trend ${perfTrend}">${perfTrend === 'up' ? '↑ Rostoucí' : (perfTrend === 'down' ? '↓ Klesající' : '→ Stabilní')}</span>
+                        </div>
+                        <div class="spark-line-container">
+                            <svg class="spark-line-svg" viewBox="0 0 200 32" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="sparkGradient-${emp.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="var(--mint)"/>
+                                        <stop offset="100%" stop-color="transparent"/>
+                                    </linearGradient>
+                                </defs>
+                                <path class="spark-line-area" d="${sparkData.area}" fill="url(#sparkGradient-${emp.id})"/>
+                                <path class="spark-line-path" d="${sparkData.line}"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="crew-indicators">
+                        <div class="crew-indicator ${utilization > 90 ? 'warning' : 'ok'}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <span>${utilization}%</span>
+                        </div>
+                        ${utilization > 100 ? `
+                            <div class="crew-indicator warning">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <span>Přetížení</span>
+                            </div>
+                        ` : ''}
+                        <div class="crew-indicator ok">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>${emp.location || 'Neznámá'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="crew-card-actions" onclick="event.stopPropagation()">
+                        <button class="crew-action-btn" onclick="showMemberDetail(${emp.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Detail
+                        </button>
+                        ${emp.phone ? `
+                            <button class="crew-action-btn" onclick="window.location.href='tel:${escapeHtml(emp.phone)}'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                                </svg>
+                                Volat
+                            </button>
+                        ` : ''}
+                        <button class="crew-action-btn" onclick="assignToProject(${emp.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            </svg>
+                            Projekt
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Leader View
+        function renderLeaderView() {
+            // Get current user's team (mock - filter by manager_id or similar)
+            const myTeam = allEmployees.slice(0, 5); // Mock data
+            
+            document.getElementById('leaderTeamToday').textContent = myTeam.filter(e => e.status !== 'vacation').length;
+            
+            const activeTasks = allTasks.filter(t => 
+                myTeam.some(e => t.employee_id === e.id || t.assigned_employees?.includes(e.id))
+            ).length;
+            document.getElementById('leaderActiveTasks').textContent = activeTasks;
+            
+            const avgAvail = Math.round(myTeam.reduce((sum, e) => sum + (100 - calculateUtilization(e.id)), 0) / myTeam.length);
+            document.getElementById('leaderAvailability').textContent = Math.max(0, avgAvail) + '%';
+            
+            renderTeamCards(myTeam, 'leaderTeamGrid');
+        }
+        
+        // Worker View
+        function renderWorkerView() {
+            // Get current employee (mock)
+            const myEmpId = currentUser?.employee_id || allEmployees[0]?.id;
+            
+            const myProjects = allJobs.filter(j => 
+                j.employee_ids?.includes(myEmpId) || j.employee_id === myEmpId
+            );
+            document.getElementById('workerProjects').textContent = myProjects.length;
+            
+            const weekHours = calculateWeeklyHours(myEmpId);
+            document.getElementById('workerHours').textContent = weekHours.toFixed(1) + 'h';
+            
+            const perf = Math.floor(Math.random() * 30) + 70;
+            document.getElementById('workerPerformance').textContent = perf + '%';
+            
+            // Render missions
+            const projectsGrid = document.getElementById('workerProjectsGrid');
+            if (projectsGrid) {
+                if (myProjects.length === 0) {
+                    projectsGrid.innerHTML = '<p style="color:var(--text-tertiary);text-align:center;padding:40px;">Žádné aktivní projekty</p>';
+                } else {
+                    projectsGrid.innerHTML = myProjects.slice(0, 10).map(m => `
+                        <div class="project-card" onclick="window.location.href='/job-detail.html?id=${m.id}'">
+                            <div class="project-status ${m.status || 'active'}"></div>
+                            <div class="project-info">
+                                <div class="project-name">${escapeHtml(m.name || m.title || 'Zakázka')}</div>
+                                <div class="project-meta">${escapeHtml(m.client_name || m.address || '')}</div>
+                            </div>
+                            <div class="project-time">${m.deadline || ''}</div>
+                        </div>
+                    `).join('');
+                }
+            }
+            
+            // Render schedule
+            const scheduleDiv = document.getElementById('workerSchedule');
+            if (scheduleDiv) {
+                const today = new Date().toISOString().split('T')[0];
+                const todayTasks = allTasks.filter(t => 
+                    (t.employee_id === myEmpId || t.assigned_employees?.includes(myEmpId)) &&
+                    t.date === today
+                );
+                
+                if (todayTasks.length === 0) {
+                    scheduleDiv.innerHTML = '<p style="color:var(--text-tertiary);text-align:center;padding:40px;">Žádné úkoly na dnes</p>';
+                } else {
+                    scheduleDiv.innerHTML = todayTasks.map(t => `
+                        <div class="schedule-item">
+                            <div class="schedule-time">${t.start_time || '08:00'}</div>
+                            <div class="schedule-content">
+                                <div class="schedule-title">${escapeHtml(t.title || t.name || 'Úkol')}</div>
+                                <div class="schedule-location">${escapeHtml(t.location || '')}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+        
+        // AI Insights
+        function generateAIInsights() {
+            const messages = [];
+            
+            // Check for overloaded employees
+            const overloaded = allEmployees.filter(e => calculateUtilization(e.id) > 100);
+            if (overloaded.length > 0) {
+                messages.push({
+                    type: 'warning',
+                    text: `${overloaded.map(e => e.name.split(' ')[0]).join(', ')} ${overloaded.length > 1 ? 'jsou' : 'je'} přetížen${overloaded.length > 1 ? 'i' : ''}. Zvažte přerozdělit úkoly.`
+                });
+            }
+            
+            // Check for underutilized
+            const underutilized = allEmployees.filter(e => {
+                const util = calculateUtilization(e.id);
+                return util > 0 && util < 50;
+            });
+            if (underutilized.length > 0) {
+                messages.push({
+                    type: 'info',
+                    text: `${underutilized[0].name} má volnou kapacitu. Ideální pro nové zakázky.`
+                });
+            }
+            
+            // Check for Friday capacity
+            const today = new Date();
+            if (today.getDay() >= 3) { // Wednesday or later
+                messages.push({
+                    type: 'info',
+                    text: 'Pátek: Zkontrolujte plánování na příští týden.'
+                });
+            }
+            
+            // Good balance message
+            if (messages.length === 0) {
+                messages.push({
+                    type: 'success',
+                    text: 'Výborně! Tým je v dobré rovnováze. Žádné kritické problémy.'
+                });
+            }
+            
+            // Render messages
+            const container = document.getElementById('aiMessages');
+            if (container) {
+                container.innerHTML = messages.map(m => `
+                    <div class="ai-message ${m.type}">
+                        <svg class="ai-message-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            ${m.type === 'warning' ? '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' : ''}
+                            ${m.type === 'success' ? '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' : ''}
+                            ${m.type === 'info' ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>' : ''}
+                        </svg>
+                        <span>${m.text}</span>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Filter functions
+        function filterTeamMembers() {
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const role = document.getElementById('roleFilter')?.value || '';
+            const status = document.getElementById('statusFilter')?.value || '';
+            
+            filteredEmployees = allEmployees.filter(emp => {
+                const matchesSearch = !search || 
+                    emp.name.toLowerCase().includes(search) ||
+                    (emp.role || '').toLowerCase().includes(search);
+                
+                const matchesRole = !role || emp.role === role;
+                
+                const util = calculateUtilization(emp.id);
+                const empStatus = util > 100 ? 'overloaded' : (util > 85 ? 'partial' : 'available');
+                const matchesStatus = !status || empStatus === status || emp.status === status;
+                
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+            
+            renderTeamCards(filteredEmployees, 'teamMembersGrid');
+            document.getElementById('teamCountBadge').textContent = `${filteredEmployees.length} členů`;
+        }
+        
+        // Helper functions
+        function getInitials(name) {
+            if (!name) return '??';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
+        function getStatusClass(utilization) {
+            if (utilization > 100) return 'overloaded';
+            if (utilization > 85) return 'partial';
+            if (utilization < 30) return 'offline';
+            return 'online';
+        }
+        
+        function getRingColor(utilization) {
+            if (utilization > 100) return 'red';
+            if (utilization > 85) return 'orange';
+            if (utilization < 50) return 'blue';
+            return 'green';
+        }
+        
+        function calculateMonthlyHours(empId) {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            return allTimesheets
+                .filter(ts => ts.employee_id === empId && new Date(ts.date) >= monthStart)
+                .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
+        }
+        
+        function calculateWeeklyHours(empId) {
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay() + 1);
+            return allTimesheets
+                .filter(ts => ts.employee_id === empId && new Date(ts.date) >= weekStart)
+                .reduce((sum, ts) => sum + (parseFloat(ts.hours) || 0), 0);
+        }
+        
+        function generateSparkData() {
+            const points = [];
+            for (let i = 0; i < 8; i++) {
+                const x = (i / 7) * 200;
+                const y = Math.random() * 20 + 6;
+                points.push({ x, y });
+            }
+            
+            const line = 'M ' + points.map(p => `${p.x},${p.y}`).join(' L ');
+            const area = line + ` L 200,32 L 0,32 Z`;
+            
+            return { line, area };
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Modal functions
+        function showAddMemberModal() {
+            document.getElementById('memberFormTitle').textContent = 'Přidat člena týmu';
+            document.getElementById('editMemberId').value = '';
+            document.getElementById('memberForm').reset();
+            document.getElementById('addMemberModal').style.display = 'flex';
+        }
+        
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'none';
+        }
+        
+        function editMemberInline(empId) {
+            const emp = allEmployees.find(e => e.id === empId);
+            if (!emp) return;
+            
+            // Close detail modal if open
+            closeMemberDetailModal();
+            
+            // Fill form with employee data
+            document.getElementById('memberFormTitle').textContent = 'Upravit člena týmu';
+            document.getElementById('editMemberId').value = empId;
+            document.getElementById('memberName').value = emp.name || '';
+            document.getElementById('memberRole').value = emp.role || 'worker';
+            document.getElementById('memberContractType').value = emp.contract_type || '';
+            document.getElementById('memberPhone').value = emp.phone || '';
+            document.getElementById('memberEmail').value = emp.email || '';
+            document.getElementById('memberStartDate').value = emp.start_date || '';
+            document.getElementById('memberBirthdate').value = emp.birthdate || '';
+            document.getElementById('memberHourlyRate').value = emp.hourly_rate || '';
+            document.getElementById('memberSalary').value = emp.salary || '';
+            document.getElementById('memberLocation').value = emp.location || emp.address || '';
+            document.getElementById('memberSkills').value = emp.skills || '';
+            
+            document.getElementById('addMemberModal').style.display = 'flex';
+        }
+        
+        async function saveMember(event) {
+            event.preventDefault();
+            
+            const editId = document.getElementById('editMemberId').value;
+            const isEdit = editId !== '';
+            
+            const data = {
+                name: document.getElementById('memberName').value.trim(),
+                role: document.getElementById('memberRole').value,
+                contract_type: document.getElementById('memberContractType').value || null,
+                phone: document.getElementById('memberPhone').value.trim(),
+                email: document.getElementById('memberEmail').value.trim() || null,
+                start_date: document.getElementById('memberStartDate').value || null,
+                birthdate: document.getElementById('memberBirthdate').value || null,
+                hourly_rate: document.getElementById('memberHourlyRate').value ? parseFloat(document.getElementById('memberHourlyRate').value) : null,
+                salary: document.getElementById('memberSalary').value ? parseFloat(document.getElementById('memberSalary').value) : null,
+                location: document.getElementById('memberLocation').value.trim() || null,
+                skills: document.getElementById('memberSkills').value.trim() || null,
+                status: 'active'
+            };
+            
+            // Add id for edit
+            if (isEdit) {
+                data.id = parseInt(editId);
+            }
+            
+            try {
+                if (window.showLoading) window.showLoading(isEdit ? 'Ukládám změny...' : 'Přidávám člena...');
+                
+                const url = '/api/employees';
+                const method = isEdit ? 'PATCH' : 'POST';  // PATCH for update, POST for create
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok || result.id || response.ok) {
+                    closeAddMemberModal();
+                    await loadAllData(false);  // Don't show loading again
+                    renderCurrentView();
+                    if (window.hideLoading) window.hideLoading();
+                    if (window.showToast) window.showToast(isEdit ? 'Člen týmu byl upraven' : 'Člen týmu byl přidán', 'success');
+                } else {
+                    if (window.hideLoading) window.hideLoading();
+                    if (window.showToast) window.showToast(result.error || 'Chyba při ukládání', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving member:', error);
+                if (window.hideLoading) window.hideLoading();
+                if (window.showToast) window.showToast('Chyba při ukládání', 'error');
+            }
+        }
+        
+        function showMemberDetail(empId) {
+            const emp = allEmployees.find(e => e.id === empId);
+            if (!emp) return;
+            
+            const modal = document.getElementById('memberDetailModal');
+            const title = document.getElementById('memberModalTitle');
+            const body = document.getElementById('memberModalBody');
+            
+            title.textContent = emp.name;
+            
+            // Current user role determines what they can see/edit
+            // Check both currentUser.role and account_role from user info
+            const userRole = (currentUser?.role || currentUser?.account_role || '').toLowerCase();
+            const isOwner = userRole === 'owner' || userRole === '';  // If no role info, assume owner for now
+            const isManager = userRole === 'manager' || isOwner;
+            const isLander = userRole === 'lander' || isManager;
+            const isSelf = currentUser?.employee_id === empId;
+            
+            // Permission flags - owner sees everything
+            const canViewSensitive = isOwner || isManager || isSelf;
+            const canViewContact = isOwner || isLander || isSelf;
+            const canEdit = isOwner || isManager || isSelf;
+            
+            const utilization = calculateUtilization(empId);
+            const monthlyHours = calculateMonthlyHours(empId);
+            const projectCount = allJobs.filter(j => j.employee_ids?.includes(empId) || j.employee_id === empId).length;
+            const completedJobs = allJobs.filter(j => (j.employee_ids?.includes(empId) || j.employee_id === empId) && j.status === 'completed').length;
+            
+            // Account info
+            const hasAccount = emp.has_account;
+            const accountRole = emp.account_role || emp.role || 'worker';
+            
+            body.innerHTML = `
+                <div class="member-detail-layout">
+                    <!-- Header s avatarem -->
+                    <div class="member-detail-header">
+                        <div class="crew-avatar" style="width:100px;height:100px;font-size:40px;">
+                            ${emp.avatar_url ? `<img src="${escapeHtml(emp.avatar_url)}" alt="">` : getInitials(emp.name)}
+                        </div>
+                        <div class="member-detail-header-info">
+                            <h2 style="margin:0 0 4px;color:var(--text-primary);font-size:24px;">${escapeHtml(emp.name)}</h2>
+                            <p style="margin:0 0 8px;color:var(--text-secondary);">${escapeHtml(emp.role || 'Člen týmu')}</p>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                ${hasAccount ? `
+                                    <span class="account-badge ${accountRole.toLowerCase()}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;">
+                                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                        ${accountRole}
+                                    </span>
+                                ` : `
+                                    <span class="account-badge no-account">Bez účtu</span>
+                                `}
+                                ${emp.contract_type ? `<span class="contract-badge ${(emp.contract_type || '').toLowerCase()}">${escapeHtml(emp.contract_type)}</span>` : ''}
+                                <span class="status-badge ${emp.status || 'offline'}">${emp.status === 'online' ? 'Online' : (emp.status === 'vacation' ? 'Dovolená' : 'Offline')}</span>
+                            </div>
+                        </div>
+                        <div class="member-detail-actions">
+                            ${canEdit ? `
+                                <button class="btn-primary" onclick="editMemberInline(${emp.id})">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                    Upravit
+                                </button>
+                            ` : ''}
+                            ${isManager ? `
+                                <button class="btn-danger" onclick="deleteMember(${emp.id})">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                    </svg>
+                                    Smazat
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Taby -->
+                    <div class="member-detail-tabs">
+                        <button class="member-tab active" onclick="switchMemberTab('overview', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Přehled
+                        </button>
+                        <button class="member-tab" onclick="switchMemberTab('projects', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                            Projekty
+                        </button>
+                        <button class="member-tab" onclick="switchMemberTab('timeline', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Časová osa
+                        </button>
+                        <button class="member-tab" onclick="switchMemberTab('performance', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            Výkonnost
+                        </button>
+                    </div>
+                    
+                    <!-- Tab content -->
+                    <div class="member-tab-content" id="memberTabContent">
+                        <!-- Overview Tab -->
+                        <div class="member-section">
+                            <h3 class="member-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Základní údaje
+                            </h3>
+                            <div class="member-info-grid">
+                                <div class="member-info-item">
+                                    <div class="member-info-label">JMÉNO</div>
+                                    <div class="member-info-value">${escapeHtml(emp.name)}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">NAROZENINY</div>
+                                    <div class="member-info-value">${emp.birthdate ? formatDate(emp.birthdate) : '—'}</div>
+                                </div>
+                                ${canViewContact ? `
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">TELEFON</div>
+                                        <div class="member-info-value">${emp.phone ? `<a href="tel:${escapeHtml(emp.phone)}">${escapeHtml(emp.phone)}</a>` : '—'}</div>
+                                    </div>
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">EMAIL</div>
+                                        <div class="member-info-value">${emp.email ? `<a href="mailto:${escapeHtml(emp.email)}">${escapeHtml(emp.email)}</a>` : '—'}</div>
+                                    </div>
+                                ` : `
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">TELEFON</div>
+                                        <div class="member-info-value restricted">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                            Omezený přístup
+                                        </div>
+                                    </div>
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">EMAIL</div>
+                                        <div class="member-info-value restricted">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                            Omezený přístup
+                                        </div>
+                                    </div>
+                                `}
+                                <div class="member-info-item">
+                                    <div class="member-info-label">ADRESA</div>
+                                    <div class="member-info-value">${emp.address || emp.location || '—'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-section">
+                            <h3 class="member-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                Pracovní info
+                            </h3>
+                            <div class="member-info-grid">
+                                <div class="member-info-item">
+                                    <div class="member-info-label">POZICE</div>
+                                    <div class="member-info-value">${escapeHtml(emp.role || 'worker')}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">DELEGÁT (ÚKOLY)</div>
+                                    <div class="member-info-value">${emp.delegate_tasks ? escapeHtml(allEmployees.find(e => e.id === emp.delegate_tasks)?.name || '—') : '—'}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">DELEGÁT (SCHVALOVÁNÍ)</div>
+                                    <div class="member-info-value">${emp.delegate_approval ? escapeHtml(allEmployees.find(e => e.id === emp.delegate_approval)?.name || '—') : '—'}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">TYP SMLOUVY</div>
+                                    <div class="member-info-value">${emp.contract_type || '—'}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">DATUM NÁSTUPU</div>
+                                    <div class="member-info-value">${emp.start_date ? formatDate(emp.start_date) : '—'}</div>
+                                </div>
+                                ${canViewSensitive ? `
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">HODINOVÁ SAZBA</div>
+                                        <div class="member-info-value">${emp.hourly_rate ? emp.hourly_rate + ' Kč/h' : '—'}</div>
+                                    </div>
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">MZDA</div>
+                                        <div class="member-info-value">${emp.salary ? emp.salary + ' Kč' : '—'}</div>
+                                    </div>
+                                ` : `
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">HODINOVÁ SAZBA</div>
+                                        <div class="member-info-value restricted">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                            Pouze management
+                                        </div>
+                                    </div>
+                                    <div class="member-info-item">
+                                        <div class="member-info-label">MZDA</div>
+                                        <div class="member-info-value restricted">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                            Pouze management
+                                        </div>
+                                    </div>
+                                `}
+                                <div class="member-info-item">
+                                    <div class="member-info-label">DOVEDNOSTI</div>
+                                    <div class="member-info-value">${emp.skills || '—'}</div>
+                                </div>
+                                <div class="member-info-item">
+                                    <div class="member-info-label">LOKACE</div>
+                                    <div class="member-info-value">${emp.location || '—'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-section">
+                            <h3 class="member-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                Statistiky
+                            </h3>
+                            <div class="member-stats-grid">
+                                <div class="member-stat-card">
+                                    <div class="member-stat-value" style="color:var(--mint);">${monthlyHours.toFixed(1)}h</div>
+                                    <div class="member-stat-label">HODINY TENTO MĚSÍC</div>
+                                </div>
+                                <div class="member-stat-card">
+                                    <div class="member-stat-value">${projectCount}</div>
+                                    <div class="member-stat-label">AKTIVNÍ PROJEKTY</div>
+                                </div>
+                                <div class="member-stat-card">
+                                    <div class="member-stat-value">${completedJobs}</div>
+                                    <div class="member-stat-label">DOKONČENÉ PROJEKTY</div>
+                                </div>
+                                <div class="member-stat-card">
+                                    <div class="member-stat-value">${emp.rating ? renderStarsSmall(emp.rating) : '—'}</div>
+                                    <div class="member-stat-label">HODNOCENÍ</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${hasAccount ? `
+                            <div class="member-section">
+                                <h3 class="member-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    Oprávnění účtu
+                                </h3>
+                                <div class="permissions-list">
+                                    ${renderPermissionsList(accountRole)}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+        
+        function renderStarsSmall(rating) {
+            const fullStars = Math.floor(rating);
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    stars += '<span style="color:var(--warning);">★</span>';
+                } else {
+                    stars += '<span style="color:var(--text-tertiary);">☆</span>';
+                }
+            }
+            return stars + ` <span style="color:var(--text-secondary);font-size:14px;">${rating.toFixed(1)}</span>`;
+        }
+        
+        function renderPermissionsList(role) {
+            const perms = {
+                owner: [
+                    { name: 'Plný přístup', desc: 'Může vše', icon: 'shield', granted: true },
+                    { name: 'Správa uživatelů', desc: 'Přidávat/mazat účty', icon: 'users', granted: true },
+                    { name: 'Finanční data', desc: 'Mzdy, faktury, náklady', icon: 'dollar', granted: true },
+                    { name: 'Nastavení systému', desc: 'Konfigurace aplikace', icon: 'settings', granted: true }
+                ],
+                manager: [
+                    { name: 'Správa týmu', desc: 'Přiřazování, hodnocení', icon: 'users', granted: true },
+                    { name: 'Finanční přehled', desc: 'Mzdy, náklady projektů', icon: 'dollar', granted: true },
+                    { name: 'Reporty', desc: 'Generování výkazů', icon: 'chart', granted: true },
+                    { name: 'Nastavení systému', desc: 'Konfigurace aplikace', icon: 'settings', granted: false }
+                ],
+                lander: [
+                    { name: 'Správa projektů', desc: 'Vytvářet, upravovat zakázky', icon: 'folder', granted: true },
+                    { name: 'Přiřazování úkolů', desc: 'Delegace práce', icon: 'tasks', granted: true },
+                    { name: 'Finanční data', desc: 'Mzdy, faktury', icon: 'dollar', granted: false },
+                    { name: 'Správa uživatelů', desc: 'Přidávat/mazat účty', icon: 'users', granted: false }
+                ],
+                worker: [
+                    { name: 'Vlastní výkazy', desc: 'Zapisovat odpracované hodiny', icon: 'clock', granted: true },
+                    { name: 'Vlastní profil', desc: 'Upravit kontaktní údaje', icon: 'user', granted: true },
+                    { name: 'Přehled projektů', desc: 'Vidět přiřazené zakázky', icon: 'folder', granted: true },
+                    { name: 'Správa týmu', desc: 'Přiřazování ostatních', icon: 'users', granted: false }
+                ]
+            };
+            
+            const rolePerms = perms[role.toLowerCase()] || perms.worker;
+            
+            return rolePerms.map(p => `
+                <div class="permission-item ${p.granted ? 'granted' : 'denied'}">
+                    <div class="permission-icon">
+                        ${p.granted ? 
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' : 
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+                        }
+                    </div>
+                    <div class="perproject-info">
+                        <div class="perproject-name">${p.name}</div>
+                        <div class="permission-desc">${p.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function switchMemberTab(tabName, btn) {
+            document.querySelectorAll('.member-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // For now, just show overview - can expand tabs later
+            if (tabName === 'projects') {
+                loadMemberProjects();
+            } else if (tabName === 'timeline') {
+                loadMemberTimeline();
+            } else if (tabName === 'performance') {
+                loadMemberPerformance();
+            }
+        }
+        
+        function loadMemberProjects() {
+            // TODO: Load projects tab content
+        }
+        
+        function loadMemberTimeline() {
+            // TODO: Load timeline tab content
+        }
+        
+        function loadMemberPerformance() {
+            // TODO: Load performance tab content
+        }
+        
+        function deleteMember(empId) {
+            if (confirm('Opravdu chcete smazat tohoto člena týmu?')) {
+                fetch(`/api/employees/${empId}`, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.ok) {
+                            closeMemberDetailModal();
+                            loadAllData().then(() => renderCurrentView());
+                            if (window.showToast) window.showToast('Člen týmu byl smazán', 'success');
+                        } else {
+                            if (window.showToast) window.showToast(data.error || 'Chyba při mazání', 'error');
+                        }
+                    });
+            }
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('cs-CZ');
+        }
+        
+        function closeMemberDetailModal() {
+            document.getElementById('memberDetailModal').style.display = 'none';
+        }
+        
+        function assignToProject(empId) {
+            window.location.href = `/jobs.html?assign=${empId}`;
+        }
+        
+        // Close modals on background click
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('employee-modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+    
+    <div id="bottom-nav-container"></div>
+    <script src="/static/bottom-nav.js"></script>
+    <link rel="stylesheet" href="/static/icons.css">
+    <script src="/static/js/components/header.js"></script>
+</body>
+</html>

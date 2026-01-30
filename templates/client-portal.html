@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klientský portál - Green David</title>
+    <style>
+        :root {
+            --mint: #9FD4A1;
+            --bg-dark: #0a0e11;
+            --bg-card: #1a1f26;
+            --bg-elevated: #242a33;
+            --border: #2d3748;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .portal-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .portal-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .portal-logo img {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+        }
+        
+        .portal-logo h1 {
+            font-size: 24px;
+            color: var(--mint);
+        }
+        
+        .portal-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .portal-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Login Form */
+        .login-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            margin: 60px auto;
+        }
+        
+        .login-section h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--mint);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: var(--mint);
+            border: none;
+            border-radius: 10px;
+            color: #0a0e11;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-login:hover {
+            background: #7bc47e;
+        }
+        
+        .login-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        /* Job Detail */
+        .job-detail {
+            display: none;
+        }
+        
+        .job-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .job-title {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .job-address {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-section h3 {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-bar-container {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            height: 24px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--mint), #7bc47e);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0a0e11;
+        }
+        
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .stat-card {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--mint);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Timeline/Updates */
+        .updates-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .updates-section h3 {
+            margin-bottom: 20px;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--mint);
+            border: 2px solid var(--bg-card);
+        }
+        
+        .timeline-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .timeline-content {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .timeline-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* Photo Gallery */
+        .gallery-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .gallery-section h3 {
+            margin-bottom: 16px;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+        
+        .gallery-item .photo-date {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            font-size: 11px;
+            color: #fff;
+        }
+        
+        .gallery-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        /* Contact Section */
+        .contact-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .contact-section h3 {
+            margin-bottom: 16px;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+        }
+        
+        .contact-item a {
+            color: var(--mint);
+            text-decoration: none;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background: rgba(159, 212, 161, 0.2);
+            color: var(--mint);
+        }
+        
+        .status-badge.completed {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+        
+        .status-badge.planned {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+        
+        /* Logout button */
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .logout-btn:hover {
+            border-color: var(--mint);
+        }
+        
+        @media (max-width: 600px) {
+            .progress-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="portal-header">
+        <div class="portal-logo">
+            <img src="/logo.jpg" alt="Green David" onerror="this.style.display='none'">
+            <h1>Green David</h1>
+        </div>
+        <p class="portal-subtitle">Klientský portál</p>
+    </header>
+    
+    <button class="logout-btn" id="logout-btn" onclick="logout()">Odhlásit</button>
+    
+    <!-- Login Section -->
+    <div class="login-section" id="login-section">
+        <h2>🔐 Přihlášení</h2>
+        <div class="login-error" id="login-error">Neplatný kód zakázky</div>
+        <form onsubmit="login(event)">
+            <div class="form-group">
+                <label>Kód zakázky</label>
+                <input type="text" id="job-code" placeholder="Např. GD-2024-001" required autofocus>
+            </div>
+            <button type="submit" class="btn-login">Zobrazit zakázku</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
+            Kód jste obdrželi v emailu nebo od vašeho kontaktu.
+        </p>
+    </div>
+    
+    <!-- Job Detail Section -->
+    <div class="portal-container job-detail" id="job-detail">
+        <div class="job-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h1 class="job-title" id="job-title">Zakázka</h1>
+                    <p class="job-address" id="job-address">
+                        <span>📍</span>
+                        <span>Adresa</span>
+                    </p>
+                </div>
+                <span class="status-badge active" id="job-status">
+                    <span>●</span> Aktivní
+                </span>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <h3>📊 Průběh zakázky</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-completed">0</div>
+                    <div class="stat-label">Dokončeno úkolů</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-remaining">0</div>
+                    <div class="stat-label">Zbývá</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-days">-</div>
+                    <div class="stat-label">Dní do termínu</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="updates-section">
+            <h3>📝 Aktualizace</h3>
+            <div class="timeline" id="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">Načítám...</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Načítám aktualizace</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="gallery-section">
+            <h3>📸 Fotografie</h3>
+            <div class="gallery-grid" id="gallery">
+                <div class="gallery-empty">Zatím žádné fotografie</div>
+            </div>
+        </div>
+        
+        <div class="contact-section">
+            <h3>📞 Kontakt</h3>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span>📧</span>
+                    <a href="mailto:info@greendavid.cz">info@greendavid.cz</a>
+                </div>
+                <div class="contact-item">
+                    <span>📱</span>
+                    <a href="tel:+420123456789">+420 123 456 789</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    let currentJob = null;
+    
+    function login(e) {
+        e.preventDefault();
+        
+        const code = document.getElementById('job-code').value.trim();
+        
+        // Fetch job by code
+        fetch(`/api/portal/job?code=${encodeURIComponent(code)}`)
+            .then(r => {
+                if (!r.ok) throw new Error('Not found');
+                return r.json();
+            })
+            .then(job => {
+                currentJob = job;
+                localStorage.setItem('portal-job-code', code);
+                showJobDetail(job);
+            })
+            .catch(err => {
+                document.getElementById('login-error').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('login-error').style.display = 'none';
+                }, 3000);
+            });
+    }
+    
+    function logout() {
+        localStorage.removeItem('portal-job-code');
+        currentJob = null;
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('job-detail').style.display = 'none';
+        document.getElementById('logout-btn').style.display = 'none';
+    }
+    
+    function showJobDetail(job) {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('job-detail').style.display = 'block';
+        document.getElementById('logout-btn').style.display = 'block';
+        
+        // Fill in job details
+        document.getElementById('job-title').textContent = job.client || job.name || 'Zakázka';
+        document.getElementById('job-address').innerHTML = `<span>📍</span><span>${job.address || 'Adresa neuvedena'}</span>`;
+        
+        // Status
+        const statusEl = document.getElementById('job-status');
+        const statusMap = {
+            'active': { class: 'active', text: 'Aktivní' },
+            'in_progress': { class: 'active', text: 'Probíhá' },
+            'completed': { class: 'completed', text: 'Dokončeno' },
+            'planned': { class: 'planned', text: 'Plánováno' }
+        };
+        const status = statusMap[job.status] || statusMap['active'];
+        statusEl.className = `status-badge ${status.class}`;
+        statusEl.innerHTML = `<span>●</span> ${status.text}`;
+        
+        // Progress
+        const progress = job.progress || 0;
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = `${progress}%`;
+        progressBar.textContent = `${progress}%`;
+        
+        // Stats
+        const completed = job.tasks_completed || 0;
+        const total = job.tasks_total || 0;
+        document.getElementById('stat-completed').textContent = completed;
+        document.getElementById('stat-remaining').textContent = Math.max(0, total - completed);
+        
+        // Days until deadline
+        if (job.deadline) {
+            const days = Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+            document.getElementById('stat-days').textContent = days > 0 ? days : (days === 0 ? 'Dnes!' : 'Po termínu');
+        }
+        
+        // Timeline/Updates
+        loadUpdates(job.id);
+        
+        // Gallery
+        loadGallery(job.id);
+    }
+    
+    async function loadUpdates(jobId) {
+        try {
+            const res = await fetch(`/api/portal/job/${jobId}/updates`);
+            const updates = await res.json();
+            
+            const timeline = document.getElementById('timeline');
+            
+            if (updates.length === 0) {
+                timeline.innerHTML = `
+                    <div class="timeline-item">
+                        <div class="timeline-date">Dnes</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Zakázka zahájena</div>
+                            <div class="timeline-desc">Pracujeme na vaší zakázce</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            timeline.innerHTML = updates.map(u => `
+                <div class="timeline-item">
+                    <div class="timeline-date">${formatDate(u.date)}</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">${escapeHtml(u.title)}</div>
+                        ${u.description ? `<div class="timeline-desc">${escapeHtml(u.description)}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error('Error loading updates:', e);
+        }
+    }
+    
+    async function loadGallery(jobId) {
+        try {
+            const res = await fetch(`/api/portal/job/${jobId}/photos`);
+            const photos = await res.json();
+            
+            const gallery = document.getElementById('gallery');
+            
+            if (photos.length === 0) {
+                gallery.innerHTML = '<div class="gallery-empty">📷 Zatím žádné fotografie</div>';
+                return;
+            }
+            
+            gallery.innerHTML = photos.map(p => `
+                <div class="gallery-item" onclick="openPhoto('${p.url}')">
+                    <img src="${p.thumbnail || p.url}" alt="Foto">
+                    <div class="photo-date">${formatDate(p.date)}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error('Error loading photos:', e);
+        }
+    }
+    
+    function openPhoto(url) {
+        window.open(url, '_blank');
+    }
+    
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Auto-login if code saved
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedCode = localStorage.getItem('portal-job-code');
+        if (savedCode) {
+            document.getElementById('job-code').value = savedCode;
+            // Try to auto-login
+            fetch(`/api/portal/job?code=${encodeURIComponent(savedCode)}`)
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(job => showJobDetail(job))
+                .catch(() => {
+                    localStorage.removeItem('portal-job-code');
+                });
+        }
+    });
+    </script>
+</body>
+</html>
