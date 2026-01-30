@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title data-i18n="timesheets.title">green david app · Výkazy hodin</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <link rel="stylesheet" href="/static/icons.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="/app-settings.js"></script>
+  <style>
+    .export-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .export-modal.active { display: flex; }
+    .export-modal-content {
+      background: #1a2332;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      border: 2px solid #9fd4a1;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .export-header {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .export-section {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #334155;
+    }
+    .export-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #9fd4a1;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .format-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .format-option {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .format-option:hover {
+      border-color: #9fd4a1;
+      background: #2d3748;
+    }
+    .format-option.active {
+      border-color: #9fd4a1;
+      background: #2d3748;
+      box-shadow: 0 0 0 3px rgba(159,212,161,0.2);
+    }
+    .format-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .format-name {
+      font-weight: 600;
+      color: white;
+      font-size: 14px;
+    }
+    .input-group {
+      margin-bottom: 12px;
+    }
+    .input-label {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #9fd4a1;
+      box-shadow: 0 0 0 3px rgba(159,212,161,0.1);
+    }
+    .checkbox-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 8px;
+      border: 1px solid #334155;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .checkbox-item:hover {
+      background: #2d3748;
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .checkbox-item label {
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      flex: 1;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn-export {
+      flex: 1;
+      padding: 12px 24px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-export:hover {
+      background: #388e3c;
+      transform: translateY(-1px);
+    }
+    .btn-export:disabled {
+      background: #4a5568;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-cancel {
+      flex: 1;
+      padding: 12px 24px;
+      background: transparent;
+      color: #9ca3af;
+      border: 1px solid #556165;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover {
+      background: #2d3748;
+      color: white;
+    }
+    .select-all-btn {
+      font-size: 12px;
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid #556165;
+      color: #9fd4a1;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .select-all-btn:hover {
+      background: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <div class="container" style="max-width:1100px;margin:24px auto 80px;padding:0 16px">
+    <h1 style="margin:0 0 6px;font-size:28px;letter-spacing:-0.02em" data-i18n="timesheets.title">Výkazy hodin</h1>
+    <div style="opacity:.75;margin:0 0 16px">Přehled a správa odpracovaného času</div>
+
+    <div class="card" style="background:#2b3235;border-radius:14px;padding:0;border:1px solid #3b4549;overflow:hidden">
+      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #3b4549;background:#232a2d">
+        <div style="font-weight:600" data-i18n="timesheets.title">Výkazy</div>
+        <div>
+          <button id="btnAdd" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer" data-i18n="timesheets.add">+ Přidat záznam</button>
+          <button id="btnReload" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="timesheets.refresh">↻ Obnovit</button>
+          <button id="btnExport" style="background:#9fd4a1;color:#0f172a;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600">📥 Export</button>
+        </div>
+      </div>
+      <div class="card-b" style="padding:16px">
+        <div class="filters" style="background:#1f2629;border:1px solid #3b4549;border-radius:12px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.from">Od</label>
+              <input type="date" id="fltFrom" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.to">Do</label>
+              <input type="date" id="fltTo" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.employee">Zaměstnanec</label>
+              <select id="fltEmp" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Všichni</option></select>
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.job">Zakázka</label>
+              <select id="fltJob" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef"><option value="">Vše</option></select>
+            </div>
+            <div style="flex:1">
+              <label style="font-size:12px;opacity:.75;display:block;margin-bottom:4px" data-i18n="timesheets.filter.text">Text</label>
+              <input type="text" id="fltText" data-i18n-placeholder="timesheets.filter.placeholder" placeholder="poznámka, název…" style="width:100%;padding:8px;border-radius:10px;border:1px solid #3b4549;background:#2b3235;color:#e4ecef">
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px">
+              <button id="btnClear" class="ghost" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:8px 12px;cursor:pointer" data-i18n="action.clear">Vymazat</button>
+              <button id="btnApply" class="btn" style="background:#2e7d32;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer" data-i18n="action.filter">Filtrovat</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="summary" style="opacity:.85;margin-top:8px"></div>
+        <div style="overflow:auto;margin-top:12px">
+          <table id="tbl" style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.date">Datum</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.employee">Zaměstnanec</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.job">Zakázka</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.hours">Hodin</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.note">Pozn.</th>
+                <th style="border-bottom:1px solid #3b4549;padding:10px;text-align:left" data-i18n="timesheets.col.actions"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="exportModal" class="export-modal">
+    <div class="export-modal-content">
+      <div class="export-header">
+        <span>📥</span>
+        <span>Export výkazů</span>
+      </div>
+
+      <!-- Format Selection -->
+      <div class="export-section">
+        <div class="export-section-title">Formát exportu</div>
+        <div class="format-selector">
+          <div class="format-option active" data-format="pdf">
+            <div class="format-icon">📄</div>
+            <div class="format-name">PDF</div>
+          </div>
+          <div class="format-option" data-format="xlsx">
+            <div class="format-icon">📊</div>
+            <div class="format-name">Excel</div>
+          </div>
+          <div class="format-option" data-format="csv">
+            <div class="format-icon">📋</div>
+            <div class="format-name">CSV</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Range -->
+      <div class="export-section">
+        <div class="export-section-title">Období</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="input-group">
+            <label class="input-label">Od data</label>
+            <input type="date" id="exportFrom" class="input-field">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Do data</label>
+            <input type="date" id="exportTo" class="input-field">
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Selection -->
+      <div class="export-section">
+        <div class="export-section-title">Zakázka</div>
+        <select id="exportJob" class="input-field">
+          <option value="">Všechny zakázky</option>
+        </select>
+      </div>
+
+      <!-- Employee Selection -->
+      <div class="export-section">
+        <div class="export-section-title">Zaměstnanci</div>
+        <button class="select-all-btn" id="selectAllEmployees">✓ Všichni</button>
+        <div class="checkbox-list" id="employeeList">
+          <!-- Dynamic employee checkboxes -->
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="button-group">
+        <button class="btn-cancel" id="btnCancelExport">Zrušit</button>
+        <button class="btn-export" id="btnConfirmExport">
+          <span id="exportBtnText">Exportovat PDF</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Modal -->
+  <div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center">
+    <div style="background:#fff;color:#111;border-radius:10px;width:min(680px,96vw);max-width:96vw;padding:18px;border:2px solid #111">
+      <div style="font-weight:700;font-size:18px">Přidat výkaz</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <div style="flex:1">
+          <div>Datum</div>
+          <input type="date" id="fDate" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
+        </div>
+        <div style="flex:1">
+          <div>Zaměstnanec</div>
+          <select id="fEmp" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
+        </div>
+        <div style="flex:1">
+          <div>Zakázka</div>
+          <select id="fJob" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></select>
+        </div>
+        <div style="width:120px">
+          <div>Hodin</div>
+          <input type="text" id="fHours" value="8" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+        <div style="flex:1">
+          <div>Poznámka</div>
+          <textarea id="fNote" rows="2" style="width:100%;padding:10px;border-radius:10px;border:1px solid #d0d0d0"></textarea>
+        </div>
+      </div>
+      <div id="formMsg" style="color:#b00020;margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="btnCancel" style="flex:1;padding:10px;border-radius:10px;background:#ddd;border:none;cursor:pointer">Zrušit</button>
+        <button id="btnSave" style="flex:1;padding:10px;border-radius:10px;background:#2e7d32;color:#fff;border:none;cursor:pointer">Uložit</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+  const api = {
+    async list(){ const r=await fetch('/api/timesheets'); if(!r.ok) throw new Error(await r.text()); return r.json(); },
+    async create(data){ const r=await fetch('/api/timesheets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+    async remove(id){ const r=await fetch(`/api/timesheets?id=${id}`,{method:'DELETE'}); if(!r.ok)throw new Error(await r.text()); return r.json(); }
+  };
+  const state = { rows:[], filtered:[], employees:[], jobs:[], isAdmin:false };
+
+  // Internationalization helper
+  function t(key) {
+    const translations = {
+      'timesheets.no_data': 'Žádné záznamy',
+      'timesheets.total': 'Celkem',
+      'timesheets.col.hours': 'Hodin',
+      'timesheets.delete': 'Smazat'
+    };
+    return translations[key] || key;
+  }
+
+  function $(sel){ return document.querySelector(sel); }
+  function fmtDate(d){ if(!d)return''; const arr=d.split('-'); return `${arr[2]||'--'}.${arr[1]||'--'}.${arr[0]||'----'}`; }
+  function empName(id){ const e=state.employees.find(x=>x.id===id); return e ? e.name : `#${id||''}`; }
+  function jobName(id){ const j=state.jobs.find(x=>x.id===id); return j ? (j.title||j.customer_name||j.name||`#${j.id}`) : ''; }
+
+  async function loadAll(){
+    const [tRes, eRes, jRes] = await Promise.all([
+      fetch('/api/timesheets'), fetch('/api/employees'), fetch('/api/jobs')
+    ]);
+    if(!tRes.ok||!eRes.ok||!jRes.ok){ console.error('Failed to load data'); return; }
+    const tData = await tRes.json(); const eData = await eRes.json(); const jData = await jRes.json();
+    state.rows = Array.isArray(tData)?tData:(tData.rows||[]);
+    state.employees = Array.isArray(eData)?eData:(eData.employees||[]);
+    state.jobs = jData.jobs || jData || [];
+    try{
+      const uRes = await fetch('/api/me'); if(uRes.ok){ const me = await uRes.json(); state.isAdmin = me.role==='admin'; }
+    }catch{}
+    $('#fltEmp').innerHTML='<option value="">Všichni</option>'+state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
+    $('#fltJob').innerHTML='<option value="">Vše</option>'+state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+    
+    // Populate export modal
+    $('#exportJob').innerHTML='<option value="">Všechny zakázky</option>'+state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+    
+    const empList = $('#employeeList');
+    empList.innerHTML = state.employees.map(e=>`
+      <div class="checkbox-item">
+        <input type="checkbox" id="emp_${e.id}" value="${e.id}" checked>
+        <label for="emp_${e.id}">${empName(e.id)}</label>
+      </div>
+    `).join('');
+    
+    applyFilters(true);
+  }
+
+  function applyFilters(isInitial = false){
+    const from = $('#fltFrom').value; const to = $('#fltTo').value;
+    const empId = $('#fltEmp').value; const jobId = $('#fltJob').value;
+    const txt = $('#fltText').value.toLowerCase();
+    state.filtered = state.rows.filter(r=>{
+      if(from && r.date<from) return false;
+      if(to && r.date>to) return false;
+      if(empId && String(r.employee_id||r.emp_id||r.user_id)!==empId) return false;
+      if(jobId && String(r.job_id)!==jobId) return false;
+      if(txt){
+        const hay = JSON.stringify(r).toLowerCase();
+        if(!hay.includes(txt)) return false;
+      }
+      return true;
+    });
+    if(isInitial && state.filtered.length===0 && state.rows.length>0) state.filtered = state.rows.slice();
+    renderTable();
+  }
+
+  function clearFilters(){ $('#fltFrom').value=''; $('#fltTo').value=''; $('#fltEmp').value=''; $('#fltJob').value=''; $('#fltText').value=''; applyFilters(); }
+
+  function renderTable(){
+    const tb = document.querySelector('#tbl tbody'); tb.innerHTML='';
+    let total=0;
+    state.filtered.forEach(r=>{
+      const tr=document.createElement('tr');
+      const hours = Number(r.hours ?? r.hrs ?? r.time ?? 0) || 0; total += hours;
+      tr.innerHTML = `
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${fmtDate(r.date)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${empName(r.employee_id||r.emp_id||r.user_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${jobName(r.job_id)}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #556165">${hours.toFixed(2)}</span></td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px">${r.note||''}</td>
+        <td style="border-bottom:1px solid #3b4549;padding:10px;text-align:right">${(state.isAdmin && r.id)?`<button class="ghost" data-del="${r.id}" style="background:transparent;border:1px solid #556165;color:#cdd7db;border-radius:10px;padding:6px 10px;cursor:pointer">${t('timesheets.delete')}</button>`:''}</td>`;
+      tb.appendChild(tr);
+    });
+    document.querySelector('#summary').textContent = `${t('timesheets.no_data').replace('Žádné záznamy', 'Záznamů')}: ${state.filtered.length} · ${t('timesheets.total')} ${t('timesheets.col.hours').toLowerCase()}: ${total.toFixed(2)}`;
+    tb.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.onclick=async()=>{ if(!confirm('Smazat výkaz?'))return; await api.remove(btn.getAttribute('data-del')); await loadAll(); };
+    });
+  }
+
+  function openModal(){
+    document.querySelector('#modal').style.display='flex';
+    document.querySelector('#fDate').value = new Date().toISOString().slice(0,10);
+    document.querySelector('#fEmp').innerHTML = state.employees.map(e=>`<option value="${e.id}">${empName(e.id)}</option>`).join('');
+    document.querySelector('#fJob').innerHTML = state.jobs.map(j=>`<option value="${j.id}">${jobName(j.id)}</option>`).join('');
+    document.querySelector('#fHours').value='8'; document.querySelector('#fNote').value=''; document.querySelector('#formMsg').textContent='';
+  }
+  function closeModal(){ document.querySelector('#modal').style.display='none'; }
+
+  async function saveEntry(){
+    const payload = {
+      date: document.querySelector('#fDate').value,
+      employee_id: document.querySelector('#fEmp').value,
+      job_id: document.querySelector('#fJob').value,
+      hours: parseFloat(String(document.querySelector('#fHours').value||'0').replace(',','.')) || 0,
+      note: document.querySelector('#fNote').value || ''
+    };
+    try{
+      const res = await api.create(payload);
+      if(res && (res.ok === false || res.error)){ document.querySelector('#formMsg').textContent = res.error || 'Uložení selhalo'; return; }
+      closeModal(); await loadAll();
+    }catch(err){ document.querySelector('#formMsg').textContent = 'Uložení selhalo: ' + (err.message||err); }
+  }
+
+  // Export Modal Logic
+  let selectedFormat = 'pdf';
+
+  function openExportModal() {
+    $('#exportModal').classList.add('active');
+    
+    // Set default dates (current month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    $('#exportFrom').value = firstDay.toISOString().slice(0, 10);
+    $('#exportTo').value = lastDay.toISOString().slice(0, 10);
+    $('#exportJob').value = '';
+    
+    // Check all employees by default
+    $$('#employeeList input[type="checkbox"]').forEach(cb => cb.checked = true);
+    
+    updateExportButton();
+  }
+
+  function closeExportModal() {
+    $('#exportModal').classList.remove('active');
+  }
+
+  function updateExportButton() {
+    const formatNames = { pdf: 'PDF', xlsx: 'Excel', csv: 'CSV' };
+    $('#exportBtnText').textContent = `Exportovat ${formatNames[selectedFormat]}`;
+  }
+
+  // Format selection
+  $$('.format-option').forEach(option => {
+    option.addEventListener('click', () => {
+      $$('.format-option').forEach(o => o.classList.remove('active'));
+      option.classList.add('active');
+      selectedFormat = option.dataset.format;
+      updateExportButton();
+    });
+  });
+
+  // Select all employees
+  $('#selectAllEmployees').addEventListener('click', () => {
+    const checkboxes = $$('#employeeList input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    $('#selectAllEmployees').textContent = allChecked ? '✓ Všichni' : '✗ Zrušit výběr';
+  });
+
+  // Confirm export
+  $('#btnConfirmExport').addEventListener('click', async () => {
+    const fromDate = $('#exportFrom').value;
+    const toDate = $('#exportTo').value;
+    const jobId = $('#exportJob').value;
+    
+    // Get selected employees
+    const selectedEmployees = Array.from($$('#employeeList input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedEmployees.length === 0) {
+      alert('Vyberte alespoň jednoho zaměstnance');
+      return;
+    }
+    
+    // Build query string
+    const params = new URLSearchParams();
+    params.append('format', selectedFormat);
+    
+    if (fromDate) params.append('from', fromDate);
+    if (toDate) params.append('to', toDate);
+    if (jobId) params.append('job_id', jobId);
+    
+    // If not all employees selected, add employee filter
+    if (selectedEmployees.length !== state.employees.length) {
+      params.append('employees', selectedEmployees.join(','));
+    } else {
+      params.append('employees', 'all');
+    }
+    
+    // Download file
+    const url = `/api/timesheets/export-advanced?${params.toString()}`;
+    window.location.href = url;
+    
+    closeExportModal();
+  });
+
+  $('#btnCancelExport').addEventListener('click', closeExportModal);
+  $('#exportModal').addEventListener('click', (e) => {
+    if (e.target === $('#exportModal')) closeExportModal();
+  });
+
+  // Main buttons
+  document.querySelector('#btnAdd').onclick=openModal;
+  document.querySelector('#btnCancel').onclick=closeModal;
+  document.querySelector('#btnSave').onclick=saveEntry;
+  document.querySelector('#btnReload').onclick=loadAll;
+  document.querySelector('#btnApply').onclick=()=>applyFilters(false);
+  document.querySelector('#btnClear').onclick=clearFilters;
+  document.querySelector('#btnExport').onclick=openExportModal;
+
+  loadAll().catch(err=>{ document.body.insertAdjacentHTML('beforeend','<div style="color:#b00020;padding:12px">'+String(err)+'</div>'); });
+  </script>
+  <div id="bottom-nav-container"></div>
+  <script src="/static/bottom-nav.js"></script>
+  <link rel="stylesheet" href="/static/icons.css">
+  <script src="/static/export-utils.js"></script>
+  <script src="/static/app-header.js"></script>
+  <script src="/static/navigation.js"></script>
+  <script src="/static/toast.js"></script>
+  <script src="/static/loading.js"></script>
+</body>
+</html>
