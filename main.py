@@ -16,14 +16,6 @@ except ImportError:
     CREW_API_AVAILABLE = False
     print("[INFO] Crew API module not available")
 
-# AI Operator Draft Actions API
-try:
-    from ai_operator_drafts import draft_actions_bp, init_draft_actions
-    DRAFT_ACTIONS_AVAILABLE = True
-except ImportError:
-    DRAFT_ACTIONS_AVAILABLE = False
-    print("[INFO] AI Operator Draft Actions module not available")
-
 # Database path configuration
 # Priority: 1. DB_PATH env var, 2. Persistent disk detection, 3. Default
 if os.environ.get("DB_PATH"):
@@ -52,11 +44,6 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 if CREW_API_AVAILABLE:
     app.register_blueprint(crew_bp)
     print("[INFO] Crew Control System API registered")
-
-# Register AI Operator Draft Actions API blueprint
-if DRAFT_ACTIONS_AVAILABLE:
-    app.register_blueprint(draft_actions_bp)
-    print("[INFO] AI Operator Draft Actions API registered")
 
 @app.after_request
 def _disable_cache_for_static(resp):
@@ -239,6 +226,75 @@ def apply_migrations():
             );
             CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read, created_at);
             CREATE INDEX IF NOT EXISTS idx_notifications_emp_read ON notifications(employee_id, is_read, created_at);
+            """,
+        ]),
+
+        # v6: AI Operator - rozšíření jobs tabulky
+        (6, [
+            ("jobs", "planned_end_date", "ALTER TABLE jobs ADD COLUMN planned_end_date DATE"),
+            ("jobs", "actual_end_date", "ALTER TABLE jobs ADD COLUMN actual_end_date DATE"),
+            ("jobs", "deadline", "ALTER TABLE jobs ADD COLUMN deadline DATE"),
+            ("jobs", "deadline_type", "ALTER TABLE jobs ADD COLUMN deadline_type TEXT DEFAULT 'soft'"),
+            ("jobs", "weather_dependent", "ALTER TABLE jobs ADD COLUMN weather_dependent BOOLEAN DEFAULT 0"),
+            ("jobs", "estimated_value", "ALTER TABLE jobs ADD COLUMN estimated_value DECIMAL(12,2)"),
+            ("jobs", "estimated_hours", "ALTER TABLE jobs ADD COLUMN estimated_hours INTEGER"),
+            ("jobs", "actual_value", "ALTER TABLE jobs ADD COLUMN actual_value DECIMAL(12,2) DEFAULT 0"),
+            ("jobs", "actual_hours", "ALTER TABLE jobs ADD COLUMN actual_hours INTEGER DEFAULT 0"),
+            ("jobs", "completion_percent", "ALTER TABLE jobs ADD COLUMN completion_percent INTEGER DEFAULT 0"),
+            ("jobs", "budget_labor", "ALTER TABLE jobs ADD COLUMN budget_labor DECIMAL(12,2) DEFAULT 0"),
+            ("jobs", "budget_materials", "ALTER TABLE jobs ADD COLUMN budget_materials DECIMAL(12,2) DEFAULT 0"),
+            ("jobs", "type", "ALTER TABLE jobs ADD COLUMN type TEXT DEFAULT 'construction'"),
+            ("jobs", "priority", "ALTER TABLE jobs ADD COLUMN priority TEXT DEFAULT 'medium'"),
+        ]),
+
+        # v7: AI Operator - draft actions a event log tabulky
+        (7, [
+            """
+            CREATE TABLE IF NOT EXISTS ai_draft_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                insight_id TEXT,
+                action_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                payload TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                priority TEXT DEFAULT 'medium',
+                created_by INTEGER,
+                approved_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                executed_at TEXT,
+                execution_result TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_draft_status ON ai_draft_actions(status);
+            
+            CREATE TABLE IF NOT EXISTS ai_insight_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                insight_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                reason TEXT,
+                user_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            
+            CREATE TABLE IF NOT EXISTS ai_event_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                entity_type TEXT,
+                entity_id INTEGER,
+                payload TEXT,
+                user_id INTEGER,
+                synced INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            
+            CREATE TABLE IF NOT EXISTS ai_memory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT NOT NULL UNIQUE,
+                value TEXT NOT NULL,
+                category TEXT,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
             """,
         ]),
     ]
@@ -1164,13 +1220,6 @@ def _ensure():
             _migrate_crew_control_tables()  # New: Crew Control System tables
         except Exception as e:
             print(f"[DB] Migration warning: {e}")
-        # Initialize AI Operator Draft Actions
-        try:
-            if DRAFT_ACTIONS_AVAILABLE:
-                init_draft_actions(get_db)
-                print("[INFO] AI Operator Draft Actions initialized")
-        except Exception as e:
-            print(f"[AI] Draft Actions init warning: {e}")
         _ensure._schema_ready = True
     seed_admin()
     _auto_upgrade_admins_to_owner()
