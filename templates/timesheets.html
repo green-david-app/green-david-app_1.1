@@ -1,0 +1,2811 @@
+{% extends "layout.html" %}
+{% block content %}
+<script src="/app-settings.js"></script>
+<main class="app-shell">
+  <div class="page-container">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Výkazy hodin</h1>
+          <p class="section-subtitle">Přehled odpracovaných hodin</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon time">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+      </div>
+        <div class="kpi-content">
+          <div class="kpi-label">CELKEM HODIN</div>
+          <div class="kpi-value" id="kpiTotalHours">0h</div>
+      </div>
+    </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon average">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-6 6"/>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">PRŮMĚR/DEN</div>
+          <div class="kpi-value" id="kpiAvgHours">0h</div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-icon projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">PROJEKTŮ</div>
+          <div class="kpi-value" id="kpiProjects">0</div>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-icon team">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">PRACOVNÍKŮ</div>
+          <div class="kpi-value" id="kpiWorkers">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="ts-view-toggle">
+      <button id="viewList" class="ts-view-btn active">
+        <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <path d="M9 12h6"/>
+          <path d="M9 16h6"/>
+        </svg>
+        <span>Seznam</span>
+      </button>
+      <button id="viewStats" class="ts-view-btn">
+        <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span>Statistiky</span>
+      </button>
+    </div>
+
+    <!-- KOMPAKTNÍ NAVIGAČNÍ LIŠTA -->
+    <div class="week-toolbar">
+      <!-- LEVÁ ČÁST: Navigace týdne -->
+      <div class="toolbar-nav">
+        <button class="nav-arrow" id="prevWeek" title="Předchozí týden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        
+        <div class="week-display">
+          <span class="week-range" id="weekRange">Po 26. 01. — Ne 01. 02.</span>
+          <input type="date" id="weekStart" class="week-picker-input">
+        </div>
+        
+        <button class="nav-arrow" id="nextWeek" title="Další týden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        
+        <button class="today-btn" id="goToday" title="Dnes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>Dnes</span>
+        </button>
+      </div>
+      
+      <!-- STŘEDNÍ ČÁST: Filtry -->
+      <div class="toolbar-filters">
+        <div class="filter-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <select id="filterJob" class="filter-select">
+            <option value="">Všechny zakázky</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <select id="filterEmployee" class="filter-select">
+            <option value="">Všichni</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- PRAVÁ ČÁST: Akce -->
+      <div class="toolbar-actions">
+        <button class="action-btn secondary" id="exportCsv" title="Export do CSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span class="btn-text">CSV</span>
+        </button>
+        
+        <button class="action-btn secondary" id="copyWeek" title="Kopírovat týden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span class="btn-text">Kopírovat</span>
+        </button>
+        
+        <button class="action-btn primary" id="addTimesheet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Přidat</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Project Color Legend -->
+    <div id="projectLegend" class="ts-legend" style="display:none;">
+      <div class="ts-legend-title">Barevné kódování projektů:</div>
+      <div id="legendItems" class="ts-legend-items"></div>
+    </div>
+
+    <!-- Enhanced Summary Bar -->
+    <div id="summaryBar" class="ts-summary-bar" style="display:none;">
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Celkem hodin</div>
+        <div id="summaryTotal" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Průměr na den</div>
+        <div id="summaryAvg" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Aktivních projektů</div>
+        <div id="summaryProjects" class="ts-summary-value">0</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Overtime</div>
+        <div id="summaryOvertime" class="ts-summary-value">0h</div>
+      </div>
+    </div>
+
+    <!-- Heat Map Week -->
+    <div id="heatMapWeek" class="ts-heatmap" style="display:none;">
+      <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+      <div id="heatMapDays" class="ts-heatmap-days"></div>
+      <div id="heatmapEmptyState" class="ts-heatmap-empty" style="display:none;">
+        <div class="ts-heatmap-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="ts-heatmap-empty-text">Zatím žádná data</div>
+        <button class="ts-heatmap-empty-cta" onclick="openModal('create', {})">+ Přidat výkaz</button>
+      </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div id="statsPanel" class="ts-stats-panel" style="display:none;">
+      <div class="ts-summary-bar" style="margin-bottom: 24px;">
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Celkem hodin</div>
+          <div id="statsSummaryTotal" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Průměr na den</div>
+          <div id="statsSummaryAvg" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Aktivních projektů</div>
+          <div id="statsSummaryProjects" class="ts-summary-value">0</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Overtime</div>
+          <div id="statsSummaryOvertime" class="ts-summary-value">0h</div>
+        </div>
+      </div>
+      
+      <!-- Heat Map -->
+      <div id="statsHeatMapWeek" class="ts-heatmap" style="margin-bottom: 24px;">
+        <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+        <div id="statsHeatMapDays" class="ts-heatmap-days"></div>
+      </div>
+      
+      <!-- Project Legend -->
+      <div id="statsProjectLegend" class="ts-legend" style="margin-bottom: 24px;">
+        <div class="ts-legend-title">Barevné kódování projektů:</div>
+        <div id="statsLegendItems" class="ts-legend-items"></div>
+      </div>
+    </div>
+
+    <!-- List View (Original) -->
+    <div id="listView" class="ts-list-view">
+    <div id="lanes" class="week-lanes" style="display:grid;grid-template-columns:repeat(7,1fr);gap:16px;margin-top:24px;"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div id="modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">Přidat výkaz</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Zaměstnanec -->
+        <div class="form-group">
+        <label>Zaměstnanec *</label>
+        <select id="fEmployee" class="form-select" required>
+          <option value="">Vyberte zaměstnance</option>
+        </select>
+        </div>
+      
+      <!-- Datum -->
+        <div class="form-group">
+        <label>Datum *</label>
+        <input type="date" id="fDate" class="form-input" required>
+      </div>
+      
+      <!-- Zakázka -->
+      <div class="form-group">
+        <label>Zakázka</label>
+          <select id="fJob" class="form-select">
+            <option value="">Bez projektu</option>
+          </select>
+        </div>
+      
+      <!-- Hodiny - quick select -->
+        <div class="form-group">
+        <label>Hodiny *</label>
+        <div class="hours-quick-select">
+          <button type="button" class="hour-btn" data-hours="0.5">0.5h</button>
+          <button type="button" class="hour-btn" data-hours="1">1h</button>
+          <button type="button" class="hour-btn" data-hours="2">2h</button>
+          <button type="button" class="hour-btn" data-hours="4">4h</button>
+          <button type="button" class="hour-btn active" data-hours="8">8h</button>
+        </div>
+        <input type="number" id="fHours" class="form-input" value="8" min="0.5" max="24" step="0.5" required>
+      </div>
+      
+      <!-- Typ práce -->
+        <div class="form-group">
+        <label>Typ práce *</label>
+        <div class="work-type-grid">
+          <div class="work-type-option active" data-type="manual">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+            <span>Manuální</span>
+        </div>
+          <div class="work-type-option" data-type="machine">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><circle cx="16" cy="12" r="2"/>
+            </svg>
+            <span>Stroj</span>
+          </div>
+          <div class="work-type-option" data-type="planning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>
+            </svg>
+            <span>Plánování</span>
+          </div>
+          <div class="work-type-option" data-type="supervision">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/>
+            </svg>
+            <span>Dozor</span>
+          </div>
+          <div class="work-type-option" data-type="transport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+            <span>Doprava</span>
+          </div>
+          <div class="work-type-option training" data-type="training">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+            <span>Školení</span>
+          </div>
+          <div class="work-type-option" data-type="other">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+            <span>Jiné</span>
+          </div>
+        </div>
+        <input type="hidden" id="fWorkType" value="manual">
+        
+        <!-- Výběr školení (zobrazí se když je vybrané "Školení") -->
+        <div id="trainingSelect" class="form-group" style="display: none;">
+          <label class="form-label">Vyberte školení</label>
+          <select id="wl-training" class="form-select">
+            <option value="">-- Vyberte školení --</option>
+          </select>
+          <span class="form-hint">Nebo vytvořte nové školení v sekci Školení</span>
+        </div>
+      </div>
+      
+      <!-- Místo -->
+        <div class="form-group">
+        <label>Místo</label>
+        <input type="text" id="fPlace" class="form-input" placeholder="Místo práce...">
+        </div>
+      
+      <!-- Progressive Disclosure Toggle -->
+      <div class="form-section-toggle">
+        <button type="button" class="toggle-btn" id="toggleAdvanced" onclick="toggleAdvanced()">
+          <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+          <span>Více detailů</span>
+        </button>
+        </div>
+      
+      <!-- Rozšířená sekce -->
+      <div id="advancedSection" class="form-section advanced hidden">
+        <!-- Úkol -->
+        <div class="form-group">
+          <label>Úkol</label>
+          <select id="fTask" class="form-select">
+            <option value="">Vyberte úkol...</option>
+          </select>
+      </div>
+        
+        <!-- Čas od/do -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Čas od</label>
+            <input type="time" id="fStartTime" class="form-input">
+    </div>
+          <div class="form-group">
+            <label>Čas do</label>
+            <input type="time" id="fEndTime" class="form-input">
+          </div>
+        </div>
+        
+        <!-- Výkon signál -->
+        <div class="form-group">
+          <label>Hodnocení výkonu</label>
+          <div class="performance-chips">
+            <button type="button" class="perf-chip excellent" data-value="excellent" title="Výborný">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+            <button type="button" class="perf-chip normal active" data-value="normal" title="Normální">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+            </button>
+            <button type="button" class="perf-chip slow" data-value="slow" title="Pomalý">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </button>
+            <button type="button" class="perf-chip problem" data-value="problem" title="Problém">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </button>
+          </div>
+          <input type="hidden" id="fPerformance" value="normal">
+        </div>
+        
+        <!-- Zdržení -->
+        <div class="form-group">
+          <label>Zdržení</label>
+          <select id="fDelayReason" class="form-select">
+            <option value="">Žádné zdržení</option>
+            <option value="weather">Počasí</option>
+            <option value="material">Chybějící materiál</option>
+            <option value="client">Klient</option>
+            <option value="technical">Technický problém</option>
+            <option value="other">Jiné</option>
+          </select>
+          <input type="text" id="fDelayNote" class="form-input mt-8" placeholder="Poznámka ke zdržení..." style="display:none;">
+        </div>
+        
+        <!-- Materiál -->
+        <div class="form-group">
+          <label>Spotřebovaný materiál</label>
+          <div id="materialList" class="material-list">
+            <!-- Dynamicky přidávané položky -->
+          </div>
+          <button type="button" class="btn-text" onclick="addMaterialRow()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Přidat materiál
+          </button>
+        </div>
+        
+        <!-- Počasí -->
+        <div class="form-group">
+          <label>Počasí</label>
+          <div class="weather-row">
+            <button type="button" class="btn-secondary" onclick="fetchWeather()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+              </svg>
+              Načíst počasí
+            </button>
+            <div id="weatherDisplay" class="weather-display hidden">
+              <span class="weather-temp">--°C</span>
+              <span class="weather-cond">--</span>
+            </div>
+          </div>
+          <input type="hidden" id="fWeatherSnapshot" value="">
+        </div>
+        
+        <!-- Fotka -->
+        <div class="form-group">
+          <label>Fotodokumentace</label>
+          <div class="photo-upload">
+            <input type="file" id="fPhoto" accept="image/*" style="display:none;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('fPhoto').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              Nahrát fotku
+            </button>
+            <div id="photoPreview" class="photo-preview hidden"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Poznámka -->
+      <div class="form-group">
+        <label>Poznámka</label>
+        <textarea id="fActivity" class="form-textarea" rows="2" placeholder="Další informace..."></textarea>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button id="btnDelete" class="btn-secondary" style="display:none;margin-right:auto;">Smazat</button>
+      <button id="btnCancel" class="btn-secondary">Zrušit</button>
+      <button id="btnSave" class="btn-primary">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.section-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+}
+.section-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: #60a5fa;
+}
+.section-title h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+.section-subtitle {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  margin: 4px 0 0 0;
+}
+
+/* KPI Cards */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+  border-color: var(--mint-border);
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%);
+}
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.kpi-icon.time {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+}
+.kpi-icon.time svg { stroke: #60a5fa; }
+
+.kpi-icon.average {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15);
+}
+.kpi-icon.average svg { stroke: #4ade80; }
+
+.kpi-icon.projects {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+}
+.kpi-icon.projects svg { stroke: #fbbf24; }
+
+.kpi-icon.team {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+.kpi-icon.team svg { stroke: #a78bfa; }
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* View Toggle */
+.ts-view-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.ts-view-btn {
+  padding: 8px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.ts-view-btn:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%);
+  border-color: rgba(74, 222, 128, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.ts-view-btn.active {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+  color: var(--text-on-light);
+  border-color: var(--mint-border);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+}
+
+/* Project Legend */
+.ts-legend {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ts-legend-title {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.ts-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ts-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ts-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced Summary Bar */
+.ts-summary-bar {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ts-summary-item {
+  flex: 1;
+  min-width: 120px;
+}
+
+.ts-summary-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.ts-summary-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+/* Heat Map */
+.ts-heatmap {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ts-heatmap-title {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.ts-heatmap-days {
+  display: flex;
+  gap: 8px;
+}
+
+.ts-heatmap-day {
+  flex: 1;
+  min-height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.ts-heatmap-day:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ts-heatmap-empty {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.ts-heatmap-empty-icon {
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: center;
+}
+
+.ts-heatmap-empty-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.ts-heatmap-empty-cta {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #0f172a;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ts-heatmap-empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+
+/* Statistics Panel */
+.ts-stats-panel {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ts-list-view {
+  display: block;
+}
+
+/* ============================================
+   KOMPAKTNÍ TOOLBAR PRO VÝKAZY
+   ============================================ */
+
+.week-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* NAVIGACE TÝDNE */
+.toolbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-arrow {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.nav-arrow:hover {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
+  border-color: var(--mint-border);
+  color: #4ade80;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.nav-arrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.week-display {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.week-range {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  padding: 8px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  transition: all 0.3s;
+  display: inline-block;
+  min-width: 180px;
+  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.week-range:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(74, 222, 128, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.week-picker-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.today-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(96, 165, 250, 0.1) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-top-color: rgba(96, 165, 250, 0.4);
+  border-left-color: rgba(96, 165, 250, 0.3);
+  border-radius: 10px;
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.today-btn:hover {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.3) 0%, rgba(96, 165, 250, 0.2) 100%);
+  border-color: rgba(96, 165, 250, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.today-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* FILTRY */
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.filter-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.filter-select {
+  padding: 8px 32px 8px 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 130px;
+  transition: all 0.3s;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-select:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(74, 222, 128, 0.3);
+  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--mint-border);
+  background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* AKČNÍ TLAČÍTKA */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn.secondary {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.action-btn.secondary:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+  border: 1px solid var(--mint-border);
+  color: var(--text-on-light);
+  padding: 8px 16px;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+}
+
+.action-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+  background: linear-gradient(135deg, var(--mint-light) 0%, var(--mint) 100%);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1100px) {
+  .week-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .toolbar-filters {
+    border: none;
+    padding: 0;
+  }
+  
+  .action-btn .btn-text {
+    display: none;
+  }
+  
+  .action-btn.secondary {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .week-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbar-nav {
+    justify-content: center;
+  }
+  
+  .toolbar-filters {
+    justify-content: center;
+    border: none;
+    padding: 0;
+  }
+  
+  .toolbar-actions {
+    justify-content: center;
+  }
+  
+  .today-btn span:not(svg) {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-select {
+    min-width: 100px;
+    font-size: 12px;
+  }
+  
+  .week-range {
+    font-size: 13px;
+    padding: 6px 12px;
+    min-width: 150px;
+    white-space: nowrap;
+  }
+  
+  .week-display {
+    white-space: nowrap;
+  }
+}
+.week-lanes {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 16px;
+}
+.lane {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 200px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: all 0.3s;
+}
+
+.lane:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+  border-color: var(--mint-border);
+}
+.lane-head {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.lane-head .title {
+  font-weight: 600;
+  color: white;
+  font-size: 14px;
+}
+.lane-head small {
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+}
+.lane-body {
+  min-height: 100px;
+}
+.entry, .timesheet-card {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-left: 3px solid #4ade80;
+  border-top-color: rgba(74, 222, 128, 0.3);
+  border-left-color: #4ade80;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.entry:hover, .timesheet-card:hover {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  transform: translateX(4px) translateY(-1px);
+  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+.entry-name {
+  font-weight: 500;
+  color: white;
+  font-size: 14px;
+}
+.entry-hours {
+  color: #4ade80;
+  font-weight: 600;
+  font-size: 14px;
+}
+.add-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.add-pill {
+  width: 100%;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px dashed rgba(74, 222, 128, 0.4);
+  border-top-color: rgba(74, 222, 128, 0.5);
+  border-left-color: rgba(74, 222, 128, 0.4);
+  border-radius: 8px;
+  color: #4ade80;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.add-pill:hover {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  border-color: rgba(74, 222, 128, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-content {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: 20px;
+  width: min(500px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.modal-close:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  transition: all 0.3s;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--mint-border);
+  background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Quick hour buttons */
+.hours-quick-select {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hour-btn {
+  flex: 1;
+  padding: 10px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.hour-btn:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(74, 222, 128, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.hour-btn.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  border-color: var(--mint-border);
+  color: #4ade80;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Work type grid */
+/* Speciální styl pro školení chip */
+.work-type-option.training {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+.work-type-option.training:hover,
+.work-type-option.training.active {
+  background: rgba(167, 139, 250, 0.2);
+  border-color: #a78bfa;
+}
+
+.work-type-option.training svg {
+  stroke: #a78bfa;
+}
+
+/* Training select */
+#trainingSelect {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(167, 139, 250, 0.05);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 10px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+}
+
+.work-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.work-type-option {
+  padding: 16px 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.work-type-option:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%);
+  border-color: rgba(74, 222, 128, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.work-type-option.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  border-color: var(--mint-border);
+  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.work-type-option svg {
+  width: 28px;
+  height: 28px;
+  stroke: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.work-type-option.active svg {
+  stroke: #4ade80;
+}
+
+.work-type-option span {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.work-type-option.active span {
+  color: #4ade80;
+}
+
+/* Modal footer */
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 12px 24px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+  border: 1px solid var(--mint-border);
+  border-radius: 10px;
+  color: var(--text-on-light);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+  background: linear-gradient(135deg, var(--mint-light) 0%, var(--mint) 100%);
+}
+
+/* Progressive Disclosure */
+.form-section-toggle {
+  margin: 16px 0;
+  text-align: center;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.toggle-btn:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  color: rgba(96, 165, 250, 0.8);
+  background: linear-gradient(145deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s;
+}
+
+.toggle-btn.active .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.form-section.advanced {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.form-section.hidden {
+  display: none;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Performance Chips */
+.performance-chips {
+  display: flex;
+  gap: 12px;
+}
+
+.perf-chip {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-primary);
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.08);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.perf-chip svg {
+  width: 24px;
+  height: 24px;
+  stroke: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
+}
+
+.perf-chip.excellent:hover,
+.perf-chip.excellent.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  border-color: var(--mint-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.perf-chip.excellent:hover svg,
+.perf-chip.excellent.active svg {
+  stroke: #4ade80;
+}
+
+.perf-chip.normal:hover,
+.perf-chip.normal.active {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.25) 0%, rgba(96, 165, 250, 0.15) 100%);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.perf-chip.normal:hover svg,
+.perf-chip.normal.active svg {
+  stroke: #60a5fa;
+}
+
+.perf-chip.slow:hover,
+.perf-chip.slow.active {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.15) 100%);
+  border-color: rgba(251, 191, 36, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.perf-chip.slow:hover svg,
+.perf-chip.slow.active svg {
+  stroke: #fbbf24;
+}
+
+.perf-chip.problem:hover,
+.perf-chip.problem.active {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.25) 0%, rgba(248, 113, 113, 0.15) 100%);
+  border-color: rgba(248, 113, 113, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.perf-chip.problem:hover svg,
+.perf-chip.problem.active svg {
+  stroke: #f87171;
+}
+
+/* Material List */
+.material-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.material-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 60px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.material-row .form-input,
+.material-row .form-select {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.material-remove {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.15);
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.material-remove:hover {
+  background: rgba(248, 113, 113, 0.25);
+}
+
+.material-remove svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Weather */
+.weather-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.weather-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(96, 165, 250, 0.15);
+  border-radius: 8px;
+}
+
+.weather-temp {
+  font-size: 18px;
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.weather-cond {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Photo */
+.photo-preview {
+  margin-top: 12px;
+}
+
+.photo-preview img {
+  max-width: 200px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Utilities */
+.mt-8 {
+  margin-top: 8px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: #60a5fa;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+  
+  .performance-chips {
+    flex-wrap: wrap;
+  }
+}
+</style>
+
+<script>
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
+function toISO(d){ const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function fromISO(s){ const [y,m,d]=s.split('-').map(Number); const dt = new Date(Date.UTC(y,m-1,d)); return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()); }
+function mondayOf(d){ const day=d.getDay()||7; const nd = new Date(d); nd.setDate(d.getDate() - (day-1)); nd.setHours(0,0,0,0); return nd; }
+function addDays(d,n){ const nd=new Date(d); nd.setDate(d.getDate()+n); return nd; }
+function fmtCZ(d){ return d.toLocaleDateString('cs-CZ', {weekday:'short', day:'2-digit', month:'2-digit'}).replace(/^./, c=>c.toUpperCase()); }
+function toCZ(s){ try{ const [y,m,d]=s.split('-'); return `${d}.${m}.${y}`; }catch(e){ return s; } }
+
+let employees=[], jobs=[], rows=[];
+let weekStart = mondayOf(new Date());
+let modalState = { mode:"create", id:null };
+
+async function api(url, opts){ 
+  const r = await fetch(url, {credentials:'same-origin', ...opts}); 
+  if(!r.ok) throw new Error(await r.text()); 
+  const ct=r.headers.get('content-type')||''; 
+  return ct.includes('application/json')? r.json() : r; 
+}
+
+function updateWeekControls(){
+  $("#weekStart").value = toISO(weekStart);
+  const ws = new Date(weekStart);
+  const we = addDays(ws,6);
+  const weekRangeEl = $("#weekRange");
+  if(weekRangeEl) {
+    weekRangeEl.innerText = `${fmtCZ(ws)} — ${fmtCZ(we)}`;
+  }
+  // Fallback pro starý weekLabel pokud existuje
+  const weekLabelEl = $("#weekLabel");
+  if(weekLabelEl) {
+    weekLabelEl.innerText = `${fmtCZ(ws)} — ${fmtCZ(we)}`;
+  }
+}
+
+function goToToday(){
+  weekStart = mondayOf(new Date());
+  updateWeekControls();
+  loadAll();
+}
+
+function buildLanes(){
+  const lanes = $("#lanes"); 
+  lanes.innerHTML="";
+  for(let i=0;i<7;i++){
+    const d = addDays(weekStart,i);
+    const iso = toISO(d);
+    const lane = document.createElement("div");
+    lane.className="lane";
+    lane.innerHTML = `
+      <div class="lane-head">
+        <div class="title">${fmtCZ(d)}</div>
+        <small>${toCZ(iso)}</small>
+      </div>
+      <div class="lane-body" data-day="${iso}"></div>
+      <div class="add-row">
+        <button class="add-pill" data-add="${iso}">＋ Přidat záznam</button>
+      </div>
+    `;
+    lanes.appendChild(lane);
+  }
+}
+
+async function updateKPIs(timesheets){
+  const totalHours = timesheets.reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+  const uniqueProjects = new Set(timesheets.map(t => t.job_id).filter(Boolean)).size;
+  const uniqueWorkers = new Set(timesheets.map(t => t.employee_id || t.user_id)).size;
+  const daysWithWork = new Set(timesheets.map(t => t.date)).size;
+  const avgHours = daysWithWork > 0 ? (totalHours / daysWithWork).toFixed(1) : 0;
+  
+  const totalEl = $("#kpiTotalHours");
+  const avgEl = $("#kpiAvgHours");
+  const projectsEl = $("#kpiProjects");
+  const workersEl = $("#kpiWorkers");
+  
+  if(totalEl) totalEl.textContent = totalHours + 'h';
+  if(avgEl) avgEl.textContent = avgHours + 'h';
+  if(projectsEl) projectsEl.textContent = uniqueProjects;
+  if(workersEl) workersEl.textContent = uniqueWorkers;
+  
+  // Update Summary Bar
+  updateSummaryBar(timesheets);
+  
+  // Update Project Legend
+  updateProjectLegend(timesheets);
+  
+  // Update Heatmap (použij API pokud je k dispozici)
+  try {
+    const ws = toISO(weekStart);
+    const we = toISO(addDays(weekStart, 6));
+    const heatmapData = await api(`/api/timesheets/heatmap?from=${ws}&to=${we}`);
+    if(heatmapData.ok) {
+      updateHeatmapFromAPI(heatmapData.days);
+    } else {
+      updateHeatmap(timesheets);
+    }
+  } catch(e) {
+    updateHeatmap(timesheets);
+  }
+  
+  // Load summary data from API
+  try {
+    const ws = toISO(weekStart);
+    const we = toISO(addDays(weekStart, 6));
+    const summaryData = await api(`/api/timesheets/summary?from=${ws}&to=${we}`);
+    if(summaryData.ok) {
+      updateKPIsFromAPI(summaryData);
+    }
+  } catch(e) {
+    console.error("Error loading summary:", e);
+  }
+}
+
+function updateKPIsFromAPI(summaryData){
+  // Aktualizuj KPI karty z API dat
+  if($("#kpiTotalHours")) $("#kpiTotalHours").textContent = summaryData.total_hours + 'h';
+  if($("#kpiAvgHours")) $("#kpiAvgHours").textContent = summaryData.avg_per_day + 'h';
+  if($("#kpiProjects")) $("#kpiProjects").textContent = summaryData.top_jobs?.length || 0;
+  
+  // Overtime KPI (pokud existuje)
+  const overtimeEl = document.getElementById("kpiOvertime");
+  if(overtimeEl) overtimeEl.textContent = (summaryData.overtime_minutes / 60).toFixed(1) + 'h';
+}
+
+function updateHeatmapFromAPI(daysData){
+  const heatMapDays = $("#heatMapDays");
+  const statsHeatMapDays = $("#statsHeatMapDays");
+  
+  function renderHeatmap(container){
+    if(!container) return;
+    container.innerHTML = "";
+    
+    // Vytvoř dny pro aktuální týden
+    for(let i=0; i<7; i++){
+      const d = addDays(weekStart, i);
+      const iso = toISO(d);
+      const dayData = daysData.find(dd => dd.date === iso);
+      
+      const totalMins = dayData ? dayData.total_minutes : 0;
+      const loadLevel = dayData ? dayData.load_level : 0;
+      
+      const bgColors = [
+        'rgba(255,255,255,0.03)',  // level 0
+        'rgba(74, 222, 128, 0.15)', // level 1
+        'rgba(74, 222, 128, 0.25)', // level 2
+        'rgba(251, 191, 36, 0.15)'  // level 3
+      ];
+      
+      const dayEl = document.createElement("div");
+      dayEl.className = "ts-heatmap-day";
+      dayEl.style.background = bgColors[loadLevel] || bgColors[0];
+      dayEl.textContent = `${fmtCZ(d).split(' ')[0]}\n${(totalMins/60).toFixed(1)}h`;
+      dayEl.style.whiteSpace = "pre-line";
+      
+      if(dayData?.flags?.overtime) dayEl.style.border = "2px solid rgba(251, 191, 36, 0.5)";
+      if(dayData?.flags?.anomaly) dayEl.style.border = "2px solid rgba(248, 113, 113, 0.5)";
+      
+      container.appendChild(dayEl);
+    }
+  }
+  
+  renderHeatmap(heatMapDays);
+  renderHeatmap(statsHeatMapDays);
+  
+  const heatmapEmptyState = $("#heatmapEmptyState");
+  if(heatmapEmptyState){
+    const hasData = daysData.some(d => d.total_minutes > 0);
+    heatmapEmptyState.style.display = hasData ? "none" : "block";
+    if(heatMapDays) heatMapDays.style.display = hasData ? "flex" : "none";
+  }
+}
+
+function updateSummaryBar(timesheets){
+  const totalHours = timesheets.reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+  const uniqueProjects = new Set(timesheets.map(t => t.job_id).filter(Boolean)).size;
+  const daysWithWork = new Set(timesheets.map(t => t.date)).size;
+  const avgHours = daysWithWork > 0 ? (totalHours / daysWithWork).toFixed(1) : 0;
+  const overtime = Math.max(0, totalHours - (daysWithWork * 8));
+  
+  const summaryTotal = $("#summaryTotal");
+  const summaryAvg = $("#summaryAvg");
+  const summaryProjects = $("#summaryProjects");
+  const summaryOvertime = $("#summaryOvertime");
+  const statsSummaryTotal = $("#statsSummaryTotal");
+  const statsSummaryAvg = $("#statsSummaryAvg");
+  const statsSummaryProjects = $("#statsSummaryProjects");
+  const statsSummaryOvertime = $("#statsSummaryOvertime");
+  
+  if(summaryTotal) summaryTotal.textContent = totalHours + 'h';
+  if(summaryAvg) summaryAvg.textContent = avgHours + 'h';
+  if(summaryProjects) summaryProjects.textContent = uniqueProjects;
+  if(summaryOvertime) summaryOvertime.textContent = overtime + 'h';
+  if(statsSummaryTotal) statsSummaryTotal.textContent = totalHours + 'h';
+  if(statsSummaryAvg) statsSummaryAvg.textContent = avgHours + 'h';
+  if(statsSummaryProjects) statsSummaryProjects.textContent = uniqueProjects;
+  if(statsSummaryOvertime) statsSummaryOvertime.textContent = overtime + 'h';
+}
+
+function updateProjectLegend(timesheets){
+  const projectMap = new Map();
+  timesheets.forEach(t => {
+    if(t.job_id && jobs.find(j => j.id === t.job_id)){
+      const job = jobs.find(j => j.id === t.job_id);
+      if(!projectMap.has(t.job_id)){
+        projectMap.set(t.job_id, {
+          id: t.job_id,
+          name: job.title || job.name || `Projekt ${t.job_id}`,
+          color: getProjectColor(t.job_id)
+        });
+      }
+    }
+  });
+  
+  const legendItems = $("#legendItems");
+  const statsLegendItems = $("#statsLegendItems");
+  
+  if(legendItems){
+    legendItems.innerHTML = Array.from(projectMap.values()).map(p => 
+      `<div class="ts-legend-item">
+        <div class="ts-legend-color" style="background:${p.color};"></div>
+        <span>${p.name}</span>
+      </div>`
+    ).join("");
+    $("#projectLegend").style.display = projectMap.size > 0 ? "block" : "none";
+  }
+  
+  if(statsLegendItems){
+    statsLegendItems.innerHTML = Array.from(projectMap.values()).map(p => 
+      `<div class="ts-legend-item">
+        <div class="ts-legend-color" style="background:${p.color};"></div>
+        <span>${p.name}</span>
+      </div>`
+    ).join("");
+  }
+}
+
+function getProjectColor(projectId){
+  const colors = [
+    '#4ade80', '#60a5fa', '#fbbf24', '#a78bfa', '#fb7185',
+    '#34d399', '#38bdf8', '#fcd34d', '#c084fc', '#f87171'
+  ];
+  return colors[projectId % colors.length];
+}
+
+function updateHeatmap(timesheets){
+  const dayHours = {};
+  for(let i=0; i<7; i++){
+    const d = addDays(weekStart, i);
+    const iso = toISO(d);
+    dayHours[iso] = 0;
+  }
+  
+  timesheets.forEach(t => {
+    if(dayHours[t.date] !== undefined){
+      dayHours[t.date] += parseFloat(t.hours) || 0;
+    }
+  });
+  
+  const heatMapDays = $("#heatMapDays");
+  const statsHeatMapDays = $("#statsHeatMapDays");
+  
+  const maxHours = Math.max(...Object.values(dayHours), 8);
+  
+  function renderHeatmap(container){
+    if(!container) return;
+    container.innerHTML = "";
+    for(let i=0; i<7; i++){
+      const d = addDays(weekStart, i);
+      const iso = toISO(d);
+      const hours = dayHours[iso] || 0;
+      const intensity = Math.min(1, hours / maxHours);
+      const bgColor = intensity === 0 ? 'rgba(255,255,255,0.05)' : 
+        `rgba(74, 222, 128, ${0.3 + intensity * 0.7})`;
+      
+      const dayEl = document.createElement("div");
+      dayEl.className = "ts-heatmap-day";
+      dayEl.style.background = bgColor;
+      dayEl.textContent = `${fmtCZ(d).split(' ')[0]}\n${hours}h`;
+      dayEl.style.whiteSpace = "pre-line";
+      container.appendChild(dayEl);
+    }
+  }
+  
+  renderHeatmap(heatMapDays);
+  renderHeatmap(statsHeatMapDays);
+  
+  const heatmapEmptyState = $("#heatmapEmptyState");
+  if(heatmapEmptyState){
+    const hasData = Object.values(dayHours).some(h => h > 0);
+    heatmapEmptyState.style.display = hasData ? "none" : "block";
+    if(heatMapDays) heatMapDays.style.display = hasData ? "flex" : "none";
+  }
+}
+
+async function copyWeek(){
+  if(!confirm("Zkopírovat všechny výkazy z tohoto týdne do příštího týdne?")) return;
+  
+  const ws = toISO(weekStart);
+  const we = toISO(addDays(weekStart, 6));
+  const nextWeekStart = addDays(weekStart, 7);
+  const nextWeekEnd = addDays(nextWeekStart, 6);
+  
+  try {
+    const currentTimesheets = rows.filter(r => r.date >= ws && r.date <= we);
+    
+    for(const ts of currentTimesheets){
+      const newDate = addDays(fromISO(ts.date), 7);
+      const payload = {
+        employee_id: ts.employee_id,
+        job_id: ts.job_id,
+        date: toISO(newDate),
+        hours: ts.hours,
+        place: ts.place || "",
+        activity: ts.activity || "",
+        work_type: ts.work_type || "manual"
+      };
+      await api("/api/timesheets", {
+        method:"POST", 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify(payload)
+      });
+    }
+    
+    alert(`Zkopírováno ${currentTimesheets.length} výkazů do příštího týdne.`);
+    await loadAll();
+  } catch(err) {
+    alert('Chyba při kopírování: ' + (err.message || String(err)));
+  }
+}
+
+function renderEntries(){
+  const empFilter = $("#filterEmployee").value;
+  const jobFilter = $("#filterJob").value;
+  $$(".lane-body").forEach(n=>n.innerHTML="");
+  for(const r of rows){
+    if(empFilter && String(r.employee_id)!==String(empFilter)) continue;
+    if(jobFilter && String(r.job_id)!==String(jobFilter)) continue;
+    const body = document.querySelector(`.lane-body[data-day="${r.date}"]`);
+    if(!body) continue;
+    const card = document.createElement("div");
+    card.className = "entry";
+    const projectColor = r.job_id ? getProjectColor(r.job_id) : "#4ade80";
+    card.style.borderLeftColor = projectColor;
+    card.innerHTML = `
+      <div>
+        <div class="entry-name">${r.employee_name || r.employee_id}</div>
+        ${r.job_id ? `<div style="font-size:11px;color:${projectColor};margin-top:2px;font-weight:500;">${jobs.find(j => j.id === r.job_id)?.title || jobs.find(j => j.id === r.job_id)?.name || 'Projekt'}</div>`:""}
+        ${r.place? `<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;">📍 ${r.place}</div>`:""}
+        ${r.activity? `<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;">${r.activity}</div>`:""}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="entry-hours">${r.hours}h</div>
+        <button class="btn btn-icon" data-edit="${r.id}" title="Upravit" style="padding:4px 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
+      </div>
+    `;
+    body.appendChild(card);
+  }
+}
+
+function fillSelect(el, items, idKey, labelKey){
+  // Preserve first option if it has empty value (default option)
+  const firstOpt = el.querySelector("option[value='']");
+  const firstOptText = firstOpt ? firstOpt.textContent : "";
+  el.innerHTML = firstOpt ? `<option value="">${firstOptText}</option>` : "";
+  for(const it of items){
+    const opt = document.createElement("option");
+    opt.value = it[idKey]; 
+    opt.textContent = it[labelKey] || it.title || it.name;
+    el.appendChild(opt);
+  }
+}
+
+// Načti seznam školení pro výběr ve výkazech
+async function loadTrainingsForSelect() {
+  try {
+    const response = await api("/gd/api/trainings");
+    const data = response.trainings || [];
+    
+    const select = $("#wl-training");
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Vyberte školení --</option>';
+    
+    data.forEach(t => {
+      const date = t.date_start ? new Date(t.date_start).toLocaleDateString('cs-CZ') : '';
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = `${t.name || 'Bez názvu'}${date ? ` (${date})` : ''}`;
+      select.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('Error loading trainings:', error);
+  }
+}
+
+async function loadAll(){
+  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
+  try {
+    const [emps, js, ts] = await Promise.all([
+      api("/api/employees"),
+      api("/api/jobs"),
+      api(`/api/timesheets?from=${ws}&to=${we}`),
+    ]);
+    employees = (emps.employees||[]).sort((a,b)=>String(a.name).localeCompare(b.name));
+    jobs = (js.jobs||[]).sort((a,b)=>String(a.title||a.name).localeCompare(b.title||b.name));
+    rows = ts.rows || [];
+
+    $("#filterEmployee").innerHTML = "<option value=''>Všichni</option>" + employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join("");
+    $("#filterJob").innerHTML = "<option value=''>Vše</option>" + jobs.map(j=>`<option value="${j.id}">${j.title||j.name}</option>`).join("");
+
+    fillSelect($("#fEmployee"), employees, "id", "name");
+    fillSelect($("#fJob"), jobs, "id", "title");
+
+    buildLanes();
+    renderEntries();
+    updateKPIs(rows);
+  } catch(err) {
+    console.error('Error loading data:', err);
+    alert('Chyba při načítání dat: ' + (err.message || String(err)));
+  }
+}
+
+// Material management
+let materialRows = [];
+
+function addMaterialRow(itemData = null){
+  const materialList = $("#materialList");
+  if(!materialList) return;
+  
+  const rowIndex = materialRows.length;
+  const row = document.createElement("div");
+  row.className = "material-row";
+  row.dataset.index = rowIndex;
+  
+  row.innerHTML = `
+    <select class="form-select material-item" data-index="${rowIndex}">
+      <option value="">Vyberte materiál...</option>
+    </select>
+    <input type="number" class="form-input material-qty" placeholder="Množství" step="0.01" min="0" data-index="${rowIndex}" value="${itemData?.qty || ''}">
+    <input type="text" class="form-input material-unit" placeholder="Jedn." value="${itemData?.unit || 'ks'}" data-index="${rowIndex}">
+    <button type="button" class="material-remove" onclick="removeMaterialRow(${rowIndex})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  `;
+  
+  materialList.appendChild(row);
+  materialRows.push({item_id: itemData?.item_id || null, qty: itemData?.qty || 0, unit: itemData?.unit || "ks"});
+  
+  // Naplň select materiálem
+  loadMaterialOptions(rowIndex, itemData?.item_id);
+  
+  // Event listenery pro změny
+  const itemSelect = row.querySelector(".material-item");
+  const qtyInput = row.querySelector(".material-qty");
+  const unitInput = row.querySelector(".material-unit");
+  
+  itemSelect.addEventListener("change", () => {
+    materialRows[rowIndex].item_id = itemSelect.value ? Number(itemSelect.value) : null;
+  });
+  
+  qtyInput.addEventListener("input", () => {
+    materialRows[rowIndex].qty = parseFloat(qtyInput.value) || 0;
+  });
+  
+  unitInput.addEventListener("input", () => {
+    materialRows[rowIndex].unit = unitInput.value || "ks";
+  });
+}
+
+function removeMaterialRow(index){
+  const row = document.querySelector(`.material-row[data-index="${index}"]`);
+  if(row) row.remove();
+  materialRows = materialRows.filter((_, i) => i !== index);
+  // Reindex
+  document.querySelectorAll(".material-row").forEach((r, i) => {
+    r.dataset.index = i;
+    r.querySelectorAll("[data-index]").forEach(el => el.dataset.index = i);
+  });
+}
+
+async function loadMaterialOptions(rowIndex, selectedId = null){
+  const row = document.querySelector(`.material-row[data-index="${rowIndex}"]`);
+  if(!row) return;
+  
+  const select = row.querySelector(".material-item");
+  if(!select) return;
+  
+  try {
+    // Zkus načíst z warehouse_items nebo inventory
+    const items = await api("/api/warehouse_items").catch(() => 
+      api("/api/inventory").catch(() => ({items: []}))
+    );
+    
+    const itemsList = items.items || items.rows || [];
+    select.innerHTML = "<option value=\"\">Vyberte materiál...</option>";
+    
+    itemsList.forEach(item => {
+      const opt = document.createElement("option");
+      opt.value = item.id;
+      opt.textContent = `${item.name}${item.sku ? ` (${item.sku})` : ''}`;
+      if(selectedId && item.id === selectedId) opt.selected = true;
+      select.appendChild(opt);
+    });
+  } catch(e){
+    console.error("Error loading materials:", e);
+  }
+}
+
+function getMaterialData(){
+  return materialRows.filter(m => m.item_id && m.qty > 0);
+}
+
+// Weather
+async function fetchWeather(){
+  const date = $("#fDate").value;
+  if(!date) {
+    alert("Nejdřív vyberte datum");
+    return;
+  }
+  
+  // Mock data (v produkci by bylo API volání)
+  const mockWeather = {
+    temp: Math.floor(Math.random() * 15) + 5, // 5-20°C
+    conditions: ["Slunečno", "Oblačno", "Déšť", "Sníh"][Math.floor(Math.random() * 4)],
+    icon: "☀️"
+  };
+  
+  $("#fWeatherSnapshot").value = JSON.stringify(mockWeather);
+  
+  const display = $("#weatherDisplay");
+  if(display){
+    display.querySelector(".weather-temp").textContent = `${mockWeather.temp}°C`;
+    display.querySelector(".weather-cond").textContent = mockWeather.conditions;
+    display.classList.remove("hidden");
+  }
+}
+
+// Photo upload
+document.addEventListener("change", (e) => {
+  if(e.target.id === "fPhoto"){
+    const file = e.target.files[0];
+    if(!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const preview = $("#photoPreview");
+      if(preview){
+        preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+        preview.classList.remove("hidden");
+      }
+      
+      // TODO: Upload na server a získat URL
+      // Prozatím data URL (v produkci by bylo upload na server)
+      const photoUrlInput = document.getElementById("fPhotoUrl");
+      if(photoUrlInput) photoUrlInput.value = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Toggle advanced section
+function toggleAdvanced(){
+  const section = $("#advancedSection");
+  const toggle = $("#toggleAdvanced");
+  if(!section || !toggle) return;
+  
+  section.classList.toggle("hidden");
+  toggle.classList.toggle("active");
+}
+
+// Performance chip handler
+document.addEventListener("click", (e) => {
+  const perfChip = e.target.closest(".perf-chip");
+  if(perfChip){
+    $$(".perf-chip").forEach(chip => chip.classList.remove("active"));
+    perfChip.classList.add("active");
+    $("#fPerformance").value = perfChip.dataset.value;
+  }
+});
+
+// Delay reason handler
+document.addEventListener("change", (e) => {
+  if(e.target.id === "fDelayReason"){
+    const delayNote = $("#fDelayNote");
+    if(delayNote){
+      delayNote.style.display = e.target.value ? "block" : "none";
+    }
+  }
+});
+
+// Tasks loading
+async function loadTasks(jobId){
+  if(!jobId) return;
+  try {
+    const tasks = await api(`/api/tasks?job_id=${jobId}`);
+    const select = $("#fTask");
+    if(select && tasks.tasks){
+      const currentValue = select.value;
+      select.innerHTML = "<option value=\"\">Vyberte úkol...</option>";
+      tasks.tasks.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = t.title;
+        select.appendChild(opt);
+      });
+      if(currentValue) select.value = currentValue;
+    }
+  } catch(e){
+    console.error("Error loading tasks:", e);
+  }
+}
+
+function openModal(mode, data){
+  modalState = {mode, id: data?.id||null};
+  const modalTitle = $("#modalTitle");
+  if(modalTitle) modalTitle.innerText = mode==="edit"? "Upravit výkaz" : "Přidat výkaz";
+  const btnDelete = $("#btnDelete");
+  if(btnDelete) btnDelete.style.display = mode==="edit"? "" : "none";
+  
+  // Reset advanced section
+  const advancedSection = $("#advancedSection");
+  if(advancedSection) advancedSection.classList.add("hidden");
+  const toggleBtn = $("#toggleAdvanced");
+  if(toggleBtn) toggleBtn.classList.remove("active");
+  
+  // Reset material rows
+  materialRows = [];
+  const materialList = $("#materialList");
+  if(materialList) materialList.innerHTML = "";
+  
+  // Reset weather
+  const weatherDisplay = $("#weatherDisplay");
+  if(weatherDisplay) weatherDisplay.classList.add("hidden");
+  $("#fWeatherSnapshot").value = "";
+  
+  // Reset photo
+  const photoPreview = $("#photoPreview");
+  if(photoPreview){
+    photoPreview.innerHTML = "";
+    photoPreview.classList.add("hidden");
+  }
+  const photoInput = $("#fPhoto");
+  if(photoInput) photoInput.value = "";
+  
+  if(mode==="edit"){
+    $("#fEmployee").value = String(data.employee_id||"");
+    $("#fJob").value = String(data.job_id||"");
+    $("#fDate").value = data.date||"";
+    $("#fHours").value = data.hours||"";
+    $("#fPlace").value = data.place || data.location || "";
+    $("#fActivity").value = data.activity || data.note || "";
+    $("#fWorkType").value = data.work_type || "manual";
+    
+    // Nová pole
+    if($("#fStartTime")) $("#fStartTime").value = data.start_time || "";
+    if($("#fEndTime")) $("#fEndTime").value = data.end_time || "";
+    if($("#fTask")) $("#fTask").value = String(data.task_id || "");
+    if($("#fPerformance")) $("#fPerformance").value = data.performance_signal || "normal";
+    if($("#fDelayReason")) $("#fDelayReason").value = data.delay_reason || "";
+    if($("#fDelayNote")) $("#fDelayNote").value = data.delay_note || "";
+    
+    // Material
+    if(data.material_used){
+      const materialData = Array.isArray(data.material_used) ? data.material_used : 
+                          (typeof data.material_used === 'string' ? JSON.parse(data.material_used) : []);
+      if(materialData.length > 0){
+        materialData.forEach(mat => {
+          addMaterialRow(mat);
+        });
+      }
+    }
+    
+    // Weather
+    if(data.weather_snapshot){
+      try {
+        const weather = typeof data.weather_snapshot === 'string' ? JSON.parse(data.weather_snapshot) : data.weather_snapshot;
+        $("#fWeatherSnapshot").value = JSON.stringify(weather);
+        if(weatherDisplay){
+          weatherDisplay.querySelector(".weather-temp").textContent = `${weather.temp}°C`;
+          weatherDisplay.querySelector(".weather-cond").textContent = weather.conditions || "";
+          weatherDisplay.classList.remove("hidden");
+        }
+      } catch(e){}
+    }
+    
+    // Photo
+    if(data.photo_url){
+      const photoUrlInput = document.getElementById("fPhotoUrl");
+      if(photoUrlInput) photoUrlInput.value = data.photo_url;
+      if(photoPreview){
+        photoPreview.innerHTML = `<img src="${data.photo_url}" alt="Preview">`;
+        photoPreview.classList.remove("hidden");
+      }
+    }
+    
+    // Load tasks for this job
+    if(data.job_id) loadTasks(data.job_id);
+    
+    // Update work type selection
+    $$(".work-type-option").forEach(opt => {
+      opt.classList.remove("active");
+      if(opt.getAttribute("data-type") === (data.work_type || "manual")) {
+        opt.classList.add("active");
+      }
+    });
+    
+    // Zobraz/skryj výběr školení
+    const trainingSelect = $("#trainingSelect");
+    if (trainingSelect) {
+      if (data.work_type === "training") {
+        trainingSelect.style.display = "block";
+        loadTrainingsForSelect().then(() => {
+          if (data.training_id && $("#wl-training")) {
+            $("#wl-training").value = data.training_id;
+          }
+        });
+      } else {
+        trainingSelect.style.display = "none";
+      }
+    }
+    
+    // Update performance chips
+    $$(".perf-chip").forEach(chip => {
+      chip.classList.remove("active");
+      if(chip.dataset.value === (data.performance_signal || "normal")) {
+        chip.classList.add("active");
+      }
+    });
+    
+    // Update delay note visibility
+    if($("#fDelayReason") && $("#fDelayReason").value){
+      $("#fDelayNote").style.display = "block";
+    }
+    
+    // Update hour buttons
+    $$(".hour-btn").forEach(btn => {
+      btn.classList.remove("active");
+      const btnHours = parseFloat(btn.getAttribute("data-hours"));
+      const dataHours = parseFloat(data.hours || 8);
+      if(Math.abs(btnHours - dataHours) < 0.1) {
+        btn.classList.add("active");
+      }
+    });
+  }else{
+    $("#fEmployee").value = "";
+    $("#fJob").value = "";
+    $("#fDate").value = data?.date || toISO(new Date());
+    $("#fHours").value = "8";
+    $("#fPlace").value = "";
+    $("#fActivity").value = "";
+    $("#fWorkType").value = "manual";
+    
+    // Reset nová pole
+    if($("#fStartTime")) $("#fStartTime").value = "";
+    if($("#fEndTime")) $("#fEndTime").value = "";
+    if($("#fTask")) $("#fTask").value = "";
+    if($("#fPerformance")) $("#fPerformance").value = "normal";
+    if($("#fDelayReason")) $("#fDelayReason").value = "";
+    if($("#fDelayNote")){
+      $("#fDelayNote").value = "";
+      $("#fDelayNote").style.display = "none";
+    }
+    
+    // Reset work type selection
+    $$(".work-type-option").forEach(opt => {
+      opt.classList.remove("active");
+      if(opt.getAttribute("data-type") === "manual") {
+        opt.classList.add("active");
+      }
+    });
+    
+    // Skryj výběr školení
+    const trainingSelect = $("#trainingSelect");
+    if (trainingSelect) {
+      trainingSelect.style.display = "none";
+    }
+    
+    // Reset performance chips
+    $$(".perf-chip").forEach(chip => {
+      chip.classList.remove("active");
+      if(chip.dataset.value === "normal") {
+        chip.classList.add("active");
+      }
+    });
+    
+    // Reset hour buttons
+    $$(".hour-btn").forEach(btn => {
+      btn.classList.remove("active");
+      if(btn.getAttribute("data-hours") === "8") {
+        btn.classList.add("active");
+      }
+    });
+  }
+  
+  // Load tasks when job changes
+  $("#fJob")?.addEventListener("change", function(){
+    if(this.value) loadTasks(Number(this.value));
+  });
+  
+  $("#modal").classList.add("active");
+}
+
+function closeModal(){ 
+  $("#modal").classList.remove("active");
+}
+
+async function saveModal(){
+  // Vypočti duration_minutes z hours
+  const hours = Number($("#fHours").value || 0);
+  const duration_minutes = Math.round(hours * 60);
+  
+  const payload = {
+    employee_id: Number($("#fEmployee").value),
+    job_id: $("#fJob").value ? Number($("#fJob").value) : 0,
+    date: $("#fDate").value,
+    hours: hours,
+    duration_minutes: duration_minutes,
+    place: $("#fPlace").value || "",
+    activity: $("#fActivity").value || "",
+    work_type: $("#fWorkType").value || "manual"
+  };
+  
+  // Nová pole
+  if($("#fStartTime")?.value) payload.start_time = $("#fStartTime").value;
+  if($("#fEndTime")?.value) payload.end_time = $("#fEndTime").value;
+  if($("#fTask")?.value) payload.task_id = Number($("#fTask").value);
+  if($("#fPerformance")?.value) payload.performance_signal = $("#fPerformance").value;
+  if($("#fDelayReason")?.value) payload.delay_reason = $("#fDelayReason").value;
+  if($("#fDelayNote")?.value) payload.delay_note = $("#fDelayNote").value;
+  if($("#fWeatherSnapshot")?.value) payload.weather_snapshot = JSON.parse($("#fWeatherSnapshot").value);
+  
+  // Material
+  const materialData = getMaterialData();
+  if(materialData.length > 0) payload.material_used = materialData;
+  
+  // Photo
+  const photoUrlInput = document.getElementById("fPhotoUrl");
+  if(photoUrlInput?.value) payload.photo_url = photoUrlInput.value;
+  
+  // Location a note (migrace ze starých polí)
+  if($("#fPlace")?.value) payload.location = $("#fPlace").value;
+  if($("#fActivity")?.value) payload.note = $("#fActivity").value;
+  
+  // Training ID (pokud je vybrané školení)
+  if($("#fWorkType").value === "training" && $("#wl-training")?.value) {
+    payload.training_id = Number($("#wl-training").value);
+  }
+  
+  try {
+    if(modalState.mode==="edit"){
+      payload.id = modalState.id;
+      await api("/api/timesheets", {method:"PATCH", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    }else{
+      await api("/api/timesheets", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    }
+    closeModal();
+    await loadAll();
+  } catch(err) {
+    alert('Chyba při ukládání: ' + (err.message || String(err)));
+  }
+}
+
+async function deleteModal(){
+  if(!confirm("Smazat záznam?")) return;
+  try {
+    await api("/api/timesheets?id="+modalState.id, {method:"DELETE"});
+    closeModal();
+    await loadAll();
+  } catch(err) {
+    alert('Chyba při mazání: ' + (err.message || String(err)));
+  }
+}
+
+// View Toggle
+$("#viewList")?.addEventListener("click", ()=>{
+  $$(".ts-view-btn").forEach(btn => btn.classList.remove("active"));
+  $("#viewList").classList.add("active");
+  $("#listView").style.display = "block";
+  $("#statsPanel").style.display = "none";
+  $("#heatMapWeek").style.display = "none";
+  $("#projectLegend").style.display = "none";
+  $("#summaryBar")?.style.setProperty("display", "none");
+});
+
+$("#viewStats")?.addEventListener("click", ()=>{
+  $$(".ts-view-btn").forEach(btn => btn.classList.remove("active"));
+  $("#viewStats").classList.add("active");
+  $("#listView").style.display = "none";
+  $("#statsPanel").style.display = "block";
+  $("#heatMapWeek").style.display = "block";
+  $("#projectLegend").style.display = "block";
+  const summaryBar = $("#summaryBar");
+  if(summaryBar) summaryBar.style.display = "flex";
+});
+
+$("#prevWeek")?.addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()-7*86400000); updateWeekControls(); loadAll(); });
+$("#nextWeek")?.addEventListener("click", ()=>{ weekStart = new Date(weekStart.getTime()+7*86400000); updateWeekControls(); loadAll(); });
+$("#weekStart")?.addEventListener("change", (e)=>{ weekStart = mondayOf(fromISO(e.target.value)); updateWeekControls(); loadAll(); });
+$("#goToday")?.addEventListener("click", goToToday);
+$("#filterEmployee")?.addEventListener("change", ()=>{ renderEntries(); });
+$("#filterJob")?.addEventListener("change", ()=>{ renderEntries(); });
+$("#addTimesheet")?.addEventListener("click", ()=>{ openModal("create", {}); });
+$("#copyWeek")?.addEventListener("click", ()=>{ copyWeek().catch(err=>alert(err.message||String(err))); });
+document.addEventListener("click", (e)=>{
+  // Hour button handlers
+  const hourBtn = e.target.closest(".hour-btn");
+  if(hourBtn){
+    $$(".hour-btn").forEach(btn => btn.classList.remove("active"));
+    hourBtn.classList.add("active");
+    $("#fHours").value = hourBtn.getAttribute("data-hours");
+    return;
+  }
+  
+  // Work type selection handlers
+  const workType = e.target.closest(".work-type-option");
+  if(workType){
+    $$(".work-type-option").forEach(opt => opt.classList.remove("active"));
+    workType.classList.add("active");
+    const selectedType = workType.getAttribute("data-type");
+    $("#fWorkType").value = selectedType;
+    
+    // Pokud je vybrané školení, zobraz výběr školení
+    const trainingSelect = $("#trainingSelect");
+    if (trainingSelect) {
+      if (selectedType === "training") {
+        trainingSelect.style.display = "block";
+        loadTrainingsForSelect();
+      } else {
+        trainingSelect.style.display = "none";
+      }
+    }
+    return;
+  }
+  
+  // Add entry button
+  const add = e.target.closest("[data-add]");
+  if(add){ openModal("create", {date:add.getAttribute("data-add")}); return; }
+  
+  // Edit entry button
+  const editBtn = e.target.closest("[data-edit]");
+  if(editBtn){
+    const id = Number(editBtn.getAttribute("data-edit"));
+    const item = rows.find(r=>r.id===id);
+    if(item){ openModal("edit", item); }
+    return;
+  }
+  
+  // Close modal when clicking on overlay background
+  if(e.target.id === "modal"){
+    closeModal();
+  }
+});
+$("#exportCsv")?.addEventListener("click", async ()=>{
+  const ws = toISO(weekStart), we = toISO(addDays(weekStart,6));
+  const emp = $("#filterEmployee").value;
+  const job = $("#filterJob").value;
+  const url = new URL(location.origin + "/api/timesheets/export");
+  url.searchParams.set("from", ws); 
+  url.searchParams.set("to", we);
+  if(emp) url.searchParams.set("employee_id", emp);
+  if(job) url.searchParams.set("job_id", job);
+  try {
+    const r = await fetch(url.toString());
+    if(!r.ok){ alert("Export selhal"); return; }
+    const blob = await r.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `timesheets_${ws}_${we}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch(err) {
+    alert('Chyba při exportu: ' + (err.message || String(err)));
+  }
+});
+
+$("#btnSave")?.addEventListener("click", ()=>saveModal().catch(err=>alert(err.message||String(err))));
+$("#btnCancel")?.addEventListener("click", ()=>closeModal());
+$("#btnDelete")?.addEventListener("click", ()=>deleteModal().catch(err=>alert(err.message||String(err))));
+
+(function init(){
+  weekStart = mondayOf(new Date());
+  updateWeekControls();
+  loadAll().catch(err=>alert(err.message||String(err)));
+})();
+</script>
+{% endblock %}
