@@ -4,87 +4,22 @@
  */
 
 body.mobile-field {
-    padding-top: 60px;
+    padding-top: 52px;
     padding-bottom: 80px;
     overflow-x: hidden;
 }
 
+/* Safe area pro notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+    body.mobile-field {
+        padding-top: calc(52px + env(safe-area-inset-top));
+    }
+}
+
 /* Field Header - kompaktní, zaměřený na aktuální kontext */
+/* Základní styly jsou v mobile-header.css */
 .field-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: var(--bg-card, rgba(255, 255, 255, 0.05));
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    z-index: 1000;
-}
-
-.field-header .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.field-header .logo-small {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-}
-
-.field-header .header-center {
-    flex: 1;
-    text-align: center;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0 8px;
-}
-
-.field-header .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.field-header .mode-toggle {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    padding: 6px;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.field-header .mode-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--mint, #4ade80);
-}
-
-.field-header .online-status {
-    display: flex;
-    align-items: center;
-}
-
-.field-header .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--mint, #4ade80);
-}
-
-.field-header .status-dot.offline {
-    background: #ef4444;
+    /* Dědičí z .app-header v mobile-header.css */
 }
 
 /* Field Content - maximální prostor pro widgety */
