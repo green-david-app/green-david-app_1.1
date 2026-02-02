@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Green David{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_full.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='icons.css') }}">
+    <script src="/app-settings.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="mobile-full" data-mode="full">
+    <header class="app-header full-header">
+        <div class="header-left">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="GD" class="logo-small" onerror="this.src='/logo.svg'">
+            <span class="brand-name">Green David</span>
+        </div>
+        <div class="header-center">
+            <span class="current-context">{% block header_title %}Přehled{% endblock %}</span>
+        </div>
+        <div class="header-right">
+            <button class="mode-toggle" onclick="toggleMode()" title="Přepnout na Field režim">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="full-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="bottom-nav full-nav">
+        <a href="{{ url_for('mobile_dashboard') if 'mobile_dashboard' in url_for.__globals__ else '/mobile/dashboard' }}" 
+           class="nav-item {% if active_tab == 'dashboard' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>Přehled</span>
+        </a>
+        <a href="{{ url_for('mobile_jobs') if 'mobile_jobs' in url_for.__globals__ else '/mobile/jobs' }}" 
+           class="nav-item {% if active_tab == 'jobs' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <span>Zakázky</span>
+        </a>
+        <a href="{{ url_for('mobile_team') if 'mobile_team' in url_for.__globals__ else '/mobile/team' }}" 
+           class="nav-item {% if active_tab == 'team' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Tým</span>
+        </a>
+        <a href="{{ url_for('mobile_notifications') if 'mobile_notifications' in url_for.__globals__ else '/mobile/notifications' }}" 
+           class="nav-item {% if active_tab == 'notifications' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span>Oznámení</span>
+            {% if unread_count and unread_count > 0 %}
+            <span class="badge">{{ unread_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('mobile_more') if 'mobile_more' in url_for.__globals__ else '/mobile/more' }}" 
+           class="nav-item {% if active_tab == 'more' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="12" cy="5" r="1"/>
+                <circle cx="12" cy="19" r="1"/>
+            </svg>
+            <span>Více</span>
+        </a>
+    </nav>
+
+    <script src="{{ url_for('static', filename='js/mode.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/offline-queue.js') }}"></script>
+</body>
+</html>
