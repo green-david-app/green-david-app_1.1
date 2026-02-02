@@ -748,8 +748,16 @@
             <div class="quick-add-icon">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </div>
-            <input type="text" id="quick-task-input" placeholder="Rychle přidat úkol... (Enter)" onkeydown="if(event.key==='Enter')quickAddTask()">
-            <button class="btn-secondary voice-btn" onclick="startVoiceInput()" title="Hlasové zadávání">
+            <input type="text" 
+                   id="quick-task-input" 
+                   placeholder="Rychle přidat úkol... (Enter)" 
+                   onkeydown="if(event.key==='Enter')quickAddTask()"
+                   data-original-placeholder="Rychle přidat úkol... (Enter)">
+            <button type="button"
+                    class="btn-secondary voice-btn" 
+                    data-voice-input="#quick-task-input"
+                    aria-label="Hlasové zadávání"
+                    title="Hlasové zadávání">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
                     <path d="M19 10v2a7 7 0 01-14 0v-2"/>
@@ -1497,54 +1505,10 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', loadData);
         
-        // Voice input
-        let recognition = null;
-        let isRecording = false;
-        
-        function startVoiceInput() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                if (window.showToast) window.showToast('Hlasové zadávání není podporováno', 'error');
-                return;
-            }
-            
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (isRecording && recognition) {
-                recognition.stop();
-                return;
-            }
-            
-            recognition = new SpeechRecognition();
-            recognition.lang = 'cs-CZ';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            
-            const btn = document.querySelector('.voice-btn');
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                btn.classList.add('recording');
-                if (window.showToast) window.showToast('Poslouchám...', 'info');
-            };
-            
-            recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                document.getElementById('quick-task-input').value = text;
-                if (window.showToast) window.showToast('Rozpoznáno: ' + text, 'success');
-            };
-            
-            recognition.onerror = (event) => {
-                console.error('Speech error:', event.error);
-                if (window.showToast) window.showToast('Chyba rozpoznávání', 'error');
-            };
-            
-            recognition.onend = () => {
-                isRecording = false;
-                btn.classList.remove('recording');
-            };
-            
-            recognition.start();
-        }
+        // Voice input je nyní v externím modulu static/js/voice-input.js
+        // Používá data-voice-input atribut pro automatickou inicializaci
     </script>
+    <!-- Voice Input Module -->
+    <script src="/static/js/voice-input.js"></script>
 </body>
 </html>
