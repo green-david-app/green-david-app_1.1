@@ -14542,7 +14542,7 @@ def api_widget_stock_alerts():
     # Zkontroluj, zda existuje warehouse_items tabulka
     try:
         alerts = db.execute("""
-            SELECT name as material_name, 
+            SELECT COALESCE(name, 'Neznámá položka') as material_name, 
                    quantity,
                    unit,
                    CASE 
