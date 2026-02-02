@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="issues.title">Issues - Green David</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/glass-design.css">
+    <link rel="stylesheet" href="/static/icons.css">
+    <script src="/app-settings.js"></script>
+</head>
+<body>
+    <div id="app-header"></div>
+    
+    <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 data-i18n="issues.title">Issues</h1>
+            <div style="display: flex; gap: 12px;">
+                <select id="filter-status" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a1a; color: #fff;">
+                    <option value="" data-i18n="issues.filter.all">Vše</option>
+                    <option value="open" selected data-i18n="issues.status.open">Otevřené</option>
+                    <option value="in_progress" data-i18n="issues.status.in_progress">Řeší se</option>
+                    <option value="resolved" data-i18n="issues.status.resolved">Vyřešené</option>
+                </select>
+                
+                <select id="filter-type" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #1a1a1a; color: #fff;">
+                    <option value="" data-i18n="issues.filter.all_types">Všechny typy</option>
+                    <option value="blocker" data-i18n="issues.type.blocker">Blokuje</option>
+                    <option value="todo" data-i18n="issues.type.todo">To-Do</option>
+                    <option value="note" data-i18n="issues.type.note">Poznámka</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.blockers">Blokující</div>
+                <div style="font-size: 32px; font-weight: 700;" id="stat-blockers">0</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.in_progress">Řeší se</div>
+                <div style="font-size: 32px; font-weight: 700;" id="stat-progress">0</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #00cc66 0%, #009944 100%); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;" data-i18n="issues.stats.resolved_today">Vyřešené dnes</div>
+                <div style="font-size: 32px; font-weight: 700;" id="stat-resolved">0</div>
+            </div>
+        </div>
+
+        <!-- My Issues -->
+        <div style="margin-bottom: 32px;">
+            <h2 style="font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span style="color: #B2FBA5;">●</span> <span data-i18n="issues.assigned_to_me">Přiřazené mně</span>
+            </h2>
+            <div id="my-issues-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="padding: 40px; text-align: center; opacity: 0.5;" data-i18n="msg.loading">
+                    Načítám...
+                </div>
+            </div>
+        </div>
+
+        <!-- All Issues -->
+        <div>
+            <h2 style="font-size: 20px; margin-bottom: 16px;" data-i18n="issues.all">Všechny issues</h2>
+            <div id="all-issues-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="padding: 40px; text-align: center; opacity: 0.5;" data-i18n="msg.loading">
+                    Načítám...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bottom-nav"></div>
+
+    <script src="/static/app-header.js"></script>
+    <script src="/static/bottom-nav.js"></script>
+    <script src="/static/navigation.js"></script>
+    <script>
+        let allIssues = [];
+        let currentUser = null;
+        let employees = [];
+
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const res = await fetch('/api/employees');
+                if (res.ok) {
+                    const data = await res.json();
+                    employees = data.employees || [];
+                    console.log('Employees loaded:', employees.length);
+                }
+            } catch (e) {
+                console.error('Error loading employees:', e);
+            }
+        }
+
+        // Fetch current user
+        async function fetchUser() {
+            const res = await fetch('/api/me');
+            const data = await res.json();
+            if (data.authenticated && data.user) {
+                currentUser = data.user;
+            }
+        }
+
+        // Fetch issues
+        async function fetchIssues() {
+            const status = document.getElementById('filter-status').value;
+            const type = document.getElementById('filter-type').value;
+            
+            let url = '/api/issues?';
+            if (status) url += `status=${status}&`;
+            if (type) url += `type=${type}&`;
+            
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (data.ok) {
+                allIssues = data.issues || [];
+                renderIssues();
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            const blockers = allIssues.filter(i => i.type === 'blocker' && i.status === 'open').length;
+            const progress = allIssues.filter(i => i.status === 'in_progress').length;
+            const today = new Date().toISOString().split('T')[0];
+            const resolved = allIssues.filter(i => i.status === 'resolved' && i.resolved_at && i.resolved_at.startsWith(today)).length;
+            
+            document.getElementById('stat-blockers').textContent = blockers;
+            document.getElementById('stat-progress').textContent = progress;
+            document.getElementById('stat-resolved').textContent = resolved;
+        }
+
+        function renderIssues() {
+            if (!currentUser) return;
+            
+            // My issues
+            const myIssues = allIssues.filter(i => i.assigned_to === currentUser.employee_id);
+            const myContainer = document.getElementById('my-issues-list');
+            
+            if (myIssues.length === 0) {
+                myContainer.innerHTML = '<div style="padding: 40px; text-align: center; opacity: 0.5;">Žádné issues přiřazené</div>';
+            } else {
+                myContainer.innerHTML = myIssues.map(issue => renderIssueCard(issue, true)).join('');
+            }
+            
+            // All issues
+            const allContainer = document.getElementById('all-issues-list');
+            
+            if (allIssues.length === 0) {
+                allContainer.innerHTML = '<div style="padding: 40px; text-align: center; opacity: 0.5;">Žádné issues</div>';
+            } else {
+                allContainer.innerHTML = allIssues.map(issue => renderIssueCard(issue, false)).join('');
+            }
+        }
+
+        function renderIssueCard(issue, highlight) {
+            const typeColors = {
+                blocker: '#ff4444',
+                todo: '#ffa500',
+                note: '#4da6ff'
+            };
+            
+            const statusLabels = {
+                open: 'Otevřené',
+                in_progress: 'Řeší se',
+                resolved: 'Vyřešeno'
+            };
+            
+            const typeLabels = {
+                blocker: 'Blokuje',
+                todo: 'To-Do',
+                note: 'Poznámka'
+            };
+            
+            return `
+                <div style="background: ${highlight ? 'linear-gradient(135deg, #1a3a1a 0%, #0d1f0d 100%)' : '#1a1a1a'}; 
+                            padding: 20px; 
+                            border-radius: 12px; 
+                            border-left: 4px solid ${typeColors[issue.type] || '#666'};
+                            cursor: pointer;"
+                     onclick="openIssue(${issue.id})">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">
+                                ${issue.title}
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <span style="background: ${typeColors[issue.type] || '#666'}; 
+                                            padding: 4px 8px; 
+                                            border-radius: 4px; 
+                                            font-size: 12px;">
+                                    ${typeLabels[issue.type] || issue.type}
+                                </span>
+                                <span style="background: #333; 
+                                            padding: 4px 8px; 
+                                            border-radius: 4px; 
+                                            font-size: 12px;">
+                                    ${statusLabels[issue.status] || issue.status}
+                                </span>
+                                ${issue.severity ? `
+                                    <span style="background: #444; 
+                                                padding: 4px 8px; 
+                                                border-radius: 4px; 
+                                                font-size: 12px;">
+                                        ${issue.severity}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${issue.status !== 'resolved' ? `
+                            <button onclick="event.stopPropagation(); updateIssueStatus(${issue.id}, 'resolved')"
+                                    style="background: #00cc66; 
+                                           color: white; 
+                                           border: none; 
+                                           padding: 8px 16px; 
+                                           border-radius: 6px; 
+                                           cursor: pointer;">
+                                Vyřešit
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${issue.description ? `
+                        <div style="opacity: 0.8; margin-bottom: 12px; font-size: 14px;">
+                            ${issue.description}
+                        </div>
+                    ` : ''}
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; opacity: 0.7;">
+                        <div>
+                            <strong>${issue.job_name || 'Bez zakázky'}</strong>
+                            ${issue.assigned_name ? ` → ${issue.assigned_name}` : ''}
+                        </div>
+                        <div>${new Date(issue.created_at).toLocaleDateString('cs-CZ')}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updateIssueStatus(issueId, newStatus) {
+            const res = await fetch('/api/issues', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: issueId, status: newStatus})
+            });
+            
+            if (res.ok) {
+                await fetchIssues();
+            }
+        }
+
+        function openIssue(issueId) {
+            openIssueDetail(null, issueId);
+        }
+
+        // Filters
+        document.getElementById('filter-status').addEventListener('change', fetchIssues);
+        document.getElementById('filter-type').addEventListener('change', fetchIssues);
+
+        // Init
+        (async () => {
+            await loadEmployees();
+            await fetchUser();
+            await fetchIssues();
+        })();
+    </script>
+    
+    <!-- Issue Detail Modal (reusing task modal) -->
+    <div id="task-detail-modal" class="task-detail-modal">
+        <div class="task-detail-content">
+            <div class="task-detail-header">
+                <div class="task-detail-title" id="modal-title">Detail issue</div>
+                <button class="task-detail-close" onclick="closeTaskDetailModal()">×</button>
+            </div>
+            
+            <div class="task-detail-body">
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Název</div>
+                    <input type="text" id="modal-task-title" class="task-detail-input">
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Popis</div>
+                    <textarea id="modal-task-description" class="task-detail-textarea"></textarea>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Stav</div>
+                    <select id="modal-task-status" class="task-detail-input">
+                        <option value="open">Otevřené</option>
+                        <option value="in_progress">Řeší se</option>
+                        <option value="resolved">Vyřešeno</option>
+                    </select>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Přiřazení team</div>
+                    <select id="modal-add-employee" class="task-detail-input" style="margin-bottom: 12px;" onchange="modalAddEmployee(this.value); this.value='';">
+                        <option value="">+ Přidat člena teamu</option>
+                    </select>
+                    <div id="modal-employees-list" class="task-detail-employee-list"></div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Poznámky & Komentáře</div>
+                    <div id="modal-comments" class="task-detail-comments"></div>
+                    <div class="task-detail-add-comment">
+                        <textarea id="modal-new-comment" class="task-detail-input" placeholder="Přidat poznámku..." style="flex:1; min-height: 60px;"></textarea>
+                        <button class="btn-secondary" onclick="addTaskComment()" style="align-self: flex-end;">Přidat</button>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">Poloha GPS</div>
+                    <div id="modal-location-container">
+                        <div id="modal-location-display" style="display:none;">
+                            <div id="modal-map" style="width:100%; height:200px; border-radius:6px; margin-bottom:12px; background:#0d0d0d;"></div>
+                            <div style="display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:8px;">
+                                <span id="modal-coords"></span>
+                                <a id="modal-gmaps-link" href="#" target="_blank" style="color:#B2FBA5;">Otevřít v Google Maps</a>
+                            </div>
+                            <button class="btn-secondary" onclick="removeLocation()" style="padding:6px 12px; font-size:13px;">Smazat polohu</button>
+                        </div>
+                        <div id="modal-location-actions" style="display:flex; gap:8px;">
+                            <button class="btn-secondary" onclick="getCurrentLocation()" style="padding:8px 12px;">Získat aktuální polohu</button>
+                            <button class="btn-secondary" onclick="selectLocationOnMap()" style="padding:8px 12px;">🗺️ Vybrat na mapě</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="task-detail-section">
+                    <div class="task-detail-section-title">📎 Přílohy</div>
+                    <div id="modal-file-drop-zone" style="border:2px dashed #333; border-radius:6px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer;"
+                         onclick="document.getElementById('modal-file-input').click()"
+                         ondragover="event.preventDefault(); this.style.borderColor='#B2FBA5';"
+                         ondragleave="this.style.borderColor='#333';"
+                         ondrop="handleFileDrop(event)">
+                        <div style="opacity:0.7; font-size:14px;">📎 Klikni nebo přetáhni soubory</div>
+                        <input type="file" id="modal-file-input" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+                    </div>
+                    <div id="modal-files" class="task-detail-files"></div>
+                </div>
+            </div>
+            
+            <div class="task-detail-actions">
+                <button class="btn-secondary" onclick="deleteTaskFromModal()">🗑️ Smazat</button>
+                <button class="btn-secondary" onclick="closeTaskDetailModal()">Zrušit</button>
+                <button class="btn-primary" onclick="saveTaskDetails()">💾 Uložit změny</button>
+            </div>
+        </div>
+    </div>
+    
+    <link rel="stylesheet" href="/static/css/task-detail-modal.css">
+    <script src="/static/js/task-detail-modal.js"></script>
+</body>
+</html>
