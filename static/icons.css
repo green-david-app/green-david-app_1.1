@@ -1,0 +1,67 @@
+/* ===== MODERN ICONS SYSTEM ===== */
+
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-large {
+  width: 32px;
+  height: 32px;
+}
+
+.icon-xl {
+  width: 48px;
+  height: 48px;
+}
+
+/* Icon colors */
+.icon-primary {
+  color: #b0fba5;
+  stroke: #b0fba5;
+}
+
+.icon-secondary {
+  color: rgba(255,255,255,0.7);
+  stroke: rgba(255,255,255,0.7);
+}
+
+.icon-active {
+  color: #b0fba5;
+  stroke: #b0fba5;
+}
+
+.icon-inactive {
+  color: rgba(255,255,255,0.5);
+  stroke: rgba(255,255,255,0.5);
+}
+
+/* Hover effects */
+.icon-button {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  color: #b0fba5;
+  stroke: #b0fba5;
+  transform: scale(1.1);
+}
+
+/* Animated icons */
+@keyframes pulse-icon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.icon-pulse {
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
