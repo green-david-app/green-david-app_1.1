@@ -96,9 +96,44 @@ def inject_permissions():
     except Exception:
         mobile_mode = 'field'
     
+    # Získej user objekt a unread count
+    user = None
+    unread_count = 0
+    
+    try:
+        from flask import session, g
+        from main import get_db
+        
+        user_id = session.get('uid')
+        if user_id:
+            db = get_db()
+            user_row = db.execute(
+                "SELECT id, name, email, role FROM users WHERE id = ?",
+                (user_id,)
+            ).fetchone()
+            
+            if user_row:
+                user = {
+                    'id': user_row[0],
+                    'name': user_row[1],
+                    'email': user_row[2],
+                    'role': user_row[3]
+                }
+                
+                # Získej unread notifications count
+                unread = db.execute(
+                    "SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND (is_read = 0 OR is_read IS NULL)",
+                    (user_id,)
+                ).fetchone()
+                unread_count = unread[0] if unread else 0
+    except Exception as e:
+        print(f"[inject_permissions] Error: {e}")
+    
     return {
         'user_role': get_user_role(),
         'has_perm': has_permission,
         'normalize_role': normalize_role,
-        'mobile_mode': mobile_mode
+        'mobile_mode': mobile_mode,
+        'user': user,
+        'unread_count': unread_count
     }
