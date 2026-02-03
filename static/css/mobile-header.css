@@ -58,7 +58,8 @@ header.app-header .logo-small {
 
 /* Center text */
 header.app-header .current-context,
-header.app-header .header-title {
+header.app-header .header-title,
+header.app-header .header-app-name {
     font-size: 13px !important;
     font-weight: 600 !important;
     color: #e8eef2 !important;
@@ -148,7 +149,8 @@ header.app-header .header-badge {
 /* Responsive adjustments for very small screens */
 @media (max-width: 350px) {
     header.app-header .current-context,
-    header.app-header .header-title {
+    header.app-header .header-title,
+    header.app-header .header-app-name {
         max-width: 100px !important;
         font-size: 12px !important;
     }

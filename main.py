@@ -2640,13 +2640,13 @@ def generate_auto_notifications(user_id):
     tasks = db.execute("""
         SELECT t.*, j.client as job_name FROM tasks t
         LEFT JOIN jobs j ON t.job_id = j.id
-        WHERE t.status != 'done' AND t.deadline IS NOT NULL
-        AND date(t.deadline) BETWEEN ? AND ?
+        WHERE t.status != 'done' AND t.due_date IS NOT NULL
+        AND date(t.due_date) BETWEEN ? AND ?
     """, (today, tomorrow)).fetchall()
     
     for task in tasks:
         if ('task', task['id'], 'deadline') not in existing_keys:
-            deadline_date = task['deadline'][:10] if task['deadline'] else ''
+            deadline_date = task['due_date'][:10] if task.get('due_date') else ''
             is_today = deadline_date == today
             notifications_to_add.append({
                 'user_id': user_id,
@@ -9018,9 +9018,9 @@ def api_task_filters():
         rows = db.execute(base_query + """
             INNER JOIN task_assignments ta ON ta.task_id = t.id
             WHERE ta.employee_id = ?
-            AND DATE(t.deadline) = DATE('now')
+            AND DATE(t.due_date) = DATE('now')
             AND t.status != 'completed'
-            ORDER BY t.priority DESC, t.deadline ASC
+            ORDER BY t.priority DESC, t.due_date ASC
         """, (u["id"],)).fetchall()
     
     elif filter_type == "my_overdue":
@@ -9028,9 +9028,9 @@ def api_task_filters():
         rows = db.execute(base_query + """
             INNER JOIN task_assignments ta ON ta.task_id = t.id
             WHERE ta.employee_id = ?
-            AND DATE(t.deadline) < DATE('now')
+            AND DATE(t.due_date) < DATE('now')
             AND t.status != 'completed'
-            ORDER BY t.deadline ASC
+            ORDER BY t.due_date ASC
         """, (u["id"],)).fetchall()
     
     elif filter_type == "my_week":
@@ -9038,9 +9038,9 @@ def api_task_filters():
         rows = db.execute(base_query + """
             INNER JOIN task_assignments ta ON ta.task_id = t.id
             WHERE ta.employee_id = ?
-            AND DATE(t.deadline) BETWEEN DATE('now') AND DATE('now', '+7 days')
+            AND DATE(t.due_date) BETWEEN DATE('now') AND DATE('now', '+7 days')
             AND t.status != 'completed'
-            ORDER BY t.deadline ASC
+            ORDER BY t.due_date ASC
         """, (u["id"],)).fetchall()
     
     elif filter_type == "high_priority":
@@ -9048,7 +9048,7 @@ def api_task_filters():
         rows = db.execute(base_query + """
             WHERE t.priority = 'high'
             AND t.status != 'completed'
-            ORDER BY t.deadline ASC
+            ORDER BY t.due_date ASC
         """).fetchall()
     
     elif filter_type == "unassigned":
@@ -14312,6 +14312,67 @@ def mobile_photos():
         job_id=job_id
     )
 
+@app.route('/mobile/jobs')
+def mobile_jobs():
+    """Mobile jobs list (FULL mode)."""
+    u, err = require_auth()
+    if err:
+        return err
+    
+    db = get_db()
+    try:
+        from app.utils.mobile_mode import get_mobile_mode
+    except ImportError:
+        def get_mobile_mode():
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
+    
+    mode = get_mobile_mode()
+    
+    jobs = db.execute("""
+        SELECT j.*, 
+            (SELECT COUNT(*) FROM tasks t WHERE t.job_id = j.id AND t.status != 'done') as open_tasks
+        FROM jobs j
+        ORDER BY j.id DESC
+        LIMIT 50
+    """).fetchall()
+    
+    return render_template('mobile/jobs.html',
+        jobs=[dict(j) for j in jobs],
+        mobile_mode=mode,
+        active_tab='jobs'
+    )
+
+@app.route('/mobile/team')
+def mobile_team():
+    """Mobile team overview (FULL mode)."""
+    u, err = require_auth()
+    if err:
+        return err
+    
+    db = get_db()
+    try:
+        from app.utils.mobile_mode import get_mobile_mode
+    except ImportError:
+        def get_mobile_mode():
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
+    
+    mode = get_mobile_mode()
+    
+    employees = db.execute("""
+        SELECT e.*, u.name as user_name, u.role as user_role
+        FROM employees e
+        LEFT JOIN users u ON e.user_id = u.id
+        ORDER BY e.name ASC
+    """).fetchall()
+    
+    return render_template('mobile/team.html',
+        employees=[dict(e) for e in employees],
+        mobile_mode=mode,
+        active_tab='team'
+    )
+
 @app.route('/mobile/notifications')
 def mobile_notifications():
     """Stránka s notifikacemi pro mobilní UI."""
@@ -15511,7 +15572,7 @@ def api_morning_planner():
             SELECT t.*, j.client as job_name
             FROM tasks t
             LEFT JOIN jobs j ON t.job_id = j.id
-            WHERE t.deadline = ? AND t.status != 'done'
+            WHERE t.due_date = ? AND t.status != 'done'
             ORDER BY t.priority DESC
         ''', [today]).fetchall()
         
@@ -15534,7 +15595,7 @@ def api_morning_planner():
             SELECT t.*, j.client as job_name
             FROM tasks t
             LEFT JOIN jobs j ON t.job_id = j.id
-            WHERE t.deadline < ? AND t.status != 'done'
+            WHERE t.due_date < ? AND t.status != 'done'
         ''', [today]).fetchall()
         
         return jsonify({

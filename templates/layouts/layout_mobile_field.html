@@ -31,15 +31,7 @@
         
         <!-- Center: Context nebo App name -->
         <div class="header-center">
-            <span class="current-context">
-                {% if context and context.current_job %}
-                    {{ context.current_job.name or context.current_job.title or ('Zakázka #' + context.current_job.id|string) }}
-                {% elif current_job %}
-                    {{ current_job.name or current_job.title or ('Zakázka #' + current_job.id|string) }}
-                {% else %}
-                    Green David
-                {% endif %}
-            </span>
+            <span class="header-app-name">Green David</span>
         </div>
         
         <!-- Right: Actions -->
