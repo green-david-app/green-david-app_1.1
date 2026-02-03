@@ -14088,6 +14088,7 @@ def mobile_today():
 @app.route('/mobile/edit-dashboard')
 def mobile_edit_dashboard():
     """Editor widget layoutu."""
+    from flask import request
     u, err = require_auth()
     if err:
         return err

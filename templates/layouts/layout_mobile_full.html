@@ -180,7 +180,7 @@
             <span class="badge">{{ unread_count }}</span>
             {% endif %}
         </a>
-        <a href="{{ url_for('mobile_more') if 'mobile_more' in url_for.__globals__ else '/mobile/more' }}" 
+        <a href="/mobile/dashboard" 
            class="nav-item {% if active_tab == 'more' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="1"/>
