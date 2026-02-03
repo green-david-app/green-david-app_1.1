@@ -872,6 +872,12 @@ tr:hover td {
   right: 12px;
   z-index: 1000;
   
+  /* Layout - horizontal items */
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 56px;
+  
   /* Glass effect */
   background: linear-gradient(
     135deg,
