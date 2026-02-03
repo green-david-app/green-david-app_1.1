@@ -149,6 +149,9 @@ except Exception as e:
 # Register Permissions context processor
 try:
     from app.utils.permissions import inject_permissions
+except ImportError:
+    from utils_standalone.permissions import inject_permissions
+try:
     app.context_processor(inject_permissions)
     print("[INFO] Permissions context processor registered")
 except Exception as e:
@@ -3272,8 +3275,8 @@ def api_user_settings():
                 from app.utils.mobile_mode import get_mobile_mode
                 mobile_mode = get_mobile_mode()
             except:
-                from flask import request
-                mobile_mode = request.cookies.get('mobile_mode', 'field')
+                import flask
+                mobile_mode = flask.request.cookies.get('mobile_mode', 'field')
                 if mobile_mode not in ('field', 'full'):
                     mobile_mode = 'field'
             return jsonify({
@@ -13878,9 +13881,9 @@ def mobile_dashboard():
         from app.utils.mobile_mode import get_mobile_mode
         from app.utils.widgets import get_user_widgets, get_available_widgets_for_user
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
         def get_user_widgets(user, mode='field'):
             return []
         def get_available_widgets_for_user(user):
@@ -14009,9 +14012,9 @@ def mobile_today():
         from app.utils.mobile_mode import get_mobile_mode
         from app.utils.widgets import get_user_widgets
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
         def get_user_widgets(user, mode='field'):
             return []
     from config.widgets import WIDGET_REGISTRY
@@ -14093,9 +14096,9 @@ def mobile_edit_dashboard():
         from app.utils.mobile_mode import get_mobile_mode
         from app.utils.widgets import get_user_widgets, get_available_widgets_for_user
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
         def get_user_widgets(user, mode='field'):
             return []
         def get_available_widgets_for_user(user):
@@ -14131,9 +14134,9 @@ def mobile_demo():
     try:
         from app.utils.mobile_mode import get_mobile_mode
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
     from config.widgets import WIDGET_REGISTRY
     
     mode = request.args.get('mode', 'field')
@@ -14220,11 +14223,10 @@ def mobile_tasks():
         from app.utils.mobile_mode import get_mobile_mode
         from app.utils.permissions import get_user_role
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
-        def get_user_role():
-            return session.get('user_role', 'worker')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
+        from utils_standalone.permissions import get_user_role
     
     mode = get_mobile_mode()
     user_id = session.get('uid')
@@ -14271,9 +14273,9 @@ def mobile_photos():
     try:
         from app.utils.mobile_mode import get_mobile_mode
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
     
     mode = get_mobile_mode()
     user_id = session.get('uid')
@@ -14319,9 +14321,9 @@ def mobile_notifications():
     try:
         from app.utils.mobile_mode import get_mobile_mode
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
     
     mode = get_mobile_mode()
     user_id = session.get('uid')
@@ -14360,17 +14362,22 @@ def mobile_queue():
         from app.utils.mobile_mode import get_mobile_mode
         from app.utils.permissions import get_user_role
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
-        def get_user_role():
-            return session.get('user_role', 'worker')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
+        from utils_standalone.permissions import get_user_role
     
     mode = get_mobile_mode()
     user_role = get_user_role()
     
     # Pouze director, manager, lander mohou vidět queue
-    if user_role not in ['director', 'manager', 'lander']:
+    # Normalizuj roli (owner -> director)
+    try:
+        from utils_standalone.permissions import normalize_role
+    except ImportError:
+        from config.permissions import normalize_role
+    normalized_role = normalize_role(user_role)
+    if normalized_role not in ['director', 'manager', 'lander']:
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
     db = get_db()
@@ -14404,9 +14411,9 @@ def api_dashboard_layout():
         from app.utils.widgets import get_user_widgets, save_user_widgets
         from app.utils.mobile_mode import get_mobile_mode
     except ImportError:
-        from flask import request
         def get_mobile_mode():
-            return request.cookies.get('mobile_mode', 'field')
+            import flask
+            return flask.request.cookies.get('mobile_mode', 'field')
         def get_user_widgets(user, mode='field'):
             return []
         def save_user_widgets(user, widgets):
@@ -14449,10 +14456,7 @@ def api_widget_current_job():
     try:
         from app.utils.permissions import require_permission
     except ImportError:
-        def require_permission(perm):
-            def decorator(f):
-                return f
-            return decorator
+        from utils_standalone.permissions import require_permission
     # Worker může vidět svou aktuální zakázku
     
     db = get_db()
@@ -14519,8 +14523,7 @@ def api_widget_jobs_risk():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('view_reports'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14568,8 +14571,7 @@ def api_widget_overdue_jobs():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('view_reports'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14596,8 +14598,7 @@ def api_widget_team_load():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('assign_people'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14649,8 +14650,7 @@ def api_widget_stock_alerts():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('log_material'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14692,8 +14692,7 @@ def api_widget_budget_burn():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('view_finance'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14759,8 +14758,7 @@ def api_worklogs_create():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('log_work'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14852,8 +14850,7 @@ def api_photos_create():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('add_photo'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
@@ -14964,8 +14961,7 @@ def api_materials_use():
     try:
         from app.utils.permissions import has_permission
     except ImportError:
-        def has_permission(perm):
-            return True  # fallback - povolit vše
+        from utils_standalone.permissions import has_permission
     if not has_permission('log_material'):
         return jsonify({'ok': False, 'error': 'Nedostatečná oprávnění'}), 403
     
