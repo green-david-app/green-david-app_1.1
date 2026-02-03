@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Moje práce • green david app</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <link rel="stylesheet" href="/static/icons.css"/>
+    <script src="/app-settings.js"></script>
+    <script src="/static/app-header.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script src="/bottom-nav.js"></script>
+    <style>
+      .wrap{max-width:1200px;margin:0 auto;}
+      .head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin:18px 0 10px;}
+      .head h1{margin:0;font-size:22px;}
+      .head p{margin:6px 0 0;color:#9ca8b3;}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+      @media (max-width: 980px){.grid{grid-template-columns:1fr;}}
+      .panel{border:1px solid rgba(255,255,255,0.10);background:rgba(17,24,39,0.35);border-radius:16px;padding:14px;}
+      .panel h2{margin:0 0 10px;font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+      .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,0.08);color:#e8eef2;}
+      .list{display:flex;flex-direction:column;gap:10px;}
+      .item{border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,0.03);}
+      .item-top{display:flex;gap:10px;align-items:center;justify-content:space-between;}
+      .item-title{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .meta{color:#9ca8b3;font-size:12px;white-space:nowrap;}
+      .sub{margin-top:6px;color:#e8eef2;opacity:0.92;font-size:13px;}
+      .empty{color:#9ca8b3;padding:10px 0;}
+      .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+      .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+      .filters label{color:#9ca8b3;font-size:12px;}
+      .filters select{min-width:160px;}
+      .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 0;}
+      .kpi .k{border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);border-radius:14px;padding:8px 10px;display:flex;gap:10px;align-items:center;}
+      .kpi .k .n{font-weight:800;}
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="wrap">
+        <div class="head">
+          <div>
+            <h1>Moje práce</h1>
+            <p id="subtitle">Přehled úkolů a problémů přiřazených přímo vám.</p>
+            <div class="kpi" id="kpi"></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="btn-refresh">Obnovit</button>
+            <a class="btn btn-ghost" href="/notifications.html" title="Notifikace">Notifikace</a>
+          </div>
+        </div>
+
+        <div class="filters panel" style="margin-bottom:14px;">
+          <div class="filters">
+            <div>
+              <label for="filter-scope">Rozsah</label><br/>
+              <select id="filter-scope" class="input">
+                <option value="active">Aktivní (otevřené + řeší se)</option>
+                <option value="all">Vše (včetně vyřešených)</option>
+              </select>
+            </div>
+            <div>
+              <label for="filter-order">Řazení</label><br/>
+              <select id="filter-order" class="input">
+                <option value="priority">Priorita / status</option>
+                <option value="due">Termín</option>
+                <option value="new">Nejnovější</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-left:auto;color:#9ca8b3;font-size:12px;">Tip: delegace se projeví tak, že se vám položka objeví mezi přiřazenými.</div>
+        </div>
+
+        <div class="grid">
+          <section class="panel">
+            <h2>
+              <span>Úkoly <span class="pill" id="tasks-count">0</span></span>
+              <a class="pill" href="/jobs.html" style="text-decoration:none;">Zakázky</a>
+            </h2>
+            <div id="tasks" class="list"></div>
+          </section>
+
+          <section class="panel">
+            <h2>
+              <span>Problémy <span class="pill" id="issues-count">0</span></span>
+              <a class="pill" href="/issues.html" style="text-decoration:none;">Issues</a>
+            </h2>
+            <div id="issues" class="list"></div>
+          </section>
+        </div>
+
+        <div class="small footer">© green david s.r.o.</div>
+      </div>
+    </main>
+
+    <script>
+      function esc(s){
+        return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function fmtDate(s){
+        if (!s) return '';
+        try{
+          // Supports YYYY-MM-DD or datetime
+          const d = new Date(String(s).includes('T') ? s : (s+'T00:00:00'));
+          if (isNaN(d.getTime())) return String(s);
+          return d.toLocaleDateString('cs-CZ');
+        }catch(_){return String(s);}
+      }
+
+      async function api(path){
+        const res = await fetch(path, {credentials:'same-origin'});
+        const j = await res.json().catch(()=>null);
+        if (!res.ok) throw new Error((j&&j.error)||res.statusText);
+        return j;
+      }
+
+      function sortByOrder(items, order, kind){
+        const statusRank = (s)=>{
+          const v = (s||'').toString();
+          if (v==='open') return 0;
+          if (v==='in_progress') return 1;
+          if (v==='resolved') return 2;
+          if (v==='done') return 2;
+          return 3;
+        };
+        if (order==='new'){
+          return items.slice().sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+        }
+        if (order==='due'){
+          return items.slice().sort((a,b)=> String(a.due_date||'').localeCompare(String(b.due_date||'')));
+        }
+        // priority
+        return items.slice().sort((a,b)=>{
+          const ar = statusRank(a.status);
+          const br = statusRank(b.status);
+          if (ar!==br) return ar-br;
+          // secondary: due date
+          return String(a.due_date||'').localeCompare(String(b.due_date||''));
+        });
+      }
+
+      function renderTasks(tasks){
+        const el = document.getElementById('tasks');
+        el.innerHTML = '';
+        document.getElementById('tasks-count').textContent = tasks.length;
+        if (!tasks.length){
+          el.innerHTML = '<div class="empty">Nemáte žádné úkoly.</div>';
+          return;
+        }
+        for (const t of tasks){
+          const job = t.job_id ? `Zakázka #${t.job_id}` : 'Bez zakázky';
+          const due = t.due_date ? `Termín: ${fmtDate(t.due_date)}` : '';
+          const item = document.createElement('div');
+          item.className = 'item';
+          item.innerHTML = `
+            <div class="item-top">
+              <div class="item-title">${esc(t.title||'')}</div>
+              <div class="meta">#${t.id} • ${esc(t.status||'')}</div>
+            </div>
+            <div class="sub">${esc(job)}${due ? ' • '+esc(due) : ''}</div>
+          `;
+          el.appendChild(item);
+        }
+      }
+
+      function renderIssues(issues){
+        const el = document.getElementById('issues');
+        el.innerHTML = '';
+        document.getElementById('issues-count').textContent = issues.length;
+        if (!issues.length){
+          el.innerHTML = '<div class="empty">Nemáte žádné problémy.</div>';
+          return;
+        }
+        for (const i of issues){
+          const job = i.job_id ? (i.job_name ? i.job_name : `Zakázka #${i.job_id}`) : 'Bez zakázky';
+          const item = document.createElement('div');
+          item.className = 'item';
+          item.innerHTML = `
+            <div class="item-top">
+              <div class="item-title">${esc(i.title||'')}</div>
+              <div class="meta">#${i.id} • ${esc(i.status||'')}</div>
+            </div>
+            <div class="sub">${esc(job)}${i.type ? ' • '+esc(i.type) : ''}</div>
+          `;
+          el.appendChild(item);
+        }
+      }
+
+      function renderKpi(tasks, issues, unread){
+        const el = document.getElementById('kpi');
+        const openTasks = tasks.filter(t => (t.status||'')!=='done' && (t.status||'')!=='resolved').length;
+        const openIssues = issues.filter(i => (i.status||'')!=='resolved').length;
+        el.innerHTML = `
+          <div class="k"><span>Aktivní úkoly</span> <span class="n">${openTasks}</span></div>
+          <div class="k"><span>Aktivní problémy</span> <span class="n">${openIssues}</span></div>
+          <div class="k"><span>Nepřečtené notifikace</span> <span class="n">${unread||0}</span></div>
+        `;
+      }
+
+      let me = null;
+
+      async function load(){
+        const scope = document.getElementById('filter-scope').value;
+        const order = document.getElementById('filter-order').value;
+
+        const meData = await api('/api/me');
+        me = meData || null;
+        if (!meData || !meData.authenticated){
+          document.getElementById('subtitle').textContent = 'Nejste přihlášen.';
+          renderTasks([]); renderIssues([]); renderKpi([],[],0);
+          return;
+        }
+
+        const employeeId = (meData.user && meData.user.employee_id) || (meData.employee && meData.employee.id);
+        const who = (meData.employee && meData.employee.name) || (meData.user && meData.user.name) || '';
+        document.getElementById('subtitle').textContent = who ? `Přehled práce pro: ${who}` : 'Přehled práce.';
+
+        if (!employeeId){
+          document.getElementById('subtitle').textContent += ' (Chybí vazba uživatele na člena teamu.)';
+          renderTasks([]); renderIssues([]); renderKpi([],[], meData.unread_notifications||0);
+          return;
+        }
+
+        // Fetch tasks
+        const tasksData = await api(`/api/tasks?employee_id=${encodeURIComponent(employeeId)}`);
+        let tasks = (tasksData.tasks||[]);
+
+        // Fetch issues
+        const issuesData = await api(`/api/issues?assigned_to=${encodeURIComponent(employeeId)}`);
+        let issues = (issuesData.issues||[]);
+
+        if (scope==='active'){
+          tasks = tasks.filter(t => (t.status||'')!=='done' && (t.status||'')!=='resolved');
+          issues = issues.filter(i => (i.status||'')!=='resolved');
+        }
+
+        tasks = sortByOrder(tasks, order, 'task');
+        issues = sortByOrder(issues, order, 'issue');
+
+        renderTasks(tasks);
+        renderIssues(issues);
+        renderKpi(tasks, issues, meData.unread_notifications||0);
+
+        if (window.appHeader && typeof window.appHeader.refreshUserBox==='function'){
+          window.appHeader.refreshUserBox();
+        }
+      }
+
+      document.getElementById('btn-refresh').addEventListener('click', ()=>{
+        load().catch(e=>{alert('Chyba: '+e.message);});
+      });
+      document.getElementById('filter-scope').addEventListener('change', ()=> load().catch(()=>{}));
+      document.getElementById('filter-order').addEventListener('change', ()=> load().catch(()=>{}));
+
+      load().catch(e=>{console.error(e);});
+    </script>
+  </body>
+</html>
