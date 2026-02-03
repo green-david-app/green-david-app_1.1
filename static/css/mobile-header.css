@@ -3,33 +3,39 @@
    Optimalizováno pro 320px+ šířku
    ========================================== */
 
+/* VYŠŠÍ SPECIFIČNOST - přepisuje app.css */
+header.app-header,
+/* VYŠŠÍ SPECIFIČNOST - přepisuje app.css */
+header.app-header,
 .app-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: rgba(25, 25, 25, 0.98);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    height: 52px;
-    min-height: 52px;
-    max-height: 52px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 6px 10px !important;
+    background: rgba(25, 25, 25, 0.98) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
     /* KRITICKÉ: Žádný horizontal scroll */
-    overflow: hidden;
-    width: 100%;
-    box-sizing: border-box;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 0 !important;
 }
 
 /* === LEFT ZONE === */
 .header-left {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    min-width: 0;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
 }
 
 .header-logo {
@@ -50,12 +56,12 @@
 
 /* === CENTER ZONE === */
 .header-center {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    padding: 0 8px;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 6px !important;
 }
 
 .current-context,
@@ -87,22 +93,24 @@
 
 /* === HEADER BUTTONS === */
 .header-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    -webkit-tap-highlight-color: transparent;
-    position: relative;
-    text-decoration: none;
-    flex-shrink: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 10px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+    position: relative !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .header-btn:hover,
@@ -123,8 +131,8 @@
 
 /* === MODE TOGGLE BUTTON === */
 .mode-toggle-btn {
-    background: rgba(76, 175, 80, 0.15);
-    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.15) !important;
+    color: #4CAF50 !important;
 }
 
 .mode-toggle-btn:hover,
