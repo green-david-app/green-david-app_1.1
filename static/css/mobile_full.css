@@ -1,0 +1,198 @@
+/**
+ * Mobile Full Mode Styles
+ * Optimalizováno pro management - přehledy, dashboardy, plánování
+ */
+
+body.mobile-full {
+    padding-top: 52px;
+    padding-bottom: 80px;
+    overflow-x: hidden;
+}
+
+/* Safe area pro notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+    body.mobile-full {
+        padding-top: calc(52px + env(safe-area-inset-top));
+    }
+}
+
+/* Full Header - základní styly jsou v mobile-header.css */
+.full-header {
+    /* Dědičí z .app-header v mobile-header.css */
+}
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.full-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.full-header .mode-toggle {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.full-header .mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--mint, #4ade80);
+}
+
+/* Full Content - více prostoru pro dashboardy */
+.full-content {
+    padding: 20px;
+    min-height: calc(100vh - 150px);
+}
+
+/* Full Bottom Nav - více možností navigace */
+.full-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: var(--bg-card, rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 8px 0;
+    z-index: 1000;
+}
+
+.full-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s;
+    min-width: 60px;
+    position: relative;
+}
+
+.full-nav .nav-item svg {
+    width: 22px;
+    height: 22px;
+}
+
+.full-nav .nav-item span {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.full-nav .nav-item.active {
+    color: var(--mint, #4ade80);
+    background: rgba(74, 222, 128, 0.1);
+}
+
+.full-nav .nav-item .badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Widget grid pro full mode */
+.full-content .widget-dashboard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.full-content .widget {
+    background: var(--bg-card, rgba(255, 255, 255, 0.05));
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.full-content .widget h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.full-content .widget.widget-half {
+    grid-column: span 1;
+}
+
+.full-content .widget.widget-full {
+    grid-column: span 1;
+}
+
+/* Cards místo tabulek */
+.full-content .widget table {
+    display: none;
+}
+
+.full-content .widget .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.full-content .widget .card-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Touch-friendly targets */
+.full-content .clickable,
+.full-content .btn {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 10px;
+}
+
+.full-content .btn-primary {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+}
+
+/* Méně textu, více vizuálů */
+.full-content .widget h4 {
+    font-size: 15px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .full-content .widget-dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 375px) {
+    .full-header .brand-name {
+        display: none;
+    }
+    
+    .full-nav .nav-item span {
+        font-size: 10px;
+    }
+}
