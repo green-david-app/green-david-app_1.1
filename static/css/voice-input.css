@@ -1,251 +1,50 @@
 /* ==========================================
-   VOICE INPUT STYLES
+   GREEN DAVID APP - Voice Input (voice-input.css)
    ========================================== */
 
-/* Voice Button */
-.voice-btn {
-    background: transparent;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.2s ease;
+.voice-input-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    min-width: 44px;
-    min-height: 44px;
-}
-
-.voice-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.voice-btn:active {
-    transform: scale(0.95);
-}
-
-.voice-btn.listening {
-    background: rgba(76, 175, 80, 0.3);
-    animation: voice-pulse 1.5s infinite;
-}
-
-.voice-btn svg {
-    width: 24px;
-    height: 24px;
-    stroke: currentColor;
-    fill: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #4CAF50;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.voice-btn.listening svg {
-    stroke: #4CAF50;
-    fill: rgba(76, 175, 80, 0.2);
+.voice-input-btn:active {
+    transform: scale(0.9);
+    background: rgba(76, 175, 80, 0.25);
+}
+
+.voice-input-btn.recording {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    animation: voice-pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes voice-pulse {
-    0% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.5); 
-    }
-    70% { 
-        box-shadow: 0 0 0 15px rgba(76, 175, 80, 0); 
-    }
-    100% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); 
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
-/* Input aktivní při voice */
-input.voice-active,
-textarea.voice-active {
-    border-color: #4CAF50 !important;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2) !important;
+.voice-input-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
-/* Listening indicator overlay */
-.voice-indicator {
-    position: fixed;
-    bottom: 120px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    z-index: 10000;
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 24px;
-    padding: 16px 24px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    opacity: 0;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.voice-indicator.visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-.voice-indicator-content {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: white;
-}
-
-/* Sound waves animation */
-.voice-waves {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    height: 24px;
-}
-
-.voice-waves span {
-    width: 4px;
-    height: 100%;
-    background: #4CAF50;
-    border-radius: 2px;
-    animation: voice-wave 1s ease-in-out infinite;
-}
-
-.voice-waves span:nth-child(1) { animation-delay: 0.0s; height: 40%; }
-.voice-waves span:nth-child(2) { animation-delay: 0.1s; height: 70%; }
-.voice-waves span:nth-child(3) { animation-delay: 0.2s; height: 100%; }
-.voice-waves span:nth-child(4) { animation-delay: 0.3s; height: 70%; }
-.voice-waves span:nth-child(5) { animation-delay: 0.4s; height: 40%; }
-
-@keyframes voice-wave {
-    0%, 100% { 
-        transform: scaleY(0.5); 
-        opacity: 0.5;
-    }
-    50% { 
-        transform: scaleY(1); 
-        opacity: 1;
-    }
-}
-
-.voice-text {
-    font-size: 15px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.voice-stop-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    transition: background 0.2s;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.voice-stop-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.voice-stop-btn:active {
-    transform: scale(0.95);
-}
-
-/* Interim result (průběžný text) */
-.voice-interim {
-    position: fixed;
-    bottom: 180px;
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    z-index: 9999;
-    background: rgba(255, 255, 255, 0.95);
-    color: #333;
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-size: 14px;
-    max-width: 80%;
+.voice-status {
+    font-size: 12px;
+    color: var(--text-secondary, #9ca8b3);
     text-align: center;
-    opacity: 0;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
 }
 
-.voice-interim.visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-/* Fallback toast */
-.voice-toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    z-index: 10001;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    opacity: 0;
-    transition: all 0.3s ease;
-    max-width: 90%;
-    text-align: center;
-}
-
-.voice-toast.visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-.voice-toast-error {
-    background: #f44336;
-    color: white;
-}
-
-.voice-toast-success {
-    background: #4CAF50;
-    color: white;
-}
-
-.voice-toast-info {
-    background: #2196F3;
-    color: white;
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-    .voice-interim {
-        background: rgba(50, 50, 50, 0.95);
-        color: #fff;
-    }
-}
-
-/* Safe area pro iOS notch */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .voice-indicator {
-        bottom: calc(120px + env(safe-area-inset-bottom));
-    }
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .voice-indicator {
-        bottom: 100px;
-        padding: 14px 20px;
-    }
-    
-    .voice-interim {
-        bottom: 160px;
-        font-size: 13px;
-        padding: 10px 16px;
-    }
-    
-    .voice-btn {
-        min-width: 48px;
-        min-height: 48px;
-    }
+.voice-status.active {
+    color: #ef4444;
 }

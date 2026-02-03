@@ -1,449 +1,170 @@
 /* ==========================================
-   KOMPAKTNÍ MOBILE HEADER
-   Optimalizováno pro 320px+ šířku
+   GREEN DAVID APP - Mobile Header (mobile-header.css)
+   Loaded AFTER app.css to override
    ========================================== */
 
-/* VYŠŠÍ SPECIFIČNOST - přepisuje app.css */
-header.app-header,
-/* VYŠŠÍ SPECIFIČNOST - přepisuje app.css */
-header.app-header,
-.app-header {
+/* Ensure header is compact on mobile */
+header.app-header {
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    padding: 0 8px !important;
+    padding-top: var(--safe-area-top, 0px) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 6px 10px !important;
-    background: rgba(25, 25, 25, 0.98) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    background: rgba(20, 20, 20, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 1000 !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    /* KRITICKÉ: Žádný horizontal scroll */
-    overflow: hidden !important;
-    overflow-x: hidden !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
     gap: 0 !important;
 }
 
-/* === LEFT ZONE === */
-.header-left {
+/* Header sections layout */
+header.app-header .header-left {
     flex: 0 0 auto !important;
     display: flex !important;
     align-items: center !important;
-    min-width: 0 !important;
 }
 
-.header-logo {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.header-logo img,
-.logo-small {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-/* === CENTER ZONE === */
-.header-center {
+header.app-header .header-center {
     flex: 1 1 auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     min-width: 0 !important;
-    padding: 0 6px !important;
+    overflow: hidden !important;
+    padding: 0 4px !important;
 }
 
-.current-context,
-.header-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+header.app-header .header-right {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
 }
 
-/* Skryj název na velmi malých obrazovkách (< 360px) */
-@media (max-width: 359px) {
-    .header-center {
-        display: none;
-    }
+/* Logo */
+header.app-header .logo-small {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    object-fit: cover !important;
+    display: block !important;
 }
 
-/* === RIGHT ZONE === */
-.header-right {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
+/* Center text */
+header.app-header .current-context,
+header.app-header .header-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #e8eef2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 160px !important;
+    display: block !important;
 }
 
-/* === HEADER BUTTONS === */
-.header-btn {
+/* Header buttons */
+header.app-header .header-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
+    border-radius: 8px !important;
     background: transparent !important;
     border: none !important;
-    border-radius: 10px !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    cursor: pointer !important;
-    transition: all 0.15s ease !important;
-    -webkit-tap-highlight-color: transparent !important;
-    position: relative !important;
-    text-decoration: none !important;
-    flex-shrink: 0 !important;
     padding: 0 !important;
-    margin: 0 !important;
+    color: #9ca8b3 !important;
+    position: relative !important;
 }
 
-.header-btn:hover,
-.header-btn:active {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+header.app-header .header-btn:active {
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
-.header-btn:active {
-    transform: scale(0.95);
+header.app-header .header-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block !important;
 }
 
-.header-btn svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-/* === MODE TOGGLE BUTTON === */
-.mode-toggle-btn {
-    background: rgba(76, 175, 80, 0.15) !important;
+/* Mode toggle green accent */
+header.app-header .mode-toggle-btn {
     color: #4CAF50 !important;
 }
 
-.mode-toggle-btn:hover,
-.mode-toggle-btn:active {
-    background: rgba(76, 175, 80, 0.25);
-    color: #4CAF50;
+header.app-header .mode-toggle-btn:active {
+    background: rgba(76, 175, 80, 0.15) !important;
 }
 
-/* Animace při přepínání */
-.mode-toggle-btn.switching {
-    animation: mode-switch-pulse 0.3s ease;
+/* Notification badge */
+header.app-header .header-badge {
+    position: absolute !important;
+    top: 4px !important;
+    right: 4px !important;
+    background: #ef4444 !important;
+    color: white !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 4px !important;
 }
 
-@keyframes mode-switch-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-}
-
-/* === NOTIFICATIONS === */
-.header-notifications {
-    position: relative;
-}
-
-.header-badge {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    background: #f44336;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
-}
-
-/* === DROPDOWN MENU === */
+/* === Dropdown positioning for mobile === */
 .header-dropdown {
-    position: fixed;
-    top: 56px;
-    right: 8px;
-    width: 220px;
-    max-width: calc(100vw - 16px);
-    background: rgba(35, 35, 35, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    z-index: 1002;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px) scale(0.95);
-    transform-origin: top right;
-    transition: all 0.2s ease;
-    overflow: hidden;
+    position: fixed !important;
+    top: 56px !important;
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    background: #1e1e1e !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0 0 16px 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    z-index: 999 !important;
 }
 
-.header-dropdown.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
-/* Dropdown overlay */
-.header-dropdown-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1001;
-    background: rgba(0, 0, 0, 0.3);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-}
-
-.header-dropdown-overlay.open {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* User section */
-.dropdown-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.dropdown-user-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #4CAF50, #2E7D32);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.dropdown-user-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.dropdown-user-name {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.dropdown-user-role {
-    display: block;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-top: 2px;
-}
-
-/* Divider */
-.dropdown-divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.08);
-    margin: 0;
-}
-
-/* Menu items */
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    font-size: 14px;
-    transition: all 0.15s ease;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align: left;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.dropdown-item:hover,
-.dropdown-item:active {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-}
-
-.dropdown-item svg {
-    flex-shrink: 0;
-    opacity: 0.6;
-}
-
-.dropdown-item:hover svg {
-    opacity: 1;
-}
-
-/* Mode info - neklikatelné */
-.dropdown-mode-info {
-    cursor: default;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.dropdown-mode-info:hover {
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.dropdown-mode-info strong {
-    color: #4CAF50;
-}
-
-/* Danger item */
-.dropdown-item-danger {
-    color: #f44336;
-}
-
-.dropdown-item-danger:hover {
-    background: rgba(244, 67, 54, 0.1);
-    color: #f44336;
-}
-
-/* ==========================================
-   RESPONSIVE
-   ========================================== */
-
-/* Velmi malé telefony (< 360px) */
-@media (max-width: 359px) {
-    .app-header {
-        padding: 6px 8px;
-        height: 48px;
-        min-height: 48px;
-        max-height: 48px;
-    }
-    
-    .header-btn {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-    }
-    
-    .header-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-    
-    .header-right {
-        gap: 2px;
-    }
-    
-    .header-logo img,
-    .logo-small {
-        width: 24px;
-        height: 24px;
-    }
-    
-    .header-badge {
-        top: 2px;
-        right: 2px;
-        min-width: 14px;
-        height: 14px;
-        font-size: 9px;
-    }
-    
+/* On larger phones, limit dropdown width */
+@media (min-width: 400px) {
     .header-dropdown {
-        top: 52px;
-        right: 4px;
-        width: 200px;
+        left: auto !important;
+        width: 300px !important;
     }
 }
 
-/* Landscape */
-@media (orientation: landscape) and (max-height: 500px) {
-    .app-header {
-        padding: 4px 16px;
-        height: 44px;
-        min-height: 44px;
-        max-height: 44px;
+/* Responsive adjustments for very small screens */
+@media (max-width: 350px) {
+    header.app-header .current-context,
+    header.app-header .header-title {
+        max-width: 100px !important;
+        font-size: 12px !important;
     }
     
-    .header-dropdown {
-        top: 48px;
-        max-height: calc(100vh - 60px);
-        overflow-y: auto;
-    }
-}
-
-/* Safe area pro notch (iPhone X+) */
-@supports (padding-top: env(safe-area-inset-top)) {
-    .app-header {
-        padding-top: max(8px, env(safe-area-inset-top));
-        height: calc(52px + env(safe-area-inset-top));
-        min-height: calc(52px + env(safe-area-inset-top));
-        max-height: calc(52px + env(safe-area-inset-top));
+    header.app-header .header-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
     }
     
-    .header-dropdown {
-        top: calc(56px + env(safe-area-inset-top));
+    header.app-header .header-btn svg {
+        width: 18px !important;
+        height: 18px !important;
     }
-}
-
-/* === FIELD HEADER SPECIFIC === */
-.field-header {
-    /* Dědičí základní styly z .app-header */
-}
-
-.field-header .current-context {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-/* === FULL HEADER SPECIFIC === */
-.full-header {
-    /* Dědičí základní styly z .app-header */
-}
-
-.full-header .header-title {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-/* === LEGACY SUPPORT === */
-/* Pro zpětnou kompatibilitu se starými třídami */
-.mode-toggle {
-    /* Mapuje na .header-btn.mode-toggle-btn */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    -webkit-tap-highlight-color: transparent;
+    
+    header.app-header .header-right {
+        gap: 0 !important;
+    }
 }
