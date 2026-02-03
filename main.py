@@ -2724,22 +2724,22 @@ def generate_auto_notifications(user_id):
     # Job-specific critical notifications
     try:
         critical_jobs = db.execute("""
-            SELECT j.id, j.title, j.deadline, j.budget, j.actual_value, j.status
+            SELECT j.*
             FROM jobs j
             WHERE j.status NOT IN ('completed', 'archived', 'cancelled')
         """, ()).fetchall()
         
         for job in critical_jobs:
             job = dict(job)
-            deadline = job.get('deadline')
-            budget = job.get('budget') or 0
-            actual = job.get('actual_value') or 0
+            deadline = job.get('deadline') or job.get('date')
+            budget = float(job.get('budget') or 0)
+            actual = float(job.get('actual_value') or job.get('estimated_value') or 0)
             
             # Deadline critical
             if deadline:
                 try:
                     deadline_dt = datetime.strptime(deadline[:10], '%Y-%m-%d').date()
-                    days_until = (deadline_dt - today).days
+                    days_until = (deadline_dt - now.date()).days
                     
                     if days_until < 0:
                         create_job_notification(
