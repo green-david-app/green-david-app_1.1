@@ -1,0 +1,51 @@
+<div class="offline-status-widget">
+    <div class="status-indicator">
+        <span class="status-dot" id="connectionDot"></span>
+        <span class="status-text" id="connectionText">Online</span>
+    </div>
+    <div class="queue-info" id="queueInfo" style="display: none;">
+        <span class="queue-count">0</span> položek čeká na odeslání
+        <button class="btn btn-sm" onclick="if(window.OfflineQueue) window.OfflineQueue.forceSync()">Odeslat nyní</button>
+    </div>
+</div>
+
+<script>
+// Inicializace offline statusu (bude propojeno s offline-queue.js)
+document.addEventListener('DOMContentLoaded', function() {
+    function updateStatus() {
+        const isOnline = navigator.onLine;
+        const dot = document.getElementById('connectionDot');
+        const text = document.getElementById('connectionText');
+        
+        if (dot) {
+            dot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+        }
+        if (text) {
+            text.textContent = isOnline ? 'Online' : 'Offline';
+        }
+        
+        // Pokud existuje OfflineQueue, použij jeho data
+        if (window.OfflineQueue) {
+            const queueCount = window.OfflineQueue.getQueue ? window.OfflineQueue.getQueue().length : 0;
+            const queueInfo = document.getElementById('queueInfo');
+            const queueCountEl = document.querySelector('.queue-count');
+            
+            if (queueInfo && queueCount > 0) {
+                queueInfo.style.display = 'block';
+                if (queueCountEl) {
+                    queueCountEl.textContent = queueCount;
+                }
+            } else if (queueInfo) {
+                queueInfo.style.display = 'none';
+            }
+        }
+    }
+    
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+    
+    // Periodická kontrola každých 5 sekund
+    setInterval(updateStatus, 5000);
+});
+</script>
