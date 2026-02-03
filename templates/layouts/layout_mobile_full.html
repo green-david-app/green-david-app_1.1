@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Green David{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_full.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/voice-input.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/mobile_full.css">
+    <link rel="stylesheet" href="/static/css/widgets.css">
+    <link rel="stylesheet" href="/static/css/voice-input.css">
     <!-- mobile-header.css MUSÍ být načteno PO app.css pro přepsání -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-header.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='icons.css') }}">
+    <link rel="stylesheet" href="/static/css/mobile-header.css">
+    <link rel="stylesheet" href="/static/icons.css">
     <script src="/app-settings.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -20,12 +20,12 @@
         <!-- Left: Logo -->
         <div class="header-left">
             <a href="/" class="header-logo">
-                <img src="{{ url_for('static', filename='img/logo.jpg') }}" 
+                <img src="/static/img/logo.jpg" 
                      alt="GD" 
                      class="logo-small"
                      width="28" 
                      height="28"
-                     onerror="this.src='/logo.svg'">
+                     onerror="this.src='/static/logo.svg'">
             </a>
         </div>
         
@@ -49,7 +49,7 @@
             </button>
             
             <!-- Notifications -->
-            <a href="{{ url_for('mobile_notifications') if 'mobile_notifications' in url_for.__globals__ else '/mobile/notifications' }}" 
+            <a href="/mobile/notifications" 
                class="header-btn header-notifications"
                aria-label="Notifikace">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -141,7 +141,7 @@
     </main>
 
     <nav class="bottom-nav full-nav">
-        <a href="{{ url_for('mobile_dashboard') if 'mobile_dashboard' in url_for.__globals__ else '/mobile/dashboard' }}" 
+        <a href="/mobile/dashboard" 
            class="nav-item {% if active_tab == 'dashboard' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"/>
@@ -151,7 +151,7 @@
             </svg>
             <span>Přehled</span>
         </a>
-        <a href="{{ url_for('mobile_jobs') if 'mobile_jobs' in url_for.__globals__ else '/mobile/jobs' }}" 
+        <a href="/mobile/jobs" 
            class="nav-item {% if active_tab == 'jobs' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -159,7 +159,7 @@
             </svg>
             <span>Zakázky</span>
         </a>
-        <a href="{{ url_for('mobile_team') if 'mobile_team' in url_for.__globals__ else '/mobile/team' }}" 
+        <a href="/mobile/team" 
            class="nav-item {% if active_tab == 'team' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -169,7 +169,7 @@
             </svg>
             <span>Tým</span>
         </a>
-        <a href="{{ url_for('mobile_notifications') if 'mobile_notifications' in url_for.__globals__ else '/mobile/notifications' }}" 
+        <a href="/mobile/notifications" 
            class="nav-item {% if active_tab == 'notifications' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -191,9 +191,9 @@
         </a>
     </nav>
 
-    <script src="{{ url_for('static', filename='js/mode.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/offline-queue.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/voice-input.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/header.js') }}"></script>
+    <script src="/static/js/mode.js"></script>
+    <script src="/static/js/offline-queue.js"></script>
+    <script src="/static/js/voice-input.js"></script>
+    <script src="/static/js/header.js"></script>
 </body>
 </html>
