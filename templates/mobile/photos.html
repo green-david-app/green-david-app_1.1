@@ -1,0 +1,185 @@
+{% extends "layouts/layout_mobile_" + mobile_mode + ".html" %}
+
+{% block content %}
+<div class="mobile-page mobile-photos" data-mode="{{ mobile_mode }}">
+    <div class="page-header">
+        <h1>Fotografie</h1>
+        {% if job_id %}
+        <p class="subtitle">Zakázka #{{ job_id }}</p>
+        {% endif %}
+    </div>
+    
+    {% if photos %}
+        <div class="photos-grid">
+            {% for photo in photos %}
+            <div class="photo-card" data-photo-id="{{ photo.id }}">
+                <img src="/uploads/{{ photo.filepath.split('/')[-1] if '/' in photo.filepath else photo.filepath }}" 
+                     alt="{{ photo.filename }}"
+                     loading="lazy"
+                     onclick="openPhotoModal('{{ photo.filepath }}', '{{ photo.filename }}')">
+                <div class="photo-info">
+                    {% if photo.job_title %}
+                    <span class="photo-job">{{ photo.job_title }}</span>
+                    {% endif %}
+                    <span class="photo-date">{{ photo.created_at[:10] if photo.created_at else '' }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>Žádné fotografie</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Photo Modal -->
+<div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
+    <div class="photo-modal-content" onclick="event.stopPropagation()">
+        <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+        <img id="photoModalImage" src="" alt="">
+        <div class="photo-modal-info">
+            <p id="photoModalFilename"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPhotoModal(filepath, filename) {
+    const modal = document.getElementById('photoModal');
+    const img = document.getElementById('photoModalImage');
+    const name = document.getElementById('photoModalFilename');
+    
+    img.src = '/uploads/' + (filepath.split('/').pop() || filepath);
+    name.textContent = filename;
+    modal.style.display = 'flex';
+}
+
+function closePhotoModal() {
+    document.getElementById('photoModal').style.display = 'none';
+}
+
+// Close on ESC key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closePhotoModal();
+    }
+});
+</script>
+
+<style>
+.mobile-photos {
+    padding: 1rem;
+}
+
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.photo-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.photo-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.photo-card img:hover {
+    transform: scale(1.05);
+}
+
+.photo-info {
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.photo-job {
+    font-weight: 500;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+}
+
+/* Photo Modal */
+.photo-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.photo-modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.photo-modal-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.photo-modal-info {
+    margin-top: 1rem;
+    color: white;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .photos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+</style>
+{% endblock %}

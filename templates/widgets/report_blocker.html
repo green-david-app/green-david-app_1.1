@@ -1,0 +1,105 @@
+<div class="report-blocker-widget">
+    <form id="blockerForm" onsubmit="submitBlocker(event)">
+        <div class="blocker-types">
+            <label class="type-option">
+                <input type="radio" name="blocker_type" value="material" checked>
+                <span>Chybí materiál</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="blocker_type" value="weather">
+                <span>Počasí</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="blocker_type" value="access">
+                <span>Přístup</span>
+            </label>
+            <label class="type-option">
+                <input type="radio" name="blocker_type" value="other">
+                <span>Jiné</span>
+            </label>
+        </div>
+        
+        <textarea name="description" placeholder="Popis problému..." required></textarea>
+        
+        <div class="blocker-photo">
+            <input type="file" id="blockerPhoto" accept="image/*" capture="environment" style="display: none;">
+            <button type="button" class="btn btn-secondary btn-sm" 
+                    onclick="document.getElementById('blockerPhoto').click()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Přidat foto
+            </button>
+            <span id="blockerPhotoStatus"></span>
+        </div>
+        
+        <button type="submit" class="btn btn-warning btn-full">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Nahlásit problém
+        </button>
+    </form>
+</div>
+
+<script>
+let blockerPhotoData = null;
+
+document.getElementById('blockerPhoto').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            blockerPhotoData = event.target.result;
+            document.getElementById('blockerPhotoStatus').textContent = 'Foto připraveno';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+async function submitBlocker(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const blockerType = form.blocker_type.value;
+    const description = form.description.value;
+    const jobId = document.getElementById('quickLogJobId')?.value || 
+                  localStorage.getItem('gd_last_job_id');
+    
+    if (!jobId) {
+        alert('Nejdřív vyber zakázku');
+        return;
+    }
+    
+    const data = {
+        job_id: parseInt(jobId),
+        type: blockerType,
+        description: description,
+        photo_data: blockerPhotoData
+    };
+    
+    try {
+        const response = await fetch('/api/blockers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            alert('Problém nahlášen');
+            form.reset();
+            blockerPhotoData = null;
+            document.getElementById('blockerPhotoStatus').textContent = '';
+        } else {
+            alert('Chyba při odesílání');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Chyba: ' + error.message);
+    }
+}
+</script>
