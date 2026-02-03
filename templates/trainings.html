@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/static/css/app.css"/>
   <link rel="stylesheet" href="/static/icons.css"/>
   <script src="/app-settings.js"></script>
-  <script src="/static/app-header.js"></script>
+  <!-- app-header.js je VYPNUTO - používáme vlastní kompaktní header -->
   <style>
     body {
       background: #0f1115;
@@ -1550,51 +1550,7 @@
     });
   </script>
   
-  <script>
-/* Header Menu + Mode Toggle */
-(function(){
-    var open = false;
-    
-    window.toggleHeaderMenu = function(){
-        var dd = document.getElementById('headerDropdown');
-        var ov = document.getElementById('headerOverlay');
-        open = !open;
-        if(open){
-            dd.classList.add('open');
-            ov.classList.add('open');
-        } else {
-            dd.classList.remove('open');
-            ov.classList.remove('open');
-        }
-    };
-    
-    window.closeHeaderMenu = function(){
-        open = false;
-        var dd = document.getElementById('headerDropdown');
-        var ov = document.getElementById('headerOverlay');
-        if(dd) dd.classList.remove('open');
-        if(ov) ov.classList.remove('open');
-    };
-    
-    window.toggleMobileMode = function(){
-        var match = document.cookie.match(/mobile_mode=(\w+)/);
-        var current = match ? match[1] : 'field';
-        var next = current === 'field' ? 'full' : 'field';
-        
-        document.cookie = 'mobile_mode=' + next + ';path=/;max-age=31536000;SameSite=Lax';
-        
-        fetch('/api/user/settings', {
-            method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({mobile_mode: next})
-        }).catch(function(){}).finally(function(){
-            window.location.reload();
-        });
-    };
-    
-    window.addEventListener('scroll', function(){ if(open) closeHeaderMenu(); }, {passive:true});
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && open) closeHeaderMenu(); });
-})();
-</script>
+  <!-- Header funkce jsou v static/js/header.js -->
+  <script src="{{ url_for('static', filename='js/header.js') }}"></script>
 </body>
 </html>
