@@ -1,0 +1,72 @@
+<div class="team-load-widget">
+    {% if team_members and team_members|length > 0 %}
+        {% for member in team_members[:6] %}
+        <div class="member-load">
+            <div class="member-info">
+                <span class="member-name">{{ member.name }}</span>
+                <span class="member-role">{{ member.role_label or member.role or '' }}</span>
+            </div>
+            <div class="load-bar">
+                <div class="load-fill load-{{ member.load_level or 'normal' }}" 
+                     style="width: {{ member.load_percent or 50 }}%"></div>
+            </div>
+            <span class="load-value">{{ member.hours_today or 0 }}h</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-state">Žádná data o vytížení</p>
+    {% endif %}
+</div>
+
+<style>
+.member-load {
+    margin-bottom: 12px;
+}
+
+.member-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.member-name {
+    font-weight: 600;
+}
+
+.member-role {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.load-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.load-fill {
+    height: 100%;
+    background: var(--mint);
+    transition: width 0.3s;
+}
+
+.load-fill.load-low {
+    background: #4ade80;
+}
+
+.load-fill.load-normal {
+    background: #fbbf24;
+}
+
+.load-fill.load-high {
+    background: #ef4444;
+}
+
+.load-value {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+</style>
