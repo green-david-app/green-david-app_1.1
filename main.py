@@ -2509,6 +2509,28 @@ def _job_title_update_set(params_list, title_value):
 # ----------------- static -----------------
 @app.route("/")
 def index():
+    """Hlavní stránka - přesměruje mobil na mobile dashboard."""
+    from flask import request, redirect
+    from app.utils.mobile_mode import get_mobile_mode
+    
+    # Detekce mobilu
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(x in user_agent for x in ['mobile', 'android', 'iphone', 'ipad'])
+    
+    if is_mobile:
+        # Na mobilu přesměruj na mobilní dashboard
+        # get_mobile_mode() může vyžadovat session, takže použij fallback
+        try:
+            mobile_mode = get_mobile_mode()
+        except:
+            mobile_mode = 'field'  # Default pro neautentizované
+        
+        if mobile_mode == 'field':
+            return redirect('/mobile/today')
+        else:
+            return redirect('/mobile/dashboard')
+    
+    # Desktop - původní chování
     return send_from_directory(".", "index.html")
 
 # Work inbox (safe standalone page)
