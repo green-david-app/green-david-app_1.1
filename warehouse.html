@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="cs" data-theme="dark">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Sklad - green david app</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/icons.css"/>
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <script src="/static/global-search.js"></script>
+    <script src="/static/js/debug.js"></script>
+    <script src="/app-settings.js"></script>
+    <style>
+        :root { --mint: #4ade80; --bg-primary: #1a1a1a; --bg-card: #242424; --bg-hover: #2a2a2a; --border-primary: #333; --border-hover: #444; --text-primary: #ffffff; --text-secondary: #a0a0a0; --text-muted: #666; --success: #4ade80; --warning: #fbbf24; --danger: #f87171; --blue: #60a5fa; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; min-height: 100vh; padding-bottom: 80px; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Page header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 16px; }
+        .page-header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .page-header h1 svg { width: 24px; height: 24px; stroke: var(--mint); fill: none; stroke-width: 2; }
+        .header-actions { display: flex; gap: 10px; }
+        
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .btn-primary { background: var(--mint); color: #1a1a1a; }
+        .btn-primary:hover { background: #b5e0b7; }
+        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-primary); }
+        .btn-secondary:hover { border-color: var(--mint); }
+        .btn-sm { padding: 6px 10px; font-size: 12px; }
+        
+        /* Stats bar - kompaktní */
+        .stats-bar { display: flex; gap: 12px; margin: 20px 0 16px 0; flex-wrap: wrap; }
+        .stat-mini { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; padding: 10px 14px; min-width: 130px; }
+        .stat-mini svg { width: 18px; height: 18px; stroke: var(--mint); fill: none; stroke-width: 2; }
+        .stat-mini-value { font-size: 16px; font-weight: 700; }
+        .stat-mini-label { font-size: 10px; color: var(--text-secondary); }
+        .stat-mini.warning .stat-mini-value { color: var(--warning); }
+        .stat-mini.warning svg { stroke: var(--warning); }
+        .stat-mini.danger .stat-mini-value { color: var(--danger); }
+        .stat-mini.danger svg { stroke: var(--danger); }
+        
+        /* Navigation tabs */
+        .nav-tabs { display: flex; gap: 4px; background: var(--bg-card); border-radius: 10px; padding: 4px; margin-bottom: 16px; border: 1px solid var(--border-primary); overflow-x: auto; }
+        .nav-tab { padding: 8px 14px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .nav-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .nav-tab.active { background: var(--mint); color: #1a1a1a; }
+        .nav-tab svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+        
+        /* Tab content */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Filters bar - INLINE */
+        .filters-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-input { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 13px; width: 220px; }
+        .filter-input:focus { outline: none; border-color: var(--mint); }
+        .filter-select { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 13px; cursor: pointer; min-width: 140px; }
+        
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-primary); }
+        .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-primary); font-size: 13px; }
+        .data-table tbody tr { transition: background 0.2s; cursor: pointer; }
+        .data-table tbody tr:hover { background: var(--bg-hover); }
+        
+        /* Item row */
+        .item-name { font-weight: 600; color: var(--text-primary); }
+        .item-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .item-qty { font-weight: 700; font-size: 14px; }
+        .item-qty-unit { font-size: 11px; color: var(--text-secondary); }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+        .badge-success { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+        .badge-warning { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .badge-danger { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .badge-info { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .badge-mint { background: rgba(159, 212, 161, 0.15); color: var(--mint); }
+        
+        /* Location badge */
+        .location-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); }
+        .location-tag svg { width: 12px; height: 12px; }
+        
+        /* Actions */
+        .actions-cell { display: flex; gap: 4px; }
+        .btn-icon { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .btn-icon:hover { background: var(--bg-card); color: var(--text-primary); }
+        .btn-icon svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+        
+        /* Cards grid */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; padding: 14px; transition: all 0.2s; }
+        .card:hover { border-color: var(--border-hover); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .card-title { font-weight: 600; font-size: 14px; }
+        .card-subtitle { font-size: 12px; color: var(--text-secondary); }
+        
+        /* Movement history */
+        .movement-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-primary); }
+        .movement-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .movement-icon.in { background: rgba(74, 222, 128, 0.15); }
+        .movement-icon.in svg { stroke: #4ade80; }
+        .movement-icon.out { background: rgba(248, 113, 113, 0.15); }
+        .movement-icon.out svg { stroke: #f87171; }
+        .movement-icon svg { width: 16px; height: 16px; fill: none; stroke-width: 2; }
+        .movement-content { flex: 1; }
+        .movement-title { font-size: 13px; font-weight: 500; }
+        .movement-meta { font-size: 11px; color: var(--text-secondary); }
+        .movement-qty { font-weight: 600; font-size: 13px; }
+        .movement-qty.positive { color: #4ade80; }
+        .movement-qty.negative { color: #f87171; }
+        
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--bg-card); border-radius: 12px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-primary); }
+        .modal-header h2 { font-size: 16px; font-weight: 600; }
+        .modal-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 20px; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px 12px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 13px; }
+        .form-input:focus { outline: none; border-color: var(--mint); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border-primary); }
+        
+        /* Empty state */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .empty-state svg { width: 48px; height: 48px; stroke: var(--text-muted); margin-bottom: 12px; }
+        .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: var(--text-primary); }
+        
+        /* Notification */
+        .notification { position: fixed; bottom: 100px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 2000; animation: slideIn 0.3s; }
+        .notification.success { background: #065f46; color: #6ee7b7; }
+        .notification.error { background: #7f1d1d; color: #fca5a5; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+</head>
+<body class="has-sidebar">
+  <div id="app-header"></div>
+    <div id="app-sidebar"></div>
+<script src="/static/app-header.js"></script>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <div class="page-icon yellow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                Sklad
+            </h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="exportData()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                </button>
+                <button class="btn btn-primary" onclick="openItemModal()">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nová položka
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stat-mini">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <div><div class="stat-mini-value" id="statValue">0 Kč</div><div class="stat-mini-label">Hodnota</div></div>
+            </div>
+            <div class="stat-mini">
+                <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                <div><div class="stat-mini-value" id="statItems">0</div><div class="stat-mini-label">Položek</div></div>
+            </div>
+            <div class="stat-mini warning">
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div><div class="stat-mini-value" id="statLow">0</div><div class="stat-mini-label">Nízký stav</div></div>
+            </div>
+            <div class="stat-mini danger">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <div><div class="stat-mini-value" id="statOut">0</div><div class="stat-mini-label">Nedostupné</div></div>
+            </div>
+            <div class="stat-mini">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <div><div class="stat-mini-value" id="statReserved">0</div><div class="stat-mini-label">Rezervováno</div></div>
+            </div>
+        </div>
+
+        <!-- Navigation tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('items')">
+                <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                Položky
+            </button>
+            <button class="nav-tab" onclick="switchTab('locations')">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Lokace
+            </button>
+            <button class="nav-tab" onclick="switchTab('movements')">
+                <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                Pohyby
+            </button>
+            <button class="nav-tab" onclick="switchTab('reservations')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Rezervace
+            </button>
+            <button class="nav-tab" onclick="switchTab('inventory')">
+                <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Inventura
+            </button>
+        </div>
+
+        <!-- TAB: Položky -->
+        <div id="tab-items" class="tab-content active">
+            <div class="filters-bar">
+                <input type="text" class="filter-input" id="searchInput" placeholder="Hledat položky..." oninput="filterItems()">
+                <select class="filter-select" id="categoryFilter" onchange="filterItems()">
+                    <option value="">Všechny kategorie</option>
+                    <option value="Rostliny">Rostliny</option>
+                    <option value="Stavební materiál">Stavební materiál</option>
+                    <option value="Nářadí">Nářadí</option>
+                    <option value="Elektro">Elektro</option>
+                    <option value="Zahrada">Zahrada</option>
+                </select>
+                <select class="filter-select" id="statusFilter" onchange="filterItems()">
+                    <option value="">Všechny stavy</option>
+                    <option value="ok">Skladem</option>
+                    <option value="low">Nízký stav</option>
+                    <option value="out">Nedostupné</option>
+                </select>
+                <select class="filter-select" id="locationFilter" onchange="filterItems()">
+                    <option value="">Všechny lokace</option>
+                </select>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:35%">Položka</th>
+                        <th style="width:12%">Množství</th>
+                        <th style="width:12%">Cena/ks</th>
+                        <th style="width:15%">Lokace</th>
+                        <th style="width:12%">Status</th>
+                        <th style="width:14%">Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                    <tr><td colspan="6" class="empty-state"><div class="loading-spinner"></div> Načítám...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: Lokace -->
+        <div id="tab-locations" class="tab-content">
+            <div style="margin-bottom:16px;">
+                <button class="btn btn-primary" onclick="openLocationModal()">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nová lokace
+                </button>
+            </div>
+            <div class="cards-grid" id="locationsGrid"></div>
+        </div>
+
+        <!-- TAB: Pohyby -->
+        <div id="tab-movements" class="tab-content">
+            <div class="filters-bar">
+                <input type="date" class="filter-input" id="movementDateFrom">
+                <input type="date" class="filter-input" id="movementDateTo">
+                <select class="filter-select" id="movementTypeFilter">
+                    <option value="">Všechny typy</option>
+                    <option value="in">Příjem</option>
+                    <option value="out">Výdej</option>
+                </select>
+            </div>
+            <div id="movementsList"></div>
+        </div>
+
+        <!-- TAB: Rezervace -->
+        <div id="tab-reservations" class="tab-content">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Položka</th>
+                        <th>Množství</th>
+                        <th>Zakázka</th>
+                        <th>Datum</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="reservationsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- TAB: Inventura -->
+        <div id="tab-inventory" class="tab-content">
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <button class="btn btn-primary" onclick="startInventory()">
+                    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg>
+                    Zahájit inventuru
+                </button>
+                <button class="btn btn-secondary" onclick="exportInventory()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                </button>
+            </div>
+            <div id="inventoryContent">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    <h3>Žádná aktivní inventura</h3>
+                    <p>Klikněte na "Zahájit inventuru" pro začátek</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nová položka -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="itemModalTitle">Nová položka</h2>
+                <button class="modal-close" onclick="closeItemModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm" onsubmit="saveItem(event)">
+                    <input type="hidden" id="itemId">
+                    <div class="form-group">
+                        <label>Název položky *</label>
+                        <input type="text" class="form-input" id="itemName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>SKU / Kód</label>
+                            <input type="text" class="form-input" id="itemSku">
+                        </div>
+                        <div class="form-group">
+                            <label>Kategorie</label>
+                            <select class="form-input" id="itemCategory">
+                                <option value="">-- vyberte --</option>
+                                <option value="Rostliny">Rostliny</option>
+                                <option value="Stavební materiál">Stavební materiál</option>
+                                <option value="Nářadí">Nářadí</option>
+                                <option value="Elektro">Elektro</option>
+                                <option value="Zahrada">Zahrada</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Množství *</label>
+                            <input type="number" class="form-input" id="itemQty" required min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Jednotka</label>
+                            <select class="form-input" id="itemUnit">
+                                <option value="ks">ks</option>
+                                <option value="kg">kg</option>
+                                <option value="l">l</option>
+                                <option value="m">m</option>
+                                <option value="m²">m²</option>
+                                <option value="bal">bal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cena za jednotku (Kč)</label>
+                            <input type="number" class="form-input" id="itemPrice" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Min. stav</label>
+                            <input type="number" class="form-input" id="itemMinStock" min="0" value="10">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Lokace</label>
+                        <select class="form-input" id="itemLocation">
+                            <option value="">-- vyberte --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Poznámka</label>
+                        <textarea class="form-input" id="itemNote" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeItemModal()">Zrušit</button>
+                <button type="submit" form="itemForm" class="btn btn-primary">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Pohyb -->
+    <div id="movementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nový pohyb</h2>
+                <button class="modal-close" onclick="closeMovementModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="movementForm" onsubmit="saveMovement(event)">
+                    <input type="hidden" id="movementItemId">
+                    <div class="form-group">
+                        <label>Typ pohybu</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <button type="button" class="btn btn-secondary movement-type-btn active" data-type="in" onclick="selectMovementType('in')">
+                                <svg viewBox="0 0 24 24" style="stroke:#4ade80;"><polyline points="3 17 9 11 3 5"/><line x1="21" y1="11" x2="9" y2="11"/></svg>
+                                Příjem
+                            </button>
+                            <button type="button" class="btn btn-secondary movement-type-btn" data-type="out" onclick="selectMovementType('out')">
+                                <svg viewBox="0 0 24 24" style="stroke:#f87171;"><polyline points="21 17 15 11 21 5"/><line x1="3" y1="11" x2="15" y2="11"/></svg>
+                                Výdej
+                            </button>
+                        </div>
+                        <input type="hidden" id="movementType" value="in">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Množství *</label>
+                            <input type="number" class="form-input" id="movementQty" required min="0.01" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Zakázka</label>
+                            <select class="form-input" id="movementJob">
+                                <option value="">-- žádná --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Poznámka</label>
+                        <textarea class="form-input" id="movementNote" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeMovementModal()">Zrušit</button>
+                <button type="submit" form="movementForm" class="btn btn-primary">Uložit pohyb</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allItems = [];
+        let allLocations = [];
+        let allMovements = [];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadItems();
+            loadLocations();
+            loadMovements();
+        });
+        
+        // === DATA LOADING ===
+        async function loadItems() {
+            try {
+                const res = await fetch('/api/warehouse/items');
+                const data = await res.json();
+                if (data.success) {
+                    allItems = data.items || [];
+                    renderItems();
+                    updateStats();
+                }
+            } catch (e) { console.error('Load items error:', e); }
+        }
+        
+        async function loadLocations() {
+            try {
+                const res = await fetch('/api/warehouse/locations');
+                const data = await res.json();
+                if (data.success) {
+                    allLocations = data.locations || [];
+                    renderLocations();
+                    populateLocationFilters();
+                }
+            } catch (e) { console.error('Load locations error:', e); }
+        }
+        
+        async function loadMovements() {
+            try {
+                const res = await fetch('/api/warehouse/movements');
+                const data = await res.json();
+                if (data.success) {
+                    allMovements = data.movements || [];
+                    renderMovements();
+                }
+            } catch (e) { console.error('Load movements error:', e); }
+        }
+        
+        // === RENDERING ===
+        function renderItems() {
+            const tbody = document.getElementById('itemsBody');
+            const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const category = document.getElementById('categoryFilter')?.value || '';
+            const status = document.getElementById('statusFilter')?.value || '';
+            const location = document.getElementById('locationFilter')?.value || '';
+            
+            const filtered = allItems.filter(i => {
+                const matchSearch = !search || i.name?.toLowerCase().includes(search) || i.sku?.toLowerCase().includes(search);
+                const matchCategory = !category || i.category === category;
+                const matchLocation = !location || i.location === location;
+                let matchStatus = true;
+                if (status === 'ok') matchStatus = i.qty > i.minStock;
+                if (status === 'low') matchStatus = i.qty > 0 && i.qty <= i.minStock;
+                if (status === 'out') matchStatus = i.qty <= 0;
+                return matchSearch && matchCategory && matchStatus && matchLocation;
+            });
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M16 10a4 4 0 01-8 0"/></svg><h3>Žádné položky</h3><p>Přidejte první položku</p></td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(i => {
+                const statusBadge = getStatusBadge(i);
+                return `
+                    <tr onclick="openItemModal(${i.id})">
+                        <td>
+                            <div class="item-name">${escapeHtml(i.name)}</div>
+                            <div class="item-meta">${i.sku ? `SKU: ${escapeHtml(i.sku)}` : ''} ${i.category ? `• ${escapeHtml(i.category)}` : ''}</div>
+                        </td>
+                        <td><span class="item-qty">${i.qty || 0}</span> <span class="item-qty-unit">${escapeHtml(i.unit || 'ks')}</span></td>
+                        <td>${i.price ? formatCurrency(i.price) : '-'}</td>
+                        <td><span class="location-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(i.location || '-')}</span></td>
+                        <td>${statusBadge}</td>
+                        <td class="actions-cell" onclick="event.stopPropagation()">
+                            <button class="btn-icon" onclick="openMovementModal(${i.id})" title="Pohyb"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/></svg></button>
+                            <button class="btn-icon" onclick="openItemModal(${i.id})" title="Upravit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                            <button class="btn-icon" onclick="deleteItem(${i.id})" title="Smazat"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function renderLocations() {
+            const grid = document.getElementById('locationsGrid');
+            if (allLocations.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><h3>Žádné lokace</h3><p>Přidejte první lokaci</p></div>`;
+                return;
+            }
+            grid.innerHTML = allLocations.map(l => {
+                const itemCount = allItems.filter(i => i.location === l.name).length;
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">${escapeHtml(l.name)}</div>
+                                <div class="card-subtitle">${escapeHtml(l.description || '')}</div>
+                            </div>
+                            <span class="badge badge-mint">${itemCount} položek</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderMovements() {
+            const container = document.getElementById('movementsList');
+            if (allMovements.length === 0) {
+                container.innerHTML = `<div class="empty-state"><h3>Žádné pohyby</h3></div>`;
+                return;
+            }
+            container.innerHTML = allMovements.slice(0, 50).map(m => {
+                const isIn = m.movement_type === 'in';
+                return `
+                    <div class="movement-item">
+                        <div class="movement-icon ${isIn ? 'in' : 'out'}">
+                            <svg viewBox="0 0 24 24"><polyline points="${isIn ? '3 17 9 11 3 5' : '21 17 15 11 21 5'}"/><line x1="${isIn ? 21 : 3}" y1="11" x2="${isIn ? 9 : 15}" y2="11"/></svg>
+                        </div>
+                        <div class="movement-content">
+                            <div class="movement-title">${escapeHtml(m.item_name || 'Položka')}</div>
+                            <div class="movement-meta">${m.created_at ? new Date(m.created_at).toLocaleString('cs-CZ') : ''} ${m.note ? '• ' + escapeHtml(m.note) : ''}</div>
+                        </div>
+                        <div class="movement-qty ${isIn ? 'positive' : 'negative'}">${isIn ? '+' : '-'}${m.qty} ${m.unit || 'ks'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // === STATS ===
+        function updateStats() {
+            const totalValue = allItems.reduce((sum, i) => sum + (i.qty || 0) * (i.price || 0), 0);
+            const lowStock = allItems.filter(i => i.qty > 0 && i.qty <= (i.minStock || 10)).length;
+            const outOfStock = allItems.filter(i => i.qty <= 0).length;
+            const reserved = allItems.reduce((sum, i) => sum + (i.reserved_qty || 0), 0);
+            
+            document.getElementById('statValue').textContent = formatCurrency(totalValue);
+            document.getElementById('statItems').textContent = allItems.length;
+            document.getElementById('statLow').textContent = lowStock;
+            document.getElementById('statOut').textContent = outOfStock;
+            document.getElementById('statReserved').textContent = reserved;
+        }
+        
+        // === HELPERS ===
+        function getStatusBadge(item) {
+            if (item.qty <= 0) return '<span class="badge badge-danger">Nedostupné</span>';
+            if (item.qty <= (item.minStock || 10)) return '<span class="badge badge-warning">Nízký stav</span>';
+            return '<span class="badge badge-success">Skladem</span>';
+        }
+        
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 }).format(val || 0);
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        
+        function showNotification(msg, type = 'success') {
+            const n = document.createElement('div');
+            n.className = `notification ${type}`;
+            n.textContent = msg;
+            document.body.appendChild(n);
+            setTimeout(() => n.remove(), 3000);
+        }
+        
+        function populateLocationFilters() {
+            const options = '<option value="">Všechny lokace</option>' + allLocations.map(l => `<option value="${escapeHtml(l.name)}">${escapeHtml(l.name)}</option>`).join('');
+            document.getElementById('locationFilter').innerHTML = options;
+            document.getElementById('itemLocation').innerHTML = '<option value="">-- vyberte --</option>' + allLocations.map(l => `<option value="${escapeHtml(l.name)}">${escapeHtml(l.name)}</option>`).join('');
+        }
+        
+        // === TABS ===
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabName)?.classList.add('active');
+            document.querySelector(`.nav-tab[onclick="switchTab('${tabName}')"]`)?.classList.add('active');
+        }
+        
+        function filterItems() { renderItems(); }
+        
+        // === MODALS ===
+        function openItemModal(id = null) {
+            document.getElementById('itemModal').classList.add('active');
+            document.getElementById('itemForm').reset();
+            document.getElementById('itemId').value = '';
+            document.getElementById('itemModalTitle').textContent = id ? 'Upravit položku' : 'Nová položka';
+            
+            if (id) {
+                const item = allItems.find(i => i.id === id);
+                if (item) {
+                    document.getElementById('itemId').value = item.id;
+                    document.getElementById('itemName').value = item.name || '';
+                    document.getElementById('itemSku').value = item.sku || '';
+                    document.getElementById('itemCategory').value = item.category || '';
+                    document.getElementById('itemQty').value = item.qty || 0;
+                    document.getElementById('itemUnit').value = item.unit || 'ks';
+                    document.getElementById('itemPrice').value = item.price || '';
+                    document.getElementById('itemMinStock').value = item.minStock || 10;
+                    document.getElementById('itemLocation').value = item.location || '';
+                    document.getElementById('itemNote').value = item.note || '';
+                }
+            }
+        }
+        
+        function closeItemModal() { document.getElementById('itemModal').classList.remove('active'); }
+        
+        async function saveItem(e) {
+            e.preventDefault();
+            const id = document.getElementById('itemId').value;
+            const data = {
+                name: document.getElementById('itemName').value,
+                sku: document.getElementById('itemSku').value,
+                category: document.getElementById('itemCategory').value,
+                qty: parseFloat(document.getElementById('itemQty').value) || 0,
+                unit: document.getElementById('itemUnit').value,
+                price: parseFloat(document.getElementById('itemPrice').value) || 0,
+                minStock: parseFloat(document.getElementById('itemMinStock').value) || 10,
+                location: document.getElementById('itemLocation').value,
+                note: document.getElementById('itemNote').value
+            };
+            
+            try {
+                const url = id ? `/api/warehouse/items/${id}` : '/api/warehouse/items';
+                const method = id ? 'PUT' : 'POST';
+                const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.success) {
+                    showNotification(id ? 'Položka aktualizována' : 'Položka přidána');
+                    closeItemModal();
+                    loadItems();
+                } else {
+                    showNotification(result.error || 'Chyba', 'error');
+                }
+            } catch (err) { showNotification('Chyba připojení', 'error'); }
+        }
+        
+        async function deleteItem(id) {
+            if (!confirm('Opravdu smazat položku?')) return;
+            try {
+                const res = await fetch(`/api/warehouse/items/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification('Položka smazána');
+                    loadItems();
+                }
+            } catch (err) { showNotification('Chyba', 'error'); }
+        }
+        
+        function openMovementModal(itemId) {
+            document.getElementById('movementModal').classList.add('active');
+            document.getElementById('movementForm').reset();
+            document.getElementById('movementItemId').value = itemId;
+            selectMovementType('in');
+        }
+        
+        function closeMovementModal() { document.getElementById('movementModal').classList.remove('active'); }
+        
+        function selectMovementType(type) {
+            document.querySelectorAll('.movement-type-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.movement-type-btn[data-type="${type}"]`)?.classList.add('active');
+            document.getElementById('movementType').value = type;
+        }
+        
+        async function saveMovement(e) {
+            e.preventDefault();
+            const data = {
+                item_id: document.getElementById('movementItemId').value,
+                movement_type: document.getElementById('movementType').value,
+                qty: parseFloat(document.getElementById('movementQty').value),
+                job_id: document.getElementById('movementJob').value || null,
+                note: document.getElementById('movementNote').value
+            };
+            
+            try {
+                const res = await fetch('/api/warehouse/movements', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.success) {
+                    showNotification('Pohyb zaznamenán');
+                    closeMovementModal();
+                    loadItems();
+                    loadMovements();
+                } else {
+                    showNotification(result.error || 'Chyba', 'error');
+                }
+            } catch (err) { showNotification('Chyba', 'error'); }
+        }
+        
+        function openLocationModal() { showNotification('Modal pro lokace - připravuje se', 'info'); }
+        function startInventory() { showNotification('Inventura - připravuje se', 'info'); }
+        function exportInventory() { showNotification('Export inventury - připravuje se', 'info'); }
+        function exportData() { showNotification('Export dat - připravuje se', 'info'); }
+    </script>
+    <script src="/static/app-sidebar.js"></script>
+</body>
+</html>
