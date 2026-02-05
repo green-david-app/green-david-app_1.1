@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Týdenní plán | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <style>
+        :root {
+            --bg-primary: #0a0e11;
+            --bg-card: #151a1e;
+            --bg-elevated: #1a2027;
+            --border-primary: #2d3439;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #4ade80;
+            --mint-dim: rgba(159, 212, 161, 0.16);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        .week-container {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .week-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .week-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .week-nav button {
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .week-nav button:hover {
+            background: var(--mint-dim);
+            border-color: var(--mint);
+        }
+        
+        .week-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        /* Grid */
+        .week-grid-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .week-grid {
+            display: grid;
+            grid-template-columns: 180px repeat(7, 1fr);
+            min-width: 900px;
+        }
+        
+        .week-cell {
+            border-right: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-primary);
+            min-height: 80px;
+            position: relative;
+        }
+        
+        .week-cell.header {
+            padding: 16px 12px;
+            font-weight: 700;
+            background: var(--bg-elevated);
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+        
+        .week-cell.employee-name {
+            padding: 16px;
+            font-weight: 600;
+            background: var(--bg-elevated);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .employee-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 4px;
+        }
+        
+        .week-cell.day-cell {
+            padding: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .week-cell.day-cell:hover {
+            background: var(--bg-elevated);
+        }
+        
+        .week-cell.day-cell.today {
+            background: rgba(96, 165, 250, 0.05);
+        }
+        
+        .week-cell.day-cell.weekend {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        /* Capacity indicator */
+        .capacity-bar {
+            height: 4px;
+            background: var(--border-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        
+        .capacity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--mint), #7bc67e);
+            transition: width 0.3s;
+        }
+        
+        .capacity-fill.overload {
+            background: linear-gradient(90deg, #ff6b6b, #ff4444);
+        }
+        
+        .capacity-text {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+        
+        /* Assignment cards */
+        .assignment-card {
+            padding: 6px 8px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            margin-bottom: 4px;
+            border-left: 3px solid var(--mint);
+            font-size: 12px;
+        }
+        
+        .assignment-card .job-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .assignment-card .hours {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .empty-cell {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .day-cell:hover .empty-cell {
+            opacity: 0.3;
+        }
+        
+        /* Summary row */
+        .summary-row {
+            background: var(--bg-elevated);
+            font-weight: 700;
+        }
+        
+        .summary-row .week-cell {
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .total-hours {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .total-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+</head>
+<body class="has-sidebar">
+  <div id="app-header"></div>
+        <div id="app-sidebar"></div>
+<header style="background: var(--bg-card); border-bottom: 1px solid var(--border-primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100;">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <a href="javascript:history.back()" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; text-decoration: none; color: var(--text-primary);">
+                <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span style="font-weight: 600; font-size: 14px;">Zpět</span>
+            </a>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Týdenní plán
+            </h1>
+            <div style="display: flex; gap: 8px; margin-left: auto;">
+                <a href="/planning/daily" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
+                <a href="/planning/timeline" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
+                <a href="/planning/week" style="padding: 8px 16px; background: var(--mint); color: #0a0e11; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Týden</a>
+                <a href="/planning/costs" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="week-container">
+        <div class="week-controls">
+            <div class="week-nav">
+                <button onclick="changeWeek(-1)">
+                    <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    Předchozí
+                </button>
+                <button onclick="changeWeek(0)" style="background: var(--mint); color: #0a0e11;">Tento týden</button>
+                <button onclick="changeWeek(1)">
+                    Příští
+                    <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="text" id="employeeSearch" placeholder="Hledat člena teamu..." 
+                    style="padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 200px;"
+                    oninput="filterEmployees()">
+                <div class="week-title" id="weekTitle">Načítám...</div>
+            </div>
+        </div>
+
+        <div class="week-grid-wrapper">
+            <div id="weekGrid">
+                <div style="padding: 60px; text-align: center; color: var(--text-tertiary);">
+                    <div style="width: 40px; height: 40px; border: 3px solid var(--border-primary); border-top-color: var(--mint); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+                    Načítám týdenní plán...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeekStart = null;
+        let weekData = null;
+
+        function getMondayOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        }
+
+        function changeWeek(offset) {
+            if (offset === 0) {
+                currentWeekStart = getMondayOfWeek(new Date());
+            } else {
+                const newDate = new Date(currentWeekStart);
+                newDate.setDate(newDate.getDate() + (offset * 7));
+                currentWeekStart = newDate;
+            }
+            loadWeekData();
+        }
+
+        async function loadWeekData() {
+            try {
+                const startStr = currentWeekStart.toISOString().split('T')[0];
+                const response = await fetch(`/api/planning/week?start=${startStr}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    weekData = data;
+                    renderWeekGrid(data);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function filterEmployees() {
+            if (!weekData) return;
+            
+            const search = document.getElementById('employeeSearch').value.toLowerCase();
+            const filteredData = {
+                ...weekData,
+                employees: weekData.employees.filter(e => 
+                    e.name.toLowerCase().includes(search) || 
+                    (e.role && e.role.toLowerCase().includes(search))
+                )
+            };
+            
+            renderWeekGrid(filteredData);
+        }
+
+        function renderWeekGrid(data) {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            const title = `${currentWeekStart.getDate()}.${currentWeekStart.getMonth()+1}. - ${weekEnd.getDate()}.${weekEnd.getMonth()+1}. ${currentWeekStart.getFullYear()}`;
+            document.getElementById('weekTitle').textContent = title;
+
+            let html = '<div class="week-grid">';
+            
+            // Header row
+            html += '<div class="week-cell header employee-name">Člen teamu</div>';
+            data.days.forEach(day => {
+                const d = new Date(day.date);
+                const isToday = d.toDateString() === new Date().toDateString();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                html += `<div class="week-cell header ${isToday?'today':''} ${isWeekend?'weekend':''}">${day.day_name}<br><span style="font-size: 11px; font-weight: 400; color: var(--text-secondary);">${d.getDate()}.${d.getMonth()+1}</span></div>`;
+            });
+
+            // Employee rows
+            data.employees.forEach(emp => {
+                html += `<div class="week-cell employee-name">${emp.name}<div class="employee-role">${emp.role || 'Člen teamu'}</div></div>`;
+                
+                data.days.forEach(day => {
+                    const assignments = day.assignments[emp.id] || [];
+                    const totalHours = assignments.reduce((sum, a) => sum + (a.hours_planned || 0), 0);
+                    const isOverload = totalHours > 8;
+                    const capacityPercent = Math.min(100, (totalHours / 8) * 100);
+                    
+                    const d = new Date(day.date);
+                    const isToday = d.toDateString() === new Date().toDateString();
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    
+                    html += `<div class="week-cell day-cell ${isToday?'today':''} ${isWeekend?'weekend':''}" onclick="openDayDetail('${day.date}', ${emp.id})">`;
+                    html += `<div class="capacity-bar"><div class="capacity-fill ${isOverload?'overload':''}" style="width:${capacityPercent}%"></div></div>`;
+                    html += `<div class="capacity-text">${totalHours.toFixed(1)}h / 8h</div>`;
+                    
+                    if (assignments.length > 0) {
+                        assignments.forEach(a => {
+                            html += `<div class="assignment-card">`;
+                            html += `<div class="job-name">${a.job_name || 'Zakázka'}</div>`;
+                            html += `<div class="hours">${a.hours_planned}h</div>`;
+                            html += `</div>`;
+                        });
+                    } else {
+                        html += `<div class="empty-cell">+</div>`;
+                    }
+                    html += '</div>';
+                });
+            });
+
+            // Summary row
+            html += '<div class="week-cell summary-row employee-name">CELKEM</div>';
+            data.days.forEach(day => {
+                let dayTotal = 0;
+                Object.values(day.assignments).forEach(empAssignments => {
+                    empAssignments.forEach(a => {
+                        dayTotal += a.hours_planned || 0;
+                    });
+                });
+                html += `<div class="week-cell summary-row"><div class="total-hours">${dayTotal.toFixed(1)}h</div><div class="total-label">celkem</div></div>`;
+            });
+
+            html += '</div>';
+            document.getElementById('weekGrid').innerHTML = html;
+        }
+
+        function openDayDetail(date, employeeId) {
+            window.location.href = `/planning/daily?date=${date}&employee=${employeeId}`;
+        }
+
+        // Init
+        currentWeekStart = getMondayOfWeek(new Date());
+        loadWeekData();
+    </script>
+    
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="/static/app-sidebar.js"></script>
+  <script src="/static/app-header.js"></script>
+</body>
+</html>

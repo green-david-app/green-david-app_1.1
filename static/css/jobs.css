@@ -1,0 +1,1328 @@
+/* ========================================
+   JOBS.CSS - Modul Zakázky
+   Green David App - Zakázky jako živý organismus
+   ======================================== */
+
+/* ========================================
+   🚨 KRITICKÉ - NÁZEV ZAKÁZKY VŽDY DOLEVA
+   Toto pravidlo má nejvyšší prioritu!
+   ======================================== */
+.job-card h3,
+.job-card h4,
+.job-card .job-title,
+.job-card .job-name,
+.job-card-title,
+.job-card-header,
+.job-card-header h3,
+.job-card-header h4,
+.job-title-row,
+.job-title-row h3,
+.job-title-row h4,
+.job-title-row .inline-edit,
+.job-card h4.inline-edit,
+[class*="job-card"] h4,
+[class*="job-title"] {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.job-card-header,
+.job-title-row {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+#jobs-table-body tr.selected-job {
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+/* Selected job card state */
+.job-card.selected,
+.job-card.active,
+.job-card.show-actions {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Zobrazit quick actions i při show-actions třídě */
+.job-card.show-actions .quick-actions {
+  opacity: 1;
+}
+
+/* ========================================
+   DASHBOARD STATS - "Emoční mapa firmy"
+   ======================================== */
+
+.jobs-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Kompaktní varianta - 6 sloupců */
+.jobs-dashboard.compact {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dashboard-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: var(--radius-sm, 10px);
+  padding: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Kompaktní varianta karty */
+.dashboard-card.compact {
+  padding: 10px 12px;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+  border-color: var(--mint-border, rgba(74, 222, 128, 0.3));
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%);
+}
+
+.dashboard-card h3 {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.55));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+/* Kompaktní varianta h3 */
+.dashboard-card.compact h3 {
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.dashboard-card .value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+/* Kompaktní varianta hodnoty */
+.dashboard-card.compact .value {
+  font-size: 18px;
+}
+
+.dashboard-card .subtitle {
+  font-size: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  margin-top: 4px;
+}
+
+/* Kompaktní varianta subtitle */
+.dashboard-card.compact .subtitle {
+  font-size: 10px;
+}
+
+.dashboard-card.success { border-left: 4px solid var(--success, #22c55e); }
+.dashboard-card.success .value { color: var(--success, #22c55e); }
+.dashboard-card.warning { border-left: 4px solid var(--warning, #f59e0b); }
+.dashboard-card.warning .value { color: var(--warning, #f59e0b); }
+.dashboard-card.danger { border-left: 4px solid var(--danger, #ef4444); }
+.dashboard-card.danger .value { color: var(--danger, #ef4444); }
+.dashboard-card.info { border-left: 4px solid var(--accent-purple, #a78bfa); }
+.dashboard-card.info .value { color: var(--accent-purple, #a78bfa); }
+
+/* ========================================
+   AI SUMMARY BAR
+   ======================================== */
+
+.ai-summary-bar {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.12) 0%, rgba(96, 165, 250, 0.08) 50%, rgba(74, 222, 128, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-top-color: rgba(74, 222, 128, 0.35);
+  border-left-color: rgba(74, 222, 128, 0.30);
+  border-radius: var(--radius-sm, 10px);
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Kompaktní varianta */
+.ai-summary-bar.compact {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.12), rgba(96, 165, 250, 0.10), rgba(74, 222, 128, 0.08));
+  backdrop-filter: blur(10px);
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ai-summary-bar .ai-avatar {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--mint, #4ade80), var(--accent-blue, #60a5fa));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Kompaktní varianta avataru */
+.ai-summary-bar.compact .ai-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.ai-summary-bar .ai-avatar svg {
+  width: 18px;
+  height: 18px;
+  stroke: #000;
+}
+
+.ai-summary-bar.compact .ai-avatar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ai-summary-bar .ai-message {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.75));
+}
+
+/* Kompaktní varianta message */
+.ai-summary-bar.compact .ai-message {
+  font-size: 12px;
+}
+
+.ai-summary-bar .ai-message-label {
+  color: var(--mint, #4ade80);
+  font-weight: 500;
+}
+
+.ai-summary-bar .ai-message-text {
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.6));
+  margin-left: 6px;
+}
+
+.ai-summary-bar .ai-message strong {
+  color: var(--text-primary, #fff);
+}
+
+.ai-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Kompaktní varianta badges */
+.ai-summary-bar.compact .ai-badges {
+  gap: 6px;
+}
+
+.ai-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-badge-item {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-badge-item.warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.ai-badge-item.danger { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+.ai-badge-item.success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+
+/* ========================================
+   KANBAN BOARD
+   ======================================== */
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  min-height: 500px;
+}
+
+.kanban-column {
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-dark, rgba(255, 255, 255, 0.08));
+  border-top-color: rgba(255,255,255,0.12);
+  border-left-color: rgba(255,255,255,0.10);
+  border-radius: var(--radius-md, 14px);
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-dark, rgba(255, 255, 255, 0.06));
+}
+
+.column-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.column-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.column-status-indicator.new { background: var(--info, #3b82f6); }
+.column-status-indicator.active { background: var(--success, #22c55e); }
+.column-status-indicator.paused { background: var(--warning, #f59e0b); }
+.column-status-indicator.completed { background: #6b7280; }
+
+.column-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.column-header .count {
+  font-size: 12px;
+  padding: 3px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.column-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  transition: all 0.15s;
+}
+
+.column-toggle:hover {
+  color: var(--text-primary, #fff);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+.column-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cards-container {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ========================================
+   JOB CARD - Živý organismus
+   ======================================== */
+
+.job-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  /* Velmi jemné ohraničení */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  /* Jemný stín místo silného borderu */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255,255,255,0.03);
+  margin-bottom: 12px;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  background: linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 100%);
+}
+
+/* Vybraná karta */
+.job-card.selected,
+.job-card.active {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Risk Ring Border */
+.job-card.risk-low { border-color: var(--success, #22c55e); border-width: 2px; }
+.job-card.risk-medium { border-color: var(--warning, #f59e0b); border-width: 2px; }
+.job-card.risk-high { border-color: var(--danger, #ef4444); border-width: 2px; }
+
+/* Margin Indicator - Left Border */
+.job-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 0 2px 2px 0;
+}
+
+.job-card.margin-high::before { background: var(--success, #22c55e); }
+.job-card.margin-medium::before { background: var(--warning, #f59e0b); }
+.job-card.margin-low::before { background: var(--danger, #ef4444); }
+
+/* Card Badges */
+.card-badges {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.card-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.card-badge.ai { background: rgba(167, 139, 250, 0.25); cursor: pointer; }
+.card-badge.material { background: rgba(251, 191, 36, 0.25); cursor: pointer; }
+.card-badge.material-ok { background: rgba(74, 222, 128, 0.25); }
+.card-badge.overdue { background: rgba(248, 113, 113, 0.25); cursor: pointer; }
+.card-badge.time-urgent { background: rgba(248, 113, 113, 0.25); cursor: pointer; }
+.card-badge.time-behind { background: rgba(251, 191, 36, 0.25); cursor: pointer; }
+.card-badge.finance { background: rgba(34, 211, 238, 0.25); cursor: pointer; }
+.card-badge.finance-critical { background: rgba(248, 113, 113, 0.25); cursor: pointer; }
+.card-badge.weather { background: rgba(59, 130, 246, 0.25); cursor: pointer; }
+
+.card-badge:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+/* Název zakázky - VŽDY DOLEVA */
+.job-card-title,
+.job-card-header h4,
+.job-title-row h4,
+.job-title-row .inline-edit,
+.job-card h4 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #fff) !important;
+  margin: 0 0 16px 0 !important;
+  padding-bottom: 12px !important;
+  padding-right: 80px !important; /* Prostor pro ikony vpravo */
+  line-height: 1.3 !important;
+  text-align: left !important; /* Zarovnání doleva - VŽDY */
+  /* Jemná linka pod názvem */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.job-card-header {
+  margin-bottom: 16px;
+}
+
+.job-title-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: flex-start !important; /* Zarovnání obsahu doleva */
+}
+
+.job-title-row h4,
+.job-title-row .inline-edit {
+  flex: 1 !important;
+  text-align: left !important;
+  margin-left: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+.job-card-info {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.job-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.job-info-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-tertiary, rgba(255, 255, 255, 0.5));
+  flex-shrink: 0;
+}
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.job-card-client {
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  margin-bottom: 4px;
+}
+
+.job-card-deadline {
+  font-size: 11px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.job-card-deadline.urgent { color: var(--danger, #ef4444); font-weight: 500; }
+.job-card-deadline.soon { color: var(--warning, #f59e0b); }
+
+/* Job Card Metrics */
+.job-card-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-dark, rgba(255, 255, 255, 0.06));
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.metric-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-tertiary, rgba(255, 255, 255, 0.55));
+}
+
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.priority-badge.high {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger, #ef4444);
+}
+
+.priority-badge.medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning, #f59e0b);
+}
+
+.priority-badge.low {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.job-card-progress {
+  color: var(--mint, #4ade80);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Quick Actions - Glass efekt, zobrazit jen při hover */
+.quick-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  /* Skrýt tlačítka a zobrazit jen při hover na kartu */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.job-card:hover .quick-actions {
+  opacity: 1;
+}
+
+.quick-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  /* GLASS EFEKT - více průhledné */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* DŮLEŽITÉ: Barva ikon - musí být viditelná */
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* SVG ikony uvnitř tlačítek - KRITICKÉ pro viditelnost */
+.quick-action-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: rgba(255, 255, 255, 0.6) !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  display: block !important;
+  flex-shrink: 0;
+}
+
+.quick-action-btn:hover svg {
+  stroke: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Micro Progress Bars */
+.micro-progress {
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.micro-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.micro-progress-label {
+  font-size: 10px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.micro-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.micro-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.micro-progress-fill.time { background: var(--accent-blue, #60a5fa); }
+.micro-progress-fill.budget { background: var(--mint, #4ade80); }
+.micro-progress-fill.over { background: var(--danger, #ef4444); }
+
+/* Dynamic width via CSS variable */
+.micro-progress-fill[data-width] {
+  width: var(--progress-width, 0%);
+}
+
+.micro-progress-value {
+  font-size: 10px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  width: 35px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.quick-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  /* GLASS EFEKT - více průhledné */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* DŮLEŽITÉ: Barva ikon - musí být viditelná */
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* SVG ikony uvnitř tlačítek - KRITICKÉ pro viditelnost */
+.quick-action-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: rgba(255, 255, 255, 0.6) !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  display: block !important;
+  flex-shrink: 0;
+}
+
+.quick-action-btn:hover svg {
+  stroke: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Micro Progress Bars */
+.micro-progress {
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.micro-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.micro-progress-label {
+  font-size: 10px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.micro-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.micro-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.micro-progress-fill.time { background: var(--accent-blue, #60a5fa); }
+.micro-progress-fill.budget { background: var(--mint, #4ade80); }
+.micro-progress-fill.over { background: var(--danger, #ef4444); }
+
+/* Dynamic width via CSS variable */
+.micro-progress-fill[data-width] {
+  width: var(--progress-width, 0%);
+}
+
+.micro-progress-value {
+  font-size: 10px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  width: 35px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   LIST VIEW
+   ======================================== */
+
+.list-view { display: none; }
+.list-view.show { display: block; }
+
+.list-table-wrapper {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: var(--radius-md, 14px);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.list-table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.55));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+.list-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text-primary, #fff);
+  border-bottom: 1px solid var(--border-dark, rgba(255, 255, 255, 0.06));
+}
+
+.list-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.list-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Risk Column */
+.cell-risk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-bar {
+  width: 60px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.risk-bar-fill.low { background: var(--success, #22c55e); }
+.risk-bar-fill.medium { background: var(--warning, #f59e0b); }
+.risk-bar-fill.high { background: var(--danger, #ef4444); }
+
+.risk-value {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.risk-value.low { color: var(--success, #22c55e); }
+.risk-value.medium { color: var(--warning, #f59e0b); }
+.risk-value.high { color: var(--danger, #ef4444); }
+
+/* Margin Column */
+.cell-margin { font-weight: 600; }
+.cell-margin.high { color: var(--success, #22c55e); }
+.cell-margin.medium { color: var(--warning, #f59e0b); }
+.cell-margin.low { color: var(--danger, #ef4444); }
+
+/* Material Status */
+.material-status {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.material-status.ok { background: rgba(74, 222, 128, 0.2); color: var(--mint, #4ade80); }
+.material-status.missing { background: rgba(248, 113, 113, 0.2); color: var(--danger, #ef4444); }
+.material-status.partial { background: rgba(251, 191, 36, 0.2); color: var(--warning, #f59e0b); }
+
+/* ========================================
+   TIMELINE VIEW
+   ======================================== */
+
+.timeline-view { display: none; }
+.timeline-view.show { display: block; }
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: var(--radius-md, 14px) var(--radius-md, 14px) 0 0;
+  border-bottom: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.timeline-header h3 {
+  margin: 0;
+  color: var(--text-primary, #fff);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.timeline-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.timeline-zoom-button {
+  padding: 8px 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.15);
+  border-left-color: rgba(255,255,255,0.12);
+  border-radius: var(--radius-xs, 6px);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.timeline-zoom-button:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%);
+  color: var(--text-primary, #fff);
+  border-color: rgba(255,255,255,0.20);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.timeline-zoom-button.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.15) 100%);
+  backdrop-filter: blur(10px);
+  border-color: var(--mint-border, rgba(74, 222, 128, 0.5));
+  color: var(--mint, #4ade80);
+  box-shadow: 0 4px 20px rgba(74,222,128,0.20), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+#timeline-container {
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top: none;
+  border-left-color: rgba(255,255,255,0.10);
+  border-radius: 0 0 var(--radius-md, 14px) var(--radius-md, 14px);
+  min-height: 500px;
+  padding: 20px;
+  overflow-x: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Timeline Bar */
+.timeline-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.timeline-bar:hover {
+  transform: scaleY(1.1);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-bar.normal { background: var(--mint, #4ade80); color: #000; }
+.timeline-bar.warning { background: var(--warning, #f59e0b); color: #000; }
+.timeline-bar.danger { background: var(--danger, #ef4444); }
+.timeline-bar.completed { background: #6b7280; }
+
+/* Ghost Plan */
+.timeline-bar.ghost {
+  background: rgba(167, 139, 250, 0.25);
+  border: 2px dashed var(--accent-purple, #a78bfa);
+  color: var(--accent-purple, #a78bfa);
+}
+
+/* ========================================
+   VIEW DROPDOWN
+   ======================================== */
+
+.view-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.20);
+  border-left-color: rgba(255,255,255,0.16);
+  border-radius: var(--radius-sm, 10px);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.view-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.view-dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%);
+  color: var(--text-primary, #fff);
+  backdrop-filter: blur(10px);
+}
+
+.view-dropdown-item.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.20) 0%, rgba(74, 222, 128, 0.12) 100%);
+  color: var(--mint, #4ade80);
+  backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   FILTERS
+   ======================================== */
+
+.filters-section {
+  display: none;
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.18);
+  border-left-color: rgba(255,255,255,0.14);
+  border-radius: var(--radius-md, 14px);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.filters-section.show { display: block; }
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filters-header h3 {
+  margin: 0;
+  color: var(--text-primary, #fff);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.15);
+  border-left-color: rgba(255,255,255,0.12);
+  border-radius: var(--radius-xs, 6px);
+  margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.3s;
+}
+
+.search-box:focus-within {
+  border-color: var(--mint-border, rgba(74, 222, 128, 0.4));
+  box-shadow: 0 4px 20px rgba(74,222,128,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.search-box svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-tertiary, rgba(255, 255, 255, 0.55));
+  flex-shrink: 0;
+}
+
+.search-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 10px 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-top-color: rgba(255,255,255,0.15);
+  border-left-color: rgba(255,255,255,0.12);
+  border-radius: var(--radius-xs, 6px);
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.3s;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--mint-border, rgba(74, 222, 128, 0.4));
+  box-shadow: 0 4px 20px rgba(74,222,128,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1200px) {
+  .kanban-board { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .jobs-dashboard.compact {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .kanban-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-grid-3col {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .form-grid-2col-asymmetric {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban-board { grid-template-columns: 1fr; }
+  .jobs-dashboard { grid-template-columns: repeat(2, 1fr); }
+  
+  .ai-summary-bar {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .ai-badges { justify-content: center; }
+  .filters-grid { grid-template-columns: 1fr; }
+}
+
+/* ========================================
+   ACTION BAR
+   ======================================== */
+
+.jobs-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.jobs-action-bar .btn-secondary,
+.jobs-action-bar .btn-primary {
+  padding: 8px 14px;
+}
+
+.jobs-action-bar .btn-primary {
+  padding: 8px 16px;
+}
+
+.jobs-action-bar .view-dropdown {
+  position: relative;
+}
+
+.jobs-action-bar .view-dropdown svg {
+  width: 16px;
+  height: 16px;
+}
+
+.jobs-action-bar .view-dropdown svg.dropdown-arrow {
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+}
+
+.jobs-action-bar .spacer {
+  flex: 1;
+}
+
+/* View Dropdown Menu - už existuje v jobs.css, jen upravíme pozici */
+.view-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary, #1a2332);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-sm, 10px);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.view-dropdown-menu.show {
+  display: block;
+}
+
+.view-dropdown-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 640px) {
+  .jobs-dashboard.compact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+  
+  .jobs-action-bar {
+    flex-wrap: wrap;
+  }
+  
+  .form-grid-2col,
+  .form-grid-3col {
+    grid-template-columns: 1fr;
+  }
+  
+  .job-hero {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .job-hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .jobs-dashboard { grid-template-columns: 1fr; }
+}
+
+/* ========================================
+   NUCLEAR OPTION - FORCE LEFT ALIGNMENT
+   Název zakázky MUSÍ být VLEVO - nejvyšší priorita
+   ======================================== */
+.job-card h3,
+.job-card h4,
+.job-card .job-title,
+.job-card .job-name,
+.job-card-title,
+.job-card-header h3,
+.job-card-header h4,
+.job-title-row h3,
+.job-title-row h4,
+.job-title-row .inline-edit,
+[class*="job"] h3,
+[class*="job"] h4,
+[class*="job"] .title {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  justify-content: flex-start !important;
+}
+
+.job-card-header,
+.job-title-container,
+.job-name-wrapper,
+.job-title-row {
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+}
