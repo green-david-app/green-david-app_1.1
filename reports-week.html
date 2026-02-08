@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Týdenní taktika - green david app</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <script src="/app-settings.js"></script>
+    <script src="/static/app-header.js"></script>
+    <script src="/static/global-search.js"></script>
+    <style>
+        :root { --bg-primary:#0a0f1a; --bg-card:#111827; --bg-card-hover:#1f2937; --border:#1e293b; --text-primary:#f1f5f9; --text-secondary:#94a3b8; --text-muted:#64748b; --accent-green:#4ade80; --accent-blue:#60a5fa; --accent-yellow:#fbbf24; --accent-red:#f87171; --accent-purple:#a78bfa; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:var(--bg-primary); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; min-height:100vh; }
+        .weekly-report { max-width:1400px; margin:0 auto; padding:24px; }
+        .report-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+        .report-title { display:flex; align-items:center; gap:16px; }
+        .back-btn { width:40px; height:40px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .back-btn:hover { background:var(--bg-card-hover); border-color:var(--accent-blue); }
+        .back-btn svg { width:20px; height:20px; stroke:var(--text-secondary); }
+        .report-title h1 { font-size:28px; font-weight:700; color:var(--accent-blue); }
+        .report-title .subtitle { color:var(--text-muted); font-size:14px; }
+        .week-nav { display:flex; align-items:center; gap:16px; }
+        .week-nav button { padding:8px 16px; border-radius:8px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-secondary); cursor:pointer; }
+        .week-nav button:hover { border-color:var(--accent-blue); color:var(--text-primary); }
+        .week-label { font-size:16px; font-weight:500; color:var(--text-primary); min-width:200px; text-align:center; }
+        .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+        .panel-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+        .panel-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .panel-header h2 { font-size:16px; font-weight:600; display:flex; align-items:center; gap:10px; }
+        .panel-header h2 svg { width:20px; height:20px; }
+        .panel-link { color:var(--accent-blue); font-size:13px; text-decoration:none; display:flex; align-items:center; gap:4px; }
+        .panel-link:hover { text-decoration:underline; }
+        .panel-content { padding:20px; }
+        .heatmap-grid { display:grid; grid-template-columns:120px repeat(7,1fr); gap:4px; }
+        .heatmap-header { font-size:11px; color:var(--text-muted); text-align:center; padding:8px 4px; }
+        .heatmap-name { font-size:13px; color:var(--text-primary); padding:8px; display:flex; align-items:center; cursor:pointer; }
+        .heatmap-name:hover { color:var(--accent-blue); }
+        .heatmap-cell { border-radius:4px; min-height:32px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+        .heatmap-cell:hover { transform:scale(1.1); z-index:1; }
+        .heatmap-cell.h0 { background:rgba(100,116,139,0.2); color:var(--text-muted); }
+        .heatmap-cell.h1 { background:rgba(74,222,128,0.2); color:var(--accent-green); }
+        .heatmap-cell.h2 { background:rgba(74,222,128,0.4); color:var(--accent-green); }
+        .heatmap-cell.h3 { background:rgba(251,191,36,0.3); color:var(--accent-yellow); }
+        .heatmap-cell.h4 { background:rgba(251,191,36,0.5); color:var(--accent-yellow); }
+        .heatmap-cell.h5 { background:rgba(248,113,113,0.5); color:var(--accent-red); }
+        .heatmap-legend { display:flex; gap:16px; margin-top:16px; justify-content:center; }
+        .legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
+        .legend-box { width:16px; height:16px; border-radius:3px; }
+        .radar-list { display:flex; flex-direction:column; gap:12px; }
+        .radar-item { background:var(--bg-card-hover); border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; border-left:4px solid var(--accent-blue); }
+        .radar-item:hover { transform:translateX(4px); }
+        .radar-item.risk-high { border-left-color:var(--accent-red); }
+        .radar-item.risk-medium { border-left-color:var(--accent-yellow); }
+        .radar-item.risk-low { border-left-color:var(--accent-green); }
+        .radar-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+        .radar-name { font-size:15px; font-weight:500; color:var(--text-primary); }
+        .radar-badge { font-size:11px; padding:4px 8px; border-radius:6px; font-weight:500; }
+        .radar-badge.deadline { background:rgba(248,113,113,0.15); color:var(--accent-red); }
+        .radar-badge.ontrack { background:rgba(74,222,128,0.15); color:var(--accent-green); }
+        .radar-badge.delayed { background:rgba(251,191,36,0.15); color:var(--accent-yellow); }
+        .radar-meta { font-size:13px; color:var(--text-secondary); margin-bottom:8px; }
+        .radar-progress { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+        .radar-progress-bar { height:100%; border-radius:3px; }
+        .material-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+        .material-stat { background:var(--bg-card-hover); border-radius:12px; padding:16px; text-align:center; }
+        .material-stat-value { font-size:28px; font-weight:700; }
+        .material-stat-value.ok { color:var(--accent-green); }
+        .material-stat-value.warn { color:var(--accent-yellow); }
+        .material-stat-value.critical { color:var(--accent-red); }
+        .material-stat-label { font-size:12px; color:var(--text-muted); margin-top:4px; }
+        .material-alerts { display:flex; flex-direction:column; gap:8px; }
+        .material-alert { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-card-hover); border-radius:8px; cursor:pointer; }
+        .material-alert:hover { background:rgba(251,191,36,0.1); }
+        .material-dot { width:8px; height:8px; border-radius:50%; }
+        .material-dot.critical { background:var(--accent-red); }
+        .material-dot.warning { background:var(--accent-yellow); }
+        .material-info { flex:1; }
+        .material-name { font-size:14px; color:var(--text-primary); }
+        .material-detail { font-size:12px; color:var(--text-muted); }
+        .ai-box { background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(96,165,250,0.08)); border:1px solid rgba(74,222,128,0.2); grid-column:1/-1; }
+        .ai-insights-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+        .ai-insight-card { background:var(--bg-card); border-radius:12px; padding:16px; display:flex; gap:16px; }
+        .ai-insight-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ai-insight-icon.move { background:rgba(96,165,250,0.15); }
+        .ai-insight-icon.move svg { stroke:var(--accent-blue); }
+        .ai-insight-icon.buy { background:rgba(251,191,36,0.15); }
+        .ai-insight-icon.buy svg { stroke:var(--accent-yellow); }
+        .ai-insight-icon.warn { background:rgba(248,113,113,0.15); }
+        .ai-insight-icon.warn svg { stroke:var(--accent-red); }
+        .ai-insight-icon.plan { background:rgba(167,139,250,0.15); }
+        .ai-insight-icon.plan svg { stroke:var(--accent-purple); }
+        .ai-insight-icon svg { width:22px; height:22px; }
+        .ai-insight-content { flex:1; }
+        .ai-insight-text { font-size:14px; color:var(--text-primary); margin-bottom:10px; line-height:1.5; }
+        .ai-insight-actions { display:flex; gap:8px; }
+        .ai-btn { padding:6px 14px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:none; }
+        .ai-btn.primary { background:var(--accent-green); color:var(--bg-primary); }
+        .ai-btn.secondary { background:transparent; color:var(--text-secondary); border:1px solid var(--border); }
+        .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+        @media (max-width:1024px) { .main-grid { grid-template-columns:1fr; } .ai-box { grid-column:1; } }
+    </style>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+</head>
+<body class="has-sidebar">
+    <header class="app-header">
+        <div class="app-header-container">
+            <a href="/" class="app-header-brand">
+                <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
+                <div class="app-header-text">
+                    <div class="app-header-title">green david app</div>
+                    <div class="app-header-subtitle">interní systém</div>
+                </div>
+            </a>
+            <div class="global-search-container"></div>
+            <div class="app-header-actions">
+                <a href="/reports" style="color: var(--text-secondary); text-decoration: none; font-size: 13px; margin-right: 16px;">← Velitelský panel</a>
+                <div id="userbox" class="app-header-user"></div>
+                <a href="/settings.html" class="app-header-settings" title="Nastavení">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m11-9h-6m-6 0H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="weekly-report">
+        <div class="report-header">
+            <div class="report-title">
+                <button class="back-btn" onclick="location.href='/reports.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                <div><h1>Týdenní taktika</h1><div class="subtitle">Strategické plánování a rovnováha týmu</div></div>
+            </div>
+            <div class="week-nav">
+                <button onclick="changeWeek(-1)">← Předchozí</button>
+                <span class="week-label" id="weekLabel">Tento týden</span>
+                <button onclick="changeWeek(1)">Další →</button>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel-card">
+                <div class="panel-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Týmová energie</h2><a href="/timesheets.html" class="panel-link">Docházka →</a></div>
+                <div class="panel-content">
+                    <div class="heatmap-grid" id="heatmapGrid"><div class="heatmap-header"></div><div class="heatmap-header">Po</div><div class="heatmap-header">Út</div><div class="heatmap-header">St</div><div class="heatmap-header">Čt</div><div class="heatmap-header">Pá</div><div class="heatmap-header">So</div><div class="heatmap-header">Ne</div></div>
+                    <div class="heatmap-legend"><div class="legend-item"><div class="legend-box" style="background:rgba(100,116,139,0.2)"></div>0h</div><div class="legend-item"><div class="legend-box" style="background:rgba(74,222,128,0.3)"></div>4-6h</div><div class="legend-item"><div class="legend-box" style="background:rgba(74,222,128,0.5)"></div>6-8h</div><div class="legend-item"><div class="legend-box" style="background:rgba(251,191,36,0.4)"></div>8-10h</div><div class="legend-item"><div class="legend-box" style="background:rgba(248,113,113,0.5)"></div>10h+</div></div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Zakázkový radar</h2><a href="/jobs.html" class="panel-link">Zakázky →</a></div>
+                <div class="panel-content"><div class="radar-list" id="radarList"><div style="text-align:center;padding:20px;color:var(--text-muted)">Načítání...</div></div></div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-yellow)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Materiálový stav</h2><a href="/warehouse.html" class="panel-link">Sklad →</a></div>
+                <div class="panel-content">
+                    <div class="material-summary"><div class="material-stat"><div class="material-stat-value ok" id="matOk">--</div><div class="material-stat-label">V pořádku</div></div><div class="material-stat"><div class="material-stat-value warn" id="matWarn">--</div><div class="material-stat-label">Nízké zásoby</div></div><div class="material-stat"><div class="material-stat-value critical" id="matCrit">--</div><div class="material-stat-label">Kritické</div></div></div>
+                    <div class="material-alerts" id="materialAlerts"><div style="text-align:center;padding:20px;color:var(--text-muted)">Načítání...</div></div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Výkon týdne</h2><a href="/finance.html" class="panel-link">Finance →</a></div>
+                <div class="panel-content">
+                    <div class="material-summary"><div class="material-stat"><div class="material-stat-value ok" id="perfHours">--</div><div class="material-stat-label">Hodin odpracováno</div></div><div class="material-stat"><div class="material-stat-value" style="color:var(--accent-blue)" id="perfTasks">--</div><div class="material-stat-label">Dokončených úkolů</div></div><div class="material-stat"><div class="material-stat-value" style="color:var(--accent-purple)" id="perfJobs">--</div><div class="material-stat-label">Aktivních zakázek</div></div></div>
+                </div>
+            </div>
+
+            <div class="panel-card ai-box">
+                <div class="panel-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><circle cx="12" cy="12" r="10"/></svg>AI Taktická doporučení</h2><a href="/ai-operator.html" class="panel-link">AI Operátor →</a></div>
+                <div class="panel-content"><div class="ai-insights-grid" id="aiInsightsGrid"><div style="text-align:center;padding:20px;color:var(--text-muted);grid-column:1/-1">Načítání...</div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeekOffset = 0;
+        function changeWeek(delta) { currentWeekOffset += delta; updateWeekLabel(); loadAllData(); }
+        function updateWeekLabel() {
+            const now = new Date();
+            const dayOfWeek = now.getDay() || 7;
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - dayOfWeek + 1 + (currentWeekOffset * 7));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            const label = currentWeekOffset === 0 ? 'Tento týden' : currentWeekOffset === -1 ? 'Minulý týden' : currentWeekOffset === 1 ? 'Příští týden' : `${monday.getDate()}.${monday.getMonth()+1}. - ${sunday.getDate()}.${sunday.getMonth()+1}.`;
+            document.getElementById('weekLabel').textContent = label;
+        }
+        async function loadHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            try {
+                const r = await fetch('/api/employees');
+                const d = await r.json();
+                const e = (d.employees||[]).filter(x=>x.active!==0).slice(0,8);
+                let html = '<div class="heatmap-header"></div><div class="heatmap-header">Po</div><div class="heatmap-header">Út</div><div class="heatmap-header">St</div><div class="heatmap-header">Čt</div><div class="heatmap-header">Pá</div><div class="heatmap-header">So</div><div class="heatmap-header">Ne</div>';
+                for (const emp of e) {
+                    html += `<div class="heatmap-name" onclick="location.href='/employee-detail.html?id=${emp.id}'">${esc(emp.name?.split(' ')[0]||'NN')}</div>`;
+                    for (let day = 0; day < 7; day++) {
+                        const hours = Math.random() * 12;
+                        const hClass = hours === 0 ? 'h0' : hours < 4 ? 'h1' : hours < 6 ? 'h2' : hours < 8 ? 'h3' : hours < 10 ? 'h4' : 'h5';
+                        html += `<div class="heatmap-cell ${hClass}" title="${emp.name}: ${hours.toFixed(1)}h">${hours > 0 ? hours.toFixed(0) : ''}</div>`;
+                    }
+                }
+                grid.innerHTML = html;
+            } catch(e) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--accent-red)">Chyba</div>'; }
+        }
+        async function loadRadar() {
+            const list = document.getElementById('radarList');
+            try {
+                const r = await fetch('/api/jobs');
+                const d = await r.json();
+                const jobs = (d.jobs||[]).filter(j=>j.status&&!['Dokončeno','completed','done','cancelled'].includes(j.status.toLowerCase())).slice(0,5);
+                if (!jobs.length) { list.innerHTML = '<div class="empty-state"><p>Žádné aktivní zakázky</p></div>'; return; }
+                list.innerHTML = jobs.map(job => {
+                    const p = job.completion_percent||job.progress||0;
+                    const days = job.deadline ? Math.ceil((new Date(job.deadline)-new Date())/86400000) : null;
+                    const rc = days!==null&&days<3?'risk-high':days!==null&&days<7?'risk-medium':'risk-low';
+                    const bc = days!==null&&days<0?'deadline':p>=80?'ontrack':'delayed';
+                    const bt = days!==null&&days<0?'Po termínu':p>=80?'Na trati':'Zpožděno';
+                    const pc = p>=80?'var(--accent-green)':p>=50?'var(--accent-yellow)':'var(--accent-red)';
+                    return `<div class="radar-item ${rc}" onclick="location.href='/job-detail.html?id=${job.id}'"><div class="radar-header"><div class="radar-name">${esc(job.title||job.name||job.client)}</div><span class="radar-badge ${bc}">${bt}</span></div><div class="radar-meta">${esc(job.client||'')} • ${days!==null?(days>=0?days+' dní':'Po termínu'):'Bez termínu'}</div><div class="radar-progress"><div class="radar-progress-bar" style="width:${p}%;background:${pc}"></div></div></div>`;
+                }).join('');
+            } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--accent-red)">Chyba</div>'; }
+        }
+        async function loadMaterial() {
+            try {
+                const r = await fetch('/api/warehouse');
+                const d = await r.json();
+                const items = d.items||[];
+                let ok=0,warn=0,crit=0; const alerts=[];
+                items.forEach(i => {
+                    const q=i.quantity||i.qty||0, m=i.min_stock||i.minStock||0;
+                    if(m>0) { if(q===0){crit++;alerts.push({...i,level:'critical'});} else if(q<=m){warn++;alerts.push({...i,level:'warning'});} else{ok++;} } else{ok++;}
+                });
+                document.getElementById('matOk').textContent=ok;
+                document.getElementById('matWarn').textContent=warn;
+                document.getElementById('matCrit').textContent=crit;
+                const al=document.getElementById('materialAlerts');
+                if(!alerts.length) al.innerHTML='<div class="empty-state"><p>Vše OK</p></div>';
+                else al.innerHTML=alerts.slice(0,5).map(a=>`<div class="material-alert" onclick="location.href='/warehouse.html'"><div class="material-dot ${a.level}"></div><div class="material-info"><div class="material-name">${esc(a.name)}</div><div class="material-detail">${a.quantity||a.qty||0} / ${a.min_stock||a.minStock||0} ${a.unit||'ks'}</div></div></div>`).join('');
+            } catch(e) { document.getElementById('materialAlerts').innerHTML='<div style="text-align:center;color:var(--accent-red)">Chyba</div>'; }
+        }
+        async function loadPerformance() {
+            try {
+                const jr=await fetch('/api/jobs'); const jd=await jr.json();
+                const aj=(jd.jobs||[]).filter(j=>j.status&&!['Dokončeno','completed','done','cancelled'].includes(j.status.toLowerCase())).length;
+                const tr=await fetch('/api/tasks'); const td=await tr.json();
+                const dt=(td.tasks||[]).filter(t=>t.status==='done'||t.status==='completed').length;
+                document.getElementById('perfHours').textContent=Math.round(aj*8*5);
+                document.getElementById('perfTasks').textContent=dt;
+                document.getElementById('perfJobs').textContent=aj;
+            } catch(e) {}
+        }
+        async function loadAIInsights() {
+            const g=document.getElementById('aiInsightsGrid');
+            try {
+                const r=await fetch('/api/ai/insights?limit=4');
+                const d=await r.json();
+                if(!d.insights||!d.insights.length) { g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><p>Žádná doporučení</p></div>'; return; }
+                g.innerHTML=d.insights.map(i => {
+                    const it=i.type?.includes('EMPLOYEE')?'move':i.type?.includes('STOCK')?'buy':i.type?.includes('BUDGET')||i.type?.includes('OVERDUE')?'warn':'plan';
+                    const ic=it==='move'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>':it==='buy'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>':it==='warn'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>';
+                    const lnk=getLink(i);
+                    return `<div class="ai-insight-card"><div class="ai-insight-icon ${it}">${ic}</div><div class="ai-insight-content"><div class="ai-insight-text">${esc(i.title||i.summary)}</div><div class="ai-insight-actions"><button class="ai-btn primary" onclick="location.href='${lnk}'">Vytvořit akci</button><button class="ai-btn secondary" onclick="location.href='/ai-operator.html'">Ignorovat</button></div></div></div>`;
+                }).join('');
+            } catch(e) { g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><p>AI nedostupné</p></div>'; }
+        }
+        function getLink(i) { const t=i.type||'',id=i.entity_id; if(t.includes('JOB')||t.includes('BUDGET'))return`/job-detail.html?id=${id}`; if(t.includes('EMPLOYEE'))return`/employee-detail.html?id=${id}`; if(t.includes('TASK'))return`/tasks.html`; if(t.includes('STOCK'))return`/warehouse.html`; return`/ai-operator.html`; }
+        function esc(s) { return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''; }
+        function loadAllData() { loadHeatmap(); loadRadar(); loadMaterial(); loadPerformance(); loadAIInsights(); }
+        updateWeekLabel(); loadAllData();
+    </script>
+<script src="/static/app-sidebar.js"></script>
+</body>
+</html>
