@@ -1,0 +1,200 @@
+import os, re, io, sqlite3, json
+from datetime import datetime, date, timedelta
+from flask import Flask, abort, g, jsonify, render_template, request, send_file, send_from_directory, session, redirect
+from werkzeug.security import generate_password_hash, check_password_hash
+from assignment_helpers import (
+    assign_employees_to_task, assign_employees_to_issue,
+    get_task_assignees, get_issue_assignees,
+    get_employee_tasks, get_employee_issues
+)
+
+# Crew Control System API
+try:
+    from crew_api import crew_bp
+    CREW_API_AVAILABLE = True
+except ImportError:
+    CREW_API_AVAILABLE = False
+    print("[INFO] Crew API module not available")
+
+# Database path configuration
+# Priority: 1. DB_PATH env var, 2. Persistent disk detection, 3. Default
+if os.environ.get("DB_PATH"):
+    # User explicitly set DB_PATH - use it
+    DB_PATH = os.environ.get("DB_PATH")
+elif os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    # Render platform detected - try persistent disk paths
+    if os.path.exists("/persistent"):
+        DB_PATH = "/persistent/app.db"
+    elif os.path.exists("/data"):
+        DB_PATH = "/data/app.db"
+    else:
+        # Fallback to /tmp which is persistent on Render
+        DB_PATH = "/tmp/app.db"
+else:
+    # Local development
+    DB_PATH = "app.db"
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-" + os.urandom(16).hex())
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
+
+app = Flask(__name__, static_folder=".", static_url_path="")
+# Disable aggressive caching in development so UI settings (language/theme) apply immediately
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+# Register Crew Control System API blueprint
+if CREW_API_AVAILABLE:
+    app.register_blueprint(crew_bp)
+    print("[INFO] Crew Control System API registered")
+
+@app.after_request
+def _disable_cache_for_static(resp):
+    try:
+        path = request.path or ""
+        if path.startswith("/static/") or path.endswith(".js") or path.endswith(".css"):
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+    except Exception:
+        pass
+    return resp
+
+app.secret_key = SECRET_KEY
+
+# ----------------- Role definitions -----------------
+# Pozn.: role 'team_lead' byla v předchozích verzích; pro kompatibilitu ji mapujeme na 'lander'.
+ROLES = ("owner", "admin", "manager", "lander", "worker")
+WRITE_ROLES = ("owner", "admin", "manager", "lander")
+
+# Role pro zaměstnance v UI (enterprise: jednotné a jednoduché)
+EMPLOYEE_ROLES = ("owner", "manager", "lander", "worker")
+
+def normalize_role(role):
+    """Normalizace role pro zpětnou kompatibilitu a konzistentní autorizaci."""
+    if not role:
+        return "owner"
+    role = str(role).strip().lower()
+    if role == "team_lead":
+        return "lander"
+    return role
+
+
+def normalize_employee_role(role: str) -> str:
+    """Normalizace role zaměstnance.
+
+    - zachová kompatibilitu se staršími hodnotami (admin -> owner, team_lead -> lander)
+    - pokud je hodnota neznámá, vrací 'worker'
+    """
+    if not role:
+        return "worker"
+    r = str(role).strip().lower()
+    if r in ("admin",):
+        r = "owner"
+    if r == "team_lead":
+        r = "lander"
+    return r if r in EMPLOYEE_ROLES else "worker"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ----------------- Database utilities -----------------
+def get_db():
+    if "db" not in g:
+        # Ensure directory exists for DB_PATH
+        db_dir = os.path.dirname(DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+                print(f"[DB] Created directory: {db_dir}")
+            except Exception as e:
+                print(f"[DB] Warning: Could not create directory {db_dir}: {e}")
+        
+        # Log database path (only once at startup)
+        if not hasattr(get_db, '_logged'):
+            print(f"[DB] Using database: {DB_PATH}")
+            get_db._logged = True
+        
+        # Connect with WAL mode for better concurrency
+        # Use a small timeout to reduce 'database is locked' errors under concurrent requests
+        g.db = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=5)
+        g.db.row_factory = sqlite3.Row
+        # Enable WAL mode for better performance and durability
+        try:
+            g.db.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+    return g.db
+
+def _table_has_column(db, table: str, column: str) -> bool:
+    try:
+        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(r[1] == column for r in rows)
+    except Exception:
+        return False
+
+
+def _table_exists(db, table: str) -> bool:
+    """Return True if a table exists in the current SQLite database."""
+    try:
+        r = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
+            (table,),
+        ).fetchone()
+        return bool(r)
+    except Exception:
+        return False
+
+
+@app.teardown_appcontext
+def close_db(exception=None):
+    """Close the database connection at the end of the request."""
+    db = g.pop('db', None)
+    if db is not None:
+        try:
+            db.close()
+        except Exception:
+            pass
+
+def apply_migrations():
+    """Lightweight, non-breaking migration runner.
+
+    Tracks applied versions in schema_migrations and applies idempotent ALTERs when needed.
+    """
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT (datetime('now')))")
+    applied = {r[0] for r in db.execute("SELECT version FROM schema_migrations").fetchall()}
+
+    migrations = [
+        # v1: baseline (existing ensure_schema creates core tables)
+        (1, []),
+
+        # v2: employees extra contact fields (safe idempotent)
+        (2, [
+            ("employees", "phone",   "ALTER TABLE employees ADD COLUMN phone TEXT DEFAULT ''"),
+            ("employees", "email",   "ALTER TABLE employees ADD COLUMN email TEXT DEFAULT ''"),
+            ("employees", "address", "ALTER TABLE employees ADD COLUMN address TEXT DEFAULT ''"),
+        ]),
+
+        # v3: core search stability (jobs/tasks/issues timestamps + assignment tables)
+        (3, [
+            ("jobs", "created_at", "ALTER TABLE jobs ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ("tasks", "created_at", "ALTER TABLE tasks ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"),
+            """
+            CREATE TABLE IF NOT EXISTS task_assignments (
+                task_id INTEGER NOT NULL,
+                employee_id INTEGER NOT NULL,
+                is_primary INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (task_id, employee_id)
+            );
+            CREATE TABLE IF NOT EXISTS issues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                type TEXT DEFAULT 'issue',
+                status TEXT NOT NULL DEFAULT 'open',
+                severity TEXT DEFAULT '',
+                assigned_to INTEGER,
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS issue_assignments (
+                issue_id INTEGER NOT NULL,
+                employee_id INTEGER NOT NULL,
+                is_primary INTEGER NOT NULL DEFAULT 0,
