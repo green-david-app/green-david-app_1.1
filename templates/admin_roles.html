@@ -1,0 +1,285 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div id="app-header"></div>
+  <div class="page">
+  <div class="container">
+    <!-- Page Header -->
+    <div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1 style="font-size:28px;font-weight:700;margin-bottom:6px;color:var(--text-primary);word-wrap:break-word;overflow-wrap:break-word;">👤 Správa uživatelů a rolí</h1>
+        <p style="color:var(--text-tertiary);font-size:14px;word-wrap:break-word;overflow-wrap:break-word;">Správa systémových uživatelů a jejich oprávnění</p>
+      </div>
+      <button id="btnAddUser" class="btn btn-primary" style="padding:10px 20px;">+ Přidat uživatele</button>
+    </div>
+
+    <!-- Users Table -->
+    <div style="background:var(--bg-card);border:1px solid var(--border-primary);border-radius:12px;overflow:hidden;">
+      <table class="roles-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg-secondary);border-bottom:2px solid var(--border-primary);">
+            <th style="padding:16px;text-align:left;font-weight:600;color:var(--text-primary);">Jméno</th>
+            <th style="padding:16px;text-align:left;font-weight:600;color:var(--text-primary);">Email</th>
+            <th style="padding:16px;text-align:left;font-weight:600;color:var(--text-primary);">Role</th>
+            <th style="padding:16px;text-align:left;font-weight:600;color:var(--text-primary);">Nadřízený</th>
+            <th style="padding:16px;text-align:left;font-weight:600;color:var(--text-primary);">Status</th>
+            <th style="padding:16px;text-align:right;font-weight:600;color:var(--text-primary);">Akce</th>
+          </tr>
+        </thead>
+        <tbody id="users-list">
+          <tr>
+            <td colspan="6" style="padding:40px;text-align:center;color:var(--text-tertiary);">Načítám...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;">
+    <h2 style="margin-bottom:20px;font-size:20px;font-weight:600;color:var(--text-primary);">Přidat uživatele</h2>
+    <form id="addUserForm">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500;color:var(--text-secondary);">Jméno</label>
+        <input type="text" id="userName" required style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500;color:var(--text-secondary);">Email</label>
+        <input type="email" id="userEmail" required style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500;color:var(--text-secondary);">Heslo</label>
+        <input type="password" id="userPassword" required style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500;color:var(--text-secondary);">Role</label>
+        <select id="userRole" style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;color:var(--text-primary);font-size:14px;">
+          <option value="worker">Pracovník</option>
+          <option value="team_lead">Vedoucí</option>
+          <option value="manager">Manager</option>
+          <option value="owner">Majitel</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+        <button type="button" id="cancelAddUser" class="btn btn-ghost">Zrušit</button>
+        <button type="submit" class="btn btn-primary">Přidat</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .roles-table tbody tr {
+    border-bottom:1px solid var(--border-primary);
+    transition:background 0.2s;
+  }
+  .roles-table tbody tr:hover {
+    background:var(--bg-secondary);
+  }
+  .roles-table td {
+    padding:16px;
+    color:var(--text-primary);
+    font-size:14px;
+  }
+  .role-badge {
+    display:inline-block;
+    padding:4px 12px;
+    border-radius:12px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .role-owner { background:#fbbf24; color:#000; }
+  .role-manager { background:#60a5fa; color:#000; }
+  .role-team_lead { background:#34d399; color:#000; }
+  .role-worker { background:#9ca3af; color:#000; }
+</style>
+
+<script>
+// Skrýt tlačítko pro přidání uživatele pokud není owner nebo manager
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.canManageEmployees === 'function' && !window.canManageEmployees()) {
+        const addButton = document.getElementById('btnAddUser');
+        if (addButton) addButton.style.display = 'none';
+    }
+});
+
+async function loadUsers() {
+    try {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        
+        if (!data.ok) {
+            throw new Error(data.error || 'Chyba při načítání uživatelů');
+        }
+        
+        const users = data.users || [];
+        const tbody = document.getElementById('users-list');
+        
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-tertiary);">Žádní uživatelé</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = users.map(user => {
+            const roleLabels = {
+                'owner': 'Majitel',
+                'manager': 'Manager',
+                'team_lead': 'Vedoucí',
+                'worker': 'Pracovník',
+                'admin': 'Admin'
+            };
+            
+            const roleClass = `role-${user.role || 'worker'}`;
+            const roleLabel = roleLabels[user.role] || user.role;
+            const managerName = user.manager_name || '—';
+            const status = user.active ? 'Aktivní' : 'Neaktivní';
+            
+            return `
+                <tr>
+                    <td>${escapeHtml(user.name || '')}</td>
+                    <td>${escapeHtml(user.email || '')}</td>
+                    <td>
+                        <select onchange="changeRole(${user.id}, this.value)" 
+                                class="role-badge ${roleClass}"
+                                style="border:none;background:transparent;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;"
+                                ${typeof window.isOwner === 'function' && !window.isOwner() ? 'disabled' : ''}>
+                            <option value="worker" ${user.role === 'worker' ? 'selected' : ''}>Pracovník</option>
+                            <option value="team_lead" ${user.role === 'team_lead' ? 'selected' : ''}>Vedoucí</option>
+                            <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>Manager</option>
+                            <option value="owner" ${user.role === 'owner' ? 'selected' : ''}>Majitel</option>
+                        </select>
+                    </td>
+                    <td>${escapeHtml(managerName)}</td>
+                    <td>${status}</td>
+                    <td style="text-align:right;">
+                        <button class="btn btn-ghost btn-sm" onclick="editUser(${user.id})" style="padding:6px 12px;font-size:12px;">Upravit</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading users:', error);
+        const tbody = document.getElementById('users-list');
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--danger);">Chyba při načítání: ' + escapeHtml(error.message) + '</td></tr>';
+    }
+}
+
+async function changeRole(userId, newRole) {
+    if (!confirm('Opravdu chcete změnit roli tohoto uživatele?')) {
+        // Obnovit původní hodnotu
+        loadUsers();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/users/${userId}/role`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({role: newRole})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.ok) {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('Role změněna', 'success');
+            } else {
+                alert('Role změněna');
+            }
+            loadUsers();
+        } else {
+            throw new Error(data.error || 'Chyba při změně role');
+        }
+    } catch (error) {
+        console.error('Error changing role:', error);
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('Chyba při změně role: ' + error.message, 'error');
+        } else {
+            alert('Chyba při změně role: ' + error.message);
+        }
+        loadUsers();
+    }
+}
+
+function editUser(userId) {
+    // TODO: Implementovat editaci uživatele
+    alert('Editace uživatele bude implementována');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Add User Modal
+const addUserModal = document.getElementById('addUserModal');
+const btnAddUser = document.getElementById('btnAddUser');
+const cancelAddUser = document.getElementById('cancelAddUser');
+const addUserForm = document.getElementById('addUserForm');
+
+btnAddUser.addEventListener('click', () => {
+    addUserModal.style.display = 'flex';
+});
+
+cancelAddUser.addEventListener('click', () => {
+    addUserModal.style.display = 'none';
+    addUserForm.reset();
+});
+
+addUserModal.addEventListener('click', (e) => {
+    if (e.target === addUserModal) {
+        addUserModal.style.display = 'none';
+        addUserForm.reset();
+    }
+});
+
+addUserForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('userName').value.trim();
+    const email = document.getElementById('userEmail').value.trim().toLowerCase();
+    const password = document.getElementById('userPassword').value;
+    const role = document.getElementById('userRole').value;
+    
+    try {
+        const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, email, password, role})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.ok) {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('Uživatel přidán', 'success');
+            } else {
+                alert('Uživatel přidán');
+            }
+            addUserModal.style.display = 'none';
+            addUserForm.reset();
+            loadUsers();
+        } else {
+            throw new Error(data.error || 'Chyba při přidávání uživatele');
+        }
+    } catch (error) {
+        console.error('Error adding user:', error);
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('Chyba: ' + error.message, 'error');
+        } else {
+            alert('Chyba: ' + error.message);
+        }
+    }
+});
+
+// Load users on page load
+loadUsers();
+</script>
+
+{% endblock %}
+
+
+
