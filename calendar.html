@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kalendář — green david app</title>
+  <link rel="icon" href="/logo.svg">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/glass-design.css">
+  <link rel="stylesheet" href="/static/css/tasks-design-system.css"/>
+  <link rel="stylesheet" href="/static/css/sidebar.css"/>
+  <link rel="stylesheet" href="/static/css/responsive.css"/>
+  <link rel="stylesheet" href="/static/icons.css">
+  <script src="/static/js/debug.js"></script>
+  <script src="/app-settings.js"></script>
+  <style>
+    :root {
+      --c-bg: #0b1120;
+      --c-s1: #131d2e;
+      --c-s2: #1a2740;
+      --c-brd: #1e2d45;
+      --c-t1: #e2e8f0;
+      --c-t2: #94a3b8;
+      --c-t3: #475569;
+      --c-red: #ef4444;
+      --c-grn: #4ade80;
+      --c-blu: #60a5fa;
+      --c-pur: #a78bfa;
+      --c-amb: #fbbf24;
+      --c-pnk: #f472b6;
+    }
+
+    .cal-root {
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: calc(100vh - 140px);
+      -webkit-user-select: none; user-select: none;
+    }
+
+    /* ── Top Nav ── */
+    .cal-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 8px; position: sticky; top: 0; z-index: 100; background: var(--c-bg);
+    }
+    .cal-btn-back {
+      display: flex; align-items: center; gap: 3px;
+      background: none; border: none; color: var(--c-grn);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      padding: 8px 10px; border-radius: 10px; transition: background 0.15s;
+    }
+    .cal-btn-back:hover { background: rgba(74,222,128,0.07); }
+    .cal-btn-back svg { width: 20px; height: 20px; }
+    .cal-btn-back.off { visibility: hidden; pointer-events: none; }
+
+    .cal-topbar-right { display: flex; gap: 5px; }
+    .cal-tbtn {
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      background: var(--c-s1); border: 1px solid var(--c-brd); border-radius: 10px;
+      color: #e2e8f0; cursor: pointer; transition: all 0.15s;
+    }
+    .cal-tbtn:hover { background: var(--c-s2); color: #fff; border-color: #94a3b8; }
+    .cal-tbtn svg { width: 20px; height: 20px; stroke: #e2e8f0 !important; fill: none !important; }
+    .cal-tbtn:hover svg { stroke: #fff !important; }
+    .cal-btn-today {
+      padding: 7px 14px; background: var(--c-s1); border: 1px solid var(--c-brd);
+      border-radius: 10px; color: var(--c-grn); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cal-btn-today:hover { background: rgba(74,222,128,0.08); border-color: var(--c-grn); }
+
+    /* ── Topbar Center (arrows + label) ── */
+    .cal-topbar-center {
+      display: flex; align-items: center; gap: 6px;
+      position: absolute; left: 50%; transform: translateX(-50%);
+    }
+    .cal-topbar { position: relative; }
+    .cal-topbar-label {
+      font-size: 15px; font-weight: 700; color: var(--c-t1);
+      min-width: 100px; text-align: center; white-space: nowrap;
+    }
+
+    /* ── Modal ── */
+    .cal-modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      z-index: 3000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .cal-modal-overlay.open { display: flex; }
+    .cal-modal {
+      background: #1a2332; border-radius: 16px; width: 100%; max-width: 520px;
+      max-height: 85vh; overflow-y: auto; border: 1px solid var(--c-brd);
+      animation: cvIn 0.2s ease;
+    }
+    .cal-modal-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--c-brd);
+    }
+    .cal-modal-hdr h3 { font-size: 18px; font-weight: 700; color: var(--c-t1); margin: 0; }
+    .cal-modal-x {
+      background: none; border: none; color: var(--c-t3); font-size: 22px;
+      cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center;
+      justify-content: center; border-radius: 8px;
+    }
+    .cal-modal-x:hover { background: var(--c-s2); color: var(--c-t1); }
+    .cal-modal-body { padding: 16px 20px; }
+    .cal-modal-ftr {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 14px 20px; border-top: 1px solid var(--c-brd);
+    }
+
+    .cm-field { margin-bottom: 14px; }
+    .cm-field label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--c-t3);
+      text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.3px;
+    }
+    .cm-field input, .cm-field select, .cm-field textarea {
+      width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid var(--c-brd);
+      border-radius: 8px; color: var(--c-t1); font-size: 14px; font-family: inherit;
+    }
+    .cm-field input:focus, .cm-field select:focus, .cm-field textarea:focus {
+      outline: none; border-color: var(--c-grn);
+    }
+    .cm-field textarea { resize: vertical; }
+    .cm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cm-row-inner { display: flex; align-items: center; gap: 6px; }
+    .cm-row-inner input { flex: 1; }
+    @media(max-width:500px){ .cm-row { grid-template-columns: 1fr; } }
+
+    /* Type selector */
+    .cm-types { display: flex; gap: 6px; }
+    .cm-type-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 8px; background: #0f172a; border: 2px solid var(--c-brd);
+      border-radius: 8px; color: var(--c-t3); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .cm-type-btn:hover { border-color: var(--c-t3); color: var(--c-t2); }
+    .cm-type-btn.active[data-type="event"] { border-color: var(--c-amb); background: rgba(251,191,36,0.06); color: var(--c-amb); }
+    .cm-type-btn.active[data-type="task"] { border-color: var(--c-pur); background: rgba(167,139,250,0.06); color: var(--c-pur); }
+    .cm-type-btn.active[data-type="job"] { border-color: var(--c-grn); background: rgba(74,222,128,0.06); color: var(--c-grn); }
+    .cm-type-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Modal buttons */
+    .cm-btn-cancel {
+      padding: 9px 18px; background: var(--c-s1); border: 1px solid var(--c-brd);
+      border-radius: 8px; color: var(--c-t2); font-size: 13px; cursor: pointer;
+    }
+    .cm-btn-cancel:hover { background: var(--c-s2); }
+    .cm-btn-save {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 20px; background: var(--c-grn); border: none;
+      border-radius: 8px; color: #0f172a; font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .cm-btn-save:hover { opacity: 0.9; }
+
+    /* ── View Fade ── */
+    .cv { display: none; animation: cvIn 0.22s ease; }
+    .cv.on { display: block; }
+    @keyframes cvIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+    /* ── Legend ── */
+    .cal-legend { display: flex; gap: 12px; padding: 4px 14px 12px; flex-wrap: wrap; }
+    .cal-legend b { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--c-t3); font-weight: 400; }
+    .cal-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+    /* ════════════════════
+       YEAR VIEW
+    ════════════════════ */
+    .yr-title {
+      font-size: 34px; font-weight: 800; color: var(--c-grn);
+      padding: 0 16px 14px; letter-spacing: -0.5px;
+    }
+    .yr-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; padding: 0 10px 28px;
+    }
+    @media(max-width:600px){ .yr-grid { grid-template-columns: repeat(2,1fr); gap: 12px; } }
+
+    .mm {
+      cursor: pointer; padding: 10px; border-radius: 12px; transition: background 0.12s;
+    }
+    .mm:hover { background: var(--c-s1); }
+    .mm-name { font-size: 15px; font-weight: 700; color: var(--c-t2); margin-bottom: 6px; }
+    .mm.now .mm-name { color: var(--c-grn); }
+    .mm-grid {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      font-size: 11px; text-align: center;
+    }
+    .mm-grid .md {
+      padding: 2.5px 0; color: var(--c-t3);
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin: 0 auto; position: relative;
+    }
+    .mm-grid .md.cm { color: var(--c-t2); }
+    .mm-grid .md.td { background: var(--c-red); color: #fff; font-weight: 700; }
+    .mm-grid .md.he::after {
+      content:''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--c-grn);
+    }
+
+    /* ════════════════════
+       MONTH VIEW
+    ════════════════════ */
+    .mo-title {
+      font-size: 28px; font-weight: 800; color: var(--c-t1);
+      padding: 0 16px 6px; letter-spacing: -0.4px;
+    }
+    .mo-wkd {
+      display: grid; grid-template-columns: repeat(7,1fr); text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--c-t3); text-transform: uppercase;
+      padding: 10px 8px 5px; border-bottom: 1px solid var(--c-brd);
+    }
+    .mo-grid { display: grid; grid-template-columns: repeat(7,1fr); padding: 0 8px; }
+    .mo-day {
+      min-height: 68px; padding: 5px 3px; border-bottom: 1px solid rgba(30,45,69,0.4);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .mo-day:hover { background: rgba(74,222,128,0.03); }
+    .mo-day.out { opacity: 0.25; }
+    .mo-day .dn {
+      font-size: 14px; font-weight: 500; color: var(--c-t2);
+      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin: 0 auto 3px;
+    }
+    .mo-day.today .dn { background: var(--c-red); color: #fff; font-weight: 700; }
+    .mo-day .devs { display: flex; flex-direction: column; gap: 1.5px; }
+    .mo-day .de {
+      font-size: 10px; padding: 1.5px 4px; border-radius: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; line-height: 1.4;
+    }
+    .de.t-job { background: rgba(74,222,128,0.13); color: #4ade80; }
+    .de.t-task { background: rgba(167,139,250,0.13); color: #c4b5fd; }
+    .de.t-timesheet { background: rgba(96,165,250,0.13); color: #93c5fd; }
+    .de.t-event { background: rgba(251,191,36,0.13); color: #fcd34d; }
+    .de.t-issue { background: rgba(244,114,182,0.13); color: #f9a8d4; }
+    .mo-day .dm { font-size: 10px; color: var(--c-t3); text-align: center; }
+
+    /* ════════════════════
+       WEEK VIEW
+    ════════════════════ */
+    .wk-title { font-size: 22px; font-weight: 700; color: var(--c-t1); padding: 0 16px 2px; }
+    .wk-sub { font-size: 13px; color: var(--c-t3); padding: 0 16px 6px; }
+    .wk-strip {
+      display: grid; grid-template-columns: repeat(7,1fr); padding: 10px 6px; gap: 3px;
+    }
+    .wk-sd {
+      text-align: center; padding: 8px 3px; border-radius: 12px;
+      cursor: pointer; transition: all 0.12s;
+    }
+    .wk-sd:hover { background: var(--c-s1); }
+    .wk-sd.sel { background: var(--c-s2); outline: 1px solid var(--c-brd); }
+    .wk-sd .wl { font-size: 11px; font-weight: 600; color: var(--c-t3); text-transform: uppercase; }
+    .wk-sd .wn {
+      font-size: 20px; font-weight: 700; color: var(--c-t2);
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin: 3px auto;
+    }
+    .wk-sd.td .wn { background: var(--c-red); color: #fff; }
+    .wk-sd .wd { display: flex; gap: 2px; justify-content: center; min-height: 7px; }
+    .wk-sd .wd span { width: 5px; height: 5px; border-radius: 50%; }
+
+    /* ── Shared Detail / Day ── */
+    .dd { padding: 0 10px 28px; }
+    .dd-hdr {
+      font-size: 13px; font-weight: 700; color: var(--c-t3); text-transform: uppercase;
+      letter-spacing: 0.4px; padding: 14px 4px 8px; border-bottom: 1px solid var(--c-brd);
+    }
+    .dd-empty {
+      text-align: center; color: var(--c-t3); font-size: 14px; padding: 36px 0;
+    }
+    .dd-empty svg { display: block; margin: 0 auto 10px; opacity: 0.25; }
+
+    .ev-item {
+      display: flex; gap: 10px; padding: 11px 6px;
+      border-bottom: 1px solid rgba(30,45,69,0.35);
+      cursor: pointer; border-radius: 6px; transition: background 0.1s;
+    }
+    .ev-item:hover { background: var(--c-s1); }
+    .ev-item:last-child { border-bottom: none; }
+    .ev-tc { min-width: 48px; text-align: right; padding-top: 2px; }
+    .ev-tc .et { font-size: 13px; font-weight: 600; color: var(--c-t2); }
+    .ev-tc .ed { font-size: 11px; color: var(--c-t3); }
+    .ev-bar { width: 3px; border-radius: 2px; min-height: 34px; flex-shrink: 0; }
+    .ev-bar.job { background: var(--c-grn); }
+    .ev-bar.task { background: var(--c-pur); }
+    .ev-bar.timesheet { background: var(--c-blu); }
+    .ev-bar.event { background: var(--c-amb); }
+    .ev-bar.issue { background: var(--c-pnk); }
+    .ev-body { flex: 1; min-width: 0; }
+    .ev-body .en {
+      font-size: 14px; font-weight: 600; color: var(--c-t1);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ev-body .es {
+      font-size: 12px; color: var(--c-t3); margin-top: 2px;
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    }
+    .ev-tag {
+      font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 0.2px;
+    }
+    .ev-tag.job { background: rgba(74,222,128,0.1); color: #4ade80; }
+    .ev-tag.task { background: rgba(167,139,250,0.1); color: #c4b5fd; }
+    .ev-tag.timesheet { background: rgba(96,165,250,0.1); color: #93c5fd; }
+    .ev-tag.event { background: rgba(251,191,36,0.1); color: #fcd34d; }
+    .ev-tag.issue { background: rgba(244,114,182,0.1); color: #f9a8d4; }
+
+    /* ── Day View Header ── */
+    .dv-date { font-size: 28px; font-weight: 800; color: var(--c-t1); padding: 0 16px; }
+    .dv-wkd { font-size: 14px; color: var(--c-t3); padding: 2px 16px 4px; }
+    .dv-sec-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; color: var(--c-t3); text-transform: uppercase;
+      letter-spacing: 0.4px; padding: 12px 4px 6px;
+    }
+    .dv-sec-title .cnt {
+      background: var(--c-s2); padding: 1px 6px; border-radius: 6px; font-size: 11px;
+    }
+
+    .btn-fullday {
+      display: block; margin: 16px auto; padding: 10px 22px;
+      background: var(--c-s1); border: 1px solid var(--c-brd); border-radius: 10px;
+      color: var(--c-grn); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-fullday:hover { background: rgba(74,222,128,0.07); border-color: var(--c-grn); }
+  </style>
+</head>
+<body class="has-sidebar">
+  <div id="app-header"></div>
+  <div id="app-sidebar"></div>
+
+  <div class="page-container">
+    <div class="cal-root">
+      <div class="cal-topbar">
+        <button class="cal-btn-back off" id="btn-back" onclick="C.back()">
+          <svg viewBox="0 0 24 24" style="fill:none;stroke:#4ade80;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px"><path d="M15 18l-6-6 6-6"/></svg>
+          <span id="back-lbl"></span>
+        </button>
+        <div class="cal-topbar-center">
+          <button class="cal-tbtn" onclick="C.prev()" id="btn-prev" title="Předchozí">
+            <svg viewBox="0 0 24 24" style="fill:none;stroke:#e2e8f0;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="cal-topbar-label" id="topbar-label"></span>
+          <button class="cal-tbtn" onclick="C.next()" id="btn-next" title="Další">
+            <svg viewBox="0 0 24 24" style="fill:none;stroke:#e2e8f0;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div class="cal-topbar-right">
+          <button class="cal-btn-today" onclick="C.today()">Dnes</button>
+          <button class="cal-tbtn" onclick="C.openAddModal()" title="Přidat">
+            <svg viewBox="0 0 24 24" style="fill:none;stroke:#e2e8f0;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14m-7-7h14"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="cal-legend">
+        <b><i style="background:var(--c-grn)"></i> Zakázky</b>
+        <b><i style="background:var(--c-pur)"></i> Úkoly</b>
+        <b><i style="background:var(--c-blu)"></i> Výkazy</b>
+        <b><i style="background:var(--c-amb)"></i> Události</b>
+        <b><i style="background:var(--c-pnk)"></i> Problémy</b>
+      </div>
+
+      <div class="cv on" id="v-year">
+        <div class="yr-title" id="yr-title"></div>
+        <div class="yr-grid" id="yr-grid"></div>
+      </div>
+      <div class="cv" id="v-month">
+        <div class="mo-title" id="mo-title"></div>
+        <div class="mo-wkd"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span>So</span><span>Ne</span></div>
+        <div class="mo-grid" id="mo-grid"></div>
+      </div>
+      <div class="cv" id="v-week">
+        <div class="wk-title" id="wk-title"></div>
+        <div class="wk-sub" id="wk-sub"></div>
+        <div class="wk-strip" id="wk-strip"></div>
+        <div class="dd" id="wk-dd"></div>
+      </div>
+      <div class="cv" id="v-day">
+        <div class="dv-date" id="dv-date"></div>
+        <div class="dv-wkd" id="dv-wkd"></div>
+        <div class="dd" id="dv-dd"></div>
+      </div>
+
+      <!-- Add Event Modal -->
+      <div class="cal-modal-overlay" id="add-modal" onclick="if(event.target===this)C.closeModal()">
+        <div class="cal-modal">
+          <div class="cal-modal-hdr">
+            <h3 id="modal-heading">Nová událost</h3>
+            <button class="cal-modal-x" onclick="C.closeModal()">×</button>
+          </div>
+          <div class="cal-modal-body">
+            <div class="cm-field">
+              <label>Typ</label>
+              <div class="cm-types" id="modal-types">
+                <button type="button" class="cm-type-btn active" data-type="event" onclick="C.setModalType('event')">
+                  <span class="cm-type-dot" style="background:var(--c-amb)"></span> Událost
+                </button>
+                <button type="button" class="cm-type-btn" data-type="task" onclick="C.setModalType('task')">
+                  <span class="cm-type-dot" style="background:var(--c-pur)"></span> Úkol
+                </button>
+                <button type="button" class="cm-type-btn" data-type="job" onclick="C.setModalType('job')">
+                  <span class="cm-type-dot" style="background:var(--c-grn)"></span> Zakázka
+                </button>
+              </div>
+            </div>
+            <div class="cm-field">
+              <label>Název *</label>
+              <input type="text" id="m-title" placeholder="Co se děje..." autocomplete="off">
+            </div>
+            <div class="cm-row">
+              <div class="cm-field">
+                <label>Datum *</label>
+                <input type="date" id="m-date">
+              </div>
+              <div class="cm-field" id="m-time-wrap">
+                <label>Čas</label>
+                <div class="cm-row-inner">
+                  <input type="time" id="m-start-time" placeholder="Od">
+                  <span style="color:var(--c-t3)">→</span>
+                  <input type="time" id="m-end-time" placeholder="Do">
+                </div>
+              </div>
+            </div>
+
+            <!-- Event-specific fields -->
+            <div id="m-fields-event">
+              <div class="cm-field">
+                <label>Poznámka</label>
+                <textarea id="m-note" rows="2" placeholder="Podrobnosti..."></textarea>
+              </div>
+            </div>
+
+            <!-- Task-specific fields -->
+            <div id="m-fields-task" style="display:none">
+              <div class="cm-row">
+                <div class="cm-field">
+                  <label>Priorita</label>
+                  <select id="m-priority">
+                    <option value="low">Nízká</option>
+                    <option value="medium" selected>Střední</option>
+                    <option value="high">Vysoká</option>
+                  </select>
+                </div>
+                <div class="cm-field">
+                  <label>Přiřadit</label>
+                  <select id="m-assignee">
+                    <option value="">— Nepřiřazeno —</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cm-field">
+                <label>Popis</label>
+                <textarea id="m-task-desc" rows="2" placeholder="Co je potřeba udělat..."></textarea>
+              </div>
+            </div>
+
+            <!-- Job-specific fields -->
+            <div id="m-fields-job" style="display:none">
+              <div class="cm-row">
+                <div class="cm-field">
+                  <label>Zákazník *</label>
+                  <input type="text" id="m-client" placeholder="Jméno zákazníka">
+                </div>
+                <div class="cm-field">
+                  <label>Město</label>
+                  <input type="text" id="m-city" placeholder="Město">
+                </div>
+              </div>
+              <div class="cm-row">
+                <div class="cm-field">
+                  <label>Kód</label>
+                  <input type="text" id="m-code" placeholder="2026-XXX">
+                </div>
+                <div class="cm-field">
+                  <label>Status</label>
+                  <select id="m-status">
+                    <option value="Plán">Plán</option>
+                    <option value="Probíhá">Probíhá</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cm-field">
+                <label>Poznámka</label>
+                <textarea id="m-job-note" rows="2" placeholder="Podrobnosti k zakázce..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="cal-modal-ftr">
+            <button class="cm-btn-cancel" onclick="C.closeModal()">Zrušit</button>
+            <button class="cm-btn-save" onclick="C.saveModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+              Uložit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottom-nav-container"></div>
+  <script src="/static/bottom-nav.js"></script>
+  <script src="/static/app-sidebar.js"></script>
+  <script src="/static/app-header.js"></script>
+
+  <script>
+  const C = (function(){
+    'use strict';
+    const TD = new Date(); TD.setHours(0,0,0,0);
+    const WD = ['Po','Út','St','Čt','Pá','So','Ne'];
+    const MN = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+    const MS = ['Led','Úno','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+    const TL = {job:'Zakázka',task:'Úkol',timesheet:'Výkaz',event:'Událost',issue:'Problém'};
+    const TO = ['job','task','timesheet','event','issue'];
+    const TLP = {job:'Zakázky',task:'Úkoly',timesheet:'Výkazy hodin',event:'Události',issue:'Problémy'};
+
+    let S = { view:'year', yr: TD.getFullYear(), mo: TD.getMonth(), wk:null, day:null, selDay:null, evts:[], cache:{} };
+
+    // ── Utils ──
+    const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const same = (a,b) => a&&b&&ymd(a)===ymd(b);
+    const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function monOf(d){ const c=new Date(d); c.setDate(c.getDate()-((c.getDay()+6)%7)); c.setHours(0,0,0,0); return c; }
+    function fmtLong(d){ return d.toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'}); }
+    function fmtWkd(d){ return d.toLocaleDateString('cs-CZ',{weekday:'long'}).replace(/^./,c=>c.toUpperCase()); }
+    function weekNum(d){ const t=new Date(d); t.setDate(t.getDate()+3-((t.getDay()+6)%7)); const j=new Date(t.getFullYear(),0,4); return 1+Math.round(((t-j)/864e5-3+((j.getDay()+6)%7))/7); }
+
+    // ── Data ──
+    async function api(u){ try{ const r=await fetch(u,{credentials:'same-origin'}); if(r.ok) return r.json(); } catch(e){} return null; }
+
+    async function load(yr){
+      const k = ''+yr;
+      if(S.cache[k]){ S.evts=S.cache[k]; return; }
+      const evts = [];
+
+      const [jd,td,id,cd,tsd] = await Promise.all([
+        api('/api/jobs'), api('/api/tasks'), api('/api/issues'),
+        api('/api/calendar?from='+yr+'-01-01&to='+yr+'-12-31'),
+        api('/api/timesheets')
+      ]);
+
+      if(jd&&jd.jobs) jd.jobs.forEach(j=>{
+        const d = j.start_date||j.date;
+        if(d) evts.push({id:'j'+j.id, rid:j.id, type:'job', title:j.title||j.name||'Zakázka', date:d, sub:[j.client,j.city].filter(Boolean).join(' · '), st:j.status});
+        if(j.planned_end_date && j.planned_end_date!==d) evts.push({id:'je'+j.id, rid:j.id, type:'job', title:(j.title||j.name||'Zakázka')+' — deadline', date:j.planned_end_date, sub:'Plánované dokončení', st:j.status});
+      });
+
+      if(td&&td.tasks) td.tasks.forEach(t=>{
+        if(!t.due_date) return;
+        const sl = {todo:'K provedení',progress:'Probíhá',done:'Hotovo',pending:'K provedení',in_progress:'Probíhá',completed:'Hotovo',open:'K provedení'};
+        evts.push({id:'t'+t.id, rid:t.id, type:'task', title:t.title||'Úkol', date:t.due_date, sub:sl[t.status]||t.status, assignee:t.employee_name, st:t.status});
+      });
+
+      if(id&&id.issues) id.issues.forEach(i=>{
+        const d = i.created_at?i.created_at.slice(0,10):null;
+        if(d) evts.push({id:'i'+i.id, rid:i.id, type:'issue', title:i.title||'Problém', date:d, sub:i.severity?'Závažnost: '+i.severity:'', st:i.status});
+      });
+
+      if(cd&&cd.events) cd.events.forEach(e=>{
+        evts.push({id:'e'+e.id, rid:e.id, type:'event', title:e.title||'Událost', date:e.date, time:e.start_time||'', etime:e.end_time||'', sub:e.note||''});
+      });
+
+      if(tsd&&(tsd.timesheets||tsd.rows)) (tsd.timesheets||tsd.rows||[]).forEach(ts=>{
+        if(!ts.date) return;
+        evts.push({id:'ts'+ts.id, rid:ts.id, type:'timesheet', title:ts.employee_name||'Výkaz', date:ts.date, time:ts.start_time||'', etime:ts.end_time||'', sub:[ts.hours?ts.hours+'h':'',ts.job_name||ts.description||''].filter(Boolean).join(' · ')});
+      });
+
+      S.evts=evts; S.cache[k]=evts;
+    }
+
+    const dayEvts = ds => S.evts.filter(e=>e.date===ds);
+    const dayTypes = ds => [...new Set(S.evts.filter(e=>e.date===ds).map(e=>e.type))];
+
+    // ── View Management ──
+    let employees = [];
+    function setV(v){ S.view=v; ['year','month','week','day'].forEach(n=>{ document.getElementById('v-'+n).classList.toggle('on',n===v); }); updNav(); }
+    function updNav(){
+      const b=document.getElementById('btn-back'), l=document.getElementById('back-lbl');
+      const tl=document.getElementById('topbar-label');
+      if(S.view==='year'){ b.classList.add('off'); }
+      else{ b.classList.remove('off'); }
+      if(S.view==='month') l.textContent=S.yr;
+      else if(S.view==='week') l.textContent=MN[S.mo];
+      else if(S.view==='day') l.textContent=S.wk?'Týden':MN[S.mo];
+
+      // Topbar center label
+      switch(S.view){
+        case 'year': tl.textContent=S.yr; break;
+        case 'month': tl.textContent=MN[S.mo]+' '+S.yr; break;
+        case 'week': tl.textContent='Týden '+weekNum(S.wk||TD); break;
+        case 'day': tl.textContent=S.day? fmtLong(S.day) : ''; break;
+      }
+    }
+
+    // ── Prev / Next navigation ──
+    function goPrev(){
+      switch(S.view){
+        case 'year': S.yr--; load(S.yr).then(()=>rYear()); break;
+        case 'month':
+          S.mo--; if(S.mo<0){ S.mo=11; S.yr--; }
+          load(S.yr).then(()=>rMonth(S.yr,S.mo)); break;
+        case 'week':
+          const pw=new Date(S.wk); pw.setDate(pw.getDate()-7);
+          S.selDay=new Date(pw); S.mo=pw.getMonth(); S.yr=pw.getFullYear();
+          load(S.yr).then(()=>rWeek(pw)); break;
+        case 'day':
+          const pd=new Date(S.day); pd.setDate(pd.getDate()-1);
+          S.day=pd; S.mo=pd.getMonth(); S.yr=pd.getFullYear();
+          load(S.yr).then(()=>rDay(pd)); break;
+      }
+    }
+    function goNext(){
+      switch(S.view){
+        case 'year': S.yr++; load(S.yr).then(()=>rYear()); break;
+        case 'month':
+          S.mo++; if(S.mo>11){ S.mo=0; S.yr++; }
+          load(S.yr).then(()=>rMonth(S.yr,S.mo)); break;
+        case 'week':
+          const nw=new Date(S.wk); nw.setDate(nw.getDate()+7);
+          S.selDay=new Date(nw); S.mo=nw.getMonth(); S.yr=nw.getFullYear();
+          load(S.yr).then(()=>rWeek(nw)); break;
+        case 'day':
+          const nd=new Date(S.day); nd.setDate(nd.getDate()+1);
+          S.day=nd; S.mo=nd.getMonth(); S.yr=nd.getFullYear();
+          load(S.yr).then(()=>rDay(nd)); break;
+      }
+    }
+
+    // ── Modal ──
+    let modalType = 'event';
+
+    async function loadEmployees(){
+      if(employees.length) return;
+      const d = await api('/api/employees');
+      if(d&&d.employees) employees=d.employees;
+      const sel=document.getElementById('m-assignee');
+      if(sel) sel.innerHTML='<option value="">— Nepřiřazeno —</option>'+employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+    }
+
+    function openAddModal(){
+      loadEmployees();
+      const modal=document.getElementById('add-modal');
+      // Pre-fill date from current context
+      const focusDate = S.day || S.selDay || TD;
+      document.getElementById('m-date').value = ymd(focusDate);
+      document.getElementById('m-title').value = '';
+      document.getElementById('m-note').value = '';
+      document.getElementById('m-task-desc').value = '';
+      document.getElementById('m-start-time').value = '';
+      document.getElementById('m-end-time').value = '';
+      document.getElementById('m-client').value = '';
+      document.getElementById('m-city').value = '';
+      document.getElementById('m-code').value = '';
+      document.getElementById('m-job-note').value = '';
+      document.getElementById('m-priority').value = 'medium';
+      document.getElementById('m-assignee').value = '';
+      setModalType('event');
+      modal.classList.add('open');
+      setTimeout(()=>document.getElementById('m-title').focus(), 100);
+    }
+
+    function closeModal(){ document.getElementById('add-modal').classList.remove('open'); }
+
+    function setModalType(type){
+      modalType=type;
+      document.querySelectorAll('.cm-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+      document.getElementById('m-fields-event').style.display = type==='event'?'':'none';
+      document.getElementById('m-fields-task').style.display = type==='task'?'':'none';
+      document.getElementById('m-fields-job').style.display = type==='job'?'':'none';
+      document.getElementById('m-time-wrap').style.display = type==='job'?'none':'';
+      const headings = {event:'Nová událost',task:'Nový úkol',job:'Nová zakázka'};
+      document.getElementById('modal-heading').textContent = headings[type]||'Nová událost';
+    }
+
+    async function saveModal(){
+      const title = document.getElementById('m-title').value.trim();
+      const dateStr = document.getElementById('m-date').value;
+      if(!title){ if(window.showToast) window.showToast('Vyplň název','error'); return; }
+      if(!dateStr){ if(window.showToast) window.showToast('Vyplň datum','error'); return; }
+
+      let ok = false;
+      try {
+        if(modalType==='event'){
+          const res = await fetch('/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
+            body:JSON.stringify({
+              title, date:dateStr, kind:'note',
+              start_time: document.getElementById('m-start-time').value||'',
+              end_time: document.getElementById('m-end-time').value||'',
+              note: document.getElementById('m-note').value.trim()
+            })});
+          ok=res.ok;
+        } else if(modalType==='task'){
+          const res = await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
+            body:JSON.stringify({
+              title, due_date:dateStr, status:'todo',
+              priority: document.getElementById('m-priority').value,
+              employee_id: document.getElementById('m-assignee').value||null,
+              description: document.getElementById('m-task-desc').value.trim()
+            })});
+          ok=res.ok;
+        } else if(modalType==='job'){
+          const client = document.getElementById('m-client').value.trim();
+          if(!client){ if(window.showToast) window.showToast('Vyplň zákazníka','error'); return; }
+          const res = await fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
+            body:JSON.stringify({
+              title, client, date:dateStr,
+              city: document.getElementById('m-city').value.trim(),
+              code: document.getElementById('m-code').value.trim(),
+              status: document.getElementById('m-status').value,
+              note: document.getElementById('m-job-note').value.trim()
+            })});
+          ok=res.ok;
+        }
+      } catch(e){ console.error(e); }
+
+      if(ok){
+        closeModal();
+        S.cache={}; // clear cache to reload
+        await load(S.yr);
+        refreshView();
+        if(window.showToast){
+          const labels={event:'Událost přidána',task:'Úkol přidán',job:'Zakázka přidána'};
+          window.showToast(labels[modalType]||'Uloženo','success');
+        }
+      } else {
+        if(window.showToast) window.showToast('Chyba při ukládání','error');
+      }
+    }
+
+    function refreshView(){
+      switch(S.view){
+        case 'year': rYear(); break;
+        case 'month': rMonth(S.yr,S.mo); break;
+        case 'week': rWeek(S.wk); break;
+        case 'day': rDay(S.day); break;
+      }
+    }
+
+    // ── Renderers ──
+    function rYear(){
+      setV('year');
+      document.getElementById('yr-title').textContent=S.yr;
+      const g=document.getElementById('yr-grid'); g.innerHTML='';
+      for(let m=0;m<12;m++){
+        const pfx = S.yr+'-'+String(m+1).padStart(2,'0');
+        const eDays = new Set(S.evts.filter(e=>e.date&&e.date.startsWith(pfx)).map(e=>e.date));
+        const cur = S.yr===TD.getFullYear()&&m===TD.getMonth();
+        const d=document.createElement('div'); d.className='mm'+(cur?' now':'');
+        d.onclick=()=>{ S.mo=m; load(S.yr).then(()=>rMonth(S.yr,m)); };
+        let h=`<div class="mm-name">${MS[m]}</div><div class="mm-grid">`;
+        const f=new Date(S.yr,m,1), lb=(f.getDay()+6)%7;
+        for(let i=0;i<lb;i++) h+='<span class="md"></span>';
+        const dim=new Date(S.yr,m+1,0).getDate();
+        for(let i=1;i<=dim;i++){
+          const dt=new Date(S.yr,m,i), k=ymd(dt), isTd=same(dt,TD), he=eDays.has(k);
+          h+=`<span class="md cm${isTd?' td':''}${he?' he':''}">${i}</span>`;
+        }
+        h+='</div>'; d.innerHTML=h; g.appendChild(d);
+      }
+    }
+
+    function rMonth(yr,mo){
+      S.yr=yr; S.mo=mo; setV('month');
+      document.getElementById('mo-title').textContent=MN[mo]+' '+yr;
+      const g=document.getElementById('mo-grid'); g.innerHTML='';
+      const f=new Date(yr,mo,1), la=new Date(yr,mo+1,0);
+      const lb=(f.getDay()+6)%7;
+      const pL=new Date(yr,mo,0);
+      for(let i=lb-1;i>=0;i--){ const dt=new Date(pL); dt.setDate(pL.getDate()-i); g.appendChild(mkMoDay(dt,true)); }
+      for(let i=1;i<=la.getDate();i++) g.appendChild(mkMoDay(new Date(yr,mo,i),false));
+      const rem=(7-g.children.length%7)%7;
+      for(let i=1;i<=rem;i++) g.appendChild(mkMoDay(new Date(yr,mo+1,i),true));
+    }
+
+    function mkMoDay(dt,out){
+      const d=document.createElement('div'), k=ymd(dt), evts=dayEvts(k), isTd=same(dt,TD);
+      d.className='mo-day'+(out?' out':'')+(isTd?' today':'');
+      d.onclick=()=>{ S.day=new Date(dt); S.mo=dt.getMonth(); S.yr=dt.getFullYear(); S.wk=monOf(dt); S.selDay=new Date(dt); rWeek(S.wk); };
+      let h=`<div class="dn">${dt.getDate()}</div>`;
+      if(evts.length){
+        h+='<div class="devs">';
+        evts.slice(0,3).forEach(e=>{ h+=`<div class="de t-${e.type}">${esc(e.title)}</div>`; });
+        if(evts.length>3) h+=`<div class="dm">+${evts.length-3}</div>`;
+        h+='</div>';
+      }
+      d.innerHTML=h; return d;
+    }
+
+    function rWeek(mon){
+      S.wk=new Date(mon); if(!S.selDay) S.selDay=new Date(mon); setV('week');
+      const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+      document.getElementById('wk-title').textContent=MN[mon.getMonth()]+(mon.getMonth()!==sun.getMonth()?' / '+MN[sun.getMonth()]:'')+' '+mon.getFullYear();
+      document.getElementById('wk-sub').textContent='Týden '+weekNum(mon);
+      const s=document.getElementById('wk-strip'); s.innerHTML='';
+      for(let i=0;i<7;i++){
+        const dt=new Date(mon); dt.setDate(mon.getDate()+i);
+        const k=ymd(dt), tps=dayTypes(k), isTd=same(dt,TD), isSel=same(dt,S.selDay);
+        const el=document.createElement('div');
+        el.className='wk-sd'+(isTd?' td':'')+(isSel?' sel':'');
+        el.onclick=()=>{ S.selDay=new Date(dt); s.querySelectorAll('.wk-sd').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); rWkDetail(dt); };
+        el.innerHTML=`<div class="wl">${WD[i]}</div><div class="wn">${dt.getDate()}</div><div class="wd">${tps.slice(0,4).map(t=>`<span style="background:var(--c-${t==='job'?'grn':t==='task'?'pur':t==='timesheet'?'blu':t==='event'?'amb':'pnk'})"></span>`).join('')}</div>`;
+        s.appendChild(el);
+      }
+      rWkDetail(S.selDay);
+    }
+
+    function rWkDetail(dt){
+      const c=document.getElementById('wk-dd'), k=ymd(dt), evts=dayEvts(k);
+      let h=`<div class="dd-hdr">${fmtWkd(dt)}, ${dt.getDate()}. ${MN[dt.getMonth()].toLowerCase()}</div>`;
+      if(!evts.length) h+=`<div class="dd-empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Žádné události</div>`;
+      else h+=evtList(evts);
+      h+=`<button class="btn-fullday" onclick="C.openDay(${dt.getFullYear()},${dt.getMonth()},${dt.getDate()})">Zobrazit celý den</button>`;
+      c.innerHTML=h;
+    }
+
+    function rDay(dt){
+      S.day=new Date(dt); S.mo=dt.getMonth(); S.yr=dt.getFullYear(); setV('day');
+      document.getElementById('dv-date').textContent=fmtLong(dt);
+      document.getElementById('dv-wkd').textContent=fmtWkd(dt);
+      const c=document.getElementById('dv-dd'), k=ymd(dt), evts=dayEvts(k);
+      if(!evts.length){ c.innerHTML=`<div class="dd-empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Žádné události pro tento den</div>`; return; }
+      const grp={}; evts.forEach(e=>{ (grp[e.type]=grp[e.type]||[]).push(e); });
+      let h='';
+      TO.forEach(t=>{ if(!grp[t]) return; h+=`<div class="dv-sec-title">${TLP[t]} <span class="cnt">${grp[t].length}</span></div>${evtList(grp[t])}`; });
+      c.innerHTML=h;
+    }
+
+    function evtList(evts){
+      return evts.map(e=>{
+        const tm=e.time?e.time.slice(0,5):'', et=e.etime?e.etime.slice(0,5):'';
+        return `<div class="ev-item" onclick="C.click('${e.type}',${e.rid||0})">
+          <div class="ev-tc">${tm?`<div class="et">${tm}</div>`:''}${et&&tm?`<div class="ed">→ ${et}</div>`:''}</div>
+          <div class="ev-bar ${e.type}"></div>
+          <div class="ev-body">
+            <div class="en">${esc(e.title)}</div>
+            <div class="es"><span class="ev-tag ${e.type}">${TL[e.type]}</span>${e.sub?'<span>'+esc(e.sub)+'</span>':''}${e.assignee?'<span>'+esc(e.assignee)+'</span>':''}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Public API ──
+    return {
+      back(){ if(S.view==='month') rYear(); else if(S.view==='week') rMonth(S.yr,S.mo); else if(S.view==='day'){ if(S.wk) rWeek(S.wk); else rMonth(S.yr,S.mo); } },
+      today(){ S.yr=TD.getFullYear(); S.mo=TD.getMonth(); S.day=new Date(TD); S.wk=monOf(TD); S.selDay=new Date(TD); load(S.yr).then(()=>rDay(TD)); },
+      prev: goPrev,
+      next: goNext,
+      openAddModal: openAddModal,
+      closeModal: closeModal,
+      setModalType: setModalType,
+      saveModal: saveModal,
+      openDay(y,m,d){ const dt=new Date(y,m,d); S.day=dt; rDay(dt); },
+      click(type,id){
+        if(!id) return;
+        const urls={job:'/job-detail.html?id=',task:'/tasks.html',timesheet:'/timesheets.html',issue:'/issues.html',event:null};
+        if(type==='job') window.location.href=urls.job+id;
+        else if(urls[type]) window.location.href=urls[type];
+      },
+      init(){ load(S.yr).then(()=>rYear()); }
+    };
+  })();
+
+  // Touch swipe — prev/next
+  let _tx=0;
+  document.addEventListener('touchstart',e=>{_tx=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-_tx;
+    if(Math.abs(dx)<80) return;
+    if(dx>0) C.prev(); else C.next();
+  },{passive:true});
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ const m=document.getElementById('add-modal'); if(m.classList.contains('open')){C.closeModal();return;} C.back(); }
+    if(e.key==='ArrowLeft') C.prev();
+    if(e.key==='ArrowRight') C.next();
+  });
+  C.init();
+  </script>
+</body>
+</html>
