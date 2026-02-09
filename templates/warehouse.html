@@ -13,7 +13,7 @@
     <script src="/static/global-search.js"></script>
     <script src="/app-settings.js"></script>
     <style>
-        :root { --mint: #4ade80; --bg-primary: #1a1a1a; --bg-card: #242424; --bg-hover: #2a2a2a; --border-primary: #333; --border-hover: #444; --text-primary: #ffffff; --text-secondary: #a0a0a0; --text-muted: #666; --success: #4ade80; --warning: #fbbf24; --danger: #f87171; --blue: #60a5fa; }
+        :root { --mint: #4ade80; --bg-primary: #1a1d1f; --bg-card: rgba(255,255,255,0.06); --bg-hover: rgba(255,255,255,0.10); --border-primary: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15); --text-primary: #ffffff; --text-secondary: #a0a0a0; --text-muted: #666; --success: #4ade80; --warning: #fbbf24; --danger: #f87171; --blue: #60a5fa; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: var(--bg-primary); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; min-height: 100vh; padding-bottom: 80px; }
         
@@ -29,7 +29,7 @@
         .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
         .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
         .btn-primary { background: var(--mint); color: #1a1a1a; }
-        .btn-primary:hover { background: #b5e0b7; }
+        .btn-primary:hover { background: #4ade80; }
         .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-primary); }
         .btn-secondary:hover { border-color: var(--mint); }
         .btn-sm { padding: 6px 10px; font-size: 12px; }
@@ -49,7 +49,7 @@
         .nav-tabs { display: flex; gap: 4px; background: var(--bg-card); border-radius: 10px; padding: 4px; margin-bottom: 16px; border: 1px solid var(--border-primary); overflow-x: auto; }
         .nav-tab { padding: 8px 14px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
         .nav-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .nav-tab.active { background: var(--mint); color: #1a1a1a; }
+        .nav-tab.active { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         .nav-tab svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
         
         /* Tab content */
@@ -81,7 +81,7 @@
         .badge-warning { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
         .badge-danger { background: rgba(248, 113, 113, 0.15); color: #f87171; }
         .badge-info { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
-        .badge-mint { background: rgba(159, 212, 161, 0.15); color: var(--mint); }
+        .badge-mint { background: rgba(74, 222, 128, 0.15); color: var(--mint); }
         
         /* Location badge */
         .location-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); }

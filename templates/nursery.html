@@ -16,10 +16,10 @@
     <script src="/static/plant_catalog_autocomplete.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0e11;
-            --bg-card: #151a1e;
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
             --bg-modal: #1a1f24;
-            --border-primary: #2d3439;
+            --border-primary: rgba(255,255,255,0.08);
             --border-hover: #3d4449;
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
@@ -28,7 +28,7 @@
             --mint-dark: #7ab87c;
             --warning: #fbbf24;
             --danger: #ef4444;
-            --success: #10b981;
+            --success: #4ade80;
             --blue: #60a5fa;
             --purple: #a78bfa;
         }
@@ -94,12 +94,12 @@
         }
 
         .nav-tab:hover {
-            background: rgba(159, 212, 161, 0.08);
+            background: rgba(74, 222, 128, 0.08);
             color: var(--text-primary);
         }
 
         .nav-tab.active {
-            background: rgba(159, 212, 161, 0.12);
+            background: rgba(74, 222, 128, 0.12);
             color: var(--mint);
         }
 
@@ -239,13 +239,13 @@
         .plants-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .plants-table th { background: var(--bg-primary); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-primary); white-space: nowrap; }
         .plants-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-primary); vertical-align: middle; }
-        .plants-table tbody tr:hover { background: rgba(159, 212, 161, 0.05); }
+        .plants-table tbody tr:hover { background: rgba(74, 222, 128, 0.05); }
         .plants-table tbody tr:last-child td { border-bottom: none; }
         .plant-name { font-weight: 600; color: var(--text-primary); font-size: 13px; }
         .plant-variety { font-size: 11px; color: var(--text-secondary); }
 
         .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-        .badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-success { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
         .badge-warning { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
         .badge-info { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
         .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
@@ -270,7 +270,7 @@
         .form-group.full-width { grid-column: span 2; }
         .form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-input { padding: 10px 12px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 6px; color: var(--text-primary); font-size: 14px; transition: all 0.2s; font-family: inherit; }
-        .form-input:focus { outline: none; border-color: var(--mint); background: rgba(159, 212, 161, 0.05); }
+        .form-input:focus { outline: none; border-color: var(--mint); background: rgba(74, 222, 128, 0.05); }
         textarea.form-input { resize: vertical; min-height: 80px; }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-primary); }
 
@@ -327,11 +327,11 @@
         .timeline-date-group { margin-bottom: 28px; }
         .timeline-date-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-primary); }
         .timeline-date-badge { background: var(--bg-card); border: 1px solid var(--border-primary); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-        .timeline-date-badge.today { background: rgba(159, 212, 161, 0.15); border-color: var(--mint); color: var(--mint); }
+        .timeline-date-badge.today { background: rgba(74, 222, 128, 0.15); border-color: var(--mint); color: var(--mint); }
         .timeline-date-text { font-size: 13px; color: var(--text-muted); }
         .timeline-events { display: flex; flex-direction: column; gap: 10px; padding-left: 20px; border-left: 2px solid var(--border-primary); }
         .timeline-event { display: flex; gap: 12px; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; position: relative; transition: all 0.2s; }
-        .timeline-event:hover { border-color: var(--border-hover); background: rgba(159, 212, 161, 0.02); }
+        .timeline-event:hover { border-color: var(--border-hover); background: rgba(74, 222, 128, 0.02); }
         .timeline-event::before { content: ''; position: absolute; left: -27px; top: 18px; width: 10px; height: 10px; background: var(--bg-primary); border: 2px solid var(--border-primary); border-radius: 50%; }
         .timeline-event:hover::before { border-color: var(--mint); }
         .timeline-event-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -342,14 +342,14 @@
         .timeline-event-icon.fertilizing svg { stroke: #a78bfa; }
         .timeline-event-icon.repotting { background: rgba(251, 191, 36, 0.15); }
         .timeline-event-icon.repotting svg { stroke: #fbbf24; }
-        .timeline-event-icon.planting { background: rgba(16, 185, 129, 0.15); }
-        .timeline-event-icon.planting svg { stroke: #10b981; }
-        .timeline-event-icon.stage { background: rgba(159, 212, 161, 0.15); }
+        .timeline-event-icon.planting { background: rgba(74, 222, 128, 0.15); }
+        .timeline-event-icon.planting svg { stroke: #4ade80; }
+        .timeline-event-icon.stage { background: rgba(74, 222, 128, 0.15); }
         .timeline-event-icon.stage svg { stroke: var(--mint); }
         .timeline-event-icon.photo { background: rgba(236, 72, 153, 0.15); }
         .timeline-event-icon.photo svg { stroke: #ec4899; }
-        .timeline-event-icon.sale { background: rgba(16, 185, 129, 0.15); }
-        .timeline-event-icon.sale svg { stroke: #10b981; }
+        .timeline-event-icon.sale { background: rgba(74, 222, 128, 0.15); }
+        .timeline-event-icon.sale svg { stroke: #4ade80; }
         .timeline-event-icon.treatment { background: rgba(239, 68, 68, 0.15); }
         .timeline-event-icon.treatment svg { stroke: #ef4444; }
         .timeline-event-icon.note { background: rgba(156, 163, 175, 0.15); }
@@ -368,7 +368,7 @@
         .timeline-event-photos { display: flex; gap: 8px; margin-top: 8px; }
         .timeline-photo-thumb { width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; border: 1px solid var(--border-primary); }
         .timeline-load-more { text-align: center; padding: 16px 0; }
-        .timeline-view-btn.active { background: rgba(159,212,161,0.15) !important; color: var(--mint) !important; }
+        .timeline-view-btn.active { background: rgba(74,222,128,0.15) !important; color: var(--mint) !important; }
         .text-success { color: var(--success) !important; }
         .text-warning { color: var(--warning) !important; }
 
@@ -382,8 +382,8 @@
         .insight-icon svg { width: 18px; height: 18px; stroke-width: 2; fill: none; }
         .insight-warning .insight-icon { background: rgba(251, 191, 36, 0.15); }
         .insight-warning .insight-icon svg { stroke: #fbbf24; }
-        .insight-success .insight-icon { background: rgba(16, 185, 129, 0.15); }
-        .insight-success .insight-icon svg { stroke: #10b981; }
+        .insight-success .insight-icon { background: rgba(74, 222, 128, 0.15); }
+        .insight-success .insight-icon svg { stroke: #4ade80; }
         .insight-info .insight-icon { background: rgba(96, 165, 250, 0.15); }
         .insight-info .insight-icon svg { stroke: #60a5fa; }
         .insight-content { flex: 1; min-width: 0; }
@@ -399,20 +399,20 @@
         .calendar-day-header { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); padding: 8px; text-transform: uppercase; }
         .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; background: var(--bg-primary); border: 1px solid transparent; transition: all 0.2s; }
         .calendar-day:hover { border-color: var(--border-primary); }
-        .calendar-day.today { background: rgba(159, 212, 161, 0.1); border-color: var(--mint); }
+        .calendar-day.today { background: rgba(74, 222, 128, 0.1); border-color: var(--mint); }
         .calendar-day.other-month { opacity: 0.3; }
         .calendar-day-number { font-weight: 500; margin-bottom: 4px; }
         .calendar-day-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
         .calendar-dot { width: 5px; height: 5px; border-radius: 50%; }
         .calendar-dot.irrigation { background: #60a5fa; }
         .calendar-dot.fertilizing { background: #a78bfa; }
-        .calendar-dot.sale { background: #10b981; }
+        .calendar-dot.sale { background: #4ade80; }
 
         /* Timeline type selector */
         .timeline-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .timeline-type-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: var(--bg-primary); border: 2px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
         .timeline-type-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
-        .timeline-type-btn.active { border-color: var(--mint); background: rgba(159, 212, 161, 0.1); color: var(--mint); }
+        .timeline-type-btn.active { border-color: var(--mint); background: rgba(74, 222, 128, 0.1); color: var(--mint); }
         .timeline-type-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
         .timeline-type-btn span { font-size: 11px; font-weight: 600; }
 
@@ -437,7 +437,7 @@
         .calendar-header { text-align: center; padding: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
         .calendar-day { aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; position: relative; }
         .calendar-day:hover { border-color: var(--mint); }
-        .calendar-day.today { border-color: var(--mint); background: rgba(159, 212, 161, 0.1); }
+        .calendar-day.today { border-color: var(--mint); background: rgba(74, 222, 128, 0.1); }
         .calendar-day.has-task::after { content: ''; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: var(--mint); border-radius: 50%; }
         .calendar-day-number { font-weight: 600; }
 
@@ -565,8 +565,8 @@
             </div>
             <!-- Rychlé akce - řada -->
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;">
-                <div onclick="openPlantModal()" style="background:var(--bg-card); border:2px dashed var(--mint); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.background='rgba(159,212,161,0.1)'" onmouseout="this.style.background='var(--bg-card)'">
-                    <div style="width:36px; height:36px; background:rgba(159,212,161,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                <div onclick="openPlantModal()" style="background:var(--bg-card); border:2px dashed var(--mint); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.background='rgba(74,222,128,0.1)'" onmouseout="this.style.background='var(--bg-card)'">
+                    <div style="width:36px; height:36px; background:rgba(74,222,128,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
                         <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--mint); fill:none; stroke-width:2;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </div>
                     <div style="font-weight:600; color:var(--text-primary); font-size:13px;">Přidat rostlinu</div>
@@ -1321,7 +1321,7 @@
                         <textarea class="form-input" id="warehouseNote" rows="2" placeholder="Volitelná poznámka..."></textarea>
                     </div>
                     
-                    <div style="background:rgba(159,212,161,0.1); border:1px solid var(--mint); border-radius:8px; padding:12px; margin-bottom:16px;">
+                    <div style="background:rgba(74,222,128,0.1); border:1px solid var(--mint); border-radius:8px; padding:12px; margin-bottom:16px;">
                         <div style="display:flex; align-items:center; gap:8px; color:var(--mint); font-size:13px;">
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                             Rostliny budou přidány do hlavního skladu a propojeny s objednávkami.

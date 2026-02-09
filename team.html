@@ -51,8 +51,8 @@
         }
         
         .view-mode-tab.active {
-            background: var(--mint);
-            color: #000;
+            background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08));
+            color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         }
         
         .view-mode-tab svg {
@@ -135,8 +135,8 @@
         
         /* AI Asistent týmu Panel */
         .ai-assistant-panel {
-            background: linear-gradient(135deg, rgba(178, 251, 165, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
-            border: 1px solid rgba(178, 251, 165, 0.3);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+            border: 1px solid rgba(74, 222, 128, 0.3);
             border-radius: 16px;
             padding: 20px;
             display: flex;
@@ -348,8 +348,8 @@
         
         /* NOVÉ: AI Recommendation Badge */
         .team-card-ai {
-            background: linear-gradient(135deg, rgba(178, 251, 165, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
-            border-top: 1px solid rgba(178, 251, 165, 0.2);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+            border-top: 1px solid rgba(74, 222, 128, 0.2);
             padding: 12px 20px;
             margin-top: 12px;
         }
@@ -359,7 +359,7 @@
             align-items: center;
             gap: 4px;
             padding: 4px 8px;
-            background: rgba(178, 251, 165, 0.2);
+            background: rgba(74, 222, 128, 0.2);
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
@@ -740,8 +740,8 @@
         
         /* NOVÉ: AI Recommendation Badge */
         .team-card-ai {
-            background: linear-gradient(135deg, rgba(178, 251, 165, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
-            border-top: 1px solid rgba(178, 251, 165, 0.2);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+            border-top: 1px solid rgba(74, 222, 128, 0.2);
             padding: 12px 20px;
             margin-top: 12px;
         }
@@ -751,7 +751,7 @@
             align-items: center;
             gap: 4px;
             padding: 4px 8px;
-            background: rgba(178, 251, 165, 0.2);
+            background: rgba(74, 222, 128, 0.2);
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
@@ -938,9 +938,9 @@
         }
         
         .account-badge.owner {
-            background: rgba(178, 251, 165, 0.2);
+            background: rgba(74, 222, 128, 0.2);
             color: var(--mint);
-            border: 1px solid rgba(178, 251, 165, 0.4);
+            border: 1px solid rgba(74, 222, 128, 0.4);
         }
         
         .account-badge.manager {
@@ -965,6 +965,133 @@
             background: rgba(239, 68, 68, 0.1);
             color: var(--text-tertiary);
             border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Role selector and account buttons */
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .role-option {
+            background: rgba(26, 35, 50, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+        .role-option:hover {
+            border-color: #4ade80;
+        }
+        .role-option.selected {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+            color: #f1f5f9;
+        }
+        .role-option-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .role-option-desc {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .role-option.selected .role-option-desc {
+            color: #94a3b8;
+        }
+        .btn-create-account {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-create-account:hover {
+            background: rgba(74, 222, 128, 0.2);
+        }
+        .btn-change-role {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            color: #a78bfa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-change-role:hover {
+            background: rgba(167, 139, 250, 0.2);
+        }
+        .btn-link-account {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-link-account:hover {
+            background: rgba(96, 165, 250, 0.2);
+        }
+        .btn-unlink-account {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: #f87171;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-unlink-account:hover {
+            background: rgba(248, 113, 113, 0.2);
+        }
+        .link-account-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(26, 35, 50, 0.6);
+            border: 1px solid #334155;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .link-account-item:hover {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.05);
+        }
+        .link-account-item.already-linked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .link-account-item.already-linked:hover {
+            border-color: #334155;
+            background: rgba(26, 35, 50, 0.6);
         }
         
         .permission-badge {
@@ -1032,7 +1159,7 @@
             color: var(--text-tertiary);
         }
         
-        .contract-badge.hpp { background: rgba(178, 251, 165, 0.15); color: var(--mint); }
+        .contract-badge.hpp { background: rgba(74, 222, 128, 0.15); color: var(--mint); }
         .contract-badge.dpp { background: rgba(96, 165, 250, 0.15); color: var(--accent-blue); }
         .contract-badge.osvc { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
         .contract-badge.brigadnik { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
@@ -1049,7 +1176,7 @@
             gap: 24px;
             align-items: center;
             padding: 32px;
-            background: linear-gradient(135deg, rgba(178, 251, 165, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%);
             border-bottom: 1px solid var(--border-primary);
             position: relative;
         }
@@ -1144,7 +1271,7 @@
             font-weight: 600;
         }
         
-        .status-badge.online { background: rgba(178, 251, 165, 0.2); color: var(--mint); }
+        .status-badge.online { background: rgba(74, 222, 128, 0.2); color: var(--mint); }
         .status-badge.offline { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
         .status-badge.vacation { background: rgba(96, 165, 250, 0.2); color: var(--accent-blue); }
         
@@ -1184,8 +1311,8 @@
         
         .member-tab.active {
             color: var(--mint);
-            background: rgba(178, 251, 165, 0.1);
-            border-color: rgba(178, 251, 165, 0.3);
+            background: rgba(74, 222, 128, 0.1);
+            border-color: rgba(74, 222, 128, 0.3);
         }
         
         .member-tab-content {
@@ -1247,7 +1374,7 @@
         }
         
         .member-info-item:hover {
-            border-color: rgba(178, 251, 165, 0.3);
+            border-color: rgba(74, 222, 128, 0.3);
             background: rgba(255,255,255,0.02);
         }
         
@@ -1296,7 +1423,7 @@
         }
         
         .member-stat-card {
-            background: linear-gradient(135deg, rgba(178, 251, 165, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%);
             border: 1px solid var(--border-primary);
             border-radius: 16px;
             padding: 24px 20px;
@@ -1305,7 +1432,7 @@
         }
         
         .member-stat-card:hover {
-            border-color: rgba(178, 251, 165, 0.3);
+            border-color: rgba(74, 222, 128, 0.3);
             transform: translateY(-2px);
         }
         
@@ -1353,7 +1480,7 @@
         }
         
         .permission-item.granted {
-            border-color: rgba(178, 251, 165, 0.3);
+            border-color: rgba(74, 222, 128, 0.3);
         }
         
         .permission-item.denied {
@@ -1375,7 +1502,7 @@
         }
         
         .permission-item.granted .permission-icon {
-            background: rgba(178, 251, 165, 0.15);
+            background: rgba(74, 222, 128, 0.15);
             color: var(--mint);
         }
         
@@ -1730,6 +1857,86 @@
             font-size: 12px;
             color: var(--text-tertiary);
         }
+        
+        /* Form input styles */
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(26, 35, 50, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .form-input:focus {
+            border-color: #4ade80;
+        }
+        .form-input::placeholder {
+            color: #64748b;
+        }
+        
+        /* Modal styles for account creation */
+        #createAccountModal.modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #createAccountModal .modal-content {
+            background: rgba(20, 27, 40, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+        }
+        #createAccountModal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #createAccountModal .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #fff;
+        }
+        #createAccountModal .modal-close {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        #createAccountModal .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        #createAccountModal .modal-body {
+            padding: 20px;
+        }
+        #createAccountModal .modal-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
     </style>
     <link rel="stylesheet" href="/static/css/sidebar.css"/>
     <link rel="stylesheet" href="/static/css/responsive.css"/>
@@ -1754,13 +1961,22 @@
                 </div>
                 Tým
             </h1>
-            <button class="btn-primary" onclick="showAddMemberModal()" style="display:flex;align-items:center;gap:8px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Přidat člena
-            </button>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <button class="btn-secondary" onclick="openUserAccountsPanel()" style="display:flex;align-items:center;gap:8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                    Správa účtů
+                </button>
+                <button class="btn-primary" onclick="showAddMemberModal()" style="display:flex;align-items:center;gap:8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Přidat člena
+                </button>
+            </div>
         </div>
         
         <!-- View Mode Tabs -->
@@ -1798,7 +2014,7 @@
                 <div class="crew-stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Aktivní členové</span>
-                        <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                        <div class="stat-icon" style="background:rgba(74,222,128,0.2);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
                                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
                                 <circle cx="9" cy="7" r="4"/>
@@ -1971,7 +2187,7 @@
                 <div class="crew-stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Můj tým dnes</span>
-                        <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                        <div class="stat-icon" style="background:rgba(74,222,128,0.2);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
                                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
                                 <circle cx="9" cy="7" r="4"/>
@@ -2025,7 +2241,7 @@
                         <div class="crew-stat-card">
                             <div class="stat-header">
                                 <span class="stat-label">Moje projekty</span>
-                                <div class="stat-icon" style="background:rgba(178,251,165,0.2);">
+                                <div class="stat-icon" style="background:rgba(74,222,128,0.2);">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#B2FBA5" stroke-width="2">
                                         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                                         <path d="M2 17l10 5 10-5"/>
@@ -3283,6 +3499,7 @@
             // Account info
             const hasAccount = emp.has_account;
             const accountRole = emp.account_role || emp.role || 'worker';
+            const accountUserId = emp.account_user_id;
             
             body.innerHTML = `
                 <div class="member-detail-layout">
@@ -3294,7 +3511,7 @@
                         <div class="member-detail-header-info">
                             <h2 style="margin:0 0 4px;color:var(--text-primary);font-size:24px;">${escapeHtml(emp.name)}</h2>
                             <p style="margin:0 0 8px;color:var(--text-secondary);">${escapeHtml(emp.role || 'Člen týmu')}</p>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                                 ${hasAccount ? `
                                     <span class="account-badge ${accountRole.toLowerCase()}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;">
@@ -3303,8 +3520,41 @@
                                         </svg>
                                         ${accountRole}
                                     </span>
+                                    ${isOwner ? `
+                                        <button class="btn-change-role" onclick="openChangeRoleModal(${emp.id}, '${escapeHtml(emp.name)}', '${accountRole}', ${accountUserId || 'null'})">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <circle cx="12" cy="12" r="3"/>
+                                                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4"/>
+                                            </svg>
+                                            Změnit roli
+                                        </button>
+                                        <button class="btn-unlink-account" onclick="unlinkAccount(${emp.id}, '${escapeHtml(emp.name)}')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+                                            </svg>
+                                            Odpojit účet
+                                        </button>
+                                    ` : ''}
                                 ` : `
                                     <span class="account-badge no-account">Bez účtu</span>
+                                    ${isOwner ? `
+                                        <button class="btn-create-account" onclick="openCreateAccountModal(${emp.id}, '${escapeHtml(emp.name)}', '${escapeHtml(emp.email || '')}')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                                <circle cx="8.5" cy="7" r="4"/>
+                                                <line x1="20" y1="8" x2="20" y2="14"/>
+                                                <line x1="23" y1="11" x2="17" y2="11"/>
+                                            </svg>
+                                            Nový účet
+                                        </button>
+                                        <button class="btn-link-account" onclick="openLinkAccountModal(${emp.id}, '${escapeHtml(emp.name)}')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                                            </svg>
+                                            Propojit účet
+                                        </button>
+                                    ` : ''}
                                 `}
                                 ${emp.contract_type ? `<span class="contract-badge ${(emp.contract_type || '').toLowerCase()}">${escapeHtml(emp.contract_type)}</span>` : ''}
                                 <span class="status-badge ${emp.status || 'offline'}">${emp.status === 'online' ? 'Online' : (emp.status === 'vacation' ? 'Dovolená' : 'Offline')}</span>
@@ -3331,6 +3581,17 @@
                             ` : ''}
                         </div>
                     </div>
+                    ${hasAccount ? `
+                        <div class="linked-account-info" style="margin-top:8px;padding:8px 12px;background:rgba(26,35,50,0.5);border:1px solid #334155;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" width="14" height="14">
+                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                            </svg>
+                            <span style="color:#94a3b8;">Propojeno s:</span>
+                            <span style="color:#f1f5f9;font-weight:500;">${escapeHtml(emp.account_email || '—')}</span>
+                            <span style="color:#64748b;">(user #${accountUserId || '—'})</span>
+                        </div>
+                    ` : ''}
                     
                     <!-- Taby -->
                     <div class="member-detail-tabs">
@@ -3652,10 +3913,448 @@
         });
     </script>
     
+    <!-- Modal pro propojení účtu -->
+    <div id="linkAccountModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeLinkAccountModal()">
+        <div class="modal-content" style="max-width: 420px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="linkAccountTitle">Propojit účet</h3>
+                <button class="modal-close" onclick="closeLinkAccountModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">
+                    Vyberte existující přihlašovací účet, který chcete propojit s tímto zaměstnancem:
+                </p>
+                <input type="hidden" id="link-employee-id">
+                <div id="link-account-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">
+                    <!-- Dynamicky naplněno -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding-top:16px;">
+                <button class="btn-secondary" onclick="closeLinkAccountModal()">Zrušit</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal pro vytvoření účtu / změnu role -->
+    <div id="createAccountModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeCreateAccountModal()">
+        <div class="modal-content" style="max-width: 420px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="createAccountTitle">Vytvořit účet</h3>
+                <button class="modal-close" onclick="closeCreateAccountModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+                <input type="hidden" id="ca-employee-id">
+                
+                <div>
+                    <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block;">Jméno</label>
+                    <input type="text" id="ca-name" class="form-input" readonly style="opacity:0.7;">
+                </div>
+                
+                <div id="ca-email-wrapper">
+                    <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block;">Email (přihlašovací jméno)</label>
+                    <input type="email" id="ca-email" class="form-input" placeholder="jan@greendavid.cz">
+                </div>
+                
+                <div id="ca-password-wrapper">
+                    <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block;">Heslo</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="ca-password" class="form-input" placeholder="Zadejte heslo" style="flex:1;">
+                        <button class="btn-secondary" onclick="generatePassword()" title="Generovat heslo" style="padding:8px 12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0110 0v4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="font-size:12px;color:#94a3b8;margin-bottom:8px;display:block;">Role v systému</label>
+                    <div class="role-selector" id="ca-role-selector">
+                        <button class="role-option" data-role="worker" onclick="selectRole(this, 'worker')">
+                            <div class="role-option-name">Pracovník</div>
+                            <div class="role-option-desc">Vlastní výkazy, úkoly, kalendář</div>
+                        </button>
+                        <button class="role-option" data-role="lander" onclick="selectRole(this, 'lander')">
+                            <div class="role-option-name">Parťák</div>
+                            <div class="role-option-desc">+ Zakázky, sklad, mission control</div>
+                        </button>
+                        <button class="role-option" data-role="manager" onclick="selectRole(this, 'manager')">
+                            <div class="role-option-name">Manažer</div>
+                            <div class="role-option-desc">+ Tým, finance, reporty, adresář</div>
+                        </button>
+                        <button class="role-option" data-role="owner" onclick="selectRole(this, 'owner')">
+                            <div class="role-option-name">Majitel</div>
+                            <div class="role-option-desc">Plný přístup včetně nastavení</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding-top:16px;">
+                <button class="btn-secondary" onclick="closeCreateAccountModal()">Zrušit</button>
+                <button class="btn-primary" id="ca-submit-btn" onclick="submitCreateAccount()">Vytvořit účet</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="bottom-nav-container"></div>
     <script src="/static/bottom-nav.js"></script>
     <link rel="stylesheet" href="/static/icons.css">
 <script src="/static/app-sidebar.js"></script>
   <script src="/static/app-header.js"></script>
+  
+  <script>
+    // Account creation / role change functions
+    let selectedRole = 'worker';
+    
+    function openCreateAccountModal(empId, name, email) {
+        document.getElementById('ca-employee-id').value = empId;
+        document.getElementById('ca-name').value = name;
+        document.getElementById('ca-email').value = email || '';
+        document.getElementById('ca-password').value = '';
+        document.getElementById('ca-submit-btn').textContent = 'Vytvořit účet';
+        document.getElementById('ca-submit-btn').onclick = submitCreateAccount;
+        document.getElementById('createAccountTitle').textContent = 'Vytvořit účet — ' + name;
+        selectedRole = 'worker';
+        // Reset role selector
+        document.querySelectorAll('.role-option').forEach(btn => btn.classList.remove('selected'));
+        document.querySelector('.role-option[data-role="worker"]').classList.add('selected');
+        // Show email and password fields
+        document.getElementById('ca-email-wrapper').style.display = 'block';
+        document.getElementById('ca-password-wrapper').style.display = 'block';
+        document.getElementById('createAccountModal').style.display = 'flex';
+    }
+    
+    function openChangeRoleModal(empId, name, currentRole, accountUserId) {
+        if (!accountUserId) {
+            alert('Uživatel nemá účet');
+            return;
+        }
+        
+        document.getElementById('ca-employee-id').value = empId;
+        document.getElementById('ca-name').value = name;
+        document.getElementById('ca-submit-btn').textContent = 'Uložit roli';
+        document.getElementById('ca-submit-btn').onclick = submitChangeRole;
+        document.getElementById('createAccountTitle').textContent = 'Změnit roli — ' + name;
+        // Hide email and password fields
+        document.getElementById('ca-email-wrapper').style.display = 'none';
+        document.getElementById('ca-password-wrapper').style.display = 'none';
+        // Nastav aktuální roli
+        selectedRole = currentRole.toLowerCase();
+        document.querySelectorAll('.role-option').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.role === selectedRole);
+        });
+        document.getElementById('createAccountModal').style.display = 'flex';
+    }
+    
+    function closeCreateAccountModal() {
+        document.getElementById('createAccountModal').style.display = 'none';
+    }
+    
+    function selectRole(btn, role) {
+        document.querySelectorAll('.role-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedRole = role;
+    }
+    
+    function generatePassword() {
+        // Generuj 8-znakové heslo: písmena + čísla
+        const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+        let pwd = '';
+        for (let i = 0; i < 8; i++) {
+            pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('ca-password').value = pwd;
+    }
+    
+    async function submitCreateAccount() {
+        const empId = document.getElementById('ca-employee-id').value;
+        const name = document.getElementById('ca-name').value;
+        const email = document.getElementById('ca-email').value.trim();
+        const password = document.getElementById('ca-password').value;
+        
+        if (!email) { alert('Zadejte email'); return; }
+        if (!password) { alert('Zadejte heslo'); return; }
+        if (password.length < 4) { alert('Heslo musí mít alespoň 4 znaky'); return; }
+        
+        const btn = document.getElementById('ca-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Vytvářím...';
+        
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    password: password,
+                    role: selectedRole,
+                    employee_id: parseInt(empId)
+                })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                closeCreateAccountModal();
+                // Reload data a znovu otevři detail
+                await loadAllData();
+                renderCurrentView();
+                showMemberDetail(parseInt(empId));
+                // Ukaž potvrzení
+                if (window.showToast) {
+                    window.showToast(`Účet vytvořen: ${email} (${selectedRole})`, 'success');
+                } else {
+                    alert(`Účet úspěšně vytvořen!\n\nEmail: ${email}\nHeslo: ${password}\nRole: ${selectedRole}\n\nZapište si heslo — později ho neuvidíte!`);
+                }
+            } else {
+                if (data.error === 'email_exists') {
+                    const empId = parseInt(document.getElementById('ca-employee-id').value);
+                    const emp = allEmployees.find(e => e.id === empId);
+                    if (confirm('Tento email je již registrován. Chcete místo toho propojit existující účet s tímto zaměstnancem?')) {
+                        closeCreateAccountModal();
+                        openLinkAccountModal(empId, emp?.name || '');
+                    }
+                } else {
+                    alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+                }
+            }
+        } catch (e) {
+            alert('Chyba při vytváření účtu: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Vytvořit účet';
+        }
+    }
+    
+    async function submitChangeRole() {
+        const empId = parseInt(document.getElementById('ca-employee-id').value);
+        const emp = allEmployees.find(e => e.id === empId);
+        if (!emp || !emp.has_account) { alert('Uživatel nemá účet'); return; }
+        
+        // Získej user_id z účtu - zkus account_user_id nebo account_user_id z API odpovědi
+        let accountUserId = emp.account_user_id;
+        if (!accountUserId) {
+            // Pokud není v lokálním stavu, načti znovu z API
+            try {
+                const res = await fetch('/api/employees');
+                const data = await res.json();
+                if (data.ok && data.employees) {
+                    const freshEmp = data.employees.find(e => e.id === empId);
+                    accountUserId = freshEmp?.account_user_id;
+                }
+            } catch (e) {
+                console.warn('Failed to reload employee data:', e);
+            }
+        }
+        
+        if (!accountUserId) {
+            alert('Nelze najít ID účtu. Obnovte stránku a zkuste znovu.');
+            return;
+        }
+        
+        const btn = document.getElementById('ca-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Ukládám...';
+        
+        try {
+            const res = await fetch(`/api/users/${accountUserId}/role`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: selectedRole })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                closeCreateAccountModal();
+                await loadAllData();
+                renderCurrentView();
+                showMemberDetail(empId);
+                if (window.showToast) {
+                    window.showToast('Role změněna na: ' + selectedRole, 'success');
+                } else {
+                    alert('Role úspěšně změněna na: ' + selectedRole);
+                }
+            } else {
+                alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+            }
+        } catch (e) {
+            alert('Chyba: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Uložit roli';
+        }
+    }
+    
+    // Link account functions
+    async function openLinkAccountModal(empId, empName) {
+        document.getElementById('link-employee-id').value = empId;
+        document.getElementById('linkAccountTitle').textContent = 'Propojit účet — ' + empName;
+        
+        // Načti seznam VŠECH uživatelů s info o propojení
+        try {
+            const res = await fetch('/api/users/unlinked');
+            const data = await res.json();
+            const users = data.users || [];
+            
+            const list = document.getElementById('link-account-list');
+            if (users.length === 0) {
+                list.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px;">Žádné účty v systému</p>';
+            } else {
+                list.innerHTML = users.map(u => `
+                    <button class="link-account-item ${u.is_linked ? 'already-linked' : ''}" 
+                            onclick="${u.is_linked ? '' : `linkAccount(${empId}, ${u.id})`}"
+                            ${u.is_linked ? 'disabled' : ''}>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:${u.is_linked ? '#1e293b' : '#1a2332'};display:flex;align-items:center;justify-content:center;color:${u.is_linked ? '#64748b' : '#f1f5f9'};font-weight:600;font-size:14px;">
+                                ${u.name ? escapeHtml(u.name).charAt(0).toUpperCase() : '?'}
+                            </div>
+                            <div>
+                                <div style="color:${u.is_linked ? '#64748b' : '#f1f5f9'};font-weight:500;font-size:14px;">${escapeHtml(u.name || 'Bez jména')}</div>
+                                <div style="color:#64748b;font-size:12px;">
+                                    ${escapeHtml(u.email)} · ${u.role || 'worker'}
+                                    ${u.is_linked ? ` · <span style="color:#fbbf24;">propojeno s: ${escapeHtml(u.linked_employee_name || '?')}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        ${u.is_linked ? `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" width="16" height="16">
+                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                            </svg>
+                        ` : `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" width="16" height="16">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        `}
+                    </button>
+                `).join('');
+            }
+        } catch (e) {
+            console.error('Chyba načítání účtů:', e);
+            document.getElementById('link-account-list').innerHTML = '<p style="color:#f87171;text-align:center;padding:20px;">Chyba načítání účtů</p>';
+        }
+        
+        document.getElementById('linkAccountModal').style.display = 'flex';
+    }
+    
+    function closeLinkAccountModal() {
+        document.getElementById('linkAccountModal').style.display = 'none';
+    }
+    
+    async function linkAccount(empId, userId) {
+        try {
+            const res = await fetch(`/api/employees/${empId}/link-account`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                closeLinkAccountModal();
+                await loadAllData();
+                renderCurrentView();
+                showMemberDetail(empId);
+                if (window.showToast) {
+                    window.showToast('Účet propojen', 'success');
+                } else {
+                    alert('Účet úspěšně propojen!');
+                }
+            } else {
+                alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+            }
+        } catch (e) {
+            alert('Chyba: ' + e.message);
+        }
+    }
+    
+    // Unlink account function
+    async function unlinkAccount(empId, empName) {
+        if (!confirm(`Odpojit přihlašovací účet od zaměstnance "${empName}"?\n\nZaměstnanec zůstane v systému, jen nebude mít přihlášení.`)) return;
+        
+        try {
+            const res = await fetch(`/api/employees/${empId}/unlink-account`, { method: 'POST' });
+            const data = await res.json();
+            if (data.ok) {
+                await loadAllData();
+                renderCurrentView();
+                showMemberDetail(empId);
+                if (window.showToast) window.showToast('Účet odpojen', 'success');
+            } else {
+                alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+            }
+        } catch (e) {
+            alert('Chyba: ' + e.message);
+        }
+    }
+    
+    // User accounts management panel
+    async function openUserAccountsPanel() {
+        try {
+            const res = await fetch('/api/users/unlinked');
+            const data = await res.json();
+            const users = data.users || [];
+            
+            const modal = document.getElementById('memberDetailModal');
+            const title = document.getElementById('memberModalTitle');
+            const body = document.getElementById('memberModalBody');
+            
+            title.textContent = 'Správa uživatelských účtů';
+            
+            body.innerHTML = `
+                <div style="padding:16px;">
+                    <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">
+                        Přehled všech přihlašovacích účtů v systému. Nepotřebné účty můžete deaktivovat.
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        ${users.map(u => `
+                            <div class="user-account-card" style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(26,35,50,0.6);border:1px solid #334155;border-radius:10px;">
+                                <div style="display:flex;align-items:center;gap:12px;">
+                                    <div style="width:40px;height:40px;border-radius:50%;background:${u.is_linked ? 'rgba(74,222,128,0.15)' : '#1e293b'};display:flex;align-items:center;justify-content:center;color:${u.is_linked ? '#4ade80' : '#94a3b8'};font-weight:600;">
+                                        ${u.name ? escapeHtml(u.name).charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                    <div>
+                                        <div style="color:#f1f5f9;font-weight:500;">${escapeHtml(u.name || '—')}</div>
+                                        <div style="color:#64748b;font-size:12px;">${escapeHtml(u.email)} · <span style="color:${roleColor(u.role)}">${u.role || 'worker'}</span></div>
+                                        ${u.is_linked ? `<div style="color:#4ade80;font-size:11px;margin-top:2px;">✓ Propojeno s: ${escapeHtml(u.linked_employee_name)}</div>` : `<div style="color:#f87171;font-size:11px;margin-top:2px;">Nepropojeno</div>`}
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:6px;">
+                                    <button class="btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="deleteUserAccount(${u.id}, '${escapeHtml(u.email)}')">
+                                        Smazat
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        } catch (e) {
+            console.error(e);
+            alert('Chyba načítání účtů: ' + e.message);
+        }
+    }
+    
+    function roleColor(role) {
+        const colors = { owner: '#4ade80', manager: '#60a5fa', lander: '#a78bfa', worker: '#94a3b8' };
+        return colors[role] || '#94a3b8';
+    }
+    
+    async function deleteUserAccount(userId, email) {
+        if (!confirm(`Smazat účet "${email}"?\n\nTento uživatel se už nebude moci přihlásit.`)) return;
+        try {
+            const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.ok) {
+                openUserAccountsPanel(); // Refresh
+                if (window.showToast) window.showToast('Účet smazán', 'success');
+            } else {
+                alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+            }
+        } catch (e) {
+            alert('Chyba: ' + e.message);
+        }
+    }
+  </script>
 </body>
 </html>

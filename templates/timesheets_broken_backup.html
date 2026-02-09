@@ -948,7 +948,7 @@
     border-bottom: none;
   }
   .ts-grid-row:hover {
-    background: rgba(178, 251, 165, 0.05);
+    background: rgba(74, 222, 128, 0.05);
   }
   .ts-employee-cell {
     display: table-cell;
@@ -997,8 +997,8 @@
     border-right: none;
   }
   .ts-time-entry {
-    background: rgba(178, 251, 165, 0.15);
-    border: 1px solid rgba(178, 251, 165, 0.3);
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
     border-radius: 6px;
     padding: 6px 8px;
     margin-bottom: 6px;
@@ -1011,7 +1011,7 @@
     overflow-wrap: break-word;
   }
   .ts-time-entry:hover {
-    background: rgba(178, 251, 165, 0.25);
+    background: rgba(74, 222, 128, 0.25);
     border-color: var(--mint);
   }
   .ts-entry-hours {
@@ -1033,8 +1033,8 @@
   .ts-add-btn {
     width: 100%;
     padding: 6px 8px;
-    background: rgba(178, 251, 165, 0.1);
-    border: 1px dashed rgba(178, 251, 165, 0.4);
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px dashed rgba(74, 222, 128, 0.4);
     border-radius: 6px;
     color: var(--mint);
     cursor: pointer;
@@ -1044,7 +1044,7 @@
     overflow-wrap: break-word;
   }
   .ts-add-btn:hover {
-    background: rgba(178, 251, 165, 0.2);
+    background: rgba(74, 222, 128, 0.2);
     border-color: var(--mint);
   }
 
@@ -1513,7 +1513,7 @@
     border: 1px solid var(--border-primary);
   }
   .ts-top-project-item.rank-1 {
-    background: rgba(178, 251, 165, 0.1);
+    background: rgba(74, 222, 128, 0.1);
     border-color: #4ade80;
   }
   .ts-rank {
@@ -2925,7 +2925,7 @@
       const intensity = Math.min((totalHours / 8) * 100, 100);
       const dayEl = document.createElement('div');
       dayEl.className = 'ts-heatmap-day';
-      dayEl.style.background = `rgba(178, 251, 165, ${intensity / 100})`;
+      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
       dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
       heatMapEl.appendChild(dayEl);
     }
@@ -4144,7 +4144,7 @@
   padding: 24px;
   max-width: 600px;
   width: 90%;
-  border: 2px solid #9fd4a1;
+  border: 2px solid #4ade80;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   max-height: 90vh;
   overflow-y: auto;
@@ -4168,7 +4168,7 @@
 .export-section-title {
   font-size: 14px;
   font-weight: 600;
-  color: #9fd4a1;
+  color: #4ade80;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -4188,13 +4188,13 @@
   text-align: center;
 }
 .format-option:hover {
-  border-color: #9fd4a1;
+  border-color: #4ade80;
   background: #2d3748;
 }
 .format-option.active {
-  border-color: #9fd4a1;
+  border-color: #4ade80;
   background: #2d3748;
-  box-shadow: 0 0 0 3px rgba(159,212,161,0.2);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.2);
 }
 .format-icon {
   font-size: 32px;
@@ -4225,8 +4225,8 @@
 }
 .input-field:focus {
   outline: none;
-  border-color: #9fd4a1;
-  box-shadow: 0 0 0 3px rgba(159,212,161,0.1);
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
 }
 .checkbox-list {
   max-height: 200px;
@@ -4305,7 +4305,7 @@
   padding: 4px 10px;
   background: transparent;
   border: 1px solid #556165;
-  color: #9fd4a1;
+  color: #4ade80;
   border-radius: 6px;
   cursor: pointer;
   margin-bottom: 8px;

@@ -8,15 +8,15 @@
     <link rel="stylesheet" href="/static/css/app.css"/>
     <style>
         :root {
-            --bg-primary: #0a0e11;
-            --bg-card: #151a1e;
-            --bg-elevated: #1a2027;
-            --border-primary: #2d3439;
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --border-primary: rgba(255,255,255,0.08);
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
             --text-tertiary: #6b7580;
             --mint: #4ade80;
-            --mint-dim: rgba(159, 212, 161, 0.16);
+            --mint-dim: rgba(74, 222, 128, 0.16);
         }
         
         body {
@@ -247,7 +247,7 @@
                 Dnes
             </h1>
             <div style="display: flex; gap: 8px; margin-left: auto;">
-                <a href="/planning/daily" style="padding: 8px 16px; background: var(--mint); color: #0a0e11; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
+                <a href="/planning/daily" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">Dnes</a>
                 <a href="/planning/timeline" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
                 <a href="/planning/week" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Týden</a>
                 <a href="/planning/costs" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
@@ -259,7 +259,7 @@
         <!-- Date Navigation -->
         <div class="date-nav">
             <button onclick="changeDate(-1)">← Včera</button>
-            <button onclick="changeDate(0)" style="background: var(--mint); color: #0a0e11;">Dnes</button>
+            <button onclick="changeDate(0)" style="background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">Dnes</button>
             <div class="current-date" id="currentDateDisplay">8. ledna 2026</div>
             <button onclick="changeDate(1)">Zítra →</button>
         </div>
@@ -431,7 +431,7 @@
                     html += `<div style="font-weight: 700; margin-bottom: 4px;">${alert.title}</div>`;
                     html += `<div style="font-size: 14px; color: var(--text-secondary);">${alert.message}</div>`;
                     if (alert.link) {
-                        html += `<a href="${alert.link}" style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: var(--mint); color: #0a0e11; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Zobrazit</a>`;
+                        html += `<a href="${alert.link}" style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: linear-gradient(135deg, rgba(74,222,128,0.85), rgba(34,197,94,0.85)); color: #0a0e11; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(74,222,128,0.2);">Zobrazit</a>`;
                     }
                     html += `</div></div></div>`;
                 });
