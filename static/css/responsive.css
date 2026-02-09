@@ -1,0 +1,312 @@
+/* ==========================================
+   RESPONSIVE CSS - Globální pravidla
+   Pro mobilní FULL mode (desktop stránky na mobilu)
+   ========================================== */
+
+/* === MOBILNÍ ÚPRAVY (FULL MODE) === */
+@media (max-width: 768px) {
+  /* Container na celou šířku */
+  .container, main {
+    max-width: 100% !important;
+    padding: 0 12px !important;
+    margin-left: 0 !important;
+  }
+  
+  /* Header přizpůsobení */
+  .app-header {
+    left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Sidebar je overlay */
+  .app-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  /* Tabulky - horizontální scroll */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  table thead {
+    display: none;
+  }
+  
+  table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  
+  table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border: none;
+  }
+  
+  table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 12px;
+  }
+  
+  /* Gridy - single column */
+  .grid, [class*="grid-"], .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Stat cards - 2 sloupce */
+  .stat-cards, [class*="stat-card"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  
+  /* Flexbox wrapping */
+  .section-header, .page-header, .header-actions,
+  .toolbar, .action-bar, .jobs-action-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  /* Karty - full width */
+  .card, .glass-card, [class*="card"],
+  .dashboard-card, .job-card, .task-card {
+    margin: 0 0 12px 0;
+    width: 100%;
+  }
+  
+  /* Modaly - full screen na mobilu */
+  .modal-content, .modal-panel, .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  
+  /* Kanban board - vertikální */
+  .kanban-board, .board-columns {
+    flex-direction: column !important;
+  }
+  
+  .kanban-column, .board-column {
+    width: 100% !important;
+    min-width: auto !important;
+    margin-bottom: 16px;
+  }
+  
+  /* Items grid - single column */
+  .items-grid, .materials-grid, .products-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Skrýt desktop-only prvky */
+  .desktop-only, .hide-mobile {
+    display: none !important;
+  }
+  
+  /* Fonty menší */
+  h1 {
+    font-size: 20px !important;
+    line-height: 1.3;
+  }
+  
+  h2 {
+    font-size: 18px !important;
+    line-height: 1.3;
+  }
+  
+  h3 {
+    font-size: 16px !important;
+    line-height: 1.3;
+  }
+  
+  /* Bottom padding pro bottom nav */
+  body {
+    padding-bottom: 80px !important;
+  }
+  
+  /* Formuláře */
+  form .form-row, form .form-group {
+    flex-direction: column;
+  }
+  
+  form input, form select, form textarea {
+    width: 100%;
+  }
+  
+  /* Buttons - full width na mobilu */
+  .btn-group, .button-group {
+    flex-direction: column;
+  }
+  
+  .btn-group .btn, .button-group .btn {
+    width: 100%;
+  }
+  
+  /* Search bar */
+  .search-bar, .header-search {
+    width: 100%;
+    margin: 8px 0;
+  }
+  
+  /* Tabs */
+  .tabs, .tab-list {
+    flex-wrap: wrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab {
+    min-width: auto;
+    white-space: nowrap;
+  }
+}
+
+/* === MOBILE RESPONSIVE — Menší karty, kompaktnější layout (iPhone 12 mini ~375px) === */
+@media (max-width: 480px) {
+  /* Quick action karty — menší, kompaktnější */
+  .quick-actions, .dashboard-grid, .action-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 0 12px !important;
+  }
+  
+  .quick-action-card, .action-card, .dashboard-card {
+    padding: 16px 12px !important;
+    min-height: auto !important;
+  }
+  
+  /* Menší ikony v kartách */
+  .quick-action-card .icon-wrapper,
+  .action-card .icon-wrapper,
+  .glass-icon-circle {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  .quick-action-card h3, .quick-action-card .card-title,
+  .action-card h3, .action-card .card-title {
+    font-size: 14px !important;
+    margin: 8px 0 2px !important;
+  }
+  
+  .quick-action-card small, .quick-action-card .card-subtitle,
+  .action-card small, .action-card .card-subtitle {
+    font-size: 11px !important;
+  }
+  
+  /* Quick add bar */
+  .quick-add, .quick-task-bar {
+    margin: 8px 12px !important;
+    padding: 8px !important;
+  }
+  
+  /* Header na mobilu — kompaktnější */
+  .app-header {
+    padding: 8px 12px !important;
+    min-height: 48px !important;
+  }
+  
+  .app-header .header-title, .page-title {
+    font-size: 16px !important;
+  }
+  
+  /* Zakázky toolbar — horizontální scroll nebo wrap */
+  .jobs-toolbar, .toolbar, .action-bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+  }
+  
+  .jobs-toolbar button, .toolbar button {
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+  
+  /* Statistické karty — menší */
+  .stats-row, .overview-stats, .kpi-cards {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    padding: 8px 12px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .stat-card, .kpi-card, .overview-card {
+    min-width: 120px !important;
+    padding: 10px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .stat-card .stat-value, .kpi-value {
+    font-size: 18px !important;
+  }
+  
+  /* Kanban — horizontální scroll */
+  .kanban-board, .kanban-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 16px !important;
+  }
+  
+  .kanban-column {
+    min-width: 260px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* AI Operátor box — menší text */
+  .operator-card, .ai-operator, [class*="operator"] {
+    font-size: 13px !important;
+    padding: 12px !important;
+  }
+  
+  .operator-card .operator-text {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* === TABLET (769-1024px) === */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+  
+  /* Gridy - 2 sloupce */
+  .grid, .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Stat cards - 2 sloupce */
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Kanban - 2 sloupce */
+  .kanban-column {
+    min-width: 300px;
+  }
+}
+
+/* === DESKTOP (>1024px) === */
+@media (min-width: 1025px) {
+  /* Sidebar layout aktivní */
+  body.has-sidebar .container {
+    max-width: calc(100% - var(--sidebar-width));
+  }
+  
+  body.has-sidebar.sidebar-collapsed .container {
+    max-width: calc(100% - var(--sidebar-width-collapsed));
+  }
+}
