@@ -551,7 +551,7 @@ box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 .employee-card:hover {
 transform: translateY(-4px);
 border-color: #B2FBA5;
-box-shadow: 0 4px 12px rgba(178, 251, 165, 0.2);
+box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
 }
 
 .employee-card:active {
@@ -604,7 +604,7 @@ border: 2px solid #1a1a1a;
 }
 
 .status-dot.online {
-background: #10b981;
+background: #4ade80;
 }
 
 .status-dot.offline {
@@ -915,7 +915,7 @@ margin-bottom: 24px;
 
 .tab-button {
 padding: 12px 24px;
-background: rgba(159, 212, 161, 0.1);
+background: rgba(74, 222, 128, 0.1);
 border: none;
 border-bottom: 3px solid transparent;
 border-radius: 8px 8px 0 0;
@@ -932,7 +932,7 @@ gap: 8px;
 
 .tab-button:hover {
 color: var(--text-primary);
-background: rgba(159, 212, 161, 0.15);
+background: rgba(74, 222, 128, 0.15);
 }
 
 .tab-button.active {
@@ -1028,8 +1028,8 @@ font-weight: 600;
 }
 
 .project-status.active {
-background: rgba(16, 185, 129, 0.2);
-color: #10b981;
+background: rgba(74, 222, 128, 0.2);
+color: #4ade80;
 }
 
 .project-status.completed {
@@ -1373,7 +1373,7 @@ gap: 8px;
 }
 
 .btn-view:hover {
-background: rgba(159, 212, 161, 0.15);
+background: rgba(74, 222, 128, 0.15);
 }
 
 .btn-view.active {
@@ -1478,7 +1478,7 @@ font-size: 15px;
 }
 
 .btn-secondary:hover {
-background: rgba(159, 212, 161, 0.15);
+background: rgba(74, 222, 128, 0.15);
 border-color: var(--mint);
 }
 
@@ -1888,7 +1888,7 @@ font-size: 11px;
 font-weight: 500;
 }
 
-.deadline-badge.ok { background: rgba(159, 212, 161, 0.25); color: #22c55e; font-weight: 600; } /* Budoucí (>14 dní) - pastelová zelená */
+.deadline-badge.ok { background: rgba(74, 222, 128, 0.25); color: #22c55e; font-weight: 600; } /* Budoucí (>14 dní) - pastelová zelená */
 .deadline-badge.warning { background: rgba(245, 158, 11, 0.25); color: #f59e0b; font-weight: 600; } /* Blížící se (7-14 dní) - oranžová */
 .deadline-badge.danger { background: rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: 700; } /* Prošlý termín - červená */
 
@@ -1965,7 +1965,7 @@ font-weight: 600;
 }
 
 .priority-badge.low {
-background: rgba(159, 212, 161, 0.25);
+background: rgba(74, 222, 128, 0.25);
 color: #22c55e;
 font-weight: 600;
 }
@@ -2279,7 +2279,7 @@ transition: all 0.2s;
 
 .timeline-controls button:hover,
 .timeline-zoom-button:hover {
-background: rgba(159, 212, 161, 0.15);
+background: rgba(74, 222, 128, 0.15);
 border-color: var(--mint);
 }
 
@@ -2572,7 +2572,7 @@ background: rgba(255,255,255,0.02);
 }
 
 .timeline-day.today {
-background: rgba(159, 212, 161, 0.1);
+background: rgba(74, 222, 128, 0.1);
   color: var(--mint);
 font-weight: 600;
 }
@@ -2624,7 +2624,7 @@ z-index: 5;
 }
 
 .timeline-bar.status-new { background: rgba(59, 130, 246, 0.8); }
-.timeline-bar.status-active { background: rgba(178, 251, 165, 0.9); }
+.timeline-bar.status-active { background: rgba(74, 222, 128, 0.9); }
 .timeline-bar.status-paused { background: rgba(251, 146, 60, 0.8); }
 .timeline-bar.status-completed { background: rgba(156, 163, 175, 0.6); }
 
@@ -3085,7 +3085,7 @@ background: rgba(255,255,255,0.05);
 }
 
 .inline-edit.editing {
-background: rgba(178, 251, 165, 0.1);
+background: rgba(74, 222, 128, 0.1);
 border: 1px solid var(--mint);
 }
 
@@ -3753,7 +3753,7 @@ font-weight: 600;
 }
 
 .badge.success {
-background: rgba(178, 251, 165, 0.2);
+background: rgba(74, 222, 128, 0.2);
 color: var(--mint);
 }
 
@@ -3954,7 +3954,7 @@ border-radius: 4px;
 }
 
 .history-item .change.positive {
-background: rgba(178, 251, 165, 0.2);
+background: rgba(74, 222, 128, 0.2);
 color: var(--mint);
 }
 
@@ -4153,7 +4153,7 @@ border-color: var(--mint);
 
 .finance-card.success {
 border-color: var(--success);
-background: rgba(178, 251, 165, 0.1);
+background: rgba(74, 222, 128, 0.1);
 }
 
 .finance-card.warning {
@@ -4188,7 +4188,7 @@ display: inline-block;
 }
 
 .finance-card .trend.up {
-background: rgba(178, 251, 165, 0.2);
+background: rgba(74, 222, 128, 0.2);
 color: var(--success);
 }
 
@@ -4345,7 +4345,7 @@ display: inline-block;
 }
 
 .badge.paid {
-background: rgba(178, 251, 165, 0.2);
+background: rgba(74, 222, 128, 0.2);
 color: var(--success);
 }
 
@@ -4866,7 +4866,7 @@ border-color: var(--mint);
 
 .file-card.selected {
 border-color: var(--mint);
-background: rgba(178, 251, 165, 0.1);
+background: rgba(74, 222, 128, 0.1);
 }
 
 .file-icon {
@@ -4964,7 +4964,7 @@ transition: all 0.2s;
 }
 
 .file-list-item:hover {
-background: rgba(178, 251, 165, 0.05);
+background: rgba(74, 222, 128, 0.05);
 border-color: var(--mint);
 }
 
@@ -4987,7 +4987,7 @@ cursor: pointer;
 .upload-area:hover,
 .upload-area.drag-over {
 border-color: var(--mint);
-background: rgba(178, 251, 165, 0.05);
+background: rgba(74, 222, 128, 0.05);
 }
 
 .upload-area input[type="file"] {
@@ -5847,7 +5847,7 @@ height: 40px;
 display: flex;
 align-items: center;
 justify-content: center;
-background: rgba(178, 251, 165, 0.1);
+background: rgba(74, 222, 128, 0.1);
 border-radius: 10px;
 }
 .card-icon .icon {
@@ -6057,7 +6057,7 @@ transition: all var(--transition);
 .form-input:focus {
 outline: none;
 border-color: var(--accent-green);
-box-shadow: 0 0 0 2px rgba(178, 251, 165, 0.2);
+box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
 }
 
 .slider {
@@ -6399,22 +6399,46 @@ width:100%;}
   width: 20px;
   height: 20px;
 }
+/* ── Badge system ── */
 .notif-badge{
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -3px;
+  right: -3px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: #e53935;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 18px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  border: 2px solid #1a1d1f;
+  z-index: 2;
+  pointer-events: none;
+}
+/* AI operator badge → small green dot with pulse */
+#ai-operator-badge.notif-badge {
+  min-width: 10px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  font-size: 0;
+  color: transparent;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6), 0 0 12px rgba(74, 222, 128, 0.2);
+  border: 2px solid #1a1d1f;
+  top: -1px;
+  right: -1px;
+  animation: ai-pulse 2.5s ease-in-out infinite;
+}
+@keyframes ai-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(74,222,128,0.6), 0 0 12px rgba(74,222,128,0.2); }
+  50% { box-shadow: 0 0 10px rgba(74,222,128,0.8), 0 0 20px rgba(74,222,128,0.35); }
 }
 
 /* ========================================

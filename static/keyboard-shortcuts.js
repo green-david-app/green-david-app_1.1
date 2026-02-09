@@ -108,7 +108,7 @@
         const content = document.createElement('div');
         content.style.cssText = `
             background: #151a1e;
-            border: 1px solid rgba(159, 212, 161, 0.3);
+            border: 1px solid rgba(74, 222, 128, 0.3);
             border-radius: 16px;
             padding: 32px;
             max-width: 700px;
@@ -146,8 +146,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                     <span style="color: #9ca8b3; font-size: 13px;">${shortcut.desc}</span>
                     <div style="display: flex; gap: 4px;">
-                        <kbd style="background: rgba(159, 212, 161, 0.15); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">G</kbd>
-                        <kbd style="background: rgba(159, 212, 161, 0.15); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">${key.toUpperCase()}</kbd>
+                        <kbd style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">G</kbd>
+                        <kbd style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">${key.toUpperCase()}</kbd>
                     </div>
                 </div>
             `;
@@ -170,7 +170,7 @@
                 html += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                         <span style="color: #9ca8b3; font-size: 13px;">${shortcut.desc}</span>
-                        <kbd style="background: rgba(159, 212, 161, 0.15); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">${displayKey}</kbd>
+                        <kbd style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">${displayKey}</kbd>
                     </div>
                 `;
             }
@@ -180,8 +180,8 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                             <span style="color: #9ca8b3; font-size: 13px;">Globální vyhledávání</span>
                             <div style="display: flex; gap: 4px;">
-                                <kbd style="background: rgba(159, 212, 161, 0.15); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">⌘/Ctrl</kbd>
-                                <kbd style="background: rgba(159, 212, 161, 0.15); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">K</kbd>
+                                <kbd style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">⌘/Ctrl</kbd>
+                                <kbd style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 3px 6px; font-size: 11px; color: #4ade80; font-family: monospace;">K</kbd>
                             </div>
                         </div>
                     </div>
@@ -270,7 +270,7 @@
                 bottom: 24px;
                 right: 24px;
                 background: rgba(21, 26, 30, 0.95);
-                border: 1px solid rgba(159, 212, 161, 0.3);
+                border: 1px solid rgba(74, 222, 128, 0.3);
                 border-radius: 12px;
                 padding: 16px 20px;
                 z-index: 9999;
@@ -284,7 +284,7 @@
                 <span style="font-size: 24px;">⌨️</span>
                 <div>
                     <div style="color: #e8eef2; font-size: 14px; font-weight: 500;">Klávesové zkratky</div>
-                    <div style="color: #9ca8b3; font-size: 12px;">Stiskni <kbd style="background: rgba(159, 212, 161, 0.2); padding: 2px 6px; border-radius: 3px; color: #4ade80;">?</kbd> pro zobrazení</div>
+                    <div style="color: #9ca8b3; font-size: 12px;">Stiskni <kbd style="background: rgba(74, 222, 128, 0.2); padding: 2px 6px; border-radius: 3px; color: #4ade80;">?</kbd> pro zobrazení</div>
                 </div>
                 <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #6b7580; cursor: pointer; padding: 4px; font-size: 18px;">&times;</button>
             `;

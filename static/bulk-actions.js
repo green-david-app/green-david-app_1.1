@@ -89,7 +89,7 @@
           .bulk-btn.danger { border-color: #ef4444; color: #ef4444; }
           .bulk-btn.danger:hover { background: rgba(239,68,68,0.2); }
           .bulk-btn.success { border-color: var(--mint, #4ade80); color: var(--mint, #4ade80); }
-          .bulk-btn.success:hover { background: rgba(159,212,161,0.2); }
+          .bulk-btn.success:hover { background: rgba(74,222,128,0.2); }
           .bulk-btn.warning { border-color: #f59e0b; color: #f59e0b; }
           .bulk-btn.warning:hover { background: rgba(245,158,11,0.2); }
           
@@ -123,7 +123,7 @@
           }
           .bulk-item.selected {
             border-color: var(--mint, #4ade80) !important;
-            box-shadow: 0 0 0 2px rgba(159,212,161,0.3);
+            box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
           }
           
           @media (max-width: 768px) {

@@ -384,7 +384,7 @@
         width: 360px;
         max-width: calc(100vw - 32px);
         background: #151a1e;
-        border: 1px solid rgba(159, 212, 161, 0.2);
+        border: 1px solid rgba(74, 222, 128, 0.2);
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         z-index: 10000;
@@ -414,7 +414,7 @@
       }
 
       .notif-mark-all:hover {
-        background: rgba(159, 212, 161, 0.1);
+        background: rgba(74, 222, 128, 0.1);
       }
 
       .notif-list {

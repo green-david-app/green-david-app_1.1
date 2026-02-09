@@ -507,7 +507,7 @@ voiceStyles.textContent = `
         border: none;
         color: #0a0e11;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(159, 212, 161, 0.4);
+        box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -517,7 +517,7 @@ voiceStyles.textContent = `
     
     .voice-command-btn:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 25px rgba(159, 212, 161, 0.5);
+        box-shadow: 0 6px 25px rgba(74, 222, 128, 0.5);
     }
     
     .voice-command-btn.listening {

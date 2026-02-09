@@ -443,7 +443,7 @@ gpsStyles.textContent = `
     
     .gps-widget.checked-in {
         border-color: var(--mint, #4ade80);
-        background: rgba(159, 212, 161, 0.05);
+        background: rgba(74, 222, 128, 0.05);
     }
     
     .gps-widget-header {

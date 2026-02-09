@@ -52,7 +52,7 @@
       height: 32px;
       border: none;
       border-radius: 50%;
-      background: rgba(159, 212, 161, 0.15);
+      background: rgba(74, 222, 128, 0.15);
       color: #4ade80;
       cursor: pointer;
       display: flex;
@@ -62,7 +62,7 @@
       z-index: 5;
     }
     .voice-btn:hover {
-      background: rgba(159, 212, 161, 0.25);
+      background: rgba(74, 222, 128, 0.25);
       transform: translateY(-50%) scale(1.05);
     }
     .voice-btn.recording {

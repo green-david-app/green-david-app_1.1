@@ -248,7 +248,7 @@ const autocompleteStyles = `
 
 .plant-autocomplete-item:hover,
 .plant-autocomplete-item.selected {
-    background: rgba(159, 212, 161, 0.12);
+    background: rgba(74, 222, 128, 0.12);
     border-color: var(--mint, #4ade80);
 }
 
@@ -269,7 +269,7 @@ const autocompleteStyles = `
 .plant-detail {
     font-size: 10px;
     color: var(--text-secondary, #9ca8b3);
-    background: rgba(159, 212, 161, 0.08);
+    background: rgba(74, 222, 128, 0.08);
     padding: 2px 6px;
     border-radius: 3px;
 }

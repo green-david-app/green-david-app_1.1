@@ -174,8 +174,8 @@ class AIInlineIndicators {
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(159, 212, 161, 0.1);
-                border: 2px dashed rgba(159, 212, 161, 0.5);
+                background: rgba(74, 222, 128, 0.1);
+                border: 2px dashed rgba(74, 222, 128, 0.5);
                 border-radius: inherit;
                 pointer-events: none;
                 z-index: 1;

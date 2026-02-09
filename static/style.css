@@ -1556,25 +1556,126 @@ tr:hover td {
 
 @media (max-width: 768px) {
   body {
-    padding-top: 72px;
+    padding-top: 64px;
     padding-bottom: 80px;
   }
   
   .app-header {
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    height: 52px;
-    padding: 0 var(--space-md);
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    height: 46px;
+    padding: 0 10px !important;
+    border-radius: 14px;
+  }
+  
+  .app-header-container {
+    gap: 6px !important;
   }
   
   .app-header-text {
     display: none;
   }
   
-  .global-search-container,
+  /* Search: hide full bar, keep the icon button */
   .app-header-search-wrapper {
+    flex: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+  .app-header-search-wrapper .app-header-search {
+    display: none !important;
+  }
+  .app-header-search-btn {
+    display: flex !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .app-header-search-btn svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+  .global-search-container {
     display: none;
+  }
+  
+  /* Header actions compact */
+  .app-header-actions {
+    gap: 4px !important;
+  }
+  
+  /* Tasks count → just a number badge */
+  .app-header-tasks-count {
+    font-size: 0 !important;
+    width: 28px;
+    height: 28px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50%;
+    position: relative;
+    text-decoration: none;
+  }
+  .app-header-tasks-count strong {
+    font-size: 11px !important;
+    color: #4ade80;
+  }
+  
+  /* Page title smaller */
+  .app-header-page-title {
+    font-size: 14px !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* All icon buttons — uniform 28px */
+  .app-header-icon-btn,
+  .app-header-notifications,
+  .app-header-settings,
+  .app-header-sidebar-toggle {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0;
+  }
+  .app-header-icon-btn svg,
+  .app-header-notifications svg,
+  .app-header-settings svg,
+  .app-header-sidebar-toggle svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  /* Badge smaller */
+  .notif-badge {
+    min-width: 14px !important;
+    height: 14px !important;
+    font-size: 8px !important;
+    line-height: 14px !important;
+    padding: 0 3px !important;
+    top: -2px !important;
+    right: -2px !important;
+    border-width: 1.5px !important;
+  }
+  #ai-operator-badge.notif-badge {
+    width: 8px !important;
+    min-width: 8px !important;
+    height: 8px !important;
+    top: 0 !important;
+    right: 0 !important;
+  }
+  
+  /* Back button compact */
+  .app-header-back {
+    height: 28px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+  }
+  .app-header-back svg {
+    width: 14px !important;
+    height: 14px !important;
   }
   
   .container {
@@ -2335,3 +2436,30 @@ table tbody tr:hover {
 
 .page-icon.red { background: linear-gradient(145deg, rgba(239,68,68,0.30) 0%, rgba(239,68,68,0.12) 100%); }
 .page-icon.red svg { stroke: #ef4444; }
+
+/* ===== Mobile Search Expanded State ===== */
+@media (max-width: 768px) {
+  .app-header.search-expanded .app-header-container {
+    position: relative;
+  }
+  .app-header.search-expanded .app-header-search {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: rgba(15, 18, 25, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 8px;
+    border-radius: 14px;
+    height: 100%;
+    display: flex !important;
+    align-items: center;
+  }
+  .app-header.search-expanded .app-header-search-input {
+    height: 40px;
+    font-size: 16px; /* prevents zoom on iOS */
+  }
+}

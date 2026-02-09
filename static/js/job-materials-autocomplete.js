@@ -83,7 +83,7 @@ function renderAutocompleteResults(dropdown, items, input, infoDiv) {
             <div style="font-size: 12px; color: #9ca3af; display: flex; gap: 12px; flex-wrap: wrap;">
                 ${item.sku ? `<span>SKU: ${escapeHtml(item.sku)}</span>` : ''}
                 ${item.category ? `<span>Kategorie: ${escapeHtml(item.category)}</span>` : ''}
-                <span style="color: ${isAvailable ? '#9fd4a1' : '#f56565'}; font-weight: 600;">
+                <span style="color: ${isAvailable ? '#4ade80' : '#f56565'}; font-weight: 600;">
                     Dostupné: ${availableQty.toFixed(2)} ${escapeHtml(item.unit)}
                 </span>
                 ${item.location ? `<span>📍 ${escapeHtml(item.location)}</span>` : ''}
@@ -130,7 +130,7 @@ function selectWarehouseItem(item, input, dropdown, infoDiv) {
         const reservedQty = item.reserved_qty || 0;
         
         infoDiv.innerHTML = `
-            <div style="background: #1a2332; padding: 12px; border-radius: 8px; border-left: 3px solid #9fd4a1;">
+            <div style="background: #1a2332; padding: 12px; border-radius: 8px; border-left: 3px solid #4ade80;">
                 <div style="font-size: 14px; color: white; font-weight: 600; margin-bottom: 8px;">
                     ✅ Položka ze skladu vybrána
                 </div>

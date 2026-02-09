@@ -457,7 +457,7 @@ plannerStyles.textContent = `
         margin-bottom: 4px;
     }
     
-    .score-circle.good { background: rgba(159, 212, 161, 0.2); color: var(--mint, #4ade80); }
+    .score-circle.good { background: rgba(74, 222, 128, 0.2); color: var(--mint, #4ade80); }
     .score-circle.medium { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
     .score-circle.bad { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
     
@@ -603,7 +603,7 @@ plannerStyles.textContent = `
     }
     
     .suggestion-item:hover {
-        background: rgba(159, 212, 161, 0.1);
+        background: rgba(74, 222, 128, 0.1);
     }
     
     .suggestion-icon { font-size: 18px; }

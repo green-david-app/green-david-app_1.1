@@ -28,11 +28,33 @@ class AppHeader {
   initSearchButton() {
     const btn = document.getElementById('app-header-search-btn');
     const input = document.getElementById('app-header-search-input');
+    const wrapper = document.getElementById('app-header-search-container');
     if (!btn || !input) return;
     
     btn.addEventListener('click', () => {
-      input.focus();
-      input.select();
+      // On mobile (input hidden), expand search overlay
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        const header = document.querySelector('.app-header');
+        if (header) header.classList.toggle('search-expanded');
+        if (wrapper) wrapper.style.display = header?.classList.contains('search-expanded') ? 'block' : 'none';
+        if (header?.classList.contains('search-expanded')) {
+          setTimeout(() => { input.focus(); input.select(); }, 100);
+        }
+      } else {
+        input.focus();
+        input.select();
+      }
+    });
+    
+    // Close on Escape
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const header = document.querySelector('.app-header');
+        if (header) header.classList.remove('search-expanded');
+        if (wrapper) wrapper.style.display = 'none';
+        input.blur();
+      }
     });
   }
   
@@ -68,6 +90,8 @@ class AppHeader {
       '/settings.html': 'Nastavení',
       '/settings': 'Nastavení',
       '/documents.html': 'Dokumenty',
+      '/directory.html': 'Adresář',
+      '/directory': 'Adresář',
       '/notifications.html': 'Notifikace',
       '/nursery.html': 'Školka',
       '/plant-database.html': 'Databáze rostlin',
@@ -276,7 +300,7 @@ class AppHeader {
 
         const headerEl = document.createElement('header');
         headerEl.className = 'app-header';
-        headerEl.style.cssText = 'position:fixed !important; top:12px; z-index:1000;';
+        headerEl.style.cssText = 'position:fixed !important; z-index:1000;';
 
         headerEl.innerHTML = `
   <div class="app-header-container">
@@ -331,7 +355,7 @@ class AppHeader {
           </svg>
           <span id="ai-operator-badge" class="notif-badge" style="display:none;">0</span>
         </button>
-        <div class="ai-operator-dropdown" id="ai-operator-dropdown" style="display:none; position:absolute; top:100%; right:0; margin-top:8px; background:#0d1117; border:1px solid #30363d; border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,0.3); min-width:300px; max-width:400px; z-index:1001; overflow:hidden;">
+        <div class="ai-operator-dropdown" id="ai-operator-dropdown" style="display:none; position:absolute; top:100%; right:0; margin-top:8px; background: linear-gradient(145deg, rgba(30,35,45,0.95), rgba(20,25,35,0.95)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05); min-width:300px; max-width:400px; z-index:1001; overflow:hidden;">
           <div style="padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:600; font-size:14px; color:#e6edf3;">AI Operátor</div>
           <div id="ai-operator-dropdown-content" style="max-height:400px; overflow-y:auto;">
             <div style="padding:24px 16px; text-align:center; color:#8b949e; font-size:14px;">Načítám...</div>
@@ -361,6 +385,14 @@ class AppHeader {
         `;
 
         document.body.insertBefore(headerEl, document.body.firstChild);
+        
+        // Skryj settings ikonu pro ne-ownery (po applySidebarRoles)
+        setTimeout(() => {
+          if (window.GD_USER_ROLE && window.GD_USER_ROLE !== 'owner') {
+            const settingsBtn = document.querySelector('.app-header-settings, [href="/settings.html"]');
+            if (settingsBtn) settingsBtn.style.display = 'none';
+          }
+        }, 100);
       }
 
 

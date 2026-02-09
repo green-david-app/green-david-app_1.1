@@ -331,12 +331,12 @@ widgetStyles.textContent = `
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(159, 212, 161, 0.4);
+        box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
         transition: all 0.3s ease;
     }
     .widget-edit-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(159, 212, 161, 0.5);
+        box-shadow: 0 6px 25px rgba(74, 222, 128, 0.5);
     }
     
     .widget-grid {
@@ -347,8 +347,8 @@ widgetStyles.textContent = `
     }
     
     .widget-grid.edit-mode {
-        background: rgba(159, 212, 161, 0.05);
-        border: 2px dashed rgba(159, 212, 161, 0.3);
+        background: rgba(74, 222, 128, 0.05);
+        border: 2px dashed rgba(74, 222, 128, 0.3);
         border-radius: 16px;
         padding: 20px;
         min-height: 200px;
@@ -363,7 +363,7 @@ widgetStyles.textContent = `
     }
     
     .dashboard-widget.editable {
-        border: 2px solid rgba(159, 212, 161, 0.3);
+        border: 2px solid rgba(74, 222, 128, 0.3);
     }
     
     .dashboard-widget.editable:hover {
@@ -380,7 +380,7 @@ widgetStyles.textContent = `
         align-items: center;
         gap: 8px;
         padding: 12px 16px;
-        background: rgba(159, 212, 161, 0.1);
+        background: rgba(74, 222, 128, 0.1);
         border-bottom: 1px solid var(--border-primary, #2d3748);
         cursor: grab;
     }
@@ -465,7 +465,7 @@ widgetStyles.textContent = `
     
     .widget-picker-item:hover {
         border-color: var(--mint, #4ade80);
-        background: rgba(159, 212, 161, 0.1);
+        background: rgba(74, 222, 128, 0.1);
         transform: translateY(-2px);
     }
     
