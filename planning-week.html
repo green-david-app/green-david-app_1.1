@@ -10,15 +10,15 @@
     <link rel="stylesheet" href="/static/css/tasks-design-system.css"/>
     <style>
         :root {
-            --bg-primary: #0a0e11;
-            --bg-card: #151a1e;
-            --bg-elevated: #1a2027;
-            --border-primary: #2d3439;
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --border-primary: rgba(255,255,255,0.08);
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
             --text-tertiary: #6b7580;
             --mint: #4ade80;
-            --mint-dim: rgba(159, 212, 161, 0.16);
+            --mint-dim: rgba(74, 222, 128, 0.16);
         }
         
         body {
@@ -373,7 +373,7 @@
         <div style="display: flex; gap: 8px; margin-left: auto;">
             <a href="/planning/daily" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
             <a href="/planning/timeline" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
-            <a href="/planning/week" style="padding: 8px 16px; background: var(--mint); color: #0a0e11; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Týden</a>
+            <a href="/planning/week" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">Týden</a>
             <a href="/planning/costs" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
             <a href="/planning/scenarios" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -393,7 +393,7 @@
                 <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                 Předchozí
             </button>
-            <button onclick="navigate(0)" style="background: var(--mint); color: #0a0e11;">Tento týden</button>
+            <button onclick="navigate(0)" style="background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">Tento týden</button>
             <button onclick="navigate(1)">
                 Příští
                 <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>

@@ -13,104 +13,145 @@
     <link rel="stylesheet" href="/static/icons.css">
     <script src="/app-settings.js"></script>
     <style>
-    :root {
-        --bg-dark: #0a0a0f;
-        --bg-elevated: #1e1e2e;
-        --mint: #4ade80;
-        --text-primary: #f1f5f9;
-        --text-secondary: #94a3b8;
-        --border-primary: #2a2a4a;
-    }
-
-    .directory-page {
+    /* Page wrapper */
+    .page {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 0 16px 100px;
+        padding: 10px 16px 100px;
     }
 
-    /* Header */
-    .directory-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 0;
-        border-bottom: 1px solid var(--border-primary);
-        margin-bottom: 24px;
-    }
-
-    .directory-header h1 {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .btn-new-party {
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        background: var(--mint);
-        color: #0a0a0f;
-        border: none;
-        cursor: pointer;
+    /* Action Bar */
+    .action-bar {
         display: flex;
         align-items: center;
         gap: 8px;
+        margin-bottom: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
     }
 
-    .btn-new-party:hover {
-        opacity: 0.9;
+    .btn-primary {
+        background: rgba(74, 222, 128, 0.15);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        color: #4ade80;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 10px;
+        padding: 10px 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: rgba(74, 222, 128, 0.25);
+        border-color: rgba(74, 222, 128, 0.5);
+        box-shadow: 0 0 20px rgba(74, 222, 128, 0.15);
     }
 
     /* Stats */
     .directory-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-        margin-bottom: 24px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
     }
 
     .stat-card {
-        background: var(--bg-elevated);
-        border: 1px solid var(--border-primary);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
+        background: rgba(26, 35, 50, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 10px;
+        padding: 12px;
+        border-left: 3px solid #334155;
+        border: 1px solid rgba(74, 222, 128, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
-    .stat-card .value {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-primary);
+    .stat-card.total { border-left-color: #60a5fa; }
+    .stat-card.active { border-left-color: #4ade80; }
+    .stat-card.strategic { border-left-color: #a78bfa; }
+    .stat-card.leads { border-left-color: #fbbf24; }
+
+    .stat-card .label {
+        font-size: 10px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 4px;
     }
 
-    .stat-card .label {
+    .stat-card .value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .stat-card .sub {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    /* Filter Pills */
+    .filter-pills {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        background: rgba(26, 35, 50, 0.4);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .filter-pill {
+        padding: 6px 14px;
+        border: 1px solid #334155;
+        background: transparent;
+        color: #64748b;
+        border-radius: 20px;
         font-size: 12px;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .filter-pill:hover {
+        border-color: #4ade80;
+    }
+
+    .filter-pill.active {
+        background: rgba(74, 222, 128, 0.15);
+        border-color: #4ade80;
+        color: #4ade80;
     }
 
     /* Filters */
     .directory-filters {
         display: flex;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         flex-wrap: wrap;
+        align-items: center;
     }
 
     .filter-input,
     .filter-select {
         padding: 8px 14px;
-        border-radius: 8px;
+        border-radius: 10px;
         font-size: 13px;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border-primary);
-        color: var(--text-primary);
+        background: rgba(26, 35, 50, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
         outline: none;
     }
 
@@ -121,40 +162,7 @@
 
     .filter-input:focus,
     .filter-select:focus {
-        border-color: var(--mint);
-    }
-
-    /* Pipeline tabs */
-    .pipeline-tabs {
-        display: flex;
-        gap: 4px;
-        margin-bottom: 20px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-    }
-
-    .pipeline-tab {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        background: transparent;
-        border: 1px solid var(--border-primary);
-        color: var(--text-secondary);
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.2s;
-    }
-
-    .pipeline-tab:hover {
-        border-color: var(--mint);
-        color: var(--text-primary);
-    }
-
-    .pipeline-tab.active {
-        background: var(--mint);
-        color: #0a0a0f;
-        border-color: var(--mint);
+        border-color: #4ade80;
     }
 
     /* Party cards */
@@ -165,16 +173,16 @@
     }
 
     .party-card {
-        background: var(--bg-elevated);
-        border: 1px solid var(--border-primary);
-        border-radius: 14px;
+        background: #1a2332;
+        border: 1px solid #334155;
+        border-radius: 10px;
         padding: 16px 20px;
         cursor: pointer;
         transition: border-color 0.2s, transform 0.1s;
     }
 
     .party-card:hover {
-        border-color: var(--mint);
+        border-color: #4ade80;
         transform: translateY(-1px);
     }
 
@@ -197,7 +205,7 @@
 
     .party-card-icon.org {
         background: rgba(74,222,128,0.12);
-        color: var(--mint);
+        color: #4ade80;
     }
 
     .party-card-icon.person {
@@ -213,7 +221,7 @@
     .party-card-name {
         font-weight: 700;
         font-size: 16px;
-        color: var(--text-primary);
+        color: #fff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -222,7 +230,7 @@
 
     .party-card-contact {
         font-size: 13px;
-        color: var(--text-secondary);
+        color: #64748b;
     }
 
     .party-card-badges {
@@ -252,7 +260,7 @@
 
     .tier-strategic {
         background: rgba(74,222,128,0.15);
-        color: var(--mint);
+        color: #4ade80;
     }
 
     .party-card-bottom {
@@ -266,7 +274,7 @@
 
     .party-card-stats {
         font-size: 12px;
-        color: var(--text-secondary);
+        color: #64748b;
         display: flex;
         gap: 4px;
         flex-wrap: wrap;
@@ -309,12 +317,15 @@
         bottom: 0;
         width: 560px;
         max-width: 100%;
-        background: var(--bg-dark);
-        border-left: 1px solid var(--border-primary);
+        background: rgba(20, 27, 40, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
         transform: translateX(100%);
         transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
         z-index: 1001;
         overflow-y: auto;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     }
 
     #party-detail-panel.open {
@@ -326,23 +337,25 @@
         justify-content: space-between;
         align-items: center;
         padding: 20px;
-        border-bottom: 1px solid var(--border-primary);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         position: sticky;
         top: 0;
-        background: var(--bg-dark);
+        background: rgba(20, 27, 40, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
         z-index: 10;
     }
 
     .detail-header h2 {
         font-size: 20px;
-        color: var(--text-primary);
+        color: #fff;
         margin: 0;
     }
 
     .detail-close {
         background: none;
         border: none;
-        color: var(--text-secondary);
+        color: #64748b;
         cursor: pointer;
         padding: 4px;
         display: flex;
@@ -351,18 +364,20 @@
     }
 
     .detail-close:hover {
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .detail-tabs {
         display: flex;
         gap: 2px;
         padding: 12px 20px;
-        border-bottom: 1px solid var(--border-primary);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         overflow-x: auto;
         position: sticky;
         top: 73px;
-        background: var(--bg-dark);
+        background: rgba(20, 27, 40, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
         z-index: 9;
     }
 
@@ -372,20 +387,23 @@
         font-size: 13px;
         background: transparent;
         border: none;
-        color: var(--text-secondary);
+        color: #64748b;
         cursor: pointer;
         white-space: nowrap;
         transition: all 0.2s;
     }
 
     .detail-tab.active {
-        background: var(--bg-elevated);
-        color: var(--text-primary);
+        background: #1a2332;
+        color: #fff;
         font-weight: 600;
     }
 
     .detail-body {
         padding: 20px;
+        background: rgba(20, 27, 40, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
     }
 
     .detail-field-grid {
@@ -402,14 +420,14 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--text-secondary);
+        color: #64748b;
         margin-bottom: 4px;
         display: block;
     }
 
     .detail-field span,
     .detail-field p {
-        color: var(--text-primary);
+        color: #fff;
         font-size: 14px;
     }
 
@@ -417,15 +435,17 @@
         width: 100%;
         padding: 8px 12px;
         border-radius: 8px;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border-primary);
-        color: var(--text-primary);
+        background: rgba(26, 35, 50, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #fff;
         font-size: 14px;
         outline: none;
     }
 
     .detail-field select:focus {
-        border-color: var(--mint);
+        border-color: #4ade80;
     }
 
     .detail-tab-content {
@@ -440,40 +460,44 @@
     .detail-contact-row,
     .detail-interaction-row {
         padding: 12px;
-        background: var(--bg-elevated);
+        background: rgba(26, 35, 50, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 8px;
         margin-bottom: 8px;
         cursor: pointer;
-        transition: all 0.2s;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: all 0.3s ease;
     }
 
     .detail-job-row:hover,
     .detail-contact-row:hover {
-        border-color: var(--mint);
+        border-color: rgba(74, 222, 128, 0.3);
         transform: translateX(2px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
     .detail-contact-row {
-        border: 1px solid var(--border-primary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .contact-role {
         font-size: 11px;
-        color: var(--text-secondary);
+        color: #64748b;
         margin-left: 6px;
     }
 
     .contact-details {
         margin-top: 4px;
         font-size: 13px;
-        color: var(--text-secondary);
+        color: #64748b;
     }
 
     .detail-interaction-row {
         display: flex;
         align-items: center;
         gap: 12px;
-        border: 1px solid var(--border-primary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .interaction-icon {
@@ -482,13 +506,13 @@
 
     .interaction-date {
         font-size: 12px;
-        color: var(--text-secondary);
+        color: #64748b;
         min-width: 100px;
     }
 
     .interaction-text {
         flex: 1;
-        color: var(--text-primary);
+        color: #fff;
         font-size: 13px;
     }
 
@@ -507,7 +531,7 @@
 
     .index-fill {
         height: 100%;
-        background: var(--mint);
+        background: #4ade80;
         border-radius: 4px;
         transition: width 0.6s;
     }
@@ -521,14 +545,16 @@
 
     .index-summary div {
         padding: 12px;
-        background: var(--bg-elevated);
+        background: rgba(26, 35, 50, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 8px;
-        border: 1px solid var(--border-primary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .index-summary label {
         font-size: 11px;
-        color: var(--text-secondary);
+        color: #64748b;
         text-transform: uppercase;
         display: block;
         margin-bottom: 4px;
@@ -536,7 +562,7 @@
 
     .index-summary strong {
         font-size: 18px;
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .btn-add,
@@ -550,7 +576,7 @@
         width: 100%;
         background: rgba(74,222,128,0.1);
         border: 1px solid rgba(74,222,128,0.3);
-        color: var(--mint);
+        color: #4ade80;
         text-align: center;
         transition: all 0.2s;
     }
@@ -563,7 +589,7 @@
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: var(--text-secondary);
+        color: #64748b;
     }
 
     .empty-state svg {
@@ -572,7 +598,7 @@
     }
 
     .empty-note {
-        color: var(--text-secondary);
+        color: #64748b;
         font-size: 13px;
         font-style: italic;
         padding: 20px;
@@ -596,18 +622,21 @@
     }
 
     .modal-content {
-        background: var(--bg-elevated);
+        background: rgba(20, 27, 40, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
         border-radius: 16px;
         width: 90%;
         max-width: 600px;
         max-height: 90vh;
         overflow-y: auto;
-        border: 1px solid var(--border-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     }
 
     .modal-header {
         padding: 20px;
-        border-bottom: 1px solid var(--border-primary);
+        border-bottom: 1px solid #334155;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -616,7 +645,7 @@
     .modal-header h3 {
         margin: 0;
         font-size: 18px;
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .modal-body {
@@ -625,7 +654,7 @@
 
     .modal-footer {
         padding: 20px;
-        border-top: 1px solid var(--border-primary);
+        border-top: 1px solid #334155;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
@@ -640,7 +669,7 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--text-secondary);
+        color: #64748b;
         margin-bottom: 6px;
     }
 
@@ -650,9 +679,11 @@
         width: 100%;
         padding: 10px 14px;
         border-radius: 8px;
-        background: var(--bg-dark);
-        border: 1px solid var(--border-primary);
-        color: var(--text-primary);
+        background: rgba(26, 35, 50, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #fff;
         font-size: 14px;
         outline: none;
         box-sizing: border-box;
@@ -661,7 +692,7 @@
     .form-row input:focus,
     .form-row select:focus,
     .form-row textarea:focus {
-        border-color: var(--mint);
+        border-color: #4ade80;
     }
 
     .form-row-grid {
@@ -682,32 +713,21 @@
         border-radius: 20px;
         font-size: 12px;
         cursor: pointer;
-        border: 1px solid var(--border-primary);
+        border: 1px solid #334155;
         background: transparent;
-        color: var(--text-secondary);
+        color: #64748b;
         transition: all 0.2s;
     }
 
     .chip:hover {
-        border-color: var(--mint);
-        color: var(--text-primary);
+        border-color: #4ade80;
+        color: #fff;
     }
 
     .chip.active {
         background: rgba(74,222,128,0.15);
-        border-color: var(--mint);
-        color: var(--mint);
-    }
-
-    .btn-primary {
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        background: var(--mint);
-        color: #0a0a0f;
-        border: none;
-        cursor: pointer;
+        border-color: #4ade80;
+        color: #4ade80;
     }
 
     .btn-secondary {
@@ -716,21 +736,19 @@
         font-size: 14px;
         font-weight: 600;
         background: transparent;
-        color: var(--text-secondary);
-        border: 1px solid var(--border-primary);
+        color: #64748b;
+        border: 1px solid #334155;
         cursor: pointer;
     }
 
     .btn-secondary:hover {
-        background: var(--bg-elevated);
-        color: var(--text-primary);
+        background: #1a2332;
+        color: #fff;
     }
 
     @media (max-width: 768px) {
-        .directory-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 16px;
+        .directory-stats {
+            grid-template-columns: repeat(2, 1fr);
         }
 
         .directory-filters {
@@ -758,45 +776,45 @@
 <body class="has-sidebar">
     <div id="app-header"></div>
     
-    <div class="directory-page">
-        <!-- Header -->
-        <div class="directory-header">
-            <h1>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 010 7.75"/>
-                </svg>
-                Adresář
-            </h1>
-            <button class="btn-new-party" onclick="openNewPartyModal()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="page">
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button class="btn-primary" onclick="openNewPartyModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Nová protistrana
+                + Nový klient
             </button>
         </div>
 
         <!-- Stats -->
         <div class="directory-stats">
-            <div class="stat-card">
-                <div class="value" id="stat-total">0</div>
+            <div class="stat-card total">
                 <div class="label">Celkem</div>
+                <div class="value" id="stat-total">0</div>
             </div>
-            <div class="stat-card">
-                <div class="value" id="stat-active">0</div>
+            <div class="stat-card active">
                 <div class="label">Aktivních</div>
+                <div class="value" id="stat-active">0</div>
             </div>
-            <div class="stat-card">
-                <div class="value" id="stat-strategic">0</div>
+            <div class="stat-card strategic">
                 <div class="label">Strategických</div>
+                <div class="value" id="stat-strategic">0</div>
             </div>
-            <div class="stat-card">
-                <div class="value" id="stat-leads">0</div>
+            <div class="stat-card leads">
                 <div class="label">Nových</div>
+                <div class="value" id="stat-leads">0</div>
             </div>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="filter-pills">
+            <button class="filter-pill active" onclick="filterByStatus('')">Všichni</button>
+            <button class="filter-pill" onclick="filterByStatus('LEAD')">Nové (<span id="tab-count-lead">0</span>)</button>
+            <button class="filter-pill" onclick="filterByStatus('ACTIVE')">Aktivní (<span id="tab-count-active">0</span>)</button>
+            <button class="filter-pill" onclick="filterByStatus('RECURRING')">Stálí (<span id="tab-count-recurring">0</span>)</button>
+            <button class="filter-pill" onclick="filterByStatus('DORMANT')">Spící</button>
         </div>
 
         <!-- Filters -->
@@ -830,15 +848,6 @@
             </select>
         </div>
 
-        <!-- Pipeline tabs -->
-        <div class="pipeline-tabs">
-            <button class="pipeline-tab active" onclick="filterByStatus('')">Všichni</button>
-            <button class="pipeline-tab" onclick="filterByStatus('LEAD')">Nové (<span id="tab-count-lead">0</span>)</button>
-            <button class="pipeline-tab" onclick="filterByStatus('ACTIVE')">Aktivní (<span id="tab-count-active">0</span>)</button>
-            <button class="pipeline-tab" onclick="filterByStatus('RECURRING')">Stálí (<span id="tab-count-recurring">0</span>)</button>
-            <button class="pipeline-tab" onclick="filterByStatus('DORMANT')">Spící</button>
-        </div>
-
         <!-- Parties list -->
         <div class="parties-list" id="parties-list"></div>
     </div>
@@ -852,7 +861,7 @@
     <div class="modal-overlay" id="party-modal" onclick="if(event.target===this)closePartyModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3 id="modal-title">Nová protistrana</h3>
+                <h3 id="modal-title">Nový klient</h3>
                 <button class="detail-close" onclick="closePartyModal()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12"/>
@@ -1070,6 +1079,7 @@
     </div>
 
     <script src="/static/app-sidebar.js"></script>
+    <script src="/static/app-header.js"></script>
     <script>
     let allParties = [];
     let currentFilter = { role: '', status: '', tier: '', search: '', sort_by: 'display_name' };
@@ -1194,7 +1204,7 @@
         loadParties();
         
         // Aktivní tab
-        document.querySelectorAll('.pipeline-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.filter-pill').forEach(t => t.classList.remove('active'));
         event.target.classList.add('active');
     }
 
@@ -1326,7 +1336,7 @@
                         <div class="detail-job-row" onclick="window.location.href='/jobs.html?id=${j.id}'">
                             <div>
                                 <strong>${escapeHtml(j.title || j.name || 'Zakázka #'+j.id)}</strong>
-                                <div class="detail-job-meta" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                <div class="detail-job-meta" style="font-size: 12px; color: #64748b; margin-top: 4px;">
                                     ${j.status || ''} · Deadline: ${j.deadline ? new Date(j.deadline).toLocaleDateString('cs-CZ') : '—'}
                                 </div>
                             </div>
@@ -1424,7 +1434,7 @@
     // Modal funkce
     function openNewPartyModal() {
         document.getElementById('party-id').value = '';
-        document.getElementById('modal-title').textContent = 'Nová protistrana';
+        document.getElementById('modal-title').textContent = 'Nový klient';
         document.getElementById('party-form').reset();
         currentPartyType = 'ORG';
         selectedRoles = ['CLIENT'];

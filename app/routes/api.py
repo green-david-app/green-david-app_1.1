@@ -561,14 +561,16 @@ def api_team_ai_recommendations():
 # Additional routes from main.py
 @api_bp.route('/api/weather', methods=['GET'])
 def api_weather():
-    """Získá aktuální počasí pro zadané město (default: Příbram)"""
+    """Získá aktuální počasí — přijímá lat/lon nebo city"""
     u, err = require_auth()
     if err: return err
     
-    city = request.args.get('city', 'Příbram')
+    # Accept direct lat/lon from browser geolocation
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    city = request.args.get('city', '')
     
-    # Open-Meteo API - free, no API key required
-    # Koordináty pro Příbram, CZ
+    # Known city coordinates as fallback
     locations = {
         'Příbram': {'lat': 49.6897, 'lon': 14.0101},
         'Praha': {'lat': 50.0755, 'lon': 14.4378},
@@ -577,17 +579,55 @@ def api_weather():
         'Plzeň': {'lat': 49.7384, 'lon': 13.3736},
     }
     
-    coords = locations.get(city, locations['Příbram'])
+    if lat is not None and lon is not None:
+        # Use direct coordinates from browser
+        city_name = city or 'Moje poloha'
+    elif city and city in locations:
+        lat = locations[city]['lat']
+        lon = locations[city]['lon']
+        city_name = city
+    else:
+        # Default: Praha
+        lat = locations['Praha']['lat']
+        lon = locations['Praha']['lon']
+        city_name = 'Praha'
     
     try:
         import urllib.request
         import urllib.error
         
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={coords['lat']}&longitude={coords['lon']}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FPrague&forecast_days=5"
+        # Fetch weather + hourly for next 24h
+        url = (
+            f"https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lon}"
+            f"&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+            f"&hourly=temperature_2m,weather_code,precipitation_probability"
+            f"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+            f"&timezone=Europe%2FPrague&forecast_days=7"
+        )
         
         req = urllib.request.Request(url, headers={'User-Agent': 'GreenDavidApp/1.0'})
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode('utf-8'))
+        
+        # If lat/lon was from browser, try reverse geocoding for city name
+        if city_name == 'Moje poloha':
+            try:
+                geo_url = f"https://geocoding-api.open-meteo.com/v1/reverse?latitude={lat}&longitude={lon}&count=1&language=cs"
+                geo_req = urllib.request.Request(geo_url, headers={'User-Agent': 'GreenDavidApp/1.0'})
+                with urllib.request.urlopen(geo_req, timeout=3) as geo_resp:
+                    geo_data = json.loads(geo_resp.read().decode('utf-8'))
+                    if geo_data.get('results'):
+                        city_name = geo_data['results'][0].get('name', 'Moje poloha')
+            except Exception:
+                # Fallback: find nearest known city
+                import math
+                min_dist = float('inf')
+                for cname, ccoords in locations.items():
+                    d = math.sqrt((lat - ccoords['lat'])**2 + (lon - ccoords['lon'])**2)
+                    if d < min_dist:
+                        min_dist = d
+                        city_name = cname
         
         # Weather code to description and icon
         weather_codes = {
@@ -631,8 +671,29 @@ def api_weather():
                     'temp_max': daily['temperature_2m_max'][i] if i < len(daily.get('temperature_2m_max', [])) else None,
                     'temp_min': daily['temperature_2m_min'][i] if i < len(daily.get('temperature_2m_min', [])) else None,
                     'precipitation_prob': daily['precipitation_probability_max'][i] if i < len(daily.get('precipitation_probability_max', [])) else 0,
+                    'weather_code': day_code,
                     'description': day_info['desc'],
                     'icon': day_info['icon']
+                })
+        
+        # Hourly data for detailed views (next 48h)
+        hourly_data = []
+        hourly = data.get('hourly', {})
+        if hourly:
+            h_times = hourly.get('time', [])
+            h_temps = hourly.get('temperature_2m', [])
+            h_codes = hourly.get('weather_code', [])
+            h_precip = hourly.get('precipitation_probability', [])
+            for i in range(min(48, len(h_times))):
+                h_code = h_codes[i] if i < len(h_codes) else 0
+                h_info = weather_codes.get(h_code, {'desc': 'Neznámo', 'icon': '❓'})
+                hourly_data.append({
+                    'time': h_times[i],
+                    'temp': h_temps[i] if i < len(h_temps) else None,
+                    'weather_code': h_code,
+                    'description': h_info['desc'],
+                    'icon': h_info['icon'],
+                    'precipitation_prob': h_precip[i] if i < len(h_precip) else 0
                 })
         
         # Gardening advice based on weather
@@ -661,7 +722,8 @@ def api_weather():
         
         return jsonify({
             'success': True,
-            'city': city,
+            'city': city_name,
+            'coords': {'lat': lat, 'lon': lon},
             'current': {
                 'temperature': current.get('temperature_2m'),
                 'humidity': current.get('relative_humidity_2m'),
@@ -671,6 +733,7 @@ def api_weather():
                 'icon': weather_info['icon']
             },
             'forecast': forecast,
+            'hourly': hourly_data,
             'advice': advice
         })
         
@@ -1184,3 +1247,53 @@ def api_ai_task_indicators():
     if err: return err
     # Stub - vrať prázdný objekt
     return jsonify({'indicators': {}})
+
+@api_bp.route('/api/inbox/jobs', methods=['GET'])
+def api_inbox_jobs():
+    """Vrátí zakázky přiřazené zaměstnanci"""
+    u, err = require_auth()
+    if err: return err
+    eid = request.args.get('employee_id', type=int)
+    if not eid:
+        return jsonify({'jobs': []})
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT DISTINCT j.id, j.name, j.client, j.status, j.city, j.code, j.priority,
+                   j.start_date, j.deadline, j.progress, j.completion_percent,
+                   j.estimated_hours, j.actual_hours, j.budget, j.estimated_value
+            FROM jobs j
+            LEFT JOIN job_assignments ja ON ja.job_id = j.id
+            LEFT JOIN job_employees je ON je.job_id = j.id
+            WHERE (ja.employee_id = ? OR je.employee_id = ? OR j.owner_id = ? OR j.project_manager_id = ?)
+              AND j.status NOT IN ('archived', 'Archivováno')
+            ORDER BY
+              CASE j.status WHEN 'Probíhá' THEN 0 WHEN 'Plán' THEN 1 ELSE 2 END,
+              j.deadline ASC NULLS LAST
+        """, (eid, eid, u['id'], u['id'])).fetchall()
+        return jsonify({'jobs': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'jobs': [], 'error': str(e)}), 500
+
+@api_bp.route('/api/inbox/trainings', methods=['GET'])
+def api_inbox_trainings():
+    """Vrátí školení přiřazená zaměstnanci"""
+    u, err = require_auth()
+    if err: return err
+    eid = request.args.get('employee_id', type=int)
+    if not eid:
+        return jsonify({'trainings': []})
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT t.id, t.name, t.title, t.date_start, t.date_end, t.location,
+                   t.training_type, t.category, ta.status as attendance_status,
+                   ta.test_score, ta.certificate_issued
+            FROM trainings t
+            JOIN training_attendees ta ON ta.training_id = t.id
+            WHERE ta.employee_id = ?
+            ORDER BY t.date_start DESC
+        """, (eid,)).fetchall()
+        return jsonify({'trainings': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'trainings': [], 'error': str(e)}), 500

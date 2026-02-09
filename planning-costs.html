@@ -11,15 +11,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0e11;
-            --bg-card: #151a1e;
-            --bg-elevated: #1a2027;
-            --border-primary: #2d3439;
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --border-primary: rgba(255,255,255,0.08);
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
             --text-tertiary: #6b7580;
             --mint: #4ade80;
-            --mint-dim: rgba(159, 212, 161, 0.16);
+            --mint-dim: rgba(74, 222, 128, 0.16);
             --warning: #fbbf24;
             --danger: #ff6b6b;
         }
@@ -423,7 +423,7 @@
                 <a href="/planning/daily" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
                 <a href="/planning/timeline" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
                 <a href="/planning/week" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Týden</a>
-                <a href="/planning/costs" style="padding: 8px 16px; background: var(--mint); color: #0a0e11; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
+                <a href="/planning/costs" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">Náklady</a>
                 <a href="/planning/scenarios" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 18l6-6-6-6"/>
@@ -447,7 +447,7 @@
                         <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         Print
                     </button>
-                    <button onclick="exportCosts()" style="padding: 10px 16px; background: var(--mint); color: #0a0e11; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <button onclick="exportCosts()" style="padding: 10px 16px; background: linear-gradient(135deg, rgba(74,222,128,0.85), rgba(34,197,94,0.85)); color: #0a0e11; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(74,222,128,0.2);">
                         <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export CSV
                     </button>

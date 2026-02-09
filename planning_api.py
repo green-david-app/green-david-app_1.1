@@ -520,9 +520,35 @@ def create_day_plan():
             INSERT INTO day_plans (date, employee_id, job_id, planned_hours, status, note)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (target_date, int(employee_id), int(job_id) if job_id else None, planned_hours, status, note))
+        plan_id = cursor.lastrowid
         db.commit()
         
-        return jsonify({'success': True, 'id': cursor.lastrowid})
+        # Notifikuj zaměstnance
+        try:
+            emp = db.execute("SELECT name, user_id FROM employees WHERE id=?", (int(employee_id),)).fetchone()
+            job = db.execute("SELECT name, client, city FROM jobs WHERE id=?", (int(job_id),)).fetchone() if job_id else None
+            
+            if emp:
+                # Notifikace přes employee_id (pro uživatele bez user_id) i user_id
+                job_desc = f"{job['client'] or job['name']}" + (f" ({job['city']})" if job and job['city'] else "") if job else "bez zakázky"
+                notif_title = f"Plán na {target_date}"
+                notif_body = f"Byl vám přiřazen plán: {job_desc}, {planned_hours}h"
+                
+                db.execute("""
+                    INSERT INTO notifications (employee_id, user_id, kind, title, body, entity_type, entity_id, is_read, created_at)
+                    VALUES (?, ?, 'plan_assigned', ?, ?, 'day_plan', ?, 0, datetime('now'))
+                """, (
+                    int(employee_id),
+                    emp['user_id'] if emp['user_id'] else None,
+                    notif_title,
+                    notif_body,
+                    plan_id
+                ))
+                db.commit()
+        except Exception as e:
+            print(f"[NOTIF] Error sending plan notification: {e}")
+        
+        return jsonify({'success': True, 'id': plan_id})
     except Exception as e:
         print(f"[ERROR] create_day_plan: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -668,13 +694,38 @@ def copy_day_plans():
             FROM day_plans WHERE date=? AND status NOT IN ('absent', 'sick', 'vacation')
         """, (from_date,)).fetchall()
         
+        new_plan_ids = []
         for p in plans:
-            db.execute("""
+            cursor = db.execute("""
                 INSERT INTO day_plans (date, employee_id, job_id, planned_hours, status, note)
                 VALUES (?, ?, ?, ?, 'planned', ?)
             """, (to_date, p['employee_id'], p['job_id'], p['planned_hours'], p['note'] or ''))
+            new_plan_ids.append((cursor.lastrowid, p['employee_id'], p['job_id'], p['planned_hours']))
         
         db.commit()
+        
+        # Notifikuj všechny zaměstnance v zkopírovaných plánech
+        try:
+            for plan_id, emp_id, job_id, hours in new_plan_ids:
+                emp = db.execute("SELECT name, user_id FROM employees WHERE id=?", (emp_id,)).fetchone()
+                job = db.execute("SELECT name, client, city FROM jobs WHERE id=?", (job_id,)).fetchone() if job_id else None
+                
+                if emp:
+                    job_desc = f"{job['client'] or job['name']}" + (f" ({job['city']})" if job and job['city'] else "") if job else "bez zakázky"
+                    db.execute("""
+                        INSERT INTO notifications (employee_id, user_id, kind, title, body, entity_type, entity_id, is_read, created_at)
+                        VALUES (?, ?, 'plan_assigned', ?, ?, 'day_plan', ?, 0, datetime('now'))
+                    """, (
+                        emp_id,
+                        emp['user_id'] if emp['user_id'] else None,
+                        f"Plán na {to_date}",
+                        f"Byl vám přiřazen plán: {job_desc}, {hours}h",
+                        plan_id
+                    ))
+            db.commit()
+        except Exception as e:
+            print(f"[NOTIF] Error sending copy notifications: {e}")
+        
         return jsonify({'success': True, 'copied': len(plans)})
     except Exception as e:
         print(f"[ERROR] copy_day_plans: {e}")

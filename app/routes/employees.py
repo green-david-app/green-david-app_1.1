@@ -10,6 +10,105 @@ from app.config import ROLES
 employees_bp = Blueprint('employees', __name__)
 
 
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def get_active_members_count(db):
+    """Počet aktivních zaměstnanců"""
+    row = db.execute("SELECT COUNT(*) as cnt FROM employees WHERE status IN ('active', 'Aktivní') OR status IS NULL").fetchone()
+    return row['cnt'] if row else 0
+
+def get_average_utilization(db, week_start, week_end):
+    """Průměrná vytíženost týmu v daném týdnu (%)"""
+    employees = db.execute("SELECT id FROM employees WHERE status IN ('active', 'Aktivní') OR status IS NULL").fetchall()
+    if not employees:
+        return 0
+    total_util = 0
+    count = 0
+    for emp in employees:
+        emp_dict = dict(emp)
+        emp_id = emp_dict['id']
+        # Získej kapacitu z profilu nebo použij fallback
+        profile = db.execute("SELECT weekly_capacity_hours FROM team_member_profile WHERE employee_id = ?", (emp_id,)).fetchone()
+        capacity = (dict(profile)['weekly_capacity_hours'] if profile else None) or 40
+        worked_row = db.execute(
+            "SELECT SUM(COALESCE(duration_minutes, CAST(hours * 60 AS INTEGER))) / 60.0 as total FROM timesheets WHERE employee_id=? AND date >= ? AND date <= ?",
+            (emp_id, week_start, week_end)
+        ).fetchone()
+        worked = (worked_row['total'] or 0) if worked_row else 0
+        if capacity > 0:
+            total_util += (worked / capacity) * 100
+        count += 1
+    return round(total_util / count, 1) if count > 0 else 0
+
+def get_overloaded_count(db, week_start, week_end):
+    """Počet přetížených zaměstnanců (>100% kapacity)"""
+    employees = db.execute("SELECT id FROM employees WHERE status IN ('active', 'Aktivní') OR status IS NULL").fetchall()
+    overloaded = 0
+    for emp in employees:
+        emp_dict = dict(emp)
+        emp_id = emp_dict['id']
+        # Získej kapacitu z profilu nebo použij fallback
+        profile = db.execute("SELECT weekly_capacity_hours FROM team_member_profile WHERE employee_id = ?", (emp_id,)).fetchone()
+        capacity = (dict(profile)['weekly_capacity_hours'] if profile else None) or 40
+        worked_row = db.execute(
+            "SELECT SUM(COALESCE(duration_minutes, CAST(hours * 60 AS INTEGER))) / 60.0 as total FROM timesheets WHERE employee_id=? AND date >= ? AND date <= ?",
+            (emp_id, week_start, week_end)
+        ).fetchone()
+        worked = (worked_row['total'] or 0) if worked_row else 0
+        if capacity > 0 and (worked / capacity) > 1.0:
+            overloaded += 1
+    return overloaded
+
+def get_ai_balance_score(db, week_start, week_end):
+    """AI skóre vyváženosti týmu (0-100). Čím rovnoměrnější rozložení, tím vyšší."""
+    employees = db.execute("SELECT id FROM employees WHERE status IN ('active', 'Aktivní') OR status IS NULL").fetchall()
+    if not employees:
+        return 0
+    utilizations = []
+    for emp in employees:
+        emp_dict = dict(emp)
+        emp_id = emp_dict['id']
+        # Získej kapacitu z profilu nebo použij fallback
+        profile = db.execute("SELECT weekly_capacity_hours FROM team_member_profile WHERE employee_id = ?", (emp_id,)).fetchone()
+        capacity = (dict(profile)['weekly_capacity_hours'] if profile else None) or 40
+        worked_row = db.execute(
+            "SELECT SUM(COALESCE(duration_minutes, CAST(hours * 60 AS INTEGER))) / 60.0 as total FROM timesheets WHERE employee_id=? AND date >= ? AND date <= ?",
+            (emp_id, week_start, week_end)
+        ).fetchone()
+        worked = (worked_row['total'] or 0) if worked_row else 0
+        utilizations.append((worked / capacity * 100) if capacity > 0 else 0)
+    if not utilizations:
+        return 0
+    avg = sum(utilizations) / len(utilizations)
+    if avg == 0:
+        return 50  # Neutrální skóre když nikdo nepracoval
+    variance = sum((u - avg) ** 2 for u in utilizations) / len(utilizations)
+    std_dev = variance ** 0.5
+    # Čím nižší odchylka, tím vyšší skóre (max 100)
+    score = max(0, min(100, 100 - std_dev))
+    return round(score, 0)
+
+def calculate_capacity_percent(profile, current_hours):
+    """Vypočítá % vytížení zaměstnance"""
+    capacity = profile.get('weekly_capacity_hours', 40) or 40
+    if capacity <= 0:
+        return 0
+    return (current_hours / capacity) * 100
+
+def calculate_capacity_status(percent):
+    """Vrátí status na základě % vytížení"""
+    if percent > 100:
+        return 'overloaded'
+    elif percent > 80:
+        return 'optimal'
+    elif percent > 40:
+        return 'available'
+    else:
+        return 'underutilized'
+
+
 # --- Team/Employees aliases (to avoid 404) ---
 @employees_bp.route("/team")
 @employees_bp.route("/team/")
@@ -48,6 +147,30 @@ def admin_roles():
 @employees_bp.route("/employees.html")
 def employees_html():
     return send_from_directory(".", "employees.html")
+
+
+@employees_bp.route("/api/employees/<int:emp_id>", methods=["DELETE"])
+@requires_role('owner', 'admin', 'manager')
+def api_delete_employee(emp_id):
+    """Smazání zaměstnance podle ID v URL"""
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    user_role = normalize_role(user.get('role')) or 'owner'
+    if user_role not in ('owner', 'admin', 'manager'):
+        return jsonify({"ok": False, "error": "forbidden"}), 403
+    
+    db = get_db()
+    try:
+        db.execute("DELETE FROM employees WHERE id=?", (emp_id,))
+        db.commit()
+        print(f"✓ Employee {emp_id} deleted successfully")
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error deleting employee: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @employees_bp.route("/api/employees", methods=["GET","POST","PATCH","DELETE"])
@@ -370,6 +493,90 @@ def api_add_user():
         db.rollback()
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
+@employees_bp.route("/api/users/unlinked", methods=["GET"])
+@requires_role('owner', 'admin')
+def api_unlinked_users():
+    """Vrátí všechny uživatele s info o propojení"""
+    db = get_db()
+    rows = db.execute("""
+        SELECT u.id, u.name, u.email, u.role, u.active,
+               e.id AS linked_employee_id,
+               e.name AS linked_employee_name
+        FROM users u 
+        LEFT JOIN employees e ON e.user_id = u.id
+        WHERE u.active = 1
+        ORDER BY u.name
+    """).fetchall()
+    users = []
+    for r in rows:
+        d = dict(r)
+        d['is_linked'] = d.get('linked_employee_id') is not None
+        users.append(d)
+    return jsonify({"ok": True, "users": users})
+
+@employees_bp.route("/api/employees/<int:emp_id>/link-account", methods=["POST"])
+@requires_role('owner', 'admin')
+def api_link_account(emp_id):
+    """Propojí zaměstnance s existujícím user účtem (přepíše předchozí propojení)"""
+    data = request.get_json(force=True, silent=True) or {}
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({"ok": False, "error": "missing_user_id"}), 400
+    db = get_db()
+    try:
+        user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
+            return jsonify({"ok": False, "error": "user_not_found"}), 404
+        emp = db.execute("SELECT id FROM employees WHERE id = ?", (emp_id,)).fetchone()
+        if not emp:
+            return jsonify({"ok": False, "error": "employee_not_found"}), 404
+        # Odpoj tento user účet od jiného zaměstnance (pokud byl propojený jinde)
+        db.execute("UPDATE employees SET user_id = NULL WHERE user_id = ?", (user_id,))
+        # Propoj s tímto zaměstnancem
+        db.execute("UPDATE employees SET user_id = ? WHERE id = ?", (user_id, emp_id))
+        db.commit()
+        print(f"✓ Employee {emp_id} linked to user {user_id}")
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error linking account: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@employees_bp.route("/api/employees/<int:emp_id>/unlink-account", methods=["POST"])
+@requires_role('owner', 'admin')
+def api_unlink_account(emp_id):
+    """Odpojí přihlašovací účet od zaměstnance"""
+    db = get_db()
+    try:
+        db.execute("UPDATE employees SET user_id = NULL WHERE id = ?", (emp_id,))
+        db.commit()
+        print(f"✓ Employee {emp_id} unlinked from user account")
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@employees_bp.route("/api/users/<int:user_id>", methods=["DELETE"])
+@requires_role('owner')
+def api_delete_user(user_id):
+    """Smazání/deaktivace user účtu - pouze owner"""
+    user = get_current_user()
+    # Nelze smazat sám sebe
+    if user and user['id'] == user_id:
+        return jsonify({"ok": False, "error": "Nemůžete smazat vlastní účet"}), 400
+    db = get_db()
+    try:
+        # Odpoj od zaměstnance
+        db.execute("UPDATE employees SET user_id = NULL WHERE user_id = ?", (user_id,))
+        # Deaktivuj účet (soft delete)
+        db.execute("UPDATE users SET active = 0 WHERE id = ?", (user_id,))
+        db.commit()
+        print(f"✓ User {user_id} deactivated")
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 @employees_bp.route("/api/users/<int:user_id>/role", methods=["PUT"])
 @requires_role('owner','admin')

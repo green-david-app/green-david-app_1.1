@@ -15,10 +15,10 @@
         /* Timeline 2.0 - Provozní realita firmy v čase */
         :root {
             --mint: #4ade80;
-            --mint-dim: rgba(159, 212, 161, 0.15);
-            --bg-primary: #0a0e11;
-            --bg-card: #1a1f26;
-            --bg-elevated: #242a33;
+            --mint-dim: rgba(74, 222, 128, 0.15);
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
             --border-primary: #2d3748;
             --text-primary: #e8eef2;
             --text-secondary: #9ca8b3;
@@ -32,8 +32,8 @@
             --color-ai: #a78bfa;
             
             /* Capacity heatmap */
-            --capacity-low: rgba(159, 212, 161, 0.08);
-            --capacity-optimal: rgba(159, 212, 161, 0.2);
+            --capacity-low: rgba(74, 222, 128, 0.08);
+            --capacity-optimal: rgba(74, 222, 128, 0.2);
             --capacity-high: rgba(251, 191, 36, 0.15);
             --capacity-overload: rgba(248, 113, 113, 0.2);
         }
@@ -126,7 +126,7 @@
         }
         
         .view-btn {
-            padding: 8px 16px;
+            padding: 8px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             background: transparent;
             border: none;
             border-radius: 8px;
@@ -141,7 +141,7 @@
         }
         
         .view-btn:hover { color: var(--text-primary); background: var(--bg-elevated); }
-        .view-btn.active { background: var(--mint); color: #0a0e11; }
+        .view-btn.active { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         
         /* Stats Grid - Klikatelné */
         .stats-grid {
@@ -155,9 +155,13 @@
         @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         
         .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: 12px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-top-color: rgba(255,255,255,0.14);
+            border-left-color: rgba(255,255,255,0.11);
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05);
             padding: 16px;
             display: flex;
             align-items: center;
@@ -284,7 +288,7 @@
             transition: all 0.2s;
         }
         
-        .gantt-row-label:hover { background: rgba(159, 212, 161, 0.05); }
+        .gantt-row-label:hover { background: rgba(74, 222, 128, 0.05); }
         .gantt-row-label.dragging { opacity: 0.5; background: var(--mint-dim); }
         
         .row-icon {
@@ -298,7 +302,7 @@
             background: var(--bg-card);
         }
         
-        .row-icon.job { background: rgba(159, 212, 161, 0.15); color: var(--mint); }
+        .row-icon.job { background: rgba(74, 222, 128, 0.15); color: var(--mint); }
         .row-icon.employee { background: rgba(96, 165, 250, 0.15); color: var(--color-info); }
         
         .row-info { flex: 1; min-width: 0; }
@@ -348,7 +352,7 @@
         
         .gantt-day:last-child { border-right: none; }
         .gantt-day.weekend { background: rgba(100, 100, 120, 0.04); }
-        .gantt-day.today { background: rgba(159, 212, 161, 0.1); }
+        .gantt-day.today { background: rgba(74, 222, 128, 0.1); }
         
         .day-name { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
         .day-number { font-weight: 600; font-size: 14px; }
@@ -396,7 +400,7 @@
             position: relative;
         }
         
-        .gantt-row.drop-target { background: rgba(159, 212, 161, 0.1); }
+        .gantt-row.drop-target { background: rgba(74, 222, 128, 0.1); }
         
         .gantt-cell {
             flex: 1;
@@ -409,8 +413,8 @@
         
         .gantt-cell:last-child { border-right: none; }
         .gantt-cell.weekend { background: rgba(100, 100, 120, 0.02); }
-        .gantt-cell.today { background: rgba(159, 212, 161, 0.06); }
-        .gantt-cell:hover { background: rgba(159, 212, 161, 0.1) !important; }
+        .gantt-cell.today { background: rgba(74, 222, 128, 0.06); }
+        .gantt-cell:hover { background: rgba(74, 222, 128, 0.1) !important; }
         
         /* Capacity heatmap */
         .gantt-cell.capacity-low { background: var(--capacity-low); }
@@ -482,8 +486,8 @@
         .gantt-bar.dragging { opacity: 0.8; cursor: grabbing; z-index: 100; }
         
         .gantt-bar.status-active {
-            background: linear-gradient(135deg, rgba(159, 212, 161, 0.3), rgba(159, 212, 161, 0.15));
-            border: 1px solid rgba(159, 212, 161, 0.4);
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.15));
+            border: 1px solid rgba(74, 222, 128, 0.4);
         }
         
         .bar-progress {
@@ -570,7 +574,7 @@
             background: var(--mint);
             z-index: 20;
             pointer-events: none;
-            box-shadow: 0 0 10px rgba(159, 212, 161, 0.5);
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
         }
         
         /* AI Assistant */
@@ -711,7 +715,7 @@
         }
         
         .modal-action:hover { border-color: var(--mint); background: var(--mint-dim); }
-        .modal-action.primary { background: var(--mint); color: #0a0e11; border-color: var(--mint); }
+        .modal-action.primary { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         .modal-action svg { width: 20px; height: 20px; }
         
         /* Signal tooltip */
@@ -931,7 +935,7 @@
         <!-- Sub-nav -->
         <div class="mc-subnav" style="display: flex; align-items: center; gap: 8px; padding: 16px 0 14px; border-bottom: 1px solid var(--border-primary); margin-bottom: 24px; flex-wrap: wrap;">
             <a href="/planning/daily" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-secondary);">Dnes</a>
-            <a href="/planning/timeline" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: var(--mint); color: #0a0e11; border-color: var(--mint);">Timeline</a>
+            <a href="/planning/timeline" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">Timeline</a>
             <a href="/planning/week" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-secondary);">Týden</a>
             <a href="/planning/costs" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-secondary);">Náklady</a>
             <a href="/planning/scenarios" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
@@ -1015,9 +1019,10 @@
         
         <!-- Weather -->
         <div class="weather-strip" id="weather-strip">
-            <div class="weather-label">
+            <div class="weather-label weather-clickable" onclick="window.WeatherPicker.showPicker(this, async () => { await generateWeatherData(); renderWeatherStrip(); })" title="Změnit polohu">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 18a5 5 0 0 0-4.6-4.96A7 7 0 1 0 5 18"/><line x1="9" y1="18" x2="9.01" y2="18"/><line x1="15" y1="18" x2="15.01" y2="18"/></svg>
-                Počasí
+                <span>Počasí</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;margin-left:4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
             <div class="weather-days" id="weather-days"></div>
         </div>
@@ -1044,7 +1049,7 @@
         
         <!-- Legend -->
         <div class="timeline-legend">
-            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(159, 212, 161, 0.3), rgba(159, 212, 161, 0.15)); border: 1px solid rgba(159, 212, 161, 0.4);"></div><span>Aktivní</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.15)); border: 1px solid rgba(74, 222, 128, 0.4);"></div><span>Aktivní</span></div>
             <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1)); border: 1px dashed rgba(96, 165, 250, 0.4);"></div><span>Plánované</span></div>
             <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(248, 113, 113, 0.15)); border: 1px solid rgba(248, 113, 113, 0.5);"></div><span>Urgentní</span></div>
             <div class="legend-divider"></div>
@@ -1124,7 +1129,7 @@
         
         async function init() {
             await loadData();
-            generateWeatherData();
+            await generateWeatherData();
             generateAIInsights();
             updateStats();
             render();
@@ -1150,13 +1155,42 @@
             } catch (e) { console.error('Error loading data:', e); }
         }
         
-        function generateWeatherData() {
-            const cond = ['sun', 'cloud', 'rain', 'cloud', 'sun', 'rain', 'sun'];
-            const temps = [12, 14, 8, 10, 15, 6, 13];
+        async function generateWeatherData() {
             weatherData = [];
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(); d.setDate(d.getDate() + i);
-                weatherData.push({ date: d.toISOString().slice(0, 10), condition: cond[i], temp: temps[i], isOutdoorRisk: cond[i] === 'rain' });
+            try {
+                const weatherUrl = await window.WeatherPicker.getWeatherUrl();
+                const resp = await fetch(weatherUrl, {credentials: 'same-origin'});
+                const w = await resp.json();
+                if (w.success && w.forecast) {
+                    const codeToCondition = (code) => {
+                        if ([0, 1].includes(code)) return 'sun';
+                        if ([2, 3, 45, 48].includes(code)) return 'cloud';
+                        return 'rain';
+                    };
+                    w.forecast.forEach(day => {
+                        const code = day.weather_code || 0;
+                        weatherData.push({
+                            date: day.date,
+                            condition: codeToCondition(code),
+                            temp: Math.round(day.temp_max != null ? day.temp_max : 10),
+                            isOutdoorRisk: code >= 51,
+                            description: day.description || '',
+                            icon: day.icon || ''
+                        });
+                    });
+                    const weatherLabel = document.querySelector('.weather-label span');
+                    if (weatherLabel) weatherLabel.textContent = `Počasí · ${w.city}`;
+                }
+            } catch(e) {
+                console.warn('Weather API error:', e);
+            }
+            if (weatherData.length === 0) {
+                const cond = ['cloud', 'cloud', 'rain', 'cloud', 'sun', 'cloud', 'sun'];
+                const temps = [8, 10, 6, 9, 12, 7, 11];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(); d.setDate(d.getDate() + i);
+                    weatherData.push({ date: d.toISOString().slice(0, 10), condition: cond[i], temp: temps[i], isOutdoorRisk: cond[i] === 'rain' });
+                }
             }
         }
         
@@ -1727,7 +1761,7 @@
             
             // Odkaz na detail
             html += `<div style="margin-top: 20px;">
-                <a href="/job-detail.html?id=${jobId}" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: var(--mint-dim); border: 1px solid rgba(159, 212, 161, 0.3); border-radius: 10px; color: var(--mint); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+                <a href="/job-detail.html?id=${jobId}" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: var(--mint-dim); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 10px; color: var(--mint); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     Otevřít plný detail
                 </a>
@@ -1749,5 +1783,6 @@
     </script>
     <script src="/static/app-sidebar.js"></script>
   <script src="/static/app-header.js"></script>
+    <script src="/static/js/weather-picker.js"></script>
 </body>
 </html>
