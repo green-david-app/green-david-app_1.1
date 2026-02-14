@@ -563,6 +563,185 @@ def apply_migrations():
         (30, [
             ("jobs", "job_type", "ALTER TABLE jobs ADD COLUMN job_type TEXT DEFAULT 'client'"),
         ]),
+
+        # v31: job detail extended tables (from migrate_jobs_extended.py)
+        (31, [
+            """CREATE TABLE IF NOT EXISTS job_clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                company TEXT, ico TEXT, dic TEXT,
+                email TEXT, phone TEXT, phone_secondary TEXT,
+                preferred_contact TEXT DEFAULT 'phone',
+                billing_street TEXT, billing_city TEXT, billing_zip TEXT,
+                billing_country TEXT DEFAULT 'CZ',
+                client_since DATE, total_projects INTEGER DEFAULT 1,
+                total_revenue DECIMAL(12,2) DEFAULT 0,
+                payment_rating TEXT DEFAULT 'good', notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(job_id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_locations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                street TEXT, city TEXT, zip TEXT,
+                country TEXT DEFAULT 'CZ',
+                lat DECIMAL(10,6), lng DECIMAL(10,6),
+                parking TEXT, parking_notes TEXT, access_notes TEXT,
+                gate_code TEXT, key_location TEXT,
+                has_electricity BOOLEAN DEFAULT false,
+                has_water BOOLEAN DEFAULT false,
+                has_toilet BOOLEAN DEFAULT false,
+                neighbors_info TEXT, noise_restrictions TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(job_id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_milestones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                name TEXT NOT NULL, description TEXT,
+                planned_date DATE, actual_date DATE,
+                status TEXT DEFAULT 'pending',
+                completion_percent INTEGER DEFAULT 0,
+                order_num INTEGER DEFAULT 0,
+                depends_on INTEGER REFERENCES job_milestones(id),
+                reminder_days_before INTEGER DEFAULT 3,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_equipment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                name TEXT NOT NULL, type TEXT,
+                days_needed INTEGER, date_from DATE, date_to DATE,
+                cost_per_day DECIMAL(10,2), total_cost DECIMAL(10,2),
+                supplier TEXT, supplier_contact TEXT,
+                reservation_date DATE, reservation_confirmed BOOLEAN DEFAULT false,
+                status TEXT DEFAULT 'needed', owned BOOLEAN DEFAULT false,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_team_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+                role TEXT DEFAULT 'worker',
+                hours_planned INTEGER DEFAULT 0, hours_actual INTEGER DEFAULT 0,
+                availability TEXT DEFAULT 'full-time',
+                assigned_date DATE DEFAULT (date('now')),
+                removed_date DATE, is_active BOOLEAN DEFAULT true, notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(job_id, employee_id, assigned_date)
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_subcontractors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                name TEXT NOT NULL, company TEXT, service TEXT NOT NULL,
+                contact_person TEXT, phone TEXT, email TEXT,
+                price DECIMAL(10,2), payment_terms TEXT,
+                status TEXT DEFAULT 'requested',
+                start_date DATE, end_date DATE,
+                contract_signed BOOLEAN DEFAULT false, invoice_number TEXT,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_risks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                description TEXT NOT NULL, category TEXT,
+                probability TEXT DEFAULT 'medium', impact TEXT DEFAULT 'medium',
+                risk_score INTEGER, mitigation_plan TEXT, contingency_plan TEXT,
+                status TEXT DEFAULT 'identified',
+                owner_id INTEGER REFERENCES users(id),
+                identified_date DATE DEFAULT (date('now')),
+                review_date DATE, closed_date DATE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                planned_date DATE, amount DECIMAL(12,2) NOT NULL,
+                percentage INTEGER, payment_type TEXT DEFAULT 'progress',
+                status TEXT DEFAULT 'pending',
+                paid_date DATE, paid_amount DECIMAL(12,2),
+                payment_method TEXT, invoice_id TEXT,
+                invoice_date DATE, invoice_due_date DATE, note TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_photos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                file_path TEXT NOT NULL, thumbnail_path TEXT,
+                phase TEXT DEFAULT 'progress',
+                milestone_id INTEGER REFERENCES job_milestones(id),
+                caption TEXT, description TEXT,
+                taken_by INTEGER REFERENCES users(id),
+                taken_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                location_on_site TEXT,
+                lat DECIMAL(10,6), lng DECIMAL(10,6),
+                related_issue_id INTEGER, severity TEXT, tags TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_communications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                communication_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                type TEXT DEFAULT 'note', direction TEXT DEFAULT 'internal',
+                subject TEXT, summary TEXT NOT NULL, full_content TEXT,
+                by_user_id INTEGER REFERENCES users(id),
+                with_client BOOLEAN DEFAULT true, participants TEXT,
+                outcome TEXT, action_items TEXT,
+                is_internal BOOLEAN DEFAULT false, attachments TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_change_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                requested_by TEXT DEFAULT 'client', requested_by_name TEXT,
+                description TEXT NOT NULL, reason TEXT,
+                impact_cost DECIMAL(10,2), impact_time INTEGER, impact_scope TEXT,
+                urgency TEXT DEFAULT 'medium', status TEXT DEFAULT 'pending',
+                approved_by INTEGER REFERENCES users(id),
+                approved_date DATE, rejection_reason TEXT,
+                implemented_date DATE, implementation_notes TEXT,
+                requested_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                name TEXT NOT NULL, type TEXT DEFAULT 'other', category TEXT,
+                file_path TEXT NOT NULL, file_size INTEGER, mime_type TEXT,
+                version INTEGER DEFAULT 1, is_latest BOOLEAN DEFAULT true,
+                replaces_document_id INTEGER REFERENCES job_documents(id),
+                description TEXT, uploaded_by INTEGER REFERENCES users(id),
+                uploaded_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                signed BOOLEAN DEFAULT false, signed_date DATE,
+                approval_status TEXT DEFAULT 'pending', approval_date DATE,
+                expires_date DATE, tags TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS job_metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                calculated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                days_elapsed INTEGER, days_remaining INTEGER, days_planned INTEGER,
+                schedule_variance INTEGER,
+                budget_spent DECIMAL(12,2), budget_remaining DECIMAL(12,2),
+                budget_variance DECIMAL(12,2), cost_performance_index DECIMAL(5,2),
+                completion_percent INTEGER, on_track BOOLEAN,
+                avg_hours_per_day DECIMAL(5,2), productive_hours_percent INTEGER,
+                defects_count INTEGER DEFAULT 0, rework_hours INTEGER DEFAULT 0,
+                predicted_completion_date DATE,
+                predicted_final_cost DECIMAL(12,2), predicted_profit DECIMAL(12,2),
+                confidence_level TEXT
+            )"""
+        ]),
     ]
 
     for version, alters in migrations:
@@ -966,6 +1145,162 @@ CREATE TABLE IF NOT EXISTS employees (
     );
     CREATE INDEX IF NOT EXISTS idx_nursery_plants_species ON nursery_plants(species);
     CREATE INDEX IF NOT EXISTS idx_nursery_plants_status ON nursery_plants(status);
+
+    -- Job detail tables (required by job-detail.html /complete endpoint)
+    CREATE TABLE IF NOT EXISTS job_clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT,
+        company TEXT,
+        ico TEXT,
+        dic TEXT,
+        email TEXT,
+        phone TEXT,
+        phone_secondary TEXT,
+        billing_street TEXT,
+        billing_city TEXT,
+        billing_zip TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_clients_job ON job_clients(job_id);
+
+    CREATE TABLE IF NOT EXISTS job_locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        street TEXT,
+        city TEXT,
+        zip TEXT,
+        lat REAL,
+        lng REAL,
+        parking TEXT,
+        access_notes TEXT,
+        gate_code TEXT,
+        address TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_locations_job ON job_locations(job_id);
+
+    CREATE TABLE IF NOT EXISTS job_milestones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        planned_date TEXT,
+        actual_date TEXT,
+        status TEXT DEFAULT 'pending',
+        completion_percent INTEGER DEFAULT 0,
+        order_num INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_milestones_job ON job_milestones(job_id);
+
+    CREATE TABLE IF NOT EXISTS job_equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT,
+        type TEXT,
+        date_from TEXT,
+        date_to TEXT,
+        cost REAL DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS job_subcontractors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT,
+        company TEXT,
+        phone TEXT,
+        email TEXT,
+        scope TEXT,
+        cost REAL DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS job_risks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT,
+        description TEXT,
+        probability TEXT DEFAULT 'medium',
+        impact TEXT DEFAULT 'medium',
+        mitigation TEXT,
+        status TEXT DEFAULT 'open',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS job_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        description TEXT,
+        amount REAL DEFAULT 0,
+        planned_date TEXT,
+        paid_date TEXT,
+        status TEXT DEFAULT 'pending',
+        type TEXT DEFAULT 'invoice',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS job_photos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        url TEXT,
+        caption TEXT,
+        taken_at TEXT,
+        uploaded_by INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS job_team_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        role TEXT DEFAULT 'worker',
+        hours_planned REAL DEFAULT 0,
+        hours_actual REAL DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_team_job ON job_team_assignments(job_id);
+    CREATE INDEX IF NOT EXISTS idx_job_team_emp ON job_team_assignments(employee_id);
+
+    -- Budget tables
+    CREATE TABLE IF NOT EXISTS budget_sections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        section_type TEXT NOT NULL DEFAULT 'material',
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_budget_sections_job ON budget_sections(job_id);
+
+    CREATE TABLE IF NOT EXISTS budget_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        section_id INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        unit TEXT DEFAULT 'ks',
+        quantity REAL DEFAULT 0,
+        unit_price REAL DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (section_id) REFERENCES budget_sections(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_budget_items_section ON budget_items(section_id);
     """)
     
     # Vytvoření FTS (Full-Text Search) tabulky pro katalog rostlin
