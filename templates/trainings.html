@@ -678,6 +678,32 @@
       transform: translateY(-1px);
     }
     
+    .btn-days-preset {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-primary);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-days-preset:hover {
+      background: rgba(74,222,128,0.15);
+      color: var(--mint);
+      border-color: var(--mint);
+    }
+    .day-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .day-check input {
+      accent-color: var(--mint);
+    }
     @media (max-width: 768px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -873,21 +899,40 @@
           
           <div class="form-row">
             <div class="form-group">
-              <label for="training_date">Datum zahájení *</label>
-              <input type="date" id="training_date" name="date" required>
+              <label for="training_date">Odkdy *</label>
+              <input type="date" id="training_date" name="date" required title="Datum zahájení školení">
             </div>
             
             <div class="form-group">
-              <label for="training_date_end">Datum ukončení</label>
-              <input type="date" id="training_date_end" name="date_end" placeholder="Pro vícedenní školení">
+              <label for="training_date_end">Dokdy</label>
+              <input type="date" id="training_date_end" name="date_end" title="Pro vícedenní školení – datum ukončení">
             </div>
             
             <div class="form-group">
-              <label for="training_hours">Délka (hodin)</label>
+              <label for="training_hours">Celkem hodin</label>
               <input type="number" id="training_hours" name="duration_hours" 
-                     min="0" step="0.5" value="8" placeholder="8">
+                     min="0" step="0.5" value="8" placeholder="8" title="Automaticky se vypočítá z odkdy–dokdy + dny v týdnu">
             </div>
           </div>
+          
+          <div class="form-group" style="margin-top: 12px;">
+            <label>Dny v týdnu (kdy školení probíhá)</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+              <button type="button" class="btn-days-preset" data-days="1,2,3,4,5" onclick="setDaysPreset([1,2,3,4,5])">Po–Pá</button>
+              <button type="button" class="btn-days-preset" data-days="0,1,2,3,4,5,6" onclick="setDaysPreset([0,1,2,3,4,5,6])">Všechny dny</button>
+              <button type="button" class="btn-days-preset" data-days="0,6" onclick="setDaysPreset([0,6])">Víkend</button>
+            </div>
+            <div class="days-of-week-checkboxes" style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <label class="day-check"><input type="checkbox" name="day_week" value="1"> Po</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="2"> Út</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="3"> St</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="4"> Čt</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="5"> Pá</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="6"> So</label>
+              <label class="day-check"><input type="checkbox" name="day_week" value="0"> Ne</label>
+            </div>
+          </div>
+          <p class="form-section-hint" style="margin-top: -4px; margin-bottom: 0;">Školení může být jen v pracovní dny (bez víkendů) nebo jen o víkendech. Vyberte dny, kdy školení probíhá – délka se pak počítá jen z těchto dnů v rozsahu odkdy–dokdy.</p>
         </div>
         
         <!-- TYP KOMPENZACE -->
@@ -1147,7 +1192,12 @@
       editingTrainingId = null;
       document.getElementById('trainingForm').reset();
       document.getElementById('modal-header').querySelector('h2').textContent = 'Přidat školení';
-      document.getElementById('training_date').value = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('training_date').value = today;
+      const dateEnd = document.getElementById('training_date_end');
+      if (dateEnd) dateEnd.min = today;
+      document.getElementById('training_date_end').value = '';
+      setSelectedDaysOfWeek([1, 2, 3, 4, 5]); // Po–Pá default
       document.querySelector('input[name="compensation_type"][value="paid_workday"]').checked = true;
       renderParticipants([]);
       updateTotalCosts();
@@ -1170,9 +1220,20 @@
       document.getElementById('training_description').value = training.description || '';
       document.getElementById('training_category').value = training.category || 'plants';
       document.getElementById('training_type').value = training.training_type || 'external';
-      document.getElementById('training_date').value = training.date || training.date_start || '';
-      document.getElementById('training_date_end').value = training.date_end || '';
+      const dateStartVal = training.date || training.date_start || '';
+      const dateEndVal = training.date_end || '';
+      document.getElementById('training_date').value = dateStartVal;
+      document.getElementById('training_date_end').value = dateEndVal;
+      const dateEndEl = document.getElementById('training_date_end');
+      if (dateEndEl) dateEndEl.min = dateStartVal || undefined;
       document.getElementById('training_hours').value = training.duration_hours || 8;
+      let days = [0, 1, 2, 3, 4, 5, 6];
+      if (training.days_of_week) {
+        try {
+          days = typeof training.days_of_week === 'string' ? JSON.parse(training.days_of_week) : training.days_of_week;
+        } catch (e) {}
+      }
+      setSelectedDaysOfWeek(Array.isArray(days) ? days : [0, 1, 2, 3, 4, 5, 6]);
       
       // Typ kompenzace
       const compType = training.compensation_type || 'paid_workday';
@@ -1262,26 +1323,52 @@
       document.getElementById('totalCosts').textContent = total.toLocaleString('cs-CZ') + ' Kč';
     }
 
-    // Auto-calculate hours from date range
+    // Dny v týdnu: 0=Ne, 1=Po, 2=Út, 3=St, 4=Čt, 5=Pá, 6=So (JS getDay())
+    function getSelectedDaysOfWeek() {
+      const checks = document.querySelectorAll('input[name="day_week"]:checked');
+      return Array.from(checks).map(c => parseInt(c.value)).sort((a,b) => a - b);
+    }
+    function setSelectedDaysOfWeek(days) {
+      document.querySelectorAll('input[name="day_week"]').forEach(cb => {
+        cb.checked = days.includes(parseInt(cb.value));
+      });
+    }
+    function setDaysPreset(days) {
+      setSelectedDaysOfWeek(days);
+      autoCalcHours();
+    }
+    // Auto-calculate hours from date range – only count selected days of week
     function autoCalcHours() {
       const dateStart = document.getElementById('training_date').value;
       const dateEnd = document.getElementById('training_date_end').value;
+      const allowedDays = getSelectedDaysOfWeek();
+      if (allowedDays.length === 0) return; // if nothing selected, keep manual value
       if (dateStart && dateEnd) {
-        const start = new Date(dateStart);
-        const end = new Date(dateEnd);
-        const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
-        document.getElementById('training_hours').value = diffDays * 8;
+        const start = new Date(dateStart + 'T12:00:00');
+        const end = new Date(dateEnd + 'T12:00:00');
+        let count = 0;
+        const d = new Date(start);
+        while (d <= end) {
+          if (allowedDays.includes(d.getDay())) count++;
+          d.setDate(d.getDate() + 1);
+        }
+        if (count > 0) document.getElementById('training_hours').value = count * 8;
+      } else if (dateStart && allowedDays.length > 0) {
+        const start = new Date(dateStart + 'T12:00:00');
+        if (allowedDays.includes(start.getDay())) {
+          document.getElementById('training_hours').value = 8;
+        }
       }
     }
     document.addEventListener('DOMContentLoaded', () => {
       const dateEnd = document.getElementById('training_date_end');
       const dateStart = document.getElementById('training_date');
+      document.querySelectorAll('input[name="day_week"]').forEach(cb => {
+        cb.addEventListener('change', autoCalcHours);
+      });
       if (dateEnd) dateEnd.addEventListener('change', autoCalcHours);
       if (dateStart) dateStart.addEventListener('change', () => {
-        // Set min for date_end
-        if (dateEnd && dateStart.value) {
-          dateEnd.min = dateStart.value;
-        }
+        if (dateEnd && dateStart.value) dateEnd.min = dateStart.value;
         autoCalcHours();
       });
     });
@@ -1306,6 +1393,7 @@
         date: document.getElementById('training_date').value,
         date_start: document.getElementById('training_date').value,
         date_end: document.getElementById('training_date_end').value || null,
+        days_of_week: JSON.stringify((() => { const d = getSelectedDaysOfWeek(); return d.length ? d : [0,1,2,3,4,5,6]; })()),
         duration_hours: parseFloat(document.getElementById('training_hours').value) || 0,
         cost_training: parseFloat(document.getElementById('cost_training').value) || 0,
         cost_travel: parseFloat(document.getElementById('cost_travel').value) || 0,
@@ -1411,6 +1499,16 @@
       const date = new Date(dateStr);
       return date.toLocaleDateString('cs-CZ');
     }
+    function formatDaysOfWeekLabel(daysJson) {
+      if (!daysJson) return '';
+      try {
+        const days = typeof daysJson === 'string' ? JSON.parse(daysJson) : daysJson;
+        if (!Array.isArray(days) || days.length === 7) return '';
+        const labels = {0:'Ne',1:'Po',2:'Út',3:'St',4:'Čt',5:'Pá',6:'So'};
+        const str = days.map(d => labels[d]).filter(Boolean).join(', ');
+        return str ? ` (${str})` : '';
+      } catch (e) { return ''; }
+    }
 
     function renderTrainingCard(training) {
       // Kategorie
@@ -1462,7 +1560,7 @@
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <path d="M16 2v4M8 2v4M3 10h18"/>
               </svg>
-              ${formatDate(training.date || training.date_start)}${training.date_end ? ' — ' + formatDate(training.date_end) : ''}
+              ${formatDate(training.date || training.date_start)}${training.date_end ? ' — ' + formatDate(training.date_end) : ''}${formatDaysOfWeekLabel(training.days_of_week)}
             </span>
             <span class="meta-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">

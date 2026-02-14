@@ -1104,9 +1104,9 @@
         async function loadData() {
             try {
                 const [tasksRes, jobsRes, empRes] = await Promise.all([
-                    fetch('/api/tasks'),
-                    fetch('/api/jobs'),
-                    fetch('/api/employees')
+                    fetch('/api/tasks', { credentials: 'same-origin' }),
+                    fetch('/api/jobs', { credentials: 'same-origin' }),
+                    fetch('/api/employees', { credentials: 'same-origin' })
                 ]);
                 
                 if (tasksRes.ok) {
@@ -1593,6 +1593,7 @@
                 const res = await fetch('/api/tasks', {
                     method: editingTaskId ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(taskData)
                 });
                 
@@ -1620,6 +1621,7 @@
                 const res = await fetch('/api/tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
                 });
                 
@@ -1670,15 +1672,20 @@
                 const res = await fetch('/api/tasks', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ id: taskId, status: newStatus })
                 });
                 if (res.ok) {
                     loadData();
                     const labels = { todo: 'K provedení', progress: 'Probíhá', done: 'Hotovo' };
                     if (window.showToast) window.showToast(`Status: ${labels[newStatus] || newStatus}`, 'success');
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    if (window.showToast) window.showToast(err.error || 'Chyba při ukládání', 'error');
                 }
             } catch (e) {
                 console.error('Error updating status:', e);
+                if (window.showToast) window.showToast('Chyba připojení', 'error');
             }
         }
         
