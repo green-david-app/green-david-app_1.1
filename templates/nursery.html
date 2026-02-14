@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trvalkové školka | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/tasks-design-system.css"/>
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <link rel="stylesheet" href="/static/icons.css"/>
+    <script src="/app-settings.js"></script>
+    <script src="/static/app-header.js"></script>
+    <script src="/static/global-search.js"></script>
+    <script src="/static/plant_catalog_autocomplete.js"></script>
+    <style>
+        :root {
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-modal: #1a1f24;
+            --border-primary: rgba(255,255,255,0.08);
+            --border-hover: #3d4449;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-muted: #6b7580;
+            --mint: #4ade80;
+            --mint-dark: #7ab87c;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --success: #4ade80;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .secondary-nav {
+            position: fixed;
+            top: 88px;
+            left: 0;
+            right: 0;
+            background: #0d1217;
+            border-bottom: 1px solid var(--border-primary);
+            z-index: 99;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .secondary-nav::-webkit-scrollbar { height: 0; }
+
+        .secondary-nav-container {
+            display: flex;
+            gap: 2px;
+            padding: 6px 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .nav-tab {
+            padding: 8px 14px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .nav-tab svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .nav-tab:hover {
+            background: rgba(74, 222, 128, 0.08);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: rgba(74, 222, 128, 0.12);
+            color: var(--mint);
+        }
+
+        .page-content {
+            margin-top: 160px;
+            padding: 24px;
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header h1 svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--mint);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .stats-mini {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-mini {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 180px;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-mini:hover {
+            border-color: var(--mint);
+            transform: translateY(-2px);
+        }
+
+        .stat-mini svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--mint);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .stat-mini-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+        .stat-mini-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+
+        .dashboard-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .dashboard-item.col-3 { grid-column: span 3; }
+        .dashboard-item.col-4 { grid-column: span 4; }
+        .dashboard-item.col-6 { grid-column: span 6; }
+        .dashboard-item.col-8 { grid-column: span 8; }
+        .dashboard-item.col-12 { grid-column: span 12; }
+
+        .dashboard-item h3 {
+            margin: 0 0 16px 0;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .dashboard-item h3 svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--mint);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .btn-primary { background: var(--mint); color: #0a0e11; }
+        .btn-primary:hover { background: var(--mint-dark); transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-primary); }
+        .btn-secondary:hover { background: var(--bg-card); color: var(--text-primary); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .plants-table-container { overflow-x: auto; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-primary); }
+        .plants-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .plants-table th { background: var(--bg-primary); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-primary); white-space: nowrap; }
+        .plants-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-primary); vertical-align: middle; }
+        .plants-table tbody tr:hover { background: rgba(74, 222, 128, 0.05); }
+        .plants-table tbody tr:last-child td { border-bottom: none; }
+        .plant-name { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+        .plant-variety { font-size: 11px; color: var(--text-secondary); }
+
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .badge-success { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+        .badge-warning { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .badge-info { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .badge-purple { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+
+        .filters-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-input { padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 200px; }
+        .filter-input:focus { outline: none; border-color: var(--mint); }
+        .filter-select { padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--bg-modal); border-radius: 16px; border: 1px solid var(--border-primary); width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; font-size: 20px; font-weight: 600; }
+        .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; border-radius: 6px; transition: all 0.2s; }
+        .modal-close:hover { background: var(--bg-card); color: var(--text-primary); }
+        .modal-body { padding: 24px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { padding: 10px 12px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 6px; color: var(--text-primary); font-size: 14px; transition: all 0.2s; font-family: inherit; }
+        .form-input:focus { outline: none; border-color: var(--mint); background: rgba(74, 222, 128, 0.05); }
+        textarea.form-input { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-primary); }
+
+        .task-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: flex-start; transition: all 0.2s; }
+        .task-card:hover { border-color: var(--border-hover); }
+        .task-checkbox { width: 22px; height: 22px; border: 2px solid var(--border-primary); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .task-checkbox:hover { border-color: var(--mint); }
+        .task-checkbox.checked { background: var(--mint); border-color: var(--mint); }
+        .task-checkbox.checked::after { content: '✓'; color: #0a0e11; font-weight: bold; font-size: 14px; }
+        .task-info { flex: 1; }
+        .task-title { font-weight: 600; margin-bottom: 6px; }
+        .task-completed .task-title { text-decoration: line-through; opacity: 0.5; }
+        .task-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
+        .task-meta span { display: flex; align-items: center; gap: 4px; }
+        .task-priority-high { border-left: 3px solid var(--danger); }
+        .task-priority-medium { border-left: 3px solid var(--warning); }
+        .task-priority-low { border-left: 3px solid var(--blue); }
+
+        .econ-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; }
+        .econ-card h3 { margin: 0 0 16px 0; font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .econ-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+        .econ-value.positive { color: var(--success); }
+        .econ-change { font-size: 13px; margin-top: 8px; }
+        .econ-change.up { color: var(--success); }
+
+        .season-timeline { display: flex; gap: 0; margin: 20px 0; }
+        .season-month { flex: 1; text-align: center; padding: 10px 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid var(--border-primary); }
+        .season-month.active { color: var(--mint); border-bottom-color: var(--mint); }
+        .season-task-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-primary); }
+        .season-task-name { width: 150px; font-weight: 500; font-size: 13px; }
+        .season-task-bar { flex: 1; display: flex; gap: 2px; }
+        .season-task-cell { flex: 1; height: 24px; background: var(--bg-card); border-radius: 4px; }
+        .season-task-cell.active { background: var(--mint); }
+        .season-task-cell.peak { background: var(--mint-dark); }
+
+        .plants-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .plant-card { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; }
+        .plant-card:hover { border-color: var(--mint); transform: translateY(-2px); }
+        .plant-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .plant-card-title { font-weight: 600; font-size: 15px; }
+        .plant-card-variety { font-size: 12px; color: var(--text-secondary); }
+        .plant-card-stats { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+        .plant-card-stat { display: flex; align-items: center; gap: 6px; }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .gallery-item { aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+        .gallery-item:hover { border-color: var(--mint); transform: scale(1.02); }
+        .gallery-empty { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-secondary); text-align: center; }
+        .gallery-empty h3 { margin: 16px 0 8px; color: var(--text-primary); }
+        .gallery-empty p { font-size: 13px; }
+
+        /* Timeline styles */
+        .timeline-container { max-width: 900px; }
+        .timeline-date-group { margin-bottom: 28px; }
+        .timeline-date-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-primary); }
+        .timeline-date-badge { background: var(--bg-card); border: 1px solid var(--border-primary); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .timeline-date-badge.today { background: rgba(74, 222, 128, 0.15); border-color: var(--mint); color: var(--mint); }
+        .timeline-date-text { font-size: 13px; color: var(--text-muted); }
+        .timeline-events { display: flex; flex-direction: column; gap: 10px; padding-left: 20px; border-left: 2px solid var(--border-primary); }
+        .timeline-event { display: flex; gap: 12px; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; position: relative; transition: all 0.2s; }
+        .timeline-event:hover { border-color: var(--border-hover); background: rgba(74, 222, 128, 0.02); }
+        .timeline-event::before { content: ''; position: absolute; left: -27px; top: 18px; width: 10px; height: 10px; background: var(--bg-primary); border: 2px solid var(--border-primary); border-radius: 50%; }
+        .timeline-event:hover::before { border-color: var(--mint); }
+        .timeline-event-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .timeline-event-icon svg { width: 16px; height: 16px; stroke-width: 2; fill: none; }
+        .timeline-event-icon.irrigation { background: rgba(96, 165, 250, 0.15); }
+        .timeline-event-icon.irrigation svg { stroke: #60a5fa; }
+        .timeline-event-icon.fertilizing { background: rgba(167, 139, 250, 0.15); }
+        .timeline-event-icon.fertilizing svg { stroke: #a78bfa; }
+        .timeline-event-icon.repotting { background: rgba(251, 191, 36, 0.15); }
+        .timeline-event-icon.repotting svg { stroke: #fbbf24; }
+        .timeline-event-icon.planting { background: rgba(74, 222, 128, 0.15); }
+        .timeline-event-icon.planting svg { stroke: #4ade80; }
+        .timeline-event-icon.stage { background: rgba(74, 222, 128, 0.15); }
+        .timeline-event-icon.stage svg { stroke: var(--mint); }
+        .timeline-event-icon.photo { background: rgba(236, 72, 153, 0.15); }
+        .timeline-event-icon.photo svg { stroke: #ec4899; }
+        .timeline-event-icon.sale { background: rgba(74, 222, 128, 0.15); }
+        .timeline-event-icon.sale svg { stroke: #4ade80; }
+        .timeline-event-icon.treatment { background: rgba(239, 68, 68, 0.15); }
+        .timeline-event-icon.treatment svg { stroke: #ef4444; }
+        .timeline-event-icon.note { background: rgba(156, 163, 175, 0.15); }
+        .timeline-event-icon.note svg { stroke: #9ca3af; }
+        .timeline-event-content { flex: 1; min-width: 0; }
+        .timeline-event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+        .timeline-event-title { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+        .timeline-event-time { font-size: 12px; color: var(--text-muted); }
+        .timeline-event-details { margin-bottom: 4px; }
+        .timeline-event-plant { font-size: 12px; color: var(--text-secondary); }
+        .timeline-event-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); }
+        .timeline-event-meta span { display: flex; align-items: center; gap: 4px; }
+        .timeline-event-meta svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .timeline-event-badges { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+        .timeline-event-note { font-size: 12px; color: var(--text-secondary); font-style: italic; background: var(--bg-primary); padding: 8px 12px; border-radius: 6px; margin-top: 8px; border-left: 3px solid var(--border-primary); }
+        .timeline-event-photos { display: flex; gap: 8px; margin-top: 8px; }
+        .timeline-photo-thumb { width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; border: 1px solid var(--border-primary); }
+        .timeline-load-more { text-align: center; padding: 16px 0; }
+        .timeline-view-btn.active { background: rgba(74,222,128,0.15) !important; color: var(--mint) !important; }
+        .text-success { color: var(--success) !important; }
+        .text-warning { color: var(--warning) !important; }
+
+        /* Insights panel */
+        .insights-panel { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; max-width: 900px; }
+        .insight-card { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px; }
+        .insight-card.insight-warning { border-left: 3px solid var(--warning); }
+        .insight-card.insight-success { border-left: 3px solid var(--success); }
+        .insight-card.insight-info { border-left: 3px solid var(--blue); }
+        .insight-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .insight-icon svg { width: 18px; height: 18px; stroke-width: 2; fill: none; }
+        .insight-warning .insight-icon { background: rgba(251, 191, 36, 0.15); }
+        .insight-warning .insight-icon svg { stroke: #fbbf24; }
+        .insight-success .insight-icon { background: rgba(74, 222, 128, 0.15); }
+        .insight-success .insight-icon svg { stroke: #4ade80; }
+        .insight-info .insight-icon { background: rgba(96, 165, 250, 0.15); }
+        .insight-info .insight-icon svg { stroke: #60a5fa; }
+        .insight-content { flex: 1; min-width: 0; }
+        .insight-title { font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 2px; }
+        .insight-desc { font-size: 12px; color: var(--text-secondary); }
+        .insight-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+        /* Calendar view */
+        .timeline-calendar { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; max-width: 700px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header h3 { margin: 0; font-size: 16px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day-header { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); padding: 8px; text-transform: uppercase; }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; background: var(--bg-primary); border: 1px solid transparent; transition: all 0.2s; }
+        .calendar-day:hover { border-color: var(--border-primary); }
+        .calendar-day.today { background: rgba(74, 222, 128, 0.1); border-color: var(--mint); }
+        .calendar-day.other-month { opacity: 0.3; }
+        .calendar-day-number { font-weight: 500; margin-bottom: 4px; }
+        .calendar-day-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+        .calendar-dot { width: 5px; height: 5px; border-radius: 50%; }
+        .calendar-dot.irrigation { background: #60a5fa; }
+        .calendar-dot.fertilizing { background: #a78bfa; }
+        .calendar-dot.sale { background: #4ade80; }
+
+        /* Timeline type selector */
+        .timeline-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .timeline-type-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: var(--bg-primary); border: 2px solid var(--border-primary); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+        .timeline-type-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+        .timeline-type-btn.active { border-color: var(--mint); background: rgba(74, 222, 128, 0.1); color: var(--mint); }
+        .timeline-type-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .timeline-type-btn span { font-size: 11px; font-weight: 600; }
+
+        .actions-dropdown { position: relative; }
+        .actions-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .actions-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+        .actions-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--bg-modal); border: 1px solid var(--border-primary); border-radius: 8px; min-width: 150px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .actions-menu.active { display: block; }
+        .actions-menu button { display: block; width: 100%; padding: 10px 14px; text-align: left; background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 13px; }
+        .actions-menu button:hover { background: var(--bg-card); }
+        .actions-menu button.danger { color: var(--danger); }
+
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-primary); border-top-color: var(--mint); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .empty-state svg { width: 64px; height: 64px; stroke: var(--border-primary); margin-bottom: 16px; }
+        .empty-state h3 { margin: 0 0 8px; color: var(--text-primary); }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-header { text-align: center; padding: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .calendar-day { aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .calendar-day:hover { border-color: var(--mint); }
+        .calendar-day.today { border-color: var(--mint); background: rgba(74, 222, 128, 0.1); }
+        .calendar-day.has-task::after { content: ''; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: var(--mint); border-radius: 50%; }
+        .calendar-day-number { font-weight: 600; }
+
+        @media (max-width: 1200px) {
+            .dashboard-item.col-3 { grid-column: span 6; }
+            .dashboard-item.col-4 { grid-column: span 6; }
+        }
+
+        @media (max-width: 768px) {
+            .page-content { margin-top: 130px; padding: 16px; }
+            .stats-mini { flex-direction: column; }
+            .stat-mini { min-width: 100%; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .dashboard-item.col-3, .dashboard-item.col-4, .dashboard-item.col-6, .dashboard-item.col-8, .dashboard-item.col-12 { grid-column: span 1; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: span 1; }
+            .filters-bar { flex-direction: column; }
+            .filter-input, .filter-select { width: 100%; }
+        }
+
+        .notification { position: fixed; top: 100px; right: 20px; padding: 14px 20px; border-radius: 8px; font-size: 14px; z-index: 10000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: slideIn 0.3s ease; }
+        .notification.success { background: var(--success); color: white; }
+        .notification.error { background: var(--danger); color: white; }
+        .notification.info { background: var(--blue); color: white; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+    </style>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+</head>
+<body class="has-sidebar">
+    <header class="app-header">
+        <div class="app-header-container">
+            <a href="/" class="app-header-brand">
+                <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
+                <div class="app-header-text">
+                    <div class="app-header-title">green david app</div>
+                    <div class="app-header-subtitle">trvalkové školka</div>
+                </div>
+            </a>
+            <div class="global-search-container"></div>
+            <div class="app-header-actions">
+                <div id="userbox" class="app-header-user"></div>
+                <a href="/settings.html" class="app-header-settings" title="Nastavení">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <nav class="secondary-nav">
+        <div class="secondary-nav-container">
+            <button class="nav-tab active" onclick="switchTab('overview')">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Přehled
+            </button>
+            <button class="nav-tab" onclick="switchTab('plants')">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Rostliny
+            </button>
+            <button class="nav-tab" onclick="switchTab('timeline')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Timeline
+            </button>
+            <button class="nav-tab" onclick="switchTab('gallery')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Fotogalerie
+            </button>
+            <button class="nav-tab" onclick="switchTab('qr')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7"/></svg>
+                QR & Etikety
+            </button>
+            <button class="nav-tab" onclick="switchTab('sales')">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Prodej
+            </button>
+            <button class="nav-tab" onclick="switchTab('zones')">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Zóny
+            </button>
+            <button class="nav-tab" onclick="switchTab('catalog')">
+                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Katalog
+            </button>
+            <button class="nav-tab" onclick="switchTab('statistics')">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Statistiky
+            </button>
+            <button class="nav-tab" onclick="switchTab('batch')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h18"/></svg>
+                Batch
+            </button>
+            <button class="nav-tab" onclick="switchTab('reminders')">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Připomínky
+            </button>
+            <button class="nav-tab" onclick="switchTab('audit')">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Audit Log
+            </button>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <!-- PŘEHLED -->
+        <section id="section-overview" class="section active">
+            <div class="page-actions-bar">
+                <div class="header-actions">
+                <button class="btn btn-primary" onclick="openPlantModal()" style="background:var(--mint); color:#0a0e11; padding:10px 18px; border:none; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                    <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Přidat rostlinu
+                </button>
+                </div>
+            </div>
+            <div class="stats-mini" id="overviewStats">
+                <div class="stat-mini" onclick="switchTab('plants')"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Celkem druhů</div><div class="stat-mini-value" id="statTotalSpecies">-</div></div></div>
+                <div class="stat-mini" onclick="switchTab('plants')"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Celkem kusů</div><div class="stat-mini-value" id="statTotalQuantity">-</div></div></div>
+                <div class="stat-mini" onclick="switchTab('economics')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Hodnota skladu</div><div class="stat-mini-value" id="statTotalValue">-</div></div></div>
+                <div class="stat-mini" onclick="switchTab('tasks')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Úkolů dnes</div><div class="stat-mini-value" id="statTasksToday">-</div></div></div>
+            </div>
+            <!-- Rychlé akce - řada -->
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;">
+                <div onclick="openPlantModal()" style="background:var(--bg-card); border:2px dashed var(--mint); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.background='rgba(74,222,128,0.1)'" onmouseout="this.style.background='var(--bg-card)'">
+                    <div style="width:36px; height:36px; background:rgba(74,222,128,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--mint); fill:none; stroke-width:2;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </div>
+                    <div style="font-weight:600; color:var(--text-primary); font-size:13px;">Přidat rostlinu</div>
+                </div>
+                <div onclick="openTaskModal()" style="background:var(--bg-card); border:1px solid var(--border-primary); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--mint)'" onmouseout="this.style.borderColor='var(--border-primary)'">
+                    <div style="width:36px; height:36px; background:rgba(96,165,250,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#60a5fa; fill:none; stroke-width:2;"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    </div>
+                    <div style="font-weight:600; color:var(--text-primary); font-size:13px;">Přidat úkol</div>
+                </div>
+                <div onclick="openTimelineEventModal()" style="background:var(--bg-card); border:1px solid var(--border-primary); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--mint)'" onmouseout="this.style.borderColor='var(--border-primary)'">
+                    <div style="width:36px; height:36px; background:rgba(167,139,250,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#a78bfa; fill:none; stroke-width:2;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div style="font-weight:600; color:var(--text-primary); font-size:13px;">Přidat záznam</div>
+                </div>
+                <div onclick="switchTab('seasonal')" style="background:var(--bg-card); border:1px solid var(--border-primary); border-radius:12px; padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--mint)'" onmouseout="this.style.borderColor='var(--border-primary)'">
+                    <div style="width:36px; height:36px; background:rgba(251,191,36,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#fbbf24; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div style="font-weight:600; color:var(--text-primary); font-size:13px;">Sezónní plán</div>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Nejnovější rostliny</h3><div id="recentPlants"><div class="loading"><div class="loading-spinner"></div>Načítám...</div></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/></svg>Dnešní úkoly</h3><div id="todayTasks"><div class="loading"><div class="loading-spinner"></div>Načítám...</div></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Podle fáze</h3><div id="stageBreakdown"></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>Podle lokace</h3><div id="locationBreakdown"></div></div>
+            </div>
+        </section>
+
+        <!-- ROSTLINY -->
+        <section id="section-plants" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Rostliny</h1><button class="btn btn-primary" onclick="openPlantModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Přidat rostlinu</button></div>
+            <div class="filters-bar">
+                <input type="text" class="filter-input" id="plantSearch" placeholder="Hledat rostlinu..." oninput="filterPlants()">
+                <select class="filter-select" id="stageFilter" onchange="filterPlants()"><option value="">Všechny fáze</option><option value="semínko">Semínko</option><option value="sazenice">Sazenice</option><option value="rostlina">Rostlina</option><option value="k_prodeji">K prodeji</option></select>
+                <select class="filter-select" id="locationFilter" onchange="filterPlants()"><option value="">Všechny lokace</option></select>
+                <select class="filter-select" id="viewMode" onchange="toggleViewMode()"><option value="table">Tabulka</option><option value="grid">Karty</option></select>
+            </div>
+            <div id="plantsTableView" class="plants-table-container"><table class="plants-table"><thead><tr><th>Název</th><th>Množství</th><th>Fáze</th><th>Lokace</th><th>Cena</th><th>Hodnota</th><th>Akce</th></tr></thead><tbody id="plantsTableBody"><tr><td colspan="7" class="loading"><div class="loading-spinner"></div>Načítám...</td></tr></tbody></table></div>
+            <div id="plantsGridView" class="plants-grid" style="display:none;"></div>
+        </section>
+
+        <!-- ÚKOLY -->
+        <section id="section-tasks" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Úkoly školky</h1><button class="btn btn-primary" onclick="openTaskModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Přidat úkol</button></div>
+            <div class="filters-bar">
+                <select class="filter-select" id="taskStatusFilter" onchange="filterTasks()"><option value="pending">Nesplněné</option><option value="all">📑 Všechny</option><option value="completed">Splněné</option></select>
+                <select class="filter-select" id="taskTypeFilter" onchange="filterTasks()"><option value="">Všechny typy</option><option value="watering">💧 Zalévání</option><option value="repotting">Přesazování</option><option value="fertilizing">🧪 Hnojení</option><option value="inspection">Kontrola</option><option value="harvesting">✂️ Sklizeň</option><option value="other">📝 Ostatní</option></select>
+                <select class="filter-select" id="taskPriorityFilter" onchange="filterTasks()"><option value="">Všechny priority</option><option value="high">🔴 Vysoká</option><option value="medium">🟡 Střední</option><option value="low">🔵 Nízká</option></select>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-8"><h3>Seznam úkolů</h3><div id="tasksList"></div></div>
+                <div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Kalendář</h3><div id="tasksCalendar"></div></div>
+            </div>
+        </section>
+
+        <!-- SEZÓNNÍ PLÁN -->
+        <section id="section-seasonal" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Sezónní plán</h1></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-12">
+                    <h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>Roční přehled aktivit</h3>
+                    <div class="season-timeline">
+                        <div class="season-month" data-month="1">Led</div><div class="season-month" data-month="2">Úno</div><div class="season-month" data-month="3">Bře</div><div class="season-month" data-month="4">Dub</div><div class="season-month" data-month="5">Kvě</div><div class="season-month" data-month="6">Čvn</div><div class="season-month" data-month="7">Čvc</div><div class="season-month" data-month="8">Srp</div><div class="season-month" data-month="9">Zář</div><div class="season-month" data-month="10">Říj</div><div class="season-month" data-month="11">Lis</div><div class="season-month" data-month="12">Pro</div>
+                    </div>
+                    <div id="seasonalTasks">
+                        <div class="season-task-row"><div class="season-task-name">🌱 Výsev</div><div class="season-task-bar"><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div></div></div>
+                        <div class="season-task-row"><div class="season-task-name">Přesazování</div><div class="season-task-bar"><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div></div></div>
+                        <div class="season-task-row"><div class="season-task-name">🧪 Hnojení</div><div class="season-task-bar"><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div></div></div>
+                        <div class="season-task-row"><div class="season-task-name">Prodej</div><div class="season-task-bar"><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div></div></div>
+                        <div class="season-task-row"><div class="season-task-name">❄️ Zimoviště</div><div class="season-task-bar"><div class="season-task-cell active"></div><div class="season-task-cell active"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell"></div><div class="season-task-cell active"></div><div class="season-task-cell active peak"></div><div class="season-task-cell active peak"></div></div></div>
+                    </div>
+                </div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aktuální měsíc: <span id="currentMonthName"></span></h3><div id="currentMonthTasks"></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Rostliny k výsevu tento měsíc</h3><div id="sowingRecommendations"></div></div>
+            </div>
+        </section>
+
+        <!-- EKONOMIKA -->
+        <section id="section-economics" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Ekonomika školky</h1></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-3"><div class="econ-card"><h3>Hodnota skladu</h3><div class="econ-value" id="econStockValue">-</div><div class="econ-change up" id="econStockChange">nákupní ceny</div></div></div>
+                <div class="dashboard-item col-3"><div class="econ-card"><h3>Potenciální tržby</h3><div class="econ-value positive" id="econPotentialRevenue">-</div><div class="econ-change" id="econRevenueNote">při prodeji všeho</div></div></div>
+                <div class="dashboard-item col-3"><div class="econ-card"><h3>Průměrná marže</h3><div class="econ-value" id="econAvgMargin">-</div><div class="econ-change" id="econMarginNote">ziskovost</div></div></div>
+                <div class="dashboard-item col-3"><div class="econ-card"><h3>Celkem druhů</h3><div class="econ-value" id="econTotalSpecies">-</div><div class="econ-change" id="econSpeciesNote">aktivních rostlin</div></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Nejhodnotnější položky</h3><div id="topValuePlants"></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Hodnota podle fáze</h3><div id="valueByStage"></div></div>
+                <div class="dashboard-item col-12"><h3><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Přehled všech rostlin s cenami</h3><div class="plants-table-container"><table class="plants-table"><thead><tr><th>Rostlina</th><th>Množství</th><th>Nákupní cena/ks</th><th>Prodejní cena/ks</th><th>Marže</th><th>Celková hodnota</th></tr></thead><tbody id="economicsTableBody"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <!-- ZÓNY -->
+        <section id="section-zones" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Zóny & Lokace</h1></div>
+            <div id="zonesContent"><div class="loading"><div class="loading-spinner"></div>Načítám zóny...</div></div>
+        </section>
+
+        <!-- TIMELINE -->
+        <section id="section-timeline" class="section">
+            <div class="page-header">
+                <h1><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</h1>
+                <button class="btn btn-primary" onclick="openTimelineEventModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Přidat záznam</button>
+            </div>
+            
+            <!-- Statistiky -->
+            <div class="stats-mini" style="margin-bottom:20px;">
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Zdraví školky</div><div class="stat-mini-value" style="color:var(--success);" id="healthScore">94%</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Progrese rostlin</div><div class="stat-mini-value" id="progressRate">87%</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Závlaha dnes</div><div class="stat-mini-value" id="irrigationToday">3× / 45l</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Upozornění</div><div class="stat-mini-value" style="color:var(--warning);" id="alertCount">2</div></div></div>
+            </div>
+
+            <!-- Insights panel -->
+            <div class="insights-panel" id="insightsPanel">
+                <div class="insight-card insight-warning">
+                    <div class="insight-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                    <div class="insight-content">
+                        <div class="insight-title">Zóna 3 - nízký tlak vody</div>
+                        <div class="insight-desc">Závlaha běžela o 23% déle než obvykle. Zkontrolujte filtry nebo tlak.</div>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="dismissInsight(this)">Vyřešeno</button>
+                </div>
+                <div class="insight-card insight-success">
+                    <div class="insight-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="insight-content">
+                        <div class="insight-title">12 rostlin připraveno k prodeji</div>
+                        <div class="insight-desc">Rudbeckia, Echinacea a Salvia dosáhly prodejní velikosti.</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="switchTab('plants')">Zobrazit</button>
+                </div>
+                <div class="insight-card insight-info">
+                    <div class="insight-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+                    <div class="insight-content">
+                        <div class="insight-title">Plánované hnojení zítra</div>
+                        <div class="insight-desc">Fertigace NPK pro skleník 1 a 2 dle rozvrhu.</div>
+                    </div>
+                    <span class="insight-time">Zítra 6:00</span>
+                </div>
+            </div>
+
+            <!-- Filtry - inline -->
+            <div class="filters-bar" style="margin-bottom:20px;">
+                <input type="text" class="filter-input" id="timelineSearch" placeholder="Hledat..." style="min-width:180px;" oninput="filterTimeline()">
+                <select class="filter-select" id="timelinePlantFilter" onchange="filterTimeline()"><option value="">Všechny rostliny</option></select>
+                <select class="filter-select" id="timelineTypeFilter" onchange="filterTimeline()">
+                    <option value="">Všechny typy</option>
+                    <option value="irrigation">💧 Závlaha</option>
+                    <option value="fertilizing">🧪 Hnojení</option>
+                    <option value="planting">🌱 Výsadba</option>
+                    <option value="repotting">Přesazení</option>
+                    <option value="stage_change">Změna fáze</option>
+                    <option value="treatment">🛡️ Ošetření</option>
+                    <option value="harvest">✂️ Sklizeň</option>
+                    <option value="sale">Prodej</option>
+                    <option value="photo">📷 Foto</option>
+                    <option value="note">📝 Poznámka</option>
+                </select>
+                <select class="filter-select" id="timelinePeriodFilter" onchange="filterTimeline()">
+                    <option value="today">Dnes</option>
+                    <option value="week" selected>Tento týden</option>
+                    <option value="month">Tento měsíc</option>
+                    <option value="all">Vše</option>
+                </select>
+                <div style="margin-left:auto;display:flex;gap:6px;">
+                    <button class="btn btn-secondary btn-sm timeline-view-btn active" onclick="toggleTimelineView('list')" id="btnViewList"><svg viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                    <button class="btn btn-secondary btn-sm timeline-view-btn" onclick="toggleTimelineView('calendar')" id="btnViewCalendar"><svg viewBox="0 0 24 24" style="width:14px;height:14px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+                </div>
+            </div>
+
+            <!-- Timeline obsah -->
+            <div class="timeline-container" id="timelineContainer">
+                <!-- Dnešek -->
+                <div class="timeline-date-group">
+                    <div class="timeline-date-header">
+                        <div class="timeline-date-badge today">Dnes</div>
+                        <span class="timeline-date-text">29. ledna 2026</span>
+                    </div>
+                    <div class="timeline-events">
+                        <div class="timeline-event" data-type="irrigation">
+                            <div class="timeline-event-icon irrigation"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Automatická závlaha - Cyklus 3/3</span>
+                                    <span class="timeline-event-time">14:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Skleník 1 (zóny A, B, C) + Venkovní záhony</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>8 min</span>
+                                    <span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>18 litrů</span>
+                                    <span class="text-success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>OK</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="irrigation">
+                            <div class="timeline-event-icon irrigation"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Automatická závlaha - Cyklus 2/3</span>
+                                    <span class="timeline-event-time">10:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Skleník 1 (zóny A, B, C)</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>6 min</span>
+                                    <span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>12 litrů</span>
+                                    <span class="text-success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>OK</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="stage_change">
+                            <div class="timeline-event-icon stage"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Změna fáze</span>
+                                    <span class="timeline-event-time">10:15</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Rudbeckia fulgida 'Goldsturm' × 45 ks</span>
+                                </div>
+                                <div class="timeline-event-badges">
+                                    <span class="badge badge-info">Sazenice</span>
+                                    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-secondary);fill:none;"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                                    <span class="badge badge-success">K prodeji</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="irrigation">
+                            <div class="timeline-event-icon irrigation"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Automatická závlaha - Cyklus 1/3</span>
+                                    <span class="timeline-event-time">06:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Všechny skleníky + výsevní místnost</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>12 min</span>
+                                    <span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>28 litrů</span>
+                                    <span class="text-success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>OK</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Včera -->
+                <div class="timeline-date-group">
+                    <div class="timeline-date-header">
+                        <div class="timeline-date-badge">Včera</div>
+                        <span class="timeline-date-text">28. ledna 2026</span>
+                    </div>
+                    <div class="timeline-events">
+                        <div class="timeline-event" data-type="fertilizing">
+                            <div class="timeline-event-icon fertilizing"><svg viewBox="0 0 24 24"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Fertigace - NPK roztok</span>
+                                    <span class="timeline-event-time">06:30</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Skleník 1 + 2 (přidáno do ranní závlahy)</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M10 2v7.31"/></svg>Kristalon Gold 2g/l</span>
+                                    <span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>EC 1.8</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="irrigation" style="border-left:3px solid var(--warning);">
+                            <div class="timeline-event-icon irrigation" style="background:rgba(251,191,36,0.15);"><svg viewBox="0 0 24 24" style="stroke:#fbbf24;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Závlaha - prodloužený cyklus</span>
+                                    <span class="timeline-event-time">14:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Zóna 3 (venkovní záhony)</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min (+6 min)</span>
+                                    <span class="text-warning"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Nízký tlak</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="sale">
+                            <div class="timeline-event-icon sale"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Prodej</span>
+                                    <span class="timeline-event-time">15:30</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Heuchera 'Palace Purple' × 12 ks</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Zahradnictví Novák</span>
+                                    <span style="color:var(--success);font-weight:600;">+1 440 Kč</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Starší -->
+                <div class="timeline-date-group">
+                    <div class="timeline-date-header">
+                        <div class="timeline-date-badge">Po 27.1.</div>
+                        <span class="timeline-date-text">27. ledna 2026</span>
+                    </div>
+                    <div class="timeline-events">
+                        <div class="timeline-event" data-type="planting">
+                            <div class="timeline-event-icon planting"><svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-7.5 8-11a8 8 0 1 0-16 0c0 3.5 2.5 8.5 8 11z"/><path d="M12 14v6"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Nový výsev</span>
+                                    <span class="timeline-event-time">08:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Lavandula angustifolia 'Hidcote' × 54 semen</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>Výsevní místnost, tác 12</span>
+                                    <span>Očekávaná klíčivost: 85%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-event" data-type="treatment">
+                            <div class="timeline-event-icon treatment"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                            <div class="timeline-event-content">
+                                <div class="timeline-event-header">
+                                    <span class="timeline-event-title">Preventivní ošetření</span>
+                                    <span class="timeline-event-time">16:00</span>
+                                </div>
+                                <div class="timeline-event-details">
+                                    <span class="timeline-event-plant">Skleník 1 - všechny rostliny</span>
+                                </div>
+                                <div class="timeline-event-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Previcur Energy</span>
+                                    <span>Proti plísním</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-load-more">
+                    <button class="btn btn-secondary" onclick="loadMoreTimeline()"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>Načíst starší záznamy</button>
+                </div>
+            </div>
+
+            <!-- Kalendářový pohled -->
+            <div class="timeline-calendar" id="timelineCalendar" style="display:none;">
+                <div class="calendar-header">
+                    <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;"><polyline points="15 18 9 12 15 6"/></svg></button>
+                    <h3 id="calendarMonthTitle">Leden 2026</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(1)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <div class="calendar-day-header">Po</div>
+                    <div class="calendar-day-header">Út</div>
+                    <div class="calendar-day-header">St</div>
+                    <div class="calendar-day-header">Čt</div>
+                    <div class="calendar-day-header">Pá</div>
+                    <div class="calendar-day-header">So</div>
+                    <div class="calendar-day-header">Ne</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOTOGALERIE -->
+        <section id="section-gallery" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Fotogalerie</h1><button class="btn btn-primary" onclick="alert('Upload fotek - připravuje se')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Nahrát fotky</button></div>
+            <div class="filters-bar">
+                <input type="text" class="filter-input" placeholder="Hledat fotky...">
+                <select class="filter-select"><option value="">Všechny rostliny</option></select>
+                <select class="filter-select"><option value="">Všechny měsíce</option></select>
+            </div>
+            <div class="gallery-grid" id="galleryGrid">
+                <div class="gallery-empty"><svg viewBox="0 0 24 24" style="width:48px;height:48px;stroke:var(--text-muted);fill:none;stroke-width:1.5;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><h3>Žádné fotky</h3><p>Nahrajte první fotky vašich rostlin</p></div>
+            </div>
+        </section>
+
+        <!-- QR & ETIKETY -->
+        <section id="section-qr" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" fill="none" stroke="currentColor"/><rect x="14" y="3" width="7" height="7" fill="none" stroke="currentColor"/><rect x="3" y="14" width="7" height="7" fill="none" stroke="currentColor"/><rect x="14" y="14" width="3" height="3" fill="none" stroke="currentColor"/><rect x="18" y="14" width="3" height="3" fill="none" stroke="currentColor"/><rect x="14" y="18" width="3" height="3" fill="none" stroke="currentColor"/><rect x="18" y="18" width="3" height="3" fill="none" stroke="currentColor"/></svg>QR kódy & Etikety</h1></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Generovat QR kódy</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Vytvořte QR kódy pro jednotlivé rostliny nebo celé skupiny.</p>
+                    <select class="filter-select" style="width:100%;margin-bottom:12px;"><option>Vybrat rostliny...</option><option>Všechny rostliny</option><option>Pouze k prodeji</option></select>
+                    <button class="btn btn-primary" style="width:100%;">Generovat QR</button>
+                </div>
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Tisknout etikety</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Vytiskněte etikety s názvy, cenami a QR kódy.</p>
+                    <select class="filter-select" style="width:100%;margin-bottom:12px;"><option>Formát etikety</option><option>Malá (3x5 cm)</option><option>Střední (5x7 cm)</option><option>Velká (7x10 cm)</option></select>
+                    <button class="btn btn-secondary" style="width:100%;">Náhled tisku</button>
+                </div>
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Šablony etiket</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Spravujte a upravujte šablony etiket.</p>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="padding:10px;background:var(--bg-primary);border-radius:6px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;">Základní etiketa</span><span style="color:var(--mint);font-size:12px;">Výchozí</span></div>
+                        <div style="padding:10px;background:var(--bg-primary);border-radius:6px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;">S cenou</span><span style="color:var(--text-muted);font-size:12px;">Upravit</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRODEJ -->
+        <section id="section-sales" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Prodej</h1><button class="btn btn-primary" onclick="alert('Nový prodej - připravuje se')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nový prodej</button></div>
+            <div class="stats-mini">
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Tržby tento měsíc</div><div class="stat-mini-value" style="color:var(--success);">24 680 Kč</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Prodaných kusů</div><div class="stat-mini-value">156</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Zákazníků</div><div class="stat-mini-value">23</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Průměrná objednávka</div><div class="stat-mini-value">1 073 Kč</div></div></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-8"><h3><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Poslední prodeje</h3><div id="recentSales" style="color:var(--text-secondary);font-size:13px;">Zatím žádné prodeje</div></div>
+                <div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Nejprodávanější</h3><div style="color:var(--text-secondary);font-size:13px;">Data se načítají...</div></div>
+            </div>
+        </section>
+
+        <!-- KATALOG -->
+        <section id="section-catalog" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Katalog rostlin</h1></div>
+            <div class="filters-bar">
+                <input type="text" class="filter-input" id="catalogSearch" placeholder="Hledat v katalogu..." style="min-width:300px;">
+                <select class="filter-select" id="catalogFilter"><option value="">Všechny kategorie</option><option value="trvalky">Trvalky</option><option value="traviny">Traviny</option><option value="kapradiny">Kapradiny</option></select>
+                <span style="color:var(--text-secondary);font-size:13px;margin-left:auto;">Celkem: <strong id="catalogCount">2048</strong> rostlin</span>
+            </div>
+            <div class="plants-table-container"><table class="plants-table"><thead><tr><th>Latinský název</th><th>Odrůda</th><th>Barva květu</th><th>Doba květu</th><th>Výška</th><th>Světlo</th><th>Akce</th></tr></thead><tbody id="catalogTableBody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-secondary);">Začněte psát pro vyhledání v katalogu</td></tr></tbody></table></div>
+        </section>
+
+        <!-- STATISTIKY -->
+        <section id="section-statistics" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Statistiky</h1></div>
+            <div class="stats-mini">
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Celkem druhů</div><div class="stat-mini-value" id="statsDruhu">-</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Celkem kusů</div><div class="stat-mini-value" id="statsKusu">-</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Aktivních zón</div><div class="stat-mini-value" id="statsZon">-</div></div></div>
+                <div class="stat-mini"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="stat-mini-info"><div class="stat-mini-label">Celková hodnota</div><div class="stat-mini-value" id="statsHodnota">-</div></div></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Vývoj skladu</h3><div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:13px;">Graf vývoje - připravuje se</div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>Rozložení podle fáze</h3><div id="statsStageChart" style="height:200px;"></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Tržby podle měsíce</h3><div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:13px;">Graf tržeb - připravuje se</div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>Obsazenost zón</h3><div id="statsZoneChart" style="height:200px;"></div></div>
+            </div>
+        </section>
+
+        <!-- BATCH -->
+        <section id="section-batch" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Batch operace</h1></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Hromadná úprava</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Upravte více rostlin najednou - fázi, lokaci, ceny.</p>
+                    <button class="btn btn-secondary" style="width:100%;">Vybrat rostliny</button>
+                </div>
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Hromadný import</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Importujte rostliny z CSV nebo Excel souboru.</p>
+                    <button class="btn btn-secondary" style="width:100%;">Nahrát soubor</button>
+                </div>
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export dat</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Exportujte vybrané rostliny do různých formátů.</p>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="exportData()">Export CSV</button>
+                </div>
+                <div class="dashboard-item col-6">
+                    <h3><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hromadné smazání</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Smažte více rostlin najednou. Tato akce je nevratná!</p>
+                    <button class="btn btn-danger" style="width:100%;">Vybrat ke smazání</button>
+                </div>
+                <div class="dashboard-item col-6">
+                    <h3><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplikovat</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Vytvořte kopie vybraných rostlin s novými parametry.</p>
+                    <button class="btn btn-secondary" style="width:100%;">Vybrat k duplikaci</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PŘIPOMÍNKY -->
+        <section id="section-reminders" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Připomínky</h1><button class="btn btn-primary" onclick="alert('Nová připomínka - připravuje se')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nová připomínka</button></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-8">
+                    <h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aktivní připomínky</h3>
+                    <div class="reminder-list">
+                        <div class="task-card task-priority-high"><div class="task-checkbox"></div><div class="task-info"><div class="task-title">Zalít skleník 1</div><div class="task-meta"><span>💧 Zalévání</span><span>Denně v 8:00</span></div></div></div>
+                        <div class="task-card task-priority-medium"><div class="task-checkbox"></div><div class="task-info"><div class="task-title">Kontrola škůdců</div><div class="task-meta"><span>Kontrola</span><span>Každý týden</span></div></div></div>
+                        <div class="task-card task-priority-low"><div class="task-checkbox"></div><div class="task-info"><div class="task-title">Hnojení trvalek</div><div class="task-meta"><span>🧪 Hnojení</span><span>Každý měsíc</span></div></div></div>
+                    </div>
+                </div>
+                <div class="dashboard-item col-4">
+                    <h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Nastavení notifikací</h3>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;"><input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--mint);"> E-mailové notifikace</label>
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;"><input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--mint);"> Push notifikace</label>
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;"><input type="checkbox" style="width:18px;height:18px;accent-color:var(--mint);"> SMS notifikace</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AUDIT LOG -->
+        <section id="section-audit" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Audit Log</h1></div>
+            <div class="filters-bar">
+                <input type="date" class="filter-input" style="min-width:150px;">
+                <select class="filter-select"><option value="">Všechny akce</option><option>Přidání</option><option>Úprava</option><option>Smazání</option><option>Prodej</option></select>
+                <select class="filter-select"><option value="">Všichni uživatelé</option></select>
+            </div>
+            <div class="plants-table-container"><table class="plants-table"><thead><tr><th>Datum</th><th>Uživatel</th><th>Akce</th><th>Objekt</th><th>Detail</th></tr></thead><tbody id="auditTableBody">
+                <tr><td style="white-space:nowrap;">29.01.2026 19:25</td><td>David Test</td><td><span class="badge badge-success">Přidání</span></td><td>Lavandula angustifolia</td><td style="color:var(--text-secondary);font-size:12px;">Přidáno 54 ks</td></tr>
+                <tr><td style="white-space:nowrap;">29.01.2026 18:42</td><td>David Test</td><td><span class="badge badge-warning">Úprava</span></td><td>Echinacea purpurea</td><td style="color:var(--text-secondary);font-size:12px;">Změna ceny: 79 → 89 Kč</td></tr>
+                <tr><td style="white-space:nowrap;">29.01.2026 17:15</td><td>David Test</td><td><span class="badge badge-info">Prodej</span></td><td>Heuchera Palace Purple</td><td style="color:var(--text-secondary);font-size:12px;">Prodáno 12 ks, 1440 Kč</td></tr>
+                <tr><td style="white-space:nowrap;">28.01.2026 14:30</td><td>David Test</td><td><span class="badge badge-danger">Smazání</span></td><td>Hosta Blue Angel</td><td style="color:var(--text-secondary);font-size:12px;">Odstraněno ze skladu</td></tr>
+            </tbody></table></div>
+        </section>
+
+        <!-- NASTAVENÍ -->
+        <section id="section-settings" class="section">
+            <div class="page-header"><h1><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Nastavení školky</h1></div>
+            <div class="dashboard-grid">
+                <div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Správa lokací</h3><p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Definujte zóny a lokace ve školce.</p><button class="btn btn-secondary" style="width:100%;">Spravovat lokace</button></div>
+                <div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export dat</h3><p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Exportujte data do CSV nebo Excel.</p><button class="btn btn-secondary" onclick="exportData()" style="width:100%;">Exportovat CSV</button></div>
+                <div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Import dat</h3><p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Importujte rostliny z externího souboru.</p><button class="btn btn-secondary" style="width:100%;">Nahrát soubor</button></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Vzhled</h3><p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Přizpůsobte si vzhled aplikace.</p><div style="display:flex;gap:12px;"><button class="btn btn-secondary">Tmavý režim</button><button class="btn btn-secondary">Světlý režim</button></div></div>
+                <div class="dashboard-item col-6"><h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Jazyk a měna</h3><p style="color:var(--text-secondary);margin-bottom:16px;font-size:13px;">Nastavte jazyk a měnu.</p><div style="display:flex;gap:12px;"><select class="filter-select"><option>Čeština</option><option>English</option></select><select class="filter-select"><option>CZK (Kč)</option><option>EUR (€)</option></select></div></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL: ROSTLINA -->
+    <div id="plantModal" class="modal">
+        <div class="modal-content" style="max-width:800px;">
+            <div class="modal-header"><h2 id="plantModalTitle">Přidat rostlinu</h2><button class="modal-close" onclick="closePlantModal()">×</button></div>
+            <div class="modal-body">
+                <form id="plantForm">
+                    <input type="hidden" id="plantId">
+                    <div class="form-row"><div class="form-group"><label>Název rostliny *</label><input type="text" class="form-input" id="plantSpecies" placeholder="např. Echinacea purpurea" required autocomplete="off"><div id="speciesAutocomplete" style="position:relative;"></div></div><div class="form-group"><label>Odrůda</label><input type="text" class="form-input" id="plantVariety" placeholder="např. Magnus"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Množství *</label><input type="number" class="form-input" id="plantQuantity" min="1" required></div><div class="form-group"><label>Fáze</label><select class="form-input" id="plantStage"><option value="semínko">Semínko</option><option value="sazenice" selected>Sazenice</option><option value="rostlina">Rostlina</option><option value="k_prodeji">K prodeji</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Lokace</label><input type="text" class="form-input" id="plantLocation" placeholder="např. Skleník 1, Stůl A"></div><div class="form-group"><label>Datum výsadby</label><input type="date" class="form-input" id="plantPlantedDate"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Nákupní cena/ks (Kč)</label><input type="number" class="form-input" id="plantPurchasePrice" step="0.01" min="0"></div><div class="form-group"><label>Prodejní cena/ks (Kč)</label><input type="number" class="form-input" id="plantSellingPrice" step="0.01" min="0"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Barva květu</label><input type="text" class="form-input" id="plantFlowerColor" placeholder="např. růžová"></div><div class="form-group"><label>Doba květu</label><input type="text" class="form-input" id="plantFloweringTime" placeholder="např. VI-IX"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Výška</label><input type="text" class="form-input" id="plantHeight" placeholder="např. 60-80 cm"></div><div class="form-group"><label>Světelné požadavky</label><select class="form-input" id="plantLightRequirements"><option value="">-- vyberte --</option><option value="plné slunce">Plné slunce</option><option value="polostín">Polostín</option><option value="stín">Stín</option></select></div></div>
+                    <div class="form-group full-width"><label>Poznámky</label><textarea class="form-input" id="plantNotes" rows="3" placeholder="Další informace..."></textarea></div>
+                    <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closePlantModal()">Zrušit</button><button type="submit" class="btn btn-primary">Uložit rostlinu</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ÚKOL -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="taskModalTitle">Přidat úkol</h2><button class="modal-close" onclick="closeTaskModal()">×</button></div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <input type="hidden" id="taskId">
+                    <div class="form-group"><label>Název úkolu *</label><input type="text" class="form-input" id="taskTitle" required placeholder="např. Zalít trvalky ve skleníku 1"></div>
+                    <div class="form-row"><div class="form-group"><label>Typ úkolu</label><select class="form-input" id="taskType"><option value="watering">💧 Zalévání</option><option value="repotting">Přesazování</option><option value="fertilizing">🧪 Hnojení</option><option value="inspection">Kontrola</option><option value="harvesting">✂️ Sklizeň</option><option value="other">📝 Ostatní</option></select></div><div class="form-group"><label>Priorita</label><select class="form-input" id="taskPriority"><option value="low">🔵 Nízká</option><option value="medium" selected>🟡 Střední</option><option value="high">🔴 Vysoká</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Termín</label><input type="date" class="form-input" id="taskDueDate"></div><div class="form-group"><label>Přiřazeno</label><select class="form-input" id="taskAssignee"><option value="">-- nepřiřazeno --</option></select></div></div>
+                    <div class="form-group"><label>Popis</label><textarea class="form-input" id="taskDescription" rows="3" placeholder="Podrobnosti úkolu..."></textarea></div>
+                    <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Zrušit</button><button type="submit" class="btn btn-primary">Uložit úkol</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TIMELINE ZÁZNAM -->
+    <div id="timelineModal" class="modal">
+        <div class="modal-content" style="max-width:650px;">
+            <div class="modal-header"><h2 id="timelineModalTitle">Přidat záznam</h2><button class="modal-close" onclick="closeTimelineModal()">×</button></div>
+            <div class="modal-body">
+                <form id="timelineForm" onsubmit="saveTimelineEvent(event)">
+                    <input type="hidden" id="timelineEventId">
+                    
+                    <!-- Typ záznamu - velké tlačítka -->
+                    <div class="form-group">
+                        <label>Typ záznamu *</label>
+                        <div class="timeline-type-grid">
+                            <button type="button" class="timeline-type-btn" data-type="irrigation" onclick="selectTimelineType('irrigation')">
+                                <svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                                <span>Závlaha</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="fertilizing" onclick="selectTimelineType('fertilizing')">
+                                <svg viewBox="0 0 24 24"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/></svg>
+                                <span>Hnojení</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="planting" onclick="selectTimelineType('planting')">
+                                <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-7.5 8-11a8 8 0 1 0-16 0c0 3.5 2.5 8.5 8 11z"/><path d="M12 14v6"/></svg>
+                                <span>Výsev</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="repotting" onclick="selectTimelineType('repotting')">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                                <span>Přesazení</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="treatment" onclick="selectTimelineType('treatment')">
+                                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span>Ošetření</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="stage_change" onclick="selectTimelineType('stage_change')">
+                                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                                <span>Změna fáze</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="sale" onclick="selectTimelineType('sale')">
+                                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <span>Prodej</span>
+                            </button>
+                            <button type="button" class="timeline-type-btn" data-type="note" onclick="selectTimelineType('note')">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span>Poznámka</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="timelineType" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Datum *</label>
+                            <input type="date" class="form-input" id="timelineDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Čas</label>
+                            <input type="time" class="form-input" id="timelineTime">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rostliny / Zóna</label>
+                        <select class="form-input" id="timelinePlants" multiple style="height:80px;">
+                            <option value="all">Všechny rostliny</option>
+                            <option value="zone1">Skleník 1</option>
+                            <option value="zone2">Skleník 2</option>
+                            <option value="zone3">Venkovní záhony</option>
+                        </select>
+                        <small style="color:var(--text-muted);font-size:11px;">Podržte Ctrl/Cmd pro výběr více položek</small>
+                    </div>
+
+                    <!-- Dynamická pole podle typu -->
+                    <div id="timelineExtraFields">
+                        <!-- Závlaha -->
+                        <div class="timeline-fields" data-for="irrigation" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Trvání (min)</label><input type="number" class="form-input" id="irrigationDuration" placeholder="8"></div>
+                                <div class="form-group"><label>Spotřeba (l)</label><input type="number" class="form-input" id="irrigationAmount" placeholder="15"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Stav</label>
+                                <select class="form-input" id="irrigationStatus">
+                                    <option value="ok">OK - bez problémů</option>
+                                    <option value="low_pressure">Nízký tlak</option>
+                                    <option value="clogged">Ucpaná tryska</option>
+                                    <option value="error">Chyba</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Hnojení -->
+                        <div class="timeline-fields" data-for="fertilizing" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Hnojivo</label><input type="text" class="form-input" id="fertilizerName" placeholder="např. Kristalon Gold"></div>
+                                <div class="form-group"><label>Koncentrace</label><input type="text" class="form-input" id="fertilizerConc" placeholder="např. 2g/l"></div>
+                            </div>
+                            <div class="form-group"><label>EC hodnota</label><input type="text" class="form-input" id="fertilizerEC" placeholder="např. 1.8"></div>
+                        </div>
+                        <!-- Ošetření -->
+                        <div class="timeline-fields" data-for="treatment" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Přípravek</label><input type="text" class="form-input" id="treatmentProduct" placeholder="např. Previcur Energy"></div>
+                                <div class="form-group"><label>Typ</label><select class="form-input" id="treatmentType"><option value="preventive">Preventivní</option><option value="reactive">Reaktivní (problém)</option></select></div>
+                            </div>
+                            <div class="form-group"><label>Proti čemu</label><input type="text" class="form-input" id="treatmentTarget" placeholder="např. plísně, mšice..."></div>
+                        </div>
+                        <!-- Prodej -->
+                        <div class="timeline-fields" data-for="sale" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Množství (ks)</label><input type="number" class="form-input" id="saleQuantity" placeholder="12"></div>
+                                <div class="form-group"><label>Cena celkem (Kč)</label><input type="number" class="form-input" id="salePrice" placeholder="1440"></div>
+                            </div>
+                            <div class="form-group"><label>Zákazník</label><input type="text" class="form-input" id="saleCustomer" placeholder="např. Zahradnictví Novák"></div>
+                        </div>
+                        <!-- Změna fáze -->
+                        <div class="timeline-fields" data-for="stage_change" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Z fáze</label><select class="form-input" id="stageFrom"><option value="seed">Semínko</option><option value="seedling">Sazenice</option><option value="growing">Rostoucí</option></select></div>
+                                <div class="form-group"><label>Do fáze</label><select class="form-input" id="stageTo"><option value="seedling">Sazenice</option><option value="growing">Rostoucí</option><option value="sale">K prodeji</option></select></div>
+                            </div>
+                            <div class="form-group"><label>Počet kusů</label><input type="number" class="form-input" id="stageQuantity" placeholder="45"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poznámka</label>
+                        <textarea class="form-input" id="timelineNote" rows="2" placeholder="Volitelná poznámka..."></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeTimelineModal()">Zrušit</button>
+                        <button type="submit" class="btn btn-primary">Uložit záznam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PŘESUN NA SKLAD -->
+    <div id="warehouseModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header"><h2>Přesunout na sklad</h2><button class="modal-close" onclick="closeWarehouseModal()">×</button></div>
+            <div class="modal-body">
+                <form id="warehouseForm" onsubmit="submitWarehouseTransfer(event)">
+                    <input type="hidden" id="warehousePlantId">
+                    
+                    <div class="warehouse-plant-info" style="background:var(--bg-primary); padding:14px; border-radius:8px; margin-bottom:16px;">
+                        <div style="font-weight:600; color:var(--text-primary);" id="warehousePlantName">-</div>
+                        <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
+                            Dostupné: <strong id="warehousePlantQty">-</strong> ks • Cena: <strong id="warehousePlantPrice">-</strong> Kč/ks
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Množství k přesunu *</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="number" class="form-input" id="warehouseQuantity" min="1" required style="flex:1;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="setMaxQuantity()">Vše</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Umístění ve skladu</label>
+                        <select class="form-input" id="warehouseLocation">
+                            <option value="Prodejní sklad">Prodejní sklad</option>
+                            <option value="Sklad A">Sklad A</option>
+                            <option value="Sklad B">Sklad B</option>
+                            <option value="Venkovní">Venkovní sklad</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Poznámka</label>
+                        <textarea class="form-input" id="warehouseNote" rows="2" placeholder="Volitelná poznámka..."></textarea>
+                    </div>
+                    
+                    <div style="background:rgba(74,222,128,0.1); border:1px solid var(--mint); border-radius:8px; padding:12px; margin-bottom:16px;">
+                        <div style="display:flex; align-items:center; gap:8px; color:var(--mint); font-size:13px;">
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                            Rostliny budou přidány do hlavního skladu a propojeny s objednávkami.
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeWarehouseModal()">Zrušit</button>
+                        <button type="submit" class="btn btn-primary"><svg viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>Přesunout na sklad</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let allPlants = [];
+    let allTasks = [];
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadUserInfo();
+        await loadPlants();
+        loadTasks();
+        updateSeasonalView();
+        setupAutocomplete();
+    });
+
+    async function loadUserInfo() {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                currentUser = data.user;
+                document.getElementById('userbox').innerHTML = `<span style="color:var(--text-secondary);font-size:13px;">${currentUser.name}</span>`;
+            }
+        } catch (e) { console.log('User not loaded'); }
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('section-' + tabName)?.classList.add('active');
+        document.querySelector(`.nav-tab[onclick="switchTab('${tabName}')"]`)?.classList.add('active');
+        if (tabName === 'plants') loadPlants();
+        if (tabName === 'tasks') loadTasks();
+        if (tabName === 'economics') loadEconomics();
+        if (tabName === 'zones') loadZones();
+    }
+
+    async function loadPlants() {
+        try {
+            const res = await fetch('/api/nursery/plants');
+            const data = await res.json();
+            if (data.success) {
+                allPlants = data.plants || [];
+                renderPlants();
+                updateStats();
+                updateLocationFilter();
+                loadEconomics();
+            }
+        } catch (e) {
+            console.error('Error loading plants:', e);
+            showNotification('Chyba při načítání rostlin', 'error');
+        }
+    }
+
+    function renderPlants() {
+        const search = document.getElementById('plantSearch')?.value.toLowerCase() || '';
+        const stage = document.getElementById('stageFilter')?.value || '';
+        const location = document.getElementById('locationFilter')?.value || '';
+        let filtered = allPlants.filter(p => {
+            const matchSearch = !search || p.species?.toLowerCase().includes(search) || p.variety?.toLowerCase().includes(search);
+            const matchStage = !stage || p.stage === stage;
+            const matchLocation = !location || p.location === location;
+            return matchSearch && matchStage && matchLocation;
+        });
+        const tbody = document.getElementById('plantsTableBody');
+        if (tbody) {
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>Žádné rostliny</h3><p>Přidejte první rostlinu kliknutím na tlačítko výše.</p></td></tr>`;
+            } else {
+                tbody.innerHTML = filtered.map(p => {
+                    const value = (p.quantity || 0) * (p.selling_price || 0);
+                    const isReady = p.stage === 'prodejní' || p.stage === 'k_prodeji';
+                    const warehouseBtn = isReady ? `<button onclick="event.stopPropagation();openWarehouseModal(${p.id})" title="Přesunout na sklad">Na sklad</button>` : '';
+                    return `<tr onclick="openPlantModal(${p.id})" style="cursor:pointer;"><td><div class="plant-name">${escapeHtml(p.species || '')}</div><div class="plant-variety">${escapeHtml(p.variety || '')}</div></td><td><strong>${p.quantity || 0}</strong> ks</td><td>${getStageBadge(p.stage)}</td><td>${escapeHtml(p.location || '-')}</td><td>${p.selling_price ? p.selling_price + ' Kč' : '-'}</td><td><strong>${formatCurrency(value)}</strong></td><td><div class="actions-dropdown"><button class="actions-btn" onclick="event.stopPropagation();toggleActions(this)">⋮</button><div class="actions-menu">${warehouseBtn}<button onclick="event.stopPropagation();openPlantModal(${p.id})">✏️ Upravit</button><button class="danger" onclick="event.stopPropagation();deletePlant(${p.id})">🗑️ Smazat</button></div></div></td></tr>`;
+                }).join('');
+            }
+        }
+        const grid = document.getElementById('plantsGridView');
+        if (grid) {
+            grid.innerHTML = filtered.map(p => {
+                const value = (p.quantity || 0) * (p.selling_price || 0);
+                return `<div class="plant-card" onclick="openPlantModal(${p.id})"><div class="plant-card-header"><div><div class="plant-card-title">${escapeHtml(p.species || '')}</div><div class="plant-card-variety">${escapeHtml(p.variety || '')}</div></div>${getStageBadge(p.stage)}</div><div class="plant-card-stats"><div class="plant-card-stat">${p.quantity || 0} ks</div><div class="plant-card-stat">${escapeHtml(p.location || '-')}</div><div class="plant-card-stat">${formatCurrency(value)}</div></div></div>`;
+            }).join('');
+        }
+        const recent = document.getElementById('recentPlants');
+        if (recent) {
+            const recentPlants = allPlants.slice(0, 5);
+            recent.innerHTML = recentPlants.length === 0 ? '<p style="color:var(--text-secondary);">Zatím žádné rostliny</p>' : recentPlants.map(p => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-primary);"><div><strong>${escapeHtml(p.species || '')}</strong><div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(p.variety || '')} • ${p.quantity} ks</div></div>${getStageBadge(p.stage)}</div>`).join('');
+        }
+    }
+
+    function filterPlants() { renderPlants(); }
+    function toggleViewMode() {
+        const mode = document.getElementById('viewMode').value;
+        document.getElementById('plantsTableView').style.display = mode === 'table' ? 'block' : 'none';
+        document.getElementById('plantsGridView').style.display = mode === 'grid' ? 'grid' : 'none';
+    }
+
+    function updateLocationFilter() {
+        const select = document.getElementById('locationFilter');
+        if (!select) return;
+        const locations = [...new Set(allPlants.map(p => p.location).filter(Boolean))];
+        select.innerHTML = '<option value="">Všechny lokace</option>' + locations.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+    }
+
+    function updateStats() {
+        const totalSpecies = allPlants.length;
+        const totalQuantity = allPlants.reduce((sum, p) => sum + (p.quantity || 0), 0);
+        const totalValue = allPlants.reduce((sum, p) => sum + ((p.quantity || 0) * (p.selling_price || 0)), 0);
+        document.getElementById('statTotalSpecies').textContent = totalSpecies;
+        document.getElementById('statTotalQuantity').textContent = totalQuantity.toLocaleString('cs-CZ');
+        document.getElementById('statTotalValue').textContent = formatCurrency(totalValue);
+        document.getElementById('statTasksToday').textContent = allTasks.filter(t => !t.completed && isToday(t.due_date)).length;
+        const stageBreakdown = document.getElementById('stageBreakdown');
+        if (stageBreakdown) {
+            const stages = {};
+            allPlants.forEach(p => { stages[p.stage] = (stages[p.stage] || 0) + (p.quantity || 0); });
+            stageBreakdown.innerHTML = Object.entries(stages).map(([stage, count]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-primary);"><span>${getStageBadge(stage)}</span><strong>${count.toLocaleString('cs-CZ')} ks</strong></div>`).join('') || '<p style="color:var(--text-secondary);">Žádná data</p>';
+        }
+        const locationBreakdown = document.getElementById('locationBreakdown');
+        if (locationBreakdown) {
+            const locations = {};
+            allPlants.forEach(p => { const loc = p.location || 'Nezařazeno'; locations[loc] = (locations[loc] || 0) + (p.quantity || 0); });
+            locationBreakdown.innerHTML = Object.entries(locations).slice(0, 5).map(([loc, count]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-primary);"><span style="color:var(--text-secondary);">${escapeHtml(loc)}</span><strong>${count.toLocaleString('cs-CZ')} ks</strong></div>`).join('') || '<p style="color:var(--text-secondary);">Žádná data</p>';
+        }
+    }
+
+    function openPlantModal(plantId = null) {
+        const modal = document.getElementById('plantModal');
+        const title = document.getElementById('plantModalTitle');
+        const form = document.getElementById('plantForm');
+        form.reset();
+        document.getElementById('plantId').value = '';
+        if (plantId) {
+            title.textContent = 'Upravit rostlinu';
+            const plant = allPlants.find(p => p.id === plantId);
+            if (plant) {
+                document.getElementById('plantId').value = plant.id;
+                document.getElementById('plantSpecies').value = plant.species || '';
+                document.getElementById('plantVariety').value = plant.variety || '';
+                document.getElementById('plantQuantity').value = plant.quantity || '';
+                document.getElementById('plantStage').value = plant.stage || 'sazenice';
+                document.getElementById('plantLocation').value = plant.location || '';
+                document.getElementById('plantPlantedDate').value = plant.planted_date || '';
+                document.getElementById('plantPurchasePrice').value = plant.purchase_price || '';
+                document.getElementById('plantSellingPrice').value = plant.selling_price || '';
+                document.getElementById('plantFlowerColor').value = plant.flower_color || '';
+                document.getElementById('plantFloweringTime').value = plant.flowering_time || '';
+                document.getElementById('plantHeight').value = plant.height || '';
+                document.getElementById('plantLightRequirements').value = plant.light_requirements || '';
+                document.getElementById('plantNotes').value = plant.notes || '';
+            }
+        } else {
+            title.textContent = 'Přidat rostlinu';
+            document.getElementById('plantPlantedDate').value = new Date().toISOString().split('T')[0];
+        }
+        modal.classList.add('active');
+    }
+
+    function closePlantModal() { document.getElementById('plantModal').classList.remove('active'); }
+
+    document.getElementById('plantForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const plantId = document.getElementById('plantId').value;
+        const data = {
+            species: document.getElementById('plantSpecies').value,
+            variety: document.getElementById('plantVariety').value,
+            quantity: parseInt(document.getElementById('plantQuantity').value) || 0,
+            stage: document.getElementById('plantStage').value,
+            location: document.getElementById('plantLocation').value,
+            planted_date: document.getElementById('plantPlantedDate').value,
+            purchase_price: parseFloat(document.getElementById('plantPurchasePrice').value) || null,
+            selling_price: parseFloat(document.getElementById('plantSellingPrice').value) || null,
+            flower_color: document.getElementById('plantFlowerColor').value,
+            flowering_time: document.getElementById('plantFloweringTime').value,
+            height: document.getElementById('plantHeight').value,
+            light_requirements: document.getElementById('plantLightRequirements').value,
+            notes: document.getElementById('plantNotes').value
+        };
+        try {
+            const url = plantId ? `/api/nursery/plants/${plantId}` : '/api/nursery/plants';
+            const method = plantId ? 'PUT' : 'POST';
+            const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const result = await res.json();
+            if (result.success) {
+                showNotification(plantId ? 'Rostlina aktualizována' : 'Rostlina přidána', 'success');
+                closePlantModal();
+                loadPlants();
+            } else {
+                showNotification(result.message || 'Chyba při ukládání', 'error');
+            }
+        } catch (e) {
+            console.error('Error saving plant:', e);
+            showNotification('Chyba při ukládání', 'error');
+        }
+    });
+
+    async function deletePlant(plantId) {
+        if (!confirm('Opravdu smazat tuto rostlinu?')) return;
+        try {
+            const res = await fetch(`/api/nursery/plants/${plantId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) { showNotification('Rostlina smazána', 'success'); loadPlants(); }
+            else { showNotification(data.message || 'Chyba při mazání', 'error'); }
+        } catch (e) { showNotification('Chyba při mazání', 'error'); }
+    }
+
+    function loadTasks() {
+        allTasks = [
+            { id: 1, title: 'Zalít trvalky ve skleníku 1', type: 'watering', priority: 'high', due_date: new Date().toISOString().split('T')[0], completed: false },
+            { id: 2, title: 'Přesadit sazenice Echinacea', type: 'repotting', priority: 'medium', due_date: new Date().toISOString().split('T')[0], completed: false },
+            { id: 3, title: 'Kontrola škůdců', type: 'inspection', priority: 'low', due_date: new Date(Date.now() + 86400000).toISOString().split('T')[0], completed: false },
+            { id: 4, title: 'Hnojení trvalek', type: 'fertilizing', priority: 'medium', due_date: new Date(Date.now() + 172800000).toISOString().split('T')[0], completed: true },
+        ];
+        renderTasks();
+        renderTasksCalendar();
+        renderTodayTasks();
+    }
+
+    function renderTasks() {
+        const status = document.getElementById('taskStatusFilter')?.value || 'pending';
+        const type = document.getElementById('taskTypeFilter')?.value || '';
+        const priority = document.getElementById('taskPriorityFilter')?.value || '';
+        let filtered = allTasks.filter(t => {
+            const matchStatus = status === 'all' || (status === 'pending' && !t.completed) || (status === 'completed' && t.completed);
+            const matchType = !type || t.type === type;
+            const matchPriority = !priority || t.priority === priority;
+            return matchStatus && matchType && matchPriority;
+        });
+        const container = document.getElementById('tasksList');
+        if (!container) return;
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/></svg><h3>Žádné úkoly</h3><p>Vytvořte nový úkol kliknutím na tlačítko výše.</p></div>`;
+            return;
+        }
+        container.innerHTML = filtered.map(t => `<div class="task-card task-priority-${t.priority} ${t.completed ? 'task-completed' : ''}"><div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTaskComplete(${t.id})"></div><div class="task-info"><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta"><span>${getTaskTypeIcon(t.type)} ${getTaskTypeName(t.type)}</span><span>${formatDate(t.due_date)}</span><span>${getPriorityBadge(t.priority)}</span></div></div><div class="actions-dropdown"><button class="actions-btn" onclick="toggleActions(this)">⋮</button><div class="actions-menu"><button onclick="openTaskModal(${t.id})">✏️ Upravit</button><button class="danger" onclick="deleteTask(${t.id})">🗑️ Smazat</button></div></div></div>`).join('');
+    }
+
+    function renderTodayTasks() {
+        const container = document.getElementById('todayTasks');
+        if (!container) return;
+        const today = allTasks.filter(t => !t.completed && isToday(t.due_date));
+        if (today.length === 0) { container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">🎉 Žádné úkoly na dnes!</p>'; return; }
+        container.innerHTML = today.map(t => `<div class="task-card task-priority-${t.priority}" style="margin-bottom:8px;"><div class="task-checkbox" onclick="toggleTaskComplete(${t.id})"></div><div class="task-info"><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta"><span>${getTaskTypeIcon(t.type)} ${getTaskTypeName(t.type)}</span></div></div></div>`).join('');
+    }
+
+    function renderTasksCalendar() {
+        const container = document.getElementById('tasksCalendar');
+        if (!container) return;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay() || 7;
+        const days = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        let html = '<div class="calendar-grid">';
+        html += days.map(d => `<div class="calendar-header">${d}</div>`).join('');
+        for (let i = 1; i < startDay; i++) { html += '<div class="calendar-day" style="opacity:0.3;"></div>'; }
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const hasTask = allTasks.some(t => t.due_date === date && !t.completed);
+            const isToday = d === now.getDate();
+            html += `<div class="calendar-day ${isToday ? 'today' : ''} ${hasTask ? 'has-task' : ''}"><div class="calendar-day-number">${d}</div></div>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function toggleTaskComplete(taskId) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (task) { task.completed = !task.completed; renderTasks(); renderTodayTasks(); updateStats(); }
+    }
+
+    function filterTasks() { renderTasks(); }
+
+    function openTaskModal(taskId = null) {
+        const modal = document.getElementById('taskModal');
+        const form = document.getElementById('taskForm');
+        form.reset();
+        document.getElementById('taskId').value = '';
+        document.getElementById('taskModalTitle').textContent = taskId ? 'Upravit úkol' : 'Přidat úkol';
+        if (taskId) {
+            const task = allTasks.find(t => t.id === taskId);
+            if (task) {
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskType').value = task.type;
+                document.getElementById('taskPriority').value = task.priority;
+                document.getElementById('taskDueDate').value = task.due_date;
+                document.getElementById('taskDescription').value = task.description || '';
+            }
+        } else {
+            document.getElementById('taskDueDate').value = new Date().toISOString().split('T')[0];
+        }
+        modal.classList.add('active');
+    }
+
+    function closeTaskModal() { document.getElementById('taskModal').classList.remove('active'); }
+
+    document.getElementById('taskForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const taskId = document.getElementById('taskId').value;
+        const taskData = {
+            id: taskId ? parseInt(taskId) : Date.now(),
+            title: document.getElementById('taskTitle').value,
+            type: document.getElementById('taskType').value,
+            priority: document.getElementById('taskPriority').value,
+            due_date: document.getElementById('taskDueDate').value,
+            description: document.getElementById('taskDescription').value,
+            completed: false
+        };
+        if (taskId) {
+            const index = allTasks.findIndex(t => t.id === parseInt(taskId));
+            if (index !== -1) { allTasks[index] = { ...allTasks[index], ...taskData }; }
+        } else { allTasks.unshift(taskData); }
+        showNotification(taskId ? 'Úkol aktualizován' : 'Úkol přidán', 'success');
+        closeTaskModal();
+        renderTasks();
+        renderTodayTasks();
+        renderTasksCalendar();
+        updateStats();
+    });
+
+    function deleteTask(taskId) {
+        if (!confirm('Opravdu smazat tento úkol?')) return;
+        allTasks = allTasks.filter(t => t.id !== taskId);
+        showNotification('Úkol smazán', 'success');
+        renderTasks();
+        renderTodayTasks();
+        updateStats();
+    }
+
+    function loadEconomics() {
+        if (allPlants.length === 0) return;
+        const totalPurchase = allPlants.reduce((sum, p) => sum + ((p.quantity || 0) * (p.purchase_price || 0)), 0);
+        const totalSelling = allPlants.reduce((sum, p) => sum + ((p.quantity || 0) * (p.selling_price || 0)), 0);
+        const avgMargin = totalPurchase > 0 ? ((totalSelling - totalPurchase) / totalPurchase * 100) : 0;
+        document.getElementById('econStockValue').textContent = formatCurrency(totalPurchase);
+        document.getElementById('econPotentialRevenue').textContent = formatCurrency(totalSelling);
+        document.getElementById('econAvgMargin').textContent = avgMargin.toFixed(1) + '%';
+        document.getElementById('econTotalSpecies').textContent = allPlants.length;
+        const topValue = document.getElementById('topValuePlants');
+        if (topValue) {
+            const sorted = [...allPlants].map(p => ({ ...p, value: (p.quantity || 0) * (p.selling_price || 0) })).sort((a, b) => b.value - a.value).slice(0, 5);
+            topValue.innerHTML = sorted.map((p, i) => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-primary);"><div><span style="color:var(--mint);font-weight:600;">#${i + 1}</span><strong style="margin-left:8px;">${escapeHtml(p.species)}</strong><span style="color:var(--text-secondary);font-size:12px;"> (${p.quantity} ks)</span></div><strong style="color:var(--success);">${formatCurrency(p.value)}</strong></div>`).join('') || '<p style="color:var(--text-secondary);">Žádná data</p>';
+        }
+        const valueByStage = document.getElementById('valueByStage');
+        if (valueByStage) {
+            const stages = {};
+            allPlants.forEach(p => { const stage = p.stage || 'nezařazeno'; stages[stage] = (stages[stage] || 0) + ((p.quantity || 0) * (p.selling_price || 0)); });
+            valueByStage.innerHTML = Object.entries(stages).map(([stage, value]) => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-primary);">${getStageBadge(stage)}<strong>${formatCurrency(value)}</strong></div>`).join('') || '<p style="color:var(--text-secondary);">Žádná data</p>';
+        }
+        const econTable = document.getElementById('economicsTableBody');
+        if (econTable) {
+            econTable.innerHTML = allPlants.map(p => {
+                const sellingTotal = (p.quantity || 0) * (p.selling_price || 0);
+                const margin = p.purchase_price > 0 ? ((p.selling_price - p.purchase_price) / p.purchase_price * 100) : 0;
+                return `<tr><td><div class="plant-name">${escapeHtml(p.species || '')}</div><div class="plant-variety">${escapeHtml(p.variety || '')}</div></td><td>${p.quantity || 0} ks</td><td>${p.purchase_price ? p.purchase_price + ' Kč' : '-'}</td><td>${p.selling_price ? p.selling_price + ' Kč' : '-'}</td><td><span class="${margin >= 0 ? 'badge-success' : 'badge-danger'}" style="padding:2px 8px;border-radius:4px;">${margin.toFixed(0)}%</span></td><td><strong>${formatCurrency(sellingTotal)}</strong></td></tr>`;
+            }).join('');
+        }
+    }
+
+    function updateSeasonalView() {
+        highlightCurrentMonth();
+        renderCurrentMonthTasks();
+        renderSowingRecommendations();
+    }
+
+    function highlightCurrentMonth() {
+        const currentMonth = new Date().getMonth() + 1;
+        document.querySelectorAll('.season-month').forEach(el => { el.classList.toggle('active', parseInt(el.dataset.month) === currentMonth); });
+        const monthNames = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+        const nameEl = document.getElementById('currentMonthName');
+        if (nameEl) nameEl.textContent = monthNames[currentMonth - 1];
+    }
+
+    function renderCurrentMonthTasks() {
+        const container = document.getElementById('currentMonthTasks');
+        if (!container) return;
+        const month = new Date().getMonth() + 1;
+        const tasks = getMonthlyTasks(month);
+        container.innerHTML = tasks.map(t => `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-primary);"><span style="font-size:20px;">${t.icon}</span><div><strong>${t.title}</strong><div style="font-size:12px;color:var(--text-secondary);">${t.description}</div></div></div>`).join('');
+    }
+
+    function renderSowingRecommendations() {
+        const container = document.getElementById('sowingRecommendations');
+        if (!container) return;
+        const month = new Date().getMonth() + 1;
+        const recommendations = getSowingRecommendations(month);
+        container.innerHTML = recommendations.map(r => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-primary);"><div><strong>${r.name}</strong><div style="font-size:12px;color:var(--text-secondary);">${r.note}</div></div><span class="badge badge-success">Doporučeno</span></div>`).join('') || '<p style="color:var(--text-secondary);">Žádné doporučení pro tento měsíc</p>';
+    }
+
+    function getMonthlyTasks(month) {
+        const tasks = {
+            1: [{ icon: '📋', title: 'Plánování', description: 'Sestavit plán výsevu na sezónu' }, { icon: '📦', title: 'Objednávky', description: 'Objednat semena a substráty' }],
+            2: [{ icon: '🌱', title: 'Výsev', description: 'Začít s výsevem pomalých rostlin' }, { icon: '🔧', title: 'Příprava', description: 'Zkontrolovat skleníky a vybavení' }],
+            3: [{ icon: '🌱', title: 'Hlavní výsev', description: 'Vysévat většinu trvalek' }, { icon: '💡', title: 'Osvětlení', description: 'Dosvěcovat sazenice' }],
+            4: [{ icon: '🪴', title: 'Přesazování', description: 'Přesazovat narostlé sazenice' }, { icon: '🧪', title: 'Hnojení', description: 'Začít pravidelně hnojit' }],
+            5: [{ icon: '💰', title: 'Prodej', description: 'Hlavní prodejní sezóna začíná' }, { icon: '🌿', title: 'Otužování', description: 'Otužovat rostliny venku' }],
+            6: [{ icon: '💧', title: 'Zalévání', description: 'Zvýšit frekvenci zálivky' }, { icon: '🔍', title: 'Kontrola', description: 'Sledovat škůdce a choroby' }],
+            7: [{ icon: '💧', title: 'Intenzivní zálivka', description: 'Zalévat ráno i večer' }, { icon: '✂️', title: 'Řízky', description: 'Odebírat letní řízky' }],
+            8: [{ icon: '🌱', title: 'Podzimní výsev', description: 'Vysévat pro příští rok' }, { icon: '📸', title: 'Dokumentace', description: 'Fotografovat kvetoucí rostliny' }],
+            9: [{ icon: '💰', title: 'Podzimní prodej', description: 'Druhá prodejní vlna' }, { icon: '🪴', title: 'Dělení', description: 'Dělit přerostlé trsy' }],
+            10: [{ icon: '❄️', title: 'Příprava na zimu', description: 'Přesouvat do zimoviště' }, { icon: '📋', title: 'Inventura', description: 'Provést inventuru skladu' }],
+            11: [{ icon: '🏠', title: 'Zimoviště', description: 'Dokončit přesun do zimoviště' }, { icon: '🧹', title: 'Úklid', description: 'Uklidit a dezinfikovat' }],
+            12: [{ icon: '📊', title: 'Vyhodnocení', description: 'Zhodnotit uplynulou sezónu' }, { icon: '📋', title: 'Plánování', description: 'Začít plánovat další rok' }],
+        };
+        return tasks[month] || [];
+    }
+
+    function getSowingRecommendations(month) {
+        const recommendations = {
+            2: [{ name: 'Echinacea purpurea', note: 'Potřebuje stratifikaci' }, { name: 'Lavandula angustifolia', note: 'Vysévat do tepla' }],
+            3: [{ name: 'Rudbeckia fulgida', note: 'Snadný výsev' }, { name: 'Salvia nemorosa', note: 'Rychle klíčí' }, { name: 'Heuchera', note: 'Jemná semena' }],
+            4: [{ name: 'Achillea millefolium', note: 'Přímý výsev' }, { name: 'Gaillardia', note: 'Teplo pro klíčení' }],
+            9: [{ name: 'Aquilegia', note: 'Podzimní výsev' }, { name: 'Primula', note: 'Potřebuje chlad' }],
+            10: [{ name: 'Helleborus', note: 'Stratifikace přes zimu' }],
+        };
+        return recommendations[month] || [];
+    }
+
+    function loadZones() {
+        const container = document.getElementById('zonesContent');
+        if (!container) return;
+        const locations = {};
+        allPlants.forEach(p => {
+            const loc = p.location || 'Nezařazeno';
+            if (!locations[loc]) { locations[loc] = { plants: [], quantity: 0, value: 0 }; }
+            locations[loc].plants.push(p);
+            locations[loc].quantity += p.quantity || 0;
+            locations[loc].value += (p.quantity || 0) * (p.selling_price || 0);
+        });
+        if (Object.keys(locations).length === 0) {
+            container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg><h3>Žádné zóny</h3><p>Přidejte rostliny s lokací pro vytvoření zón.</p></div>`;
+            return;
+        }
+        container.innerHTML = `<div class="dashboard-grid">${Object.entries(locations).map(([name, data]) => `<div class="dashboard-item col-4"><h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(name)}</h3><div style="display:flex;gap:20px;margin-bottom:16px;"><div><div style="font-size:12px;color:var(--text-secondary);">Druhů</div><div style="font-size:20px;font-weight:700;">${data.plants.length}</div></div><div><div style="font-size:12px;color:var(--text-secondary);">Kusů</div><div style="font-size:20px;font-weight:700;">${data.quantity.toLocaleString('cs-CZ')}</div></div><div><div style="font-size:12px;color:var(--text-secondary);">Hodnota</div><div style="font-size:20px;font-weight:700;color:var(--success);">${formatCurrency(data.value)}</div></div></div><div style="max-height:150px;overflow-y:auto;">${data.plants.slice(0, 5).map(p => `<div style="padding:6px 0;border-bottom:1px solid var(--border-primary);font-size:13px;">${escapeHtml(p.species)} <span style="color:var(--text-secondary);">(${p.quantity} ks)</span></div>`).join('')}${data.plants.length > 5 ? `<div style="padding:6px 0;color:var(--text-secondary);font-size:12px;">+ dalších ${data.plants.length - 5}</div>` : ''}</div></div>`).join('')}</div>`;
+    }
+
+    function setupAutocomplete() {
+        if (typeof PlantCatalogAutocomplete !== 'undefined') {
+            const inputEl = document.getElementById('plantSpecies');
+            const containerEl = document.getElementById('speciesAutocomplete');
+            if (inputEl && containerEl) {
+                new PlantCatalogAutocomplete(inputEl, { 
+                    container: containerEl,
+                    onSelect: function(plant) { fillFormFromCatalog(plant); } 
+                });
+            }
+        }
+    }
+
+    function fillFormFromCatalog(plant) {
+        if (plant.latin_name) document.getElementById('plantSpecies').value = plant.latin_name;
+        if (plant.variety) document.getElementById('plantVariety').value = plant.variety;
+        if (plant.flower_color) document.getElementById('plantFlowerColor').value = plant.flower_color;
+        if (plant.flowering_time) document.getElementById('plantFloweringTime').value = plant.flowering_time;
+        if (plant.height) document.getElementById('plantHeight').value = plant.height;
+        if (plant.light_requirements) document.getElementById('plantLightRequirements').value = plant.light_requirements;
+    }
+
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function formatCurrency(value) { return (value || 0).toLocaleString('cs-CZ') + ' Kč'; }
+    function formatDate(dateStr) { if (!dateStr) return '-'; const d = new Date(dateStr); return d.toLocaleDateString('cs-CZ'); }
+    function isToday(dateStr) { if (!dateStr) return false; return dateStr === new Date().toISOString().split('T')[0]; }
+    function getStageBadge(stage) {
+        const badges = { 'semínko': '<span class="badge badge-purple">Semínko</span>', 'sazenice': '<span class="badge badge-info">Sazenice</span>', 'rostlina': '<span class="badge badge-warning">Rostlina</span>', 'k_prodeji': '<span class="badge badge-success">K prodeji</span>' };
+        return badges[stage] || `<span class="badge">${stage || '-'}</span>`;
+    }
+    function getTaskTypeIcon(type) { const icons = { 'watering': '💧', 'repotting': '🪴', 'fertilizing': '🧪', 'inspection': '🔍', 'harvesting': '✂️', 'other': '📝' }; return icons[type] || '📝'; }
+    function getTaskTypeName(type) { const names = { 'watering': 'Zalévání', 'repotting': 'Přesazování', 'fertilizing': 'Hnojení', 'inspection': 'Kontrola', 'harvesting': 'Sklizeň', 'other': 'Ostatní' }; return names[type] || type; }
+    function getPriorityBadge(priority) { const badges = { 'high': '<span class="badge badge-danger">Vysoká</span>', 'medium': '<span class="badge badge-warning">Střední</span>', 'low': '<span class="badge badge-info">Nízká</span>' }; return badges[priority] || ''; }
+    function toggleActions(btn) { document.querySelectorAll('.actions-menu.active').forEach(m => m.classList.remove('active')); btn.nextElementSibling.classList.toggle('active'); }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.actions-dropdown')) { document.querySelectorAll('.actions-menu.active').forEach(m => m.classList.remove('active')); }
+        if (e.target.classList.contains('modal')) { e.target.classList.remove('active'); }
+    });
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => { notification.style.animation = 'slideOut 0.3s ease'; setTimeout(() => notification.remove(), 300); }, 3000);
+    }
+
+    function exportData() {
+        if (allPlants.length === 0) { showNotification('Žádná data k exportu', 'error'); return; }
+        const headers = ['Název', 'Odrůda', 'Množství', 'Fáze', 'Lokace', 'Nákupní cena', 'Prodejní cena'];
+        const rows = allPlants.map(p => [p.species || '', p.variety || '', p.quantity || 0, p.stage || '', p.location || '', p.purchase_price || '', p.selling_price || '']);
+        const csv = [headers, ...rows].map(row => row.join(';')).join('\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nursery_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification('Data exportována', 'success');
+    }
+
+    // Timeline functions
+    let timelineView = 'list';
+    
+    function toggleTimelineView(view) {
+        timelineView = view;
+        document.querySelectorAll('.timeline-view-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(view === 'list' ? 'btnViewList' : 'btnViewCalendar').classList.add('active');
+        document.getElementById('timelineContainer').style.display = view === 'list' ? 'block' : 'none';
+        document.getElementById('timelineCalendar').style.display = view === 'calendar' ? 'block' : 'none';
+        if (view === 'calendar') renderCalendar();
+    }
+    
+    function filterTimeline() {
+        const search = document.getElementById('timelineSearch')?.value.toLowerCase() || '';
+        const plant = document.getElementById('timelinePlantFilter')?.value || '';
+        const type = document.getElementById('timelineTypeFilter')?.value || '';
+        const period = document.getElementById('timelinePeriodFilter')?.value || 'week';
+        
+        document.querySelectorAll('.timeline-event').forEach(event => {
+            const eventType = event.dataset.type || '';
+            const text = event.textContent.toLowerCase();
+            const matchSearch = !search || text.includes(search);
+            const matchType = !type || eventType === type;
+            event.style.display = matchSearch && matchType ? 'flex' : 'none';
+        });
+    }
+    
+    function loadMoreTimeline() {
+        showNotification('Načítám starší záznamy...', 'info');
+    }
+    
+    function openTimelineEventModal(eventId = null) {
+        document.getElementById('timelineModal').classList.add('active');
+        document.getElementById('timelineModalTitle').textContent = eventId ? 'Upravit záznam' : 'Přidat záznam';
+        document.getElementById('timelineEventId').value = eventId || '';
+        document.getElementById('timelineDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('timelineTime').value = new Date().toTimeString().slice(0,5);
+        
+        // Reset type selection
+        document.querySelectorAll('.timeline-type-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('timelineType').value = '';
+        document.querySelectorAll('.timeline-fields').forEach(f => f.style.display = 'none');
+        
+        // Populate plants select
+        const plantsSelect = document.getElementById('timelinePlants');
+        plantsSelect.innerHTML = '<option value="all">Všechny rostliny</option><option value="zone1">Skleník 1</option><option value="zone2">Skleník 2</option><option value="zone3">Venkovní záhony</option>';
+        allPlants.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.species + (p.variety ? ` '${p.variety}'` : '');
+            plantsSelect.appendChild(opt);
+        });
+    }
+    
+    function closeTimelineModal() {
+        document.getElementById('timelineModal').classList.remove('active');
+        document.getElementById('timelineForm').reset();
+    }
+    
+    // === WAREHOUSE MODAL ===
+    let currentWarehousePlant = null;
+    
+    function openWarehouseModal(plantId) {
+        const plant = allPlants.find(p => p.id === plantId);
+        if (!plant) {
+            showNotification('Rostlina nenalezena', 'error');
+            return;
+        }
+        
+        currentWarehousePlant = plant;
+        document.getElementById('warehouseModal').classList.add('active');
+        document.getElementById('warehousePlantId').value = plantId;
+        
+        const name = plant.species + (plant.variety ? ` '${plant.variety}'` : '');
+        document.getElementById('warehousePlantName').textContent = name;
+        document.getElementById('warehousePlantQty').textContent = plant.quantity || 0;
+        document.getElementById('warehousePlantPrice').textContent = plant.selling_price || 0;
+        
+        document.getElementById('warehouseQuantity').value = '';
+        document.getElementById('warehouseQuantity').max = plant.quantity || 0;
+    }
+    
+    function closeWarehouseModal() {
+        document.getElementById('warehouseModal').classList.remove('active');
+        currentWarehousePlant = null;
+    }
+    
+    function setMaxQuantity() {
+        if (currentWarehousePlant) {
+            document.getElementById('warehouseQuantity').value = currentWarehousePlant.quantity || 0;
+        }
+    }
+    
+    async function submitWarehouseTransfer(e) {
+        e.preventDefault();
+        
+        const plantId = document.getElementById('warehousePlantId').value;
+        const quantity = parseInt(document.getElementById('warehouseQuantity').value);
+        const location = document.getElementById('warehouseLocation').value;
+        const note = document.getElementById('warehouseNote').value;
+        
+        if (!quantity || quantity <= 0) {
+            showNotification('Zadejte platné množství', 'error');
+            return;
+        }
+        
+        if (currentWarehousePlant && quantity > currentWarehousePlant.quantity) {
+            showNotification(`Maximální množství je ${currentWarehousePlant.quantity} ks`, 'error');
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/nursery/plants/${plantId}/to-warehouse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    quantity: quantity,
+                    warehouse_location: location,
+                    note: note
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                showNotification(`Přesunuto ${quantity} ks na sklad`, 'success');
+                closeWarehouseModal();
+                await loadPlants(); // Reload plants
+            } else {
+                showNotification(data.error || 'Chyba při přesunu', 'error');
+            }
+        } catch (err) {
+            console.error('Warehouse transfer error:', err);
+            showNotification('Chyba připojení', 'error');
+        }
+    }
+    
+    function selectTimelineType(type) {
+        document.querySelectorAll('.timeline-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+        document.getElementById('timelineType').value = type;
+        
+        // Show/hide extra fields
+        document.querySelectorAll('.timeline-fields').forEach(f => {
+            f.style.display = f.dataset.for === type ? 'block' : 'none';
+        });
+    }
+    
+    function saveTimelineEvent(e) {
+        e.preventDefault();
+        const type = document.getElementById('timelineType').value;
+        if (!type) {
+            showNotification('Vyberte typ záznamu', 'error');
+            return;
+        }
+        
+        const data = {
+            type: type,
+            date: document.getElementById('timelineDate').value,
+            time: document.getElementById('timelineTime').value,
+            plants: Array.from(document.getElementById('timelinePlants').selectedOptions).map(o => o.value),
+            note: document.getElementById('timelineNote').value
+        };
+        
+        // Get extra fields based on type
+        if (type === 'irrigation') {
+            data.duration = document.getElementById('irrigationDuration').value;
+            data.amount = document.getElementById('irrigationAmount').value;
+            data.status = document.getElementById('irrigationStatus').value;
+        } else if (type === 'fertilizing') {
+            data.fertilizer = document.getElementById('fertilizerName').value;
+            data.concentration = document.getElementById('fertilizerConc').value;
+            data.ec = document.getElementById('fertilizerEC').value;
+        } else if (type === 'treatment') {
+            data.product = document.getElementById('treatmentProduct').value;
+            data.treatmentType = document.getElementById('treatmentType').value;
+            data.target = document.getElementById('treatmentTarget').value;
+        } else if (type === 'sale') {
+            data.quantity = document.getElementById('saleQuantity').value;
+            data.price = document.getElementById('salePrice').value;
+            data.customer = document.getElementById('saleCustomer').value;
+        } else if (type === 'stage_change') {
+            data.fromStage = document.getElementById('stageFrom').value;
+            data.toStage = document.getElementById('stageTo').value;
+            data.quantity = document.getElementById('stageQuantity').value;
+        }
+        
+        console.log('Timeline event data:', data);
+        showNotification('Záznam uložen (demo)', 'success');
+        closeTimelineModal();
+        
+        // TODO: Send to API
+        // fetch('/api/nursery/timeline', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })
+    }
+    
+    function dismissInsight(btn) {
+        const card = btn.closest('.insight-card');
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-20px)';
+        setTimeout(() => card.remove(), 300);
+        showNotification('Upozornění označeno jako vyřešené', 'success');
+    }
+    
+    // Health score algorithm
+    function calculateHealthScore() {
+        // Algoritmus: 
+        // - 40% přežití rostlin (pokud žádná neuhynula = 100%)
+        // - 30% progrese (kolik rostlin postoupilo do další fáze)
+        // - 20% pravidelnost závlahy (bez výpadků)
+        // - 10% preventivní ošetření vs reaktivní
+        const survivalRate = 98; // z dat
+        const progressRate = 87; // rostlin postoupilo
+        const irrigationReliability = 95; // závlaha OK
+        const preventiveCare = 90; // preventivní ošetření
+        
+        const score = Math.round(
+            survivalRate * 0.4 + 
+            progressRate * 0.3 + 
+            irrigationReliability * 0.2 + 
+            preventiveCare * 0.1
+        );
+        return score;
+    }
+    
+    let calendarMonth = new Date().getMonth();
+    let calendarYear = new Date().getFullYear();
+    
+    function changeCalendarMonth(delta) {
+        calendarMonth += delta;
+        if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+        if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+        renderCalendar();
+    }
+    
+    function renderCalendar() {
+        const months = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+        document.getElementById('calendarMonthTitle').textContent = `${months[calendarMonth]} ${calendarYear}`;
+        
+        const grid = document.getElementById('calendarGrid');
+        const headers = grid.querySelectorAll('.calendar-day-header');
+        grid.innerHTML = '';
+        headers.forEach(h => grid.appendChild(h.cloneNode(true)));
+        
+        const firstDay = new Date(calendarYear, calendarMonth, 1);
+        const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+        const startOffset = (firstDay.getDay() + 6) % 7;
+        const today = new Date();
+        
+        for (let i = startOffset - 1; i >= 0; i--) {
+            const day = new Date(calendarYear, calendarMonth, -i);
+            grid.appendChild(createCalendarDay(day, true));
+        }
+        
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            const day = new Date(calendarYear, calendarMonth, i);
+            const isToday = day.toDateString() === today.toDateString();
+            grid.appendChild(createCalendarDay(day, false, isToday));
+        }
+        
+        const remaining = 42 - grid.querySelectorAll('.calendar-day').length;
+        for (let i = 1; i <= remaining && i <= 14; i++) {
+            const day = new Date(calendarYear, calendarMonth + 1, i);
+            grid.appendChild(createCalendarDay(day, true));
+        }
+    }
+    
+    function createCalendarDay(date, otherMonth, isToday = false) {
+        const div = document.createElement('div');
+        div.className = 'calendar-day' + (otherMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+        const hasIrrigation = Math.random() > 0.3;
+        const hasFertilizing = Math.random() > 0.85;
+        const hasSale = Math.random() > 0.92;
+        div.innerHTML = `
+            <span class="calendar-day-number">${date.getDate()}</span>
+            <div class="calendar-day-dots">
+                ${hasIrrigation ? '<span class="calendar-dot irrigation"></span>' : ''}
+                ${hasFertilizing ? '<span class="calendar-dot fertilizing"></span>' : ''}
+                ${hasSale ? '<span class="calendar-dot sale"></span>' : ''}
+            </div>
+        `;
+        div.onclick = () => showNotification(`${date.toLocaleDateString('cs-CZ')} - detail dne`, 'info');
+        return div;
+    }
+    
+    function populateTimelinePlantFilter() {
+        const select = document.getElementById('timelinePlantFilter');
+        if (!select || allPlants.length === 0) return;
+        allPlants.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.species + (p.variety ? ` '${p.variety}'` : '');
+            select.appendChild(opt);
+        });
+    }
+    
+    setTimeout(populateTimelinePlantFilter, 1000);
+    </script>
+<script src="/static/app-sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page-pad">
+  <div style="margin-bottom: 16px;">
+    <button onclick="history.back()" class="btn btn-ghost" style="display: flex; align-items: center; gap: 8px; color: var(--mint);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Zpět
+    </button>
+  </div>
+  <div class="tabs sticky">
+    <a class="tab" href="/calendar.html">kalendář</a>
+    <a class="tab" href="/timesheets.html">výkazy hodin</a>
+    <a class="tab active" href="/?tab=jobs">zakázky</a>
+    <a class="tab" href="/?tab=tasks">úkoly</a>
+    <a class="tab" href="/zamestnanci">team</a>
+    <a class="tab" href="/brigadnici.html">brigádníci</a>
+    <a class="tab" href="/?tab=warehouse">sklad</a>
+    <a class="tab" href="/?tab=users">uživatelé</a>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h"><strong>Detail zakázky</strong></div>
+    <div class="card-c" id="jobBox">
+      Načítám…
+    </div>
+  </div>
+
+  <!-- Finance Panel -->
+  <div class="card card-dark" id="finance-panel" style="display:none;">
+    <div class="card-h">
+      <strong>Finance</strong>
+    </div>
+    <div class="card-c" id="finance-content">
+      Načítám finance data…
+    </div>
+  </div>
+
+  <!-- Material Consumption Panel -->
+  <div class="card card-dark" id="material-panel" style="display:none;">
+    <div class="card-h">
+      <strong>Spotřeba materiálu</strong>
+    </div>
+    <div class="card-c" id="material-content">
+      Načítám spotřebu materiálu…
+    </div>
+  </div>
+
+  <div class="card card-dark">
+    <div class="card-h" style="display:flex;justify-content:space-between;align-items:center">
+      <strong>výkazy pro tuto zakázku</strong>
+      <div>
+        <button id="btnExpCSV" class="ghost small">Export CSV</button>
+      </div>
+    </div>
+    <div class="card-c">
+      <table class="tbl">
+        <thead>
+          <tr><th>Datum</th><th>Člen teamu</th><th>Hodin</th><th>Náklady</th><th>Místo</th><th>Činnost</th></tr>
+        </thead>
+        <tbody id="tsBody"><tr><td colspan="6" class="muted">Načítám…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const jid = {{ job_id|int }};
+
+  function toCZ(d){
+    if(!d) return '';
+    const [y,m,da] = d.split('-');
+    return `${da}.${m}.${y}`;
+  }
+
+  async function fetchJSON(url){
+    const r = await fetch(url);
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  const jobBox = document.getElementById('jobBox');
+  const tsBody = document.getElementById('tsBody');
+  const btnCSV = document.getElementById('btnExpCSV');
+
+  // load job info
+  try{
+    const j = await fetchJSON('/api/jobs/'+jid);
+    const job = j.job;
+    const finance = j.finance || {};
+    const materialConsumption = j.material_consumption || [];
+    const missingMaterials = j.missing_materials || [];
+    
+    jobBox.innerHTML = `
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <span><strong>${job.title||''}</strong> <span class="muted">#${job.code||''}</span></span>
+      </div>
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <span>${job.city||''}</span>
+      </div>
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </span>
+        <span>${job.client||''}</span>
+      </div>
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </span>
+        <span>${toCZ(job.date||'')}</span>
+      </div>
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </span>
+        <span>${job.status||''}</span>
+      </div>
+      ${job.note ? `
+      <div class="kv">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;display:inline-block;vertical-align:middle;">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </span>
+        <span>${job.note}</span>
+      </div>
+      ` : ''}
+    `;
+    
+    // Render finance panel
+    const financePanel = document.getElementById('finance-panel');
+    const financeContent = document.getElementById('finance-content');
+    if (financePanel && financeContent) {
+      const budget = finance.budget || 0;
+      const costSpent = finance.cost_spent || 0;
+      const hourlyRate = job.hourly_rate || null;
+      
+      // Check if hourly rate is missing (heuristic: if we have worklogs but no cost data)
+      const hasWorklogs = finance.worklogs_count > 0;
+      const hasCostData = costSpent > 0 || finance.total_cost > 0;
+      const missingRate = hasWorklogs && !hasCostData && !hourlyRate;
+      
+      if (budget > 0 || costSpent > 0 || missingRate) {
+        financePanel.style.display = 'block';
+        const budgetRemaining = finance.budget_remaining !== null ? finance.budget_remaining : (budget - costSpent);
+        const marginPct = finance.margin_pct !== null ? finance.margin_pct : (budget > 0 ? ((budget - costSpent) / budget * 100) : null);
+        const spentPct = budget > 0 ? (costSpent / budget * 100) : 0;
+        
+        financeContent.innerHTML = `
+          ${missingRate ? `
+            <div style="padding:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:16px;">
+              <div style="display:flex;align-items:start;gap:12px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#ef4444;flex-shrink:0;margin-top:2px;">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:600;color:#ef4444;margin-bottom:4px;">Hodinová sazba nenastavena</div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Pro výpočet nákladů práce je potřeba nastavit hodinovou sazbu.</div>
+                  <a href="/settings.html" style="display:inline-block;padding:6px 12px;background:#ef4444;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Nastavit v Nastavení →</a>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          ${budget > 0 || costSpent > 0 ? `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;">
+              <div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Rozpočet</div>
+                <div style="font-size:24px;font-weight:700;color:var(--mint);">${budget.toLocaleString('cs-CZ')} Kč</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Skutečné náklady</div>
+                <div style="font-size:24px;font-weight:700;color:${costSpent > budget ? '#ef4444' : 'var(--text-primary)'};">${costSpent.toLocaleString('cs-CZ')} Kč</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Zbývá</div>
+                <div style="font-size:24px;font-weight:700;color:${budgetRemaining < 0 ? '#ef4444' : budgetRemaining < budget * 0.2 ? '#f59e0b' : 'var(--mint)'};">${budgetRemaining.toLocaleString('cs-CZ')} Kč</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Marže</div>
+                <div style="font-size:24px;font-weight:700;color:${marginPct !== null && marginPct < 0 ? '#ef4444' : marginPct !== null && marginPct < 15 ? '#f59e0b' : 'var(--mint)'};">
+                  ${marginPct !== null ? marginPct.toFixed(1) + '%' : '—'}
+                </div>
+              </div>
+            </div>
+            ${budget > 0 ? `
+              <div style="margin-top:16px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                  <span style="font-size:12px;color:var(--text-secondary);">Spotřeba rozpočtu</span>
+                  <span style="font-size:12px;color:var(--text-secondary);">${spentPct.toFixed(1)}%</span>
+                </div>
+                <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
+                  <div style="height:100%;background:${spentPct > 100 ? '#ef4444' : spentPct > 80 ? '#f59e0b' : 'var(--mint)'};width:${Math.min(100, spentPct)}%;transition:width 0.3s;"></div>
+                </div>
+              </div>
+            ` : ''}
+            ${finance.total_hours > 0 ? `
+              <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Celkem hodin práce</div>
+                <div style="font-size:18px;font-weight:600;">${finance.total_hours}h</div>
+              </div>
+            ` : ''}
+          ` : ''}
+        `;
+      }
+    }
+    
+    // Render material consumption panel
+    const materialPanel = document.getElementById('material-panel');
+    const materialContent = document.getElementById('material-content');
+    if (materialPanel && materialContent) {
+      const materialConsumption = j.material_consumption || [];
+      const missingMaterials = j.missing_materials || [];
+      
+      if (materialConsumption.length > 0 || missingMaterials.length > 0) {
+        materialPanel.style.display = 'block';
+        
+        let html = '';
+        
+        // Warning for missing materials
+        if (missingMaterials.length > 0) {
+          html += `
+            <div style="padding:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:16px;">
+              <div style="display:flex;align-items:start;gap:12px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#ef4444;flex-shrink:0;margin-top:2px;">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:600;color:#ef4444;margin-bottom:8px;">Chybí materiál</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    ${missingMaterials.map(m => `
+                      <div style="font-size:12px;color:var(--text-secondary);">
+                        <strong>${escapeHtml(m.name)}</strong>: spotřebováno ${m.consumed} ${m.unit}, skladem ${m.available} ${m.unit}
+                      </div>
+                    `).join('')}
+                  </div>
+                  <a href="/?tab=warehouse" style="display:inline-block;margin-top:8px;padding:6px 12px;background:#ef4444;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">Doplnit sklad →</a>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        
+        // Material consumption list
+        if (materialConsumption.length > 0) {
+          html += `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:12px;">
+              ${materialConsumption.map(m => `
+                <div style="padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                    <div style="font-size:14px;font-weight:600;">${escapeHtml(m.name || 'Neznámý materiál')}</div>
+                    ${m.stock_qty !== undefined ? `
+                      <div style="font-size:12px;color:${m.stock_qty < m.qty ? '#ef4444' : 'var(--text-secondary)'};">
+                        ${m.stock_qty} ${m.unit} skladem
+                      </div>
+                    ` : ''}
+                  </div>
+                  <div style="font-size:12px;color:var(--text-secondary);">
+                    Spotřebováno: <strong>${m.qty.toFixed(2)} ${m.unit || 'ks'}</strong>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        materialContent.innerHTML = html || '<div style="padding:16px;text-align:center;color:var(--text-secondary);">Žádná spotřeba materiálu</div>';
+      } else {
+        // Empty state
+        materialPanel.style.display = 'block';
+        materialContent.innerHTML = `
+          <div class="worklog-empty-state">
+            <div class="worklog-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+              </svg>
+            </div>
+            <div class="worklog-empty-text">Pro tuto zakázku zatím nebyla spotřebována žádná položka ze skladu.</div>
+            <a href="/timesheets.html?job_id=${jid}" class="worklog-empty-cta">Přidat výkaz s materiálem →</a>
+          </div>
+        `;
+      }
+    }
+  }catch(e){
+    jobBox.textContent = 'Zakázka nenalezena';
+  }
+  
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // load timesheets for this job
+  const data = await fetchJSON('/api/timesheets?job_id='+jid);
+  const rows = data.rows || [];
+  if(rows.length===0){
+    tsBody.innerHTML = '<tr><td colspan="6" class="muted">Žádné výkazy pro tuto zakázku</td></tr>';
+  }else{
+    tsBody.innerHTML = '';
+    let totalCost = 0;
+    let hasCostData = false;
+    for(const r of rows){
+      const hours = r.hours || 0;
+      const laborCost = r.labor_cost || 0;
+      if (laborCost > 0) hasCostData = true;
+      totalCost += laborCost;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${toCZ(r.date)}</td>
+        <td>${r.employee_name||('#'+r.employee_id)}</td>
+        <td>${hours}</td>
+        <td>${laborCost > 0 ? laborCost.toLocaleString('cs-CZ') + ' Kč' : '—'}</td>
+        <td>${r.place||''}</td>
+        <td>${r.activity||''}</td>
+      `;
+      tsBody.appendChild(tr);
+    }
+    
+    // Show warning if no cost data
+    if (!hasCostData && rows.length > 0) {
+      const warningRow = document.createElement('tr');
+      warningRow.innerHTML = `
+        <td colspan="6" style="padding:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;">
+          <div style="display:flex;align-items:start;gap:12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#ef4444;flex-shrink:0;margin-top:2px;">
+              <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:#ef4444;margin-bottom:4px;">Hodinová sazba nenastavena</div>
+              <div style="font-size:12px;color:var(--text-secondary);">Pro zobrazení nákladů práce je potřeba nastavit hodinovou sazbu v nastavení nebo u zaměstnance.</div>
+            </div>
+          </div>
+        </td>
+      `;
+      tsBody.appendChild(warningRow);
+    }
+    // Add total row
+    if(totalCost > 0){
+      const totalRow = document.createElement('tr');
+      totalRow.style.fontWeight = '700';
+      totalRow.style.borderTop = '2px solid rgba(255,255,255,0.2)';
+      totalRow.innerHTML = `
+        <td colspan="3" style="text-align:right;">Celkem:</td>
+        <td>${totalCost.toLocaleString('cs-CZ')} Kč</td>
+        <td colspan="2"></td>
+      `;
+      tsBody.appendChild(totalRow);
+    }
+  }
+
+  // CSV export (client-side)
+  btnCSV.addEventListener('click', async ()=>{
+    const d = await fetchJSON('/api/timesheets/export?job_id='+jid);
+    const rows = d.rows || [];
+    if(rows.length===0){ alert('Nic k exportu'); return; }
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(',')].concat(rows.map(r=>headers.map(h=>`"${String(r[h]??'').replaceAll('"','""')}"`).join(','))).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'timesheets_job_'+jid+'.csv';
+    a.click();
+  });
+
+})();
+</script>
+{% endblock %}

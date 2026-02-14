@@ -1,0 +1,4662 @@
+{% extends "layout.html" %}
+{% block content %}
+<script src="/app-settings.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<main class="app-shell">
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="ts-page-title" data-i18n="timesheets.title">Výkazy hodin</h1>
+          <p class="section-subtitle">Přehled odpracovaných hodin</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="ts-view-toggle">
+      <button id="viewList" class="ts-view-btn active">
+        <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <path d="M9 12h6"/>
+          <path d="M9 16h6"/>
+        </svg>
+        <span data-i18n="timesheets.view.list">Seznam</span>
+      </button>
+      <button id="viewTimeline" class="ts-view-btn">
+        <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span data-i18n="timesheets.view.timeline">Timeline</span>
+      </button>
+      <button id="viewStats" class="ts-view-btn">
+        <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span data-i18n="timesheets.view.stats">Statistiky</span>
+      </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="ts-toolbar">
+      <div class="ts-week-nav">
+        <button id="prevWeek" class="ts-nav-btn"><span data-i18n="timesheets.nav.previous">← Předchozí</span></button>
+        <div id="weekLabel" class="ts-week-label">23. - 29. prosince 2025</div>
+        <button id="nextWeek" class="ts-nav-btn"><span data-i18n="timesheets.nav.next">Další →</span></button>
+      </div>
+      <div class="ts-actions">
+        <button id="toggleFilters" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          Filtry
+        </button>
+        <button id="bulkActions" class="btn btn-secondary" style="display:none;">
+          <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/>
+          </svg>
+          Hromadné akce
+        </button>
+        <button id="exportCsv" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Export
+        </button>
+        <button id="copyWeek" class="btn btn-secondary">
+          <svg style="width:18px;height:18px;stroke:#4ade80;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+          Kopírovat týden
+        </button>
+        <button id="addTimesheet" class="btn btn-primary">
+          <svg style="width:18px;height:18px;stroke:#0a0e11;display:inline-block;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Přidat výkaz
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div id="filtersPanel" class="ts-filters-panel" style="display:none;">
+      <div class="ts-filter-group">
+        <label>Člen teamu:</label>
+        <select id="filterEmployee" class="form-select" style="width:auto;"><option value="">všichni</option></select>
+      </div>
+      <div class="ts-filter-group">
+        <label>Zakázka:</label>
+        <select id="filterJob" class="form-select" style="width:auto;"><option value="">vše</option></select>
+      </div>
+    </div>
+
+    <!-- Project Color Legend -->
+    <div id="projectLegend" class="ts-legend">
+      <div class="ts-legend-title">Barevné kódování projektů:</div>
+      <div id="legendItems" class="ts-legend-items"></div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div id="kpiCards" class="ts-kpi-cards">
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Celkem hodin</div>
+          <div id="kpiTotal" class="ts-kpi-value">0h</div>
+        </div>
+      </div>
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Průměr/den</div>
+          <div id="kpiAvg" class="ts-kpi-value">0h</div>
+        </div>
+      </div>
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Overtime</div>
+          <div id="kpiOvertime" class="ts-kpi-value">0h</div>
+        </div>
+      </div>
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Efektivita</div>
+          <div id="kpiEfficiency" class="ts-kpi-value">0%</div>
+        </div>
+      </div>
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Top projektů</div>
+          <div id="kpiTopJobs" class="ts-kpi-value">0</div>
+        </div>
+      </div>
+      <div class="ts-kpi-card">
+        <div class="ts-kpi-icon-wrapper">
+          <svg class="ts-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ts-kpi-content">
+          <div class="ts-kpi-label">Anomálie</div>
+          <div id="kpiAnomalies" class="ts-kpi-value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Summary Bar -->
+    <div class="ts-summary-bar">
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Celkem hodin</div>
+        <div id="summaryTotal" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Průměr na den</div>
+        <div id="summaryAvg" class="ts-summary-value">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Aktivních projektů</div>
+        <div id="summaryProjects" class="ts-summary-value">0</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">Overtime</div>
+        <div id="summaryOvertime" class="ts-summary-value" style="color:var(--text-secondary);">0h</div>
+      </div>
+      <div class="ts-summary-item">
+        <div class="ts-summary-label">vs. minulý týden</div>
+        <div id="summaryTrend" class="ts-summary-value" style="color:var(--text-secondary);">—</div>
+      </div>
+    </div>
+
+    <!-- AI Signals Panel -->
+    <div id="aiSignalsPanel" class="ts-signals-panel" style="display:none;">
+      <div class="ts-signals-header">
+        <div class="ts-signals-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--mint);">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <span>AI Signály</span>
+        </div>
+      </div>
+      <div id="aiSignalsContent" class="ts-signals-content">
+        <div class="ts-signals-loading">Načítám signály…</div>
+      </div>
+    </div>
+
+    <!-- Heat Map Week -->
+    <div id="heatMapWeek" class="ts-heatmap">
+      <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+      <div id="heatMapDays" class="ts-heatmap-days"></div>
+      <div id="heatmapEmptyState" class="ts-heatmap-empty" style="display:none;">
+        <div class="ts-heatmap-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="ts-heatmap-empty-text">Zatím žádná data</div>
+        <button class="ts-heatmap-empty-cta" onclick="openWorklogModal()">+ Přidat výkaz</button>
+      </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div id="statsPanel" class="ts-stats-panel" style="display:none;">
+      <!-- Summary Cards (same as above) -->
+      <div class="ts-summary-bar" style="margin-bottom: 24px;">
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Celkem hodin</div>
+          <div id="statsSummaryTotal" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Průměr na den</div>
+          <div id="statsSummaryAvg" class="ts-summary-value">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Aktivních projektů</div>
+          <div id="statsSummaryProjects" class="ts-summary-value">0</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">Overtime</div>
+          <div id="statsSummaryOvertime" class="ts-summary-value" style="color:var(--text-secondary);">0h</div>
+        </div>
+        <div class="ts-summary-item">
+          <div class="ts-summary-label">vs. minulý týden</div>
+          <div id="statsSummaryTrend" class="ts-summary-value" style="color:var(--text-secondary);">—</div>
+        </div>
+      </div>
+      
+      <!-- Heat Map -->
+      <div id="statsHeatMapWeek" class="ts-heatmap" style="margin-bottom: 24px;">
+        <div class="ts-heatmap-title">Vizualizace zatížení týdne</div>
+        <div id="statsHeatMapDays" class="ts-heatmap-days"></div>
+      </div>
+      
+      <!-- Project Legend -->
+      <div id="statsProjectLegend" class="ts-legend" style="margin-bottom: 24px;">
+        <div class="ts-legend-title">Barevné kódování projektů:</div>
+        <div id="statsLegendItems" class="ts-legend-items"></div>
+      </div>
+      
+      <!-- Statistics Grid -->
+      <div class="ts-stats-grid">
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Rozpad hodin po projektech</div>
+          <div id="projectBreakdown" class="ts-project-breakdown"></div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Trend hodin (4 týdny)</div>
+          <div id="trendWeeks" class="ts-trend-weeks"></div>
+          <div id="trendInfo" class="ts-trend-info"></div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Hodiny po dnech</div>
+          <div id="dailyChart" class="ts-daily-chart"></div>
+        </div>
+        <div class="ts-stat-card">
+          <div class="ts-stat-title">Top projekty tento týden</div>
+          <div id="topProjects" class="ts-top-projects-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div id="timelineView" class="ts-timeline-view" style="display:none;">
+      <div class="ts-timeline-container">
+        <div class="ts-timeline-header">
+          <div class="ts-timeline-time-col">Čas</div>
+          <div class="ts-timeline-days">
+            <div class="ts-timeline-day" data-day="0">Po</div>
+            <div class="ts-timeline-day" data-day="1">Út</div>
+            <div class="ts-timeline-day" data-day="2">St</div>
+            <div class="ts-timeline-day" data-day="3">Čt</div>
+            <div class="ts-timeline-day" data-day="4">Pá</div>
+            <div class="ts-timeline-day" data-day="5">So</div>
+            <div class="ts-timeline-day" data-day="6">Ne</div>
+          </div>
+        </div>
+        <div class="ts-timeline-body">
+          <div class="ts-timeline-time-labels">
+            <!-- Hours 8:00 - 18:00 will be generated -->
+          </div>
+          <div class="ts-timeline-grid">
+            <div class="ts-timeline-day-column" data-day="0"></div>
+            <div class="ts-timeline-day-column" data-day="1"></div>
+            <div class="ts-timeline-day-column" data-day="2"></div>
+            <div class="ts-timeline-day-column" data-day="3"></div>
+            <div class="ts-timeline-day-column" data-day="4"></div>
+            <div class="ts-timeline-day-column" data-day="5"></div>
+            <div class="ts-timeline-day-column" data-day="6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View (Original) -->
+    <div id="listView" class="ts-list-view" style="display:block;">
+      <div id="weekGrid" class="ts-week-grid"></div>
+    </div>
+  </div>
+  </div>
+</main>
+
+<!-- Floating Action Button (Mobile) -->
+<button id="fabAdd" class="ts-fab" style="display:none;">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+</button>
+
+<!-- Worklog Modal - New Design -->
+<div id="worklogModal" class="worklog-modal-backdrop">
+  <div class="worklog-modal">
+    <div class="worklog-modal-header">
+      <h2 id="worklogModalTitle" class="worklog-modal-title">Nový výkaz</h2>
+      <button class="worklog-modal-close" onclick="closeWorklogModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="worklog-modal-body">
+      <form id="worklogForm">
+        <input type="hidden" id="worklogId"/>
+        
+        <!-- Required Fields -->
+        <div class="worklog-form-group">
+          <label class="worklog-form-label required">Zaměstnanec *</label>
+          <select id="worklogEmployee" class="worklog-form-select" required>
+            <option value="">Vyberte zaměstnance</option>
+          </select>
+        </div>
+        
+        <div class="worklog-form-group">
+          <label class="worklog-form-label required">Datum *</label>
+          <input id="worklogDate" type="date" class="worklog-form-input" required/>
+        </div>
+        
+        <div class="worklog-form-group">
+          <label class="worklog-form-label">Projekt/Zakázka</label>
+          <select id="worklogJob" class="worklog-form-select">
+            <option value="">Bez projektu</option>
+          </select>
+        </div>
+        
+        <div class="worklog-form-group">
+          <label class="worklog-form-label required">Délka</label>
+          <div class="worklog-duration-chips">
+            <button type="button" class="worklog-duration-chip" data-minutes="30">0.5h</button>
+            <button type="button" class="worklog-duration-chip" data-minutes="60">1h</button>
+            <button type="button" class="worklog-duration-chip" data-minutes="120">2h</button>
+            <button type="button" class="worklog-duration-chip" data-minutes="240">4h</button>
+            <button type="button" class="worklog-duration-chip" data-minutes="480">8h</button>
+          </div>
+          <input id="worklogDuration" type="number" min="1" step="1" placeholder="Minuty" class="worklog-form-input" required/>
+        </div>
+        
+        <div class="worklog-form-group">
+          <label class="worklog-form-label required">Typ práce</label>
+          <div class="worklog-work-type-grid">
+            <div class="worklog-work-type-option" data-type="manual">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <div class="worklog-work-type-label">Manuální</div>
+            </div>
+            <div class="worklog-work-type-option" data-type="machine">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <div class="worklog-work-type-label">Stroj</div>
+            </div>
+            <div class="worklog-work-type-option" data-type="planning">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <div class="worklog-work-type-label">Plánování</div>
+            </div>
+            <div class="worklog-work-type-option" data-type="supervision">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <div class="worklog-work-type-label">Dozor</div>
+            </div>
+            <div class="worklog-work-type-option" data-type="transport">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"></path>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              <div class="worklog-work-type-label">Doprava</div>
+            </div>
+            <div class="worklog-work-type-option" data-type="other">
+              <svg class="worklog-work-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div class="worklog-work-type-label">Jiné</div>
+            </div>
+          </div>
+          <input type="hidden" id="worklogWorkType" value="manual"/>
+        </div>
+        
+        <!-- Progressive Disclosure -->
+        <button type="button" class="worklog-expand-toggle" onclick="toggleWorklogExpand('advanced')">
+          <span>Další informace</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        
+        <div id="worklogAdvanced" class="worklog-expandable-content">
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Úkol</label>
+            <select id="worklogTask" class="worklog-form-select">
+              <option value="">—</option>
+            </select>
+          </div>
+          
+          <div class="worklog-form-grid worklog-form-grid-2col">
+            <div class="worklog-form-group">
+              <label class="worklog-form-label">Čas začátku</label>
+              <input id="worklogStartTime" type="time" class="worklog-form-input"/>
+            </div>
+            <div class="worklog-form-group">
+              <label class="worklog-form-label">Čas konce</label>
+              <input id="worklogEndTime" type="time" class="worklog-form-input"/>
+            </div>
+          </div>
+          
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Lokace</label>
+            <input id="worklogLocation" type="text" class="worklog-form-input" placeholder="Místo práce"/>
+          </div>
+          
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Výkon</label>
+            <div class="worklog-performance-signals">
+              <div class="worklog-performance-signal" data-signal="fast">
+                <svg class="worklog-performance-signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                <div class="worklog-performance-signal-label">Rychle</div>
+              </div>
+              <div class="worklog-performance-signal active" data-signal="normal">
+                <svg class="worklog-performance-signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6v6l4 2"></path>
+                </svg>
+                <div class="worklog-performance-signal-label">Normální</div>
+              </div>
+              <div class="worklog-performance-signal" data-signal="slow">
+                <svg class="worklog-performance-signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <div class="worklog-performance-signal-label">Pomalu</div>
+              </div>
+              <div class="worklog-performance-signal" data-signal="blocked">
+                <svg class="worklog-performance-signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="worklog-performance-signal-label">Blokováno</div>
+              </div>
+            </div>
+            <input type="hidden" id="worklogPerformanceSignal" value="normal"/>
+          </div>
+          
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Důvod zdržení</label>
+            <input id="worklogDelayReason" type="text" class="worklog-form-input" placeholder="Pokud byla práce blokována"/>
+          </div>
+          
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Materiál</label>
+            <datalist id="materialDatalist"></datalist>
+            <div id="worklogMaterialList" class="worklog-material-list"></div>
+            <div id="worklogMaterialEmptyState" class="worklog-empty-state" style="display:none; margin-top: 8px;">
+              <div class="worklog-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                  <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                </svg>
+              </div>
+              <div class="worklog-empty-text">Sklad je prázdný.</div>
+              <a href="/?tab=warehouse" class="worklog-empty-cta">Přidat položky do skladu →</a>
+            </div>
+            <button type="button" class="worklog-material-add" onclick="addWorklogMaterial()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Přidat materiál
+            </button>
+          </div>
+          
+          <div class="worklog-form-group">
+            <label class="worklog-form-label">Poznámka</label>
+            <textarea id="worklogNote" rows="3" class="worklog-form-textarea" placeholder="Popis práce, poznámky..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="worklog-modal-actions">
+      <button id="worklogDelete" type="button" class="worklog-btn worklog-btn-danger" style="display:none; margin-right: auto;" onclick="deleteWorklog()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Smazat
+      </button>
+      <button type="button" class="worklog-btn worklog-btn-secondary" onclick="closeWorklogModal()">Zrušit</button>
+      <button type="button" class="worklog-btn worklog-btn-primary" onclick="saveWorklog()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Uložit
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Legacy Modal (kept for backward compatibility) -->
+<div id="modal" class="modal-backdrop" style="display:none;">
+  <div class="card modal-card">
+    <div class="card-h">
+      <div id="modalTitle" class="modal-title">upravit záznam</div>
+    </div>
+    <div class="card-c">
+      <div class="form-grid">
+      <input type="hidden" id="mId"/>
+        <div class="form-group">
+          <label class="form-label">člen teamu</label>
+          <select id="mEmployee" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">zakázka</label>
+          <select id="mJob" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">datum</label>
+          <input id="mDate" type="date" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">hodin</label>
+          <input id="mHours" type="number" min="0" step="0.25" placeholder="8" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">místo</label>
+          <input id="mPlace" type="text" class="form-input"/>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">činnost</label>
+          <textarea id="mActivity" rows="2" class="form-textarea"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="card-f actions">
+      <button id="mDelete" class="btn btn-danger" style="margin-right:auto;display:none;">smazat</button>
+      <button id="mCopy" class="btn btn-secondary" style="margin-right:auto;display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+        </svg>
+        Kopírovat
+      </button>
+      <button id="mCancel" class="btn btn-ghost">zrušit</button>
+      <button id="mSave" class="btn btn-primary">uložit</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Section Header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .section-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #60a5fa;
+  }
+  .section-title h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+  }
+  .section-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    margin: 4px 0 0 0;
+  }
+  
+  /* Page Header (backward compatibility) */
+  .ts-page-header {
+    margin-bottom: 24px;
+  }
+  .ts-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-page-subtitle {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Toolbar */
+  .ts-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .ts-week-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ts-week-label {
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 150px;
+    text-align: center;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 8px;
+  }
+  .ts-nav-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .ts-nav-btn:hover {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+  .ts-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ts-actions .btn-primary {
+    background: var(--mint) !important;
+    color: #0a0e11 !important;
+    border-color: var(--mint) !important;
+    font-weight: 600 !important;
+  }
+  .ts-actions .btn-primary:hover {
+    background: var(--mint-light) !important;
+    color: #0a0e11 !important;
+  }
+  
+  /* Zajistit viditelnost ikon v tlačítkách */
+  .ts-actions .btn svg,
+  .ts-view-btn svg {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    vertical-align: middle !important;
+  }
+  
+  .ts-actions .btn-primary svg {
+    stroke: #0a0e11 !important;
+    color: #0a0e11 !important;
+  }
+  
+  .ts-view-btn.active svg {
+    stroke: #0a0e11 !important;
+    color: #0a0e11 !important;
+  }
+
+  /* KPI Cards */
+  .ts-kpi-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .ts-kpi-card {
+    background: rgba(30, 33, 40, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .ts-kpi-card:hover {
+    background: rgba(40, 44, 52, 0.7);
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  }
+  .ts-kpi-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ts-kpi-icon-wrapper.time {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.3));
+  }
+  .ts-kpi-icon-wrapper.average {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.3));
+  }
+  .ts-kpi-icon-wrapper.overtime {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.3));
+  }
+  .ts-kpi-icon {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    opacity: 0.9;
+  }
+  .ts-kpi-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .ts-kpi-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ts-kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  @media (max-width: 768px) {
+    .ts-kpi-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .ts-kpi-card {
+      padding: 16px;
+    }
+    .ts-kpi-icon-wrapper {
+      width: 48px;
+      height: 48px;
+    }
+    .ts-kpi-icon {
+      width: 24px;
+      height: 24px;
+    }
+    .ts-kpi-value {
+      font-size: 20px;
+    }
+  }
+
+  /* Summary Bar */
+  .ts-summary-bar {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .ts-summary-item {
+    text-align: center;
+  }
+  .ts-summary-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .ts-summary-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--mint);
+  }
+  @media (max-width: 768px) {
+    .ts-page-title {
+      font-size: 20px;
+    }
+    .ts-page-subtitle {
+      font-size: 12px;
+    }
+    .ts-week-label {
+      font-size: 13px;
+      min-width: 120px;
+    }
+    .ts-summary-value {
+      font-size: 18px;
+    }
+    .ts-summary-label {
+      font-size: 10px;
+    }
+  }
+
+  /* Week Grid */
+  .ts-week-grid {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #252a2f 100%);
+    border: 1px solid var(--border-medium);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 100px;
+  }
+  .ts-grid-header {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    background: #252a2f;
+    border-bottom: 2px solid var(--border-medium);
+  }
+  .ts-grid-cell {
+    display: table-cell;
+    padding: 12px 8px;
+    border-right: 1px solid #2a3036;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-grid-cell:first-child {
+    text-align: left;
+    padding-left: 16px;
+    width: 140px;
+    min-width: 120px;
+  }
+  .ts-grid-cell:last-child {
+    border-right: none;
+  }
+  .ts-day-header {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-day-date {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-day-header.today {
+    color: var(--mint);
+  }
+  .ts-grid-row {
+    display: table-row;
+    border-bottom: 1px solid #2a3036;
+  }
+  .ts-grid-row:last-child {
+    border-bottom: none;
+  }
+  .ts-grid-row:hover {
+    background: rgba(74, 222, 128, 0.05);
+  }
+  .ts-employee-cell {
+    display: table-cell;
+    padding: 12px 8px 12px 16px;
+    border-right: 1px solid #2a3036;
+    background: transparent;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-employee-cell > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ts-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--mint) 0%, #4ade80 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .ts-employee-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+  .ts-day-cell {
+    display: table-cell;
+    padding: 8px;
+    border-right: 1px solid #2a3036;
+    min-height: 50px;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-day-cell:last-child {
+    border-right: none;
+  }
+  .ts-time-entry {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    width: 100%;
+    max-width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-time-entry:hover {
+    background: rgba(74, 222, 128, 0.25);
+    border-color: var(--mint);
+  }
+  .ts-entry-hours {
+    font-weight: 700;
+    color: var(--mint);
+    margin-bottom: 2px;
+    font-size: 13px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-entry-project {
+    color: var(--text-tertiary);
+    font-size: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    line-height: 1.3;
+  }
+  .ts-add-btn {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px dashed rgba(74, 222, 128, 0.4);
+    border-radius: 6px;
+    color: var(--mint);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-add-btn:hover {
+    background: rgba(74, 222, 128, 0.2);
+    border-color: var(--mint);
+  }
+
+  /* View Toggle */
+  .ts-view-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .ts-view-btn {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .ts-view-btn:hover {
+    background: var(--bg-elevated);
+    border-color: var(--mint);
+  }
+  .ts-view-btn.active {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+
+  /* Enhanced Filters */
+  .ts-filters-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ts-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .ts-filter-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 120px;
+  }
+  .ts-quick-filter {
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+  .ts-quick-filter:hover {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+  .ts-multi-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ts-multi-select-item {
+    padding: 4px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-multi-select-item.selected {
+    background: var(--mint);
+    color: var(--text-dark);
+    border-color: var(--mint);
+  }
+
+  /* Project Legend */
+  .ts-legend {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .ts-legend-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .ts-legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ts-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .ts-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* KPI Cards */
+  .ts-kpi-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .ts-kpi-card {
+    background: rgba(30, 33, 40, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+  }
+  .ts-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+  .ts-kpi-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ts-kpi-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--mint);
+  }
+  .ts-kpi-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .ts-kpi-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .ts-kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  @media (max-width: 768px) {
+    .ts-kpi-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .ts-kpi-value {
+      font-size: 20px;
+    }
+  }
+
+  /* Heat Map */
+  .ts-heatmap {
+    background: rgba(30, 33, 40, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .ts-heatmap-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .ts-heatmap-days {
+    display: flex;
+    gap: 8px;
+  }
+  .ts-heatmap-day {
+    flex: 1;
+    min-height: 60px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .ts-heatmap-day:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .ts-heatmap-empty {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .ts-heatmap-empty-icon {
+    margin-bottom: 16px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: center;
+  }
+  .ts-heatmap-empty-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .ts-heatmap-empty-cta {
+    display: inline-block;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--mint) 0%, #4ade80 100%);
+    color: #0a0e11;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-heatmap-empty-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+  }
+
+  /* Statistics Panel */
+  .ts-stats-panel {
+    background: rgba(30, 33, 40, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .ts-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .ts-stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .ts-trend-weeks {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .ts-stat-card {
+      padding: 12px;
+      font-size: 14px;
+    }
+    .ts-stat-title {
+      font-size: 12px;
+    }
+    .ts-daily-chart {
+      height: 250px !important;
+    }
+    .ts-project-breakdown,
+    .ts-trend-weeks {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .ts-summary-bar {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .ts-summary-item {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 120px;
+    }
+  }
+  .ts-stat-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .ts-stat-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  /* Project Breakdown */
+  .ts-project-breakdown {
+    padding: 10px 0;
+  }
+  .ts-project-item {
+    margin-bottom: 12px;
+  }
+  .ts-project-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .ts-project-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ts-project-hours {
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .ts-progress-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .ts-progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  /* Trend Weeks */
+  .ts-trend-weeks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .ts-week-stat {
+    text-align: center;
+    padding: 12px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    min-width: 0;
+  }
+  .ts-week-stat.active {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+  .ts-week-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  .ts-week-stat.active .ts-week-label {
+    color: var(--text-dark);
+  }
+  .ts-week-hours {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ts-week-hours.big {
+    font-size: 22px;
+  }
+  .ts-week-stat.active .ts-week-hours {
+    color: var(--text-dark);
+  }
+  .ts-trend-info {
+    padding: 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Daily Chart */
+  .ts-daily-chart {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 200px;
+    padding: 10px 0;
+  }
+  .ts-day-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .ts-bar-column {
+    width: 100%;
+    max-width: 40px;
+    background: #444;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s ease;
+    min-height: 4px;
+    position: relative;
+  }
+  .ts-bar-column:hover {
+    opacity: 0.8;
+  }
+  .ts-bar-column.low {
+    background: #86efac;
+  }
+  .ts-bar-column.medium {
+    background: #4ade80;
+  }
+  .ts-bar-column.high {
+    background: #16a34a;
+  }
+  .ts-day-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+  }
+  .ts-hours-label {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  
+  /* Top Projects */
+  .ts-top-projects-list {
+    padding: 10px 0;
+  }
+  .ts-top-project-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+  }
+  .ts-top-project-item.rank-1 {
+    background: rgba(74, 222, 128, 0.1);
+    border-color: #4ade80;
+  }
+  .ts-rank {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .ts-project-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .ts-project-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .ts-project-bar {
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ts-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 3px;
+  }
+  .ts-hours {
+    font-weight: 700;
+    color: var(--mint);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .ts-no-other-projects {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+  
+  /* Empty State */
+  .ts-empty-state {
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .ts-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+  .ts-empty-text {
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .ts-top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ts-top-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  /* Timeline View */
+  .ts-timeline-view {
+    background: rgba(30, 33, 40, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .ts-timeline-container {
+    display: flex;
+    flex-direction: column;
+  }
+  .ts-timeline-header {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+    background: var(--bg-elevated);
+    border-bottom: 2px solid var(--border-medium);
+  }
+  .ts-timeline-time-col {
+    padding: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 12px;
+    border-right: 1px solid var(--border-medium);
+    text-align: center;
+  }
+  .ts-timeline-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .ts-timeline-day {
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 12px;
+    border-right: 1px solid var(--border-medium);
+  }
+  .ts-timeline-day:last-child {
+    border-right: none;
+  }
+  .ts-timeline-body {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+    position: relative;
+    min-height: 600px;
+    background: var(--bg-primary);
+  }
+  .ts-timeline-time-labels {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-medium);
+    background: var(--bg-elevated);
+  }
+  .ts-timeline-hour {
+    height: 60px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ts-timeline-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    position: relative;
+  }
+  .ts-timeline-day-column {
+    position: relative;
+    min-height: 600px;
+    border-right: 1px solid var(--border-primary);
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--bg-card) 0px,
+      var(--bg-card) 59px,
+      var(--border-primary) 59px,
+      var(--border-primary) 60px
+    );
+  }
+  .ts-timeline-day-column:last-child {
+    border-right: none;
+  }
+  .ts-timeline-block {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+  .ts-timeline-block:hover {
+    transform: scale(1.02);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .ts-timeline-block-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ts-timeline-block-hours {
+    font-size: 10px;
+    opacity: 0.9;
+  }
+
+  /* AI Signals Panel */
+  .ts-signals-panel {
+    background: rgba(30, 33, 40, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .ts-signals-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .ts-signals-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .ts-signals-content {
+    min-height: 60px;
+  }
+  .ts-signals-loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  .ts-signals-grid {
+    display: grid;
+    gap: 12px;
+  }
+  .ts-signal-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ts-signal-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--mint);
+    transform: translateX(4px);
+  }
+  .ts-signal-card.info {
+    cursor: default;
+  }
+  .ts-signal-card.info:hover {
+    transform: none;
+  }
+  .ts-signal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid;
+    flex-shrink: 0;
+  }
+  .ts-signal-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .ts-signal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .ts-signal-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .ts-signal-arrow {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+  .ts-signals-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  /* Floating Action Button (Mobile) */
+  .ts-fab {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: var(--text-dark);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.2s;
+  }
+  .ts-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  }
+  @media (min-width: 769px) {
+    .ts-fab {
+      display: none;
+    }
+  }
+
+  /* Bulk Selection */
+  .ts-entry-checkbox {
+    margin-right: 8px;
+  }
+  .ts-bulk-actions-bar {
+    position: fixed;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: var(--mint);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 999;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+  }
+
+</style>
+
+<script>
+(function(){
+  const elWeekGrid = document.getElementById('weekGrid');
+  let elWeekStart = document.getElementById('weekStart');
+  // If weekStart doesn't exist, create it
+  if (!elWeekStart) {
+    elWeekStart = document.createElement('input');
+    elWeekStart.type = 'date';
+    elWeekStart.id = 'weekStart';
+    elWeekStart.style.display = 'none';
+    document.body.appendChild(elWeekStart);
+  }
+  const elPrev = document.getElementById('prevWeek');
+  const elNext = document.getElementById('nextWeek');
+  let elFJob = document.getElementById('filterJob');
+  let elFEmp = document.getElementById('filterEmployee');
+  const elWeekLabel = document.getElementById('weekLabel');
+  
+  // Create filter selects if they don't exist
+  if (!elFJob) {
+    const filtersPanel = document.getElementById('filtersPanel');
+    if (filtersPanel) {
+      const jobGroup = filtersPanel.querySelector('.ts-filter-group:last-child');
+      if (jobGroup) {
+        elFJob = document.createElement('select');
+        elFJob.id = 'filterJob';
+        elFJob.className = 'form-select';
+        elFJob.style.width = 'auto';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'vše';
+        elFJob.appendChild(opt);
+        jobGroup.appendChild(elFJob);
+      }
+    }
+  }
+  if (!elFEmp) {
+    const filtersPanel = document.getElementById('filtersPanel');
+    if (filtersPanel) {
+      const empGroup = filtersPanel.querySelector('.ts-filter-group:first-child');
+      if (empGroup) {
+        elFEmp = document.createElement('select');
+        elFEmp.id = 'filterEmployee';
+        elFEmp.className = 'form-select';
+        elFEmp.style.width = 'auto';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'všichni';
+        elFEmp.appendChild(opt);
+        empGroup.appendChild(elFEmp);
+      }
+    }
+  }
+  const elSummaryTotal = document.getElementById('summaryTotal');
+  const elSummaryAvg = document.getElementById('summaryAvg');
+  const elSummaryProjects = document.getElementById('summaryProjects');
+  const elSummaryOvertime = document.getElementById('summaryOvertime');
+  const elSummaryTrend = document.getElementById('summaryTrend');
+  
+  // View elements
+  const elViewList = document.getElementById('viewList');
+  const elViewTimeline = document.getElementById('viewTimeline');
+  const elViewStats = document.getElementById('viewStats');
+  const elListView = document.getElementById('listView');
+  const elTimelineView = document.getElementById('timelineView');
+  const elStatsPanel = document.getElementById('statsPanel');
+  
+  // Filter elements
+  const elFiltersPanel = document.getElementById('filtersPanel');
+  const elToggleFilters = document.getElementById('toggleFilters');
+  
+  // Project colors
+  const projectColors = {};
+  const colorPalette = [
+    '#4ade80', '#4ade80', '#4ade80', '#4ade80', '#4ade80',
+    '#4ade80', '#4ade80', '#7cc5ff', '#60a5fa', '#4a90e2'
+  ];
+  
+  let currentView = 'list';
+  let selectedEntries = new Set();
+
+  // modal elems
+  const modal = document.getElementById('modal');
+  const mId = document.getElementById('mId');
+  const mEmployee = document.getElementById('mEmployee');
+  const mJob = document.getElementById('mJob');
+  const mDate = document.getElementById('mDate');
+  const mHours = document.getElementById('mHours');
+  const mPlace = document.getElementById('mPlace');
+  const mActivity = document.getElementById('mActivity');
+  const mTitle = document.getElementById('modalTitle');
+  const mSave = document.getElementById('mSave');
+  const mCancel = document.getElementById('mCancel');
+  const mDelete = document.getElementById('mDelete');
+
+  // Store employees list
+  let employeesList = [];
+  let jobsList = [];
+
+  // --- Local date helpers (no UTC conversion) ---
+  const fmtLocal = (d)=>{
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  };
+  const parse = (s)=> { const [y,m,dd] = s.split('-').map(x=>parseInt(x,10)); return new Date(y, m-1, dd); };
+  const monday = (d)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const wd = x.getDay(); const diff = (wd===0?6:wd-1); x.setDate(x.getDate()-diff); x.setHours(0,0,0,0); return x; };
+  const addDays = (d,n)=>{ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; };
+  const formatDateRange = (start, end) => {
+    const fmt = (d) => d.toLocaleDateString('cs-CZ', {day: 'numeric', month: 'long', year: 'numeric'});
+    return fmt(start) + ' - ' + fmt(end);
+  };
+
+  async function apiJSON(url, options){
+    const r = await fetch(url, Object.assign({
+      credentials: 'same-origin',
+      headers:{'Content-Type':'application/json'}
+    }, options||{}));
+    if(!r.ok) {
+      const errorText = await r.text();
+      let errorMsg = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error || errorJson.message || errorText;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return r.json();
+  }
+  async function fetchJSON(url){ 
+    const r = await fetch(url, {credentials: 'same-origin'}); 
+    if(!r.ok) {
+      const errorText = await r.text();
+      let errorMsg = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.error || errorJson.message || errorText;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return r.json(); 
+  }
+
+  async function loadFilters(){
+    try{
+      const jobs = await fetchJSON('/api/jobs');
+      jobsList = jobs.jobs || [];
+      jobsList.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = j.title + (j.code?(' ('+j.code+')'):''); 
+        elFJob.appendChild(opt);
+        const opt2 = opt.cloneNode(true); mJob.appendChild(opt2);
+      });
+      
+      // Check for job_id in URL query params and set filter
+      const urlParams = new URLSearchParams(window.location.search);
+      const jobIdParam = urlParams.get('job_id');
+      if (jobIdParam && elFJob) {
+        elFJob.value = jobIdParam;
+        // Trigger filter change to reload data
+        if (elFJob.dispatchEvent) {
+          elFJob.dispatchEvent(new Event('change'));
+        }
+      }
+    }catch(e){}
+    try{
+      const emps = await fetchJSON('/api/employees');
+      employeesList = emps.employees || [];
+      employeesList.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.name; 
+        elFEmp.appendChild(opt);
+        const opt2 = opt.cloneNode(true); mEmployee.appendChild(opt2);
+      });
+    }catch(e){}
+  }
+
+  // Load KPI data from new API
+  async function loadKPIData(start, end) {
+    try {
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) {
+        // Get user_id from employee_id if needed
+        const emp = employeesList.find(e => e.id == elFEmp.value);
+        if (emp && emp.user_id) q.set('user_id', emp.user_id);
+      }
+      
+      const response = await fetchJSON('/gd/api/worklogs/summary?' + q.toString());
+      if (response.ok && response.summary) {
+        const s = response.summary;
+        
+        // Update KPI cards
+        const kpiTotal = document.getElementById('kpiTotal');
+        const kpiAvg = document.getElementById('kpiAvg');
+        const kpiOvertime = document.getElementById('kpiOvertime');
+        const kpiEfficiency = document.getElementById('kpiEfficiency');
+        const kpiTopJobs = document.getElementById('kpiTopJobs');
+        const kpiAnomalies = document.getElementById('kpiAnomalies');
+        
+        if (kpiTotal) kpiTotal.textContent = Math.round(s.total_minutes / 60) + 'h';
+        if (kpiAvg) kpiAvg.textContent = Math.round(s.avg_per_day / 60 * 10) / 10 + 'h';
+        if (kpiOvertime) {
+          kpiOvertime.textContent = Math.round(s.overtime_minutes / 60) + 'h';
+          kpiOvertime.style.color = s.overtime_minutes > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+        if (kpiEfficiency) {
+          kpiEfficiency.textContent = s.efficiency.toFixed(0) + '%';
+          kpiEfficiency.style.color = s.efficiency >= 70 ? 'var(--mint)' : s.efficiency >= 50 ? 'var(--warning)' : 'var(--danger)';
+        }
+        if (kpiTopJobs) kpiTopJobs.textContent = s.top_jobs.length;
+        if (kpiAnomalies) {
+          kpiAnomalies.textContent = s.anomalies_count;
+          kpiAnomalies.style.color = s.anomalies_count > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+        
+        // Update summary bar (backwards compatibility)
+        const summaryTotal = document.getElementById('summaryTotal');
+        const summaryAvg = document.getElementById('summaryAvg');
+        const summaryOvertime = document.getElementById('summaryOvertime');
+        if (summaryTotal) summaryTotal.textContent = Math.round(s.total_minutes / 60) + 'h';
+        if (summaryAvg) summaryAvg.textContent = Math.round(s.avg_per_day / 60 * 10) / 10 + 'h';
+        if (summaryOvertime) {
+          summaryOvertime.textContent = Math.round(s.overtime_minutes / 60) + 'h';
+          summaryOvertime.style.color = s.overtime_minutes > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+      }
+    } catch (error) {
+      console.error('Error loading KPI data:', error);
+    }
+  }
+  
+  // Load heatmap data from new API
+  async function loadHeatmapData(start, end) {
+    try {
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) {
+        const emp = employeesList.find(e => e.id == elFEmp.value);
+        if (emp && emp.user_id) q.set('user_id', emp.user_id);
+      }
+      
+      const response = await fetchJSON('/gd/api/worklogs/heatmap?' + q.toString());
+      const heatMapEl = document.getElementById('heatMapDays');
+      const emptyState = document.getElementById('heatmapEmptyState');
+      
+      if (!heatMapEl) return;
+      
+      if (response.ok && response.heatmap && response.heatmap.length > 0) {
+        heatMapEl.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'none';
+        
+        const weekStart = monday(parse(elWeekStart.value));
+        const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        const heatmapByDate = {};
+        response.heatmap.forEach(item => {
+          heatmapByDate[item.date] = item;
+        });
+        
+        for (let i = 0; i < 7; i++) {
+          const d = addDays(weekStart, i);
+          const dstr = fmtLocal(d);
+          const dayData = heatmapByDate[dstr];
+          
+          const dayEl = document.createElement('div');
+          dayEl.className = 'ts-heatmap-day';
+          dayEl.setAttribute('data-date', dstr);
+          dayEl.style.cursor = 'pointer';
+          
+          if (dayData) {
+            const loadLevel = dayData.load_level;
+            const totalMinutes = dayData.total_minutes;
+            const totalHours = totalMinutes / 60;
+            
+            // Color based on load_level
+            let bgColor, textColor = '#0a0e11';
+            if (loadLevel === 0) bgColor = 'rgba(134, 239, 172, 0.3)'; // green (<4h)
+            else if (loadLevel === 1) bgColor = 'rgba(96, 165, 250, 0.3)'; // blue (4-6h)
+            else if (loadLevel === 2) bgColor = 'rgba(251, 191, 36, 0.3)'; // orange (6-8h)
+            else bgColor = 'rgba(239, 68, 68, 0.3)'; // red (>8h)
+            
+            dayEl.style.background = bgColor;
+            dayEl.style.border = `2px solid ${bgColor.replace('0.3', '0.6')}`;
+            
+            let flagsHTML = '';
+            if (dayData.flags && dayData.flags.length > 0) {
+              flagsHTML = '<div style="font-size:8px;margin-top:2px;opacity:0.7;">' + dayData.flags.join(', ') + '</div>';
+            }
+            
+            dayEl.innerHTML = `
+              <div>
+                <div style="font-size:10px;margin-bottom:2px;font-weight:600;">${dayNames[i]}</div>
+                <div style="font-size:11px;font-weight:700;">${totalHours.toFixed(1)}h</div>
+                ${flagsHTML}
+              </div>
+            `;
+            
+            // Click handler - navigate to day detail
+            dayEl.addEventListener('click', () => {
+              // Filter to this day
+              elWeekStart.value = dstr;
+              renderWeek();
+            });
+          } else {
+            dayEl.style.background = 'rgba(255, 255, 255, 0.03)';
+            dayEl.style.border = '1px dashed rgba(255, 255, 255, 0.1)';
+            dayEl.innerHTML = `
+              <div>
+                <div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div>
+                <div style="font-size:11px;opacity:0.5;">0h</div>
+              </div>
+            `;
+            dayEl.addEventListener('click', () => {
+              openWorklogModal({date: dstr});
+            });
+          }
+          
+          heatMapEl.appendChild(dayEl);
+        }
+      } else {
+        heatMapEl.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error loading heatmap data:', error);
+    }
+  }
+
+  async function renderWeek(){
+    if (!elWeekStart || !elWeekStart.value) {
+      const today = new Date();
+      const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+      startMonday.setHours(0,0,0,0);
+      if (elWeekStart) {
+        elWeekStart.value = fmtLocal(startMonday);
+      }
+    }
+    
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    if (elWeekLabel) elWeekLabel.textContent = formatDateRange(start, end);
+
+    // Load summary, heatmap and AI signals from new API
+    await loadKPIData(start, end);
+    await loadHeatmapData(start, end);
+    // await loadAISignals(start, end); // TODO: Implement if needed
+
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+
+    const data = await fetchJSON('/api/timesheets?' + q.toString());
+    const rows = (data.rows||[]);
+    
+    // Calculate cost burn rate
+    let totalCost = 0;
+    const costByDate = {};
+    rows.forEach(r => {
+      const cost = r.labor_cost || 0;
+      totalCost += cost;
+      const date = (r.date || '').slice(0, 10);
+      if (date) {
+        if (!costByDate[date]) costByDate[date] = 0;
+        costByDate[date] += cost;
+      }
+    });
+    
+    // Update cost burn rate in summary bar if element exists
+    const summaryCost = document.getElementById('summaryCost');
+    if (summaryCost) {
+      summaryCost.textContent = totalCost > 0 ? totalCost.toLocaleString('cs-CZ') + ' Kč' : '—';
+    }
+    
+    // Group by employee and date
+    const byEmployee = {};
+    const byDate = {};
+    let totalHours = 0;
+    const projectSet = new Set();
+    
+    for(const r of rows){
+      const empId = r.employee_id;
+      const d = (r.date||'').slice(0,10);
+      if(!byEmployee[empId]) {
+        byEmployee[empId] = {};
+        const emp = employeesList.find(e => e.id === empId);
+        byEmployee[empId].name = emp ? emp.name : ('ID '+empId);
+        byEmployee[empId].initials = emp ? (emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)) : '?';
+        byEmployee[empId].entries = {};
+      }
+      if(!byEmployee[empId].entries[d]) byEmployee[empId].entries[d] = [];
+      byEmployee[empId].entries[d].push(r);
+      
+      if(!byDate[d]) byDate[d] = [];
+      byDate[d].push(r);
+      
+      totalHours += (r.hours || 0);
+      if(r.job_id) projectSet.add(r.job_id);
+    }
+
+    // Update summary
+    elSummaryTotal.textContent = totalHours.toFixed(1) + 'h';
+    elSummaryAvg.textContent = (totalHours / 7).toFixed(1) + 'h';
+    elSummaryProjects.textContent = projectSet.size;
+
+    // Get active employees (those with entries or all if no filter)
+    const activeEmployees = (elFEmp && elFEmp.value) 
+      ? [employeesList.find(e => e.id == elFEmp.value)].filter(Boolean)
+      : employeesList.filter(e => byEmployee[e.id] || !elFEmp || !elFEmp.value);
+    
+    // If no employees, show all
+    if(activeEmployees.length === 0) activeEmployees.push(...employeesList);
+
+    // Build simple day list (original design)
+    elWeekGrid.innerHTML = '';
+    
+    for(let i=0; i<7; i++){
+      const d = addDays(start, i);
+      const dstr = fmtLocal(d);
+      const isToday = dstr === fmtLocal(new Date());
+      
+      const dayCard = document.createElement('div');
+      dayCard.className = 'card';
+      dayCard.style.marginBottom = '16px';
+      
+      const dayHeader = document.createElement('div');
+      dayHeader.className = 'card-h';
+      dayHeader.style.display = 'flex';
+      dayHeader.style.justifyContent = 'space-between';
+      dayHeader.style.alignItems = 'center';
+      dayHeader.style.gap = '12px';
+      
+      const dayTitle = document.createElement('div');
+      dayTitle.style.fontWeight = '600';
+      dayTitle.style.fontSize = '14px';
+      dayTitle.style.color = isToday ? 'var(--mint)' : 'var(--text-primary)';
+      dayTitle.style.flex = '1';
+      dayTitle.style.minWidth = '0';
+      dayTitle.style.wordWrap = 'break-word';
+      dayTitle.style.overflowWrap = 'break-word';
+      dayTitle.style.lineHeight = '1.3';
+      dayTitle.textContent = d.toLocaleDateString('cs-CZ', {weekday: 'long'}) + ' ' + 
+                           d.toLocaleDateString('cs-CZ', {day: '2-digit', month: '2-digit', year: 'numeric'});
+      dayHeader.appendChild(dayTitle);
+      
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn-primary btn-sm';
+      addBtn.textContent = '+ Přidat';
+      addBtn.style.fontSize = '11px';
+      addBtn.style.padding = '5px 8px';
+      addBtn.style.whiteSpace = 'nowrap';
+      addBtn.style.flexShrink = '0';
+      addBtn.style.marginLeft = '8px';
+      addBtn.addEventListener('click', () => openModal({date: dstr}));
+      dayHeader.appendChild(addBtn);
+      
+      dayCard.appendChild(dayHeader);
+      
+      const dayBody = document.createElement('div');
+      dayBody.className = 'card-c';
+      
+      const dayEntries = byDate[dstr] || [];
+      if(dayEntries.length === 0){
+        dayBody.innerHTML = '<div style="color:var(--text-tertiary);padding:12px;text-align:center;font-size:12px;">Žádné záznamy</div>';
+      } else {
+        dayEntries.forEach(r => {
+          const entry = document.createElement('div');
+          entry.className = 'card';
+          entry.style.marginBottom = '8px';
+          entry.style.cursor = 'pointer';
+          entry.style.padding = '10px';
+          entry.style.background = 'var(--bg-tertiary)';
+          entry.style.border = '0.5px solid var(--border-primary)';
+          entry.style.borderRadius = 'var(--radius-md)';
+          entry.style.wordWrap = 'break-word';
+          entry.style.overflowWrap = 'break-word';
+          entry.setAttribute('data-job-id', r.job_id || '');
+          entry.addEventListener('click', () => {
+            openModal({
+              id: r.id, employee_id: r.employee_id, job_id: r.job_id, 
+              date: r.date, hours: r.hours, place: r.place, activity: r.activity
+            });
+          });
+          
+          const emp = employeesList.find(e => e.id === r.employee_id);
+          const empName = (emp ? emp.name : 'Neznámý');
+          const jobTitle = (r.job_title || ('Zakázka '+r.job_id));
+          const color = r.job_id ? getProjectColor(r.job_id) : '#4ade80';
+          entry.style.background = color + '33';
+          entry.style.borderColor = color;
+          entry.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;gap:8px;">' +
+                           '<div style="flex:1;min-width:0;word-wrap:break-word;overflow-wrap:break-word;"><div style="fontWeight:600;color:var(--text-primary);margin-bottom:3px;word-wrap:break-word;overflow-wrap:break-word;font-size:13px;line-height:1.3;">' + empName + '</div>' +
+                           '<div style="fontSize:12px;color:' + color + ';fontWeight:600;">' + (r.hours||0) + 'h</div></div>' +
+                           '</div>' +
+                           '<div style="fontSize:11px;color:var(--text-secondary);marginBottom:3px;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;">' + jobTitle + '</div>' +
+                           (r.activity ? '<div style="fontSize:10px;color:var(--text-tertiary);word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;">' + r.activity + '</div>' : '');
+          dayBody.appendChild(entry);
+        });
+      }
+      
+      dayCard.appendChild(dayBody);
+      elWeekGrid.appendChild(dayCard);
+    }
+  }
+
+  function openModal(data){
+    mId.value = data.id || '';
+    mTitle.textContent = data.id ? 'upravit záznam' : 'nový záznam';
+    if(data.employee_id) mEmployee.value = String(data.employee_id);
+    if(data.job_id) mJob.value = String(data.job_id);
+    mDate.value = (data.date ? data.date.slice(0,10) : elWeekStart.value);
+    mHours.value = (data.hours!=null ? data.hours : '');
+    mPlace.value = (data.place || '');
+    mActivity.value = (data.activity || '');
+    mDelete.style.display = data.id ? '' : 'none';
+    modal.style.display='flex';
+  }
+  function closeModal(){ modal.style.display='none'; }
+
+  mCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  mSave.addEventListener('click', async ()=>{
+    const empId = Number(mEmployee.value||0);
+    const jobId = Number(mJob.value||0);
+    const hours = Number(mHours.value||0);
+    
+    if(!empId || empId <= 0){
+      alert('Vyber člena teamu');
+      return;
+    }
+    if(!jobId || jobId <= 0){
+      alert('Vyber zakázku');
+      return;
+    }
+    if(!mDate.value){
+      alert('Vyplň datum');
+      return;
+    }
+    if(!hours || hours <= 0){
+      alert('Vyplň počet hodin');
+      return;
+    }
+    
+    const payload = {
+      employee_id: empId,
+      job_id: jobId,
+      date: mDate.value,
+      hours: hours,
+      place: mPlace.value || '',
+      activity: mActivity.value || ''
+    };
+    try{
+      if(mId.value){
+        payload.id = Number(mId.value);
+        await apiJSON('/api/timesheets', {method:'PATCH', body: JSON.stringify(payload)});
+      }else{
+        await apiJSON('/api/timesheets', {method:'POST', body: JSON.stringify(payload)});
+      }
+      closeModal();
+      renderWeek().catch(console.error);
+      // Show success notification if available
+      if(typeof showNotification === 'function'){
+        showNotification('Výkaz úspěšně uložen', 'success');
+      }
+    }catch(e){
+      const errorMsg = 'Chyba při ukládání: ' + (e.message || String(e));
+      alert(errorMsg);
+      console.error('Timesheet save error:', e);
+      if(typeof showNotification === 'function'){
+        showNotification(errorMsg, 'error');
+      }
+    }
+  });
+
+  mDelete.addEventListener('click', async ()=>{
+    if(!mId.value) return;
+    if(!confirm('Opravdu smazat záznam?')) return;
+    try{
+      const url = '/api/timesheets?id=' + encodeURIComponent(mId.value);
+      const r = await fetch(url, {method:'DELETE', credentials: 'same-origin'});
+      if(!r.ok) {
+        const errorText = await r.text();
+        let errorMsg = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.error || errorJson.message || errorText;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+      closeModal(); 
+      renderWeek().catch(console.error);
+      if(typeof showNotification === 'function'){
+        showNotification('Výkaz smazán', 'success');
+      }
+    }catch(e){
+      const errorMsg = 'Chyba při mazání: ' + (e.message || String(e));
+      alert(errorMsg);
+      console.error('Timesheet delete error:', e);
+      if(typeof showNotification === 'function'){
+        showNotification(errorMsg, 'error');
+      }
+    }
+  });
+
+  if (elPrev) elPrev.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()-7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  if (elNext) elNext.addEventListener('click', ()=>{ const d=parse(elWeekStart.value); d.setDate(d.getDate()+7); elWeekStart.value=fmtLocal(d); renderWeek().catch(console.error); });
+  // Filters MUST work - reload all components when changed
+  if (elFJob) elFJob.addEventListener('change', ()=>{
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    renderWeek().catch(console.error);
+    loadKPIData(start, end).catch(console.error);
+    loadHeatmapData(start, end).catch(console.error);
+  });
+  if (elFEmp) elFEmp.addEventListener('change', ()=>{
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    renderWeek().catch(console.error);
+    loadKPIData(start, end).catch(console.error);
+    loadHeatmapData(start, end).catch(console.error);
+  });
+  document.getElementById('exportCsv').addEventListener('click', ()=>{
+    openExportModal();
+  });
+  document.getElementById('addTimesheet').addEventListener('click', ()=>{
+    openModal({date: elWeekStart.value});
+  });
+
+  // Project Color Function (projectColors and colorPalette already declared above)
+  function getProjectColor(jobId) {
+    if (!projectColors[jobId]) {
+      const index = Object.keys(projectColors).length % colorPalette.length;
+      projectColors[jobId] = colorPalette[index];
+    }
+    return projectColors[jobId];
+  }
+  
+  // View Toggle Functions
+  function switchView(view) {
+    console.log('switchView called with:', view);
+    currentView = view;
+    
+    // Update button states
+    if (elViewList) {
+      elViewList.classList.remove('active');
+      if (view === 'list') elViewList.classList.add('active');
+    }
+    if (elViewTimeline) {
+      elViewTimeline.classList.remove('active');
+      if (view === 'timeline') elViewTimeline.classList.add('active');
+    }
+    if (elViewStats) {
+      elViewStats.classList.remove('active');
+      if (view === 'stats') elViewStats.classList.add('active');
+    }
+    
+    // Show/hide views
+    if (elListView) elListView.style.display = view === 'list' ? 'block' : 'none';
+    if (elTimelineView) elTimelineView.style.display = view === 'timeline' ? 'block' : 'none';
+    if (elStatsPanel) elStatsPanel.style.display = view === 'stats' ? 'block' : 'none';
+    
+    console.log('elStatsPanel display:', elStatsPanel ? elStatsPanel.style.display : 'not found');
+    console.log('About to render view:', view);
+    
+    // Render specific views
+    if (view === 'timeline') {
+      console.log('Calling renderTimeline');
+      renderTimeline();
+    } else if (view === 'stats') {
+      console.log('Calling renderStats');
+      renderStats();
+    } else if (view === 'list') {
+      // Ensure week grid is visible
+      if (elWeekGrid) elWeekGrid.style.display = 'block';
+    }
+    
+    console.log('switchView completed');
+  }
+  
+  async function renderTimeline() {
+    const timelineView = document.getElementById('timelineView');
+    if (!timelineView) return;
+    
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    
+    try {
+      // Load heatmap data with per-user info
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) {
+        const emp = employeesList.find(e => e.id == elFEmp.value);
+        if (emp && emp.user_id) q.set('user_id', emp.user_id);
+      }
+      
+      const heatmapResponse = await fetchJSON('/gd/api/worklogs/heatmap?' + q.toString());
+      const perUserData = heatmapResponse.per_user || {};
+      
+      // Load employees/users list
+      const employeesData = await fetchJSON('/api/employees');
+      const usersList = employeesData.employees || [];
+      
+      // Build timeline HTML with per-user rows
+      const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+      let timelineHTML = `
+        <div class="ts-timeline-container">
+          <div class="ts-timeline-header">
+            <div class="ts-timeline-user-col">Uživatel</div>
+            <div class="ts-timeline-days">
+              ${dayNames.map((name, i) => `<div class="ts-timeline-day" data-day="${i}">${name}</div>`).join('')}
+            </div>
+          </div>
+          <div class="ts-timeline-body">
+      `;
+      
+      // Get unique users from data
+      const userMap = {};
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(start, i);
+        const dstr = fmtLocal(d);
+        const dayData = perUserData[dstr] || [];
+        dayData.forEach(userDay => {
+          const uid = userDay.user_id;
+          if (!userMap[uid]) {
+            const user = usersList.find(u => u.id == uid || (u.user_id == uid));
+            userMap[uid] = {
+              id: uid,
+              name: userDay.user_name || (user ? user.name : `User #${uid}`)
+            };
+          }
+        });
+      }
+      
+      // Render each user row
+      const userIds = Object.keys(userMap).sort();
+      if (userIds.length === 0) {
+        timelineHTML += `
+          <div class="ts-timeline-empty">
+            <div class="ts-empty-state">
+              <div class="ts-empty-text">Žádná data pro tento týden</div>
+              <button class="btn btn-primary" onclick="openWorklogModal()">+ Přidat výkaz</button>
+            </div>
+          </div>
+        `;
+      } else {
+        userIds.forEach(uid => {
+          const user = userMap[uid];
+          timelineHTML += `
+            <div class="ts-timeline-user-row" data-user-id="${uid}">
+              <div class="ts-timeline-user-name">${escapeHtml(user.name)}</div>
+              <div class="ts-timeline-user-days">
+          `;
+          
+          // Render load level segments for each day
+          for (let day = 0; day < 7; day++) {
+            const d = addDays(start, day);
+            const dstr = fmtLocal(d);
+            const dayData = perUserData[dstr] || [];
+            const userDayData = dayData.find(u => u.user_id == uid);
+            
+            if (userDayData) {
+              const loadLevel = userDayData.load_level;
+              const totalHours = userDayData.total_minutes / 60;
+              
+              // Color based on load_level: 0: green, 1: blue, 2: orange, 3: red
+              let bgColor, borderColor;
+              if (loadLevel === 0) {
+                bgColor = 'rgba(134, 239, 172, 0.3)'; // green (<4h)
+                borderColor = 'rgba(134, 239, 172, 0.6)';
+              } else if (loadLevel === 1) {
+                bgColor = 'rgba(96, 165, 250, 0.3)'; // blue (4-6h)
+                borderColor = 'rgba(96, 165, 250, 0.6)';
+              } else if (loadLevel === 2) {
+                bgColor = 'rgba(251, 191, 36, 0.3)'; // orange (6-8h)
+                borderColor = 'rgba(251, 191, 36, 0.6)';
+              } else {
+                bgColor = 'rgba(239, 68, 68, 0.3)'; // red (>8h)
+                borderColor = 'rgba(239, 68, 68, 0.6)';
+              }
+              
+              timelineHTML += `
+                <div class="ts-timeline-day-segment" 
+                     data-date="${dstr}" 
+                     data-user-id="${uid}"
+                     style="background: ${bgColor}; border: 2px solid ${borderColor}; cursor: pointer;"
+                     onclick="navigateToDayDetail('${dstr}', ${uid})"
+                     title="${totalHours.toFixed(1)}h - ${dayNames[day]}">
+                  <div class="ts-timeline-segment-hours">${totalHours.toFixed(1)}h</div>
+                </div>
+              `;
+            } else {
+              timelineHTML += `
+                <div class="ts-timeline-day-segment empty" 
+                     data-date="${dstr}" 
+                     data-user-id="${uid}"
+                     onclick="openWorklogModal({date: '${dstr}', user_id: ${uid}})"
+                     title="Přidat výkaz - ${dayNames[day]}">
+                  <div class="ts-timeline-segment-add">+</div>
+                </div>
+              `;
+            }
+          }
+          
+          timelineHTML += `
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      timelineHTML += `
+          </div>
+        </div>
+      `;
+      
+      timelineView.innerHTML = timelineHTML;
+      
+    } catch (error) {
+      console.error('Error rendering timeline:', error);
+      timelineView.innerHTML = `
+        <div class="ts-timeline-empty">
+          <div class="ts-empty-state">
+            <div class="ts-empty-text">Chyba při načítání timeline</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  function navigateToDayDetail(date, userId) {
+    // Filter to this day and user
+    elWeekStart.value = date;
+    if (elFEmp) {
+      // Find employee by user_id
+      const emp = employeesList.find(e => e.user_id == userId);
+      if (emp) elFEmp.value = emp.id;
+    }
+    switchView('list');
+    renderWeek();
+  }
+  
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  
+  async function renderStats() {
+    console.log('renderStats() called');
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    const q = new URLSearchParams();
+    q.set('from', fmtLocal(start));
+    q.set('to', fmtLocal(end));
+    if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+    if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+    
+    console.log('Fetching data from:', '/api/timesheets?' + q.toString());
+    
+    try {
+      const data = await fetchJSON('/api/timesheets?' + q.toString());
+      const rows = data.rows || [];
+      
+      console.log('Received rows:', rows.length);
+      
+      if (rows.length === 0) {
+        console.log('No data, showing empty state');
+        renderEmptyState();
+        
+        // Also update summary to show zeros
+        const statsSummaryTotal = document.getElementById('statsSummaryTotal');
+        const statsSummaryAvg = document.getElementById('statsSummaryAvg');
+        const statsSummaryProjects = document.getElementById('statsSummaryProjects');
+        const statsSummaryOvertime = document.getElementById('statsSummaryOvertime');
+        
+        if (statsSummaryTotal) statsSummaryTotal.textContent = '0h';
+        if (statsSummaryAvg) statsSummaryAvg.textContent = '0h';
+        if (statsSummaryProjects) statsSummaryProjects.textContent = '0';
+        if (statsSummaryOvertime) statsSummaryOvertime.textContent = '0h';
+        
+        return;
+      }
+      
+      // Calculate project hours
+      const projectHours = {};
+      const dailyHours = [0, 0, 0, 0, 0, 0, 0];
+      let totalHours = 0;
+      
+      rows.forEach(row => {
+        const hours = row.hours || 0;
+        totalHours += hours;
+        const jobId = row.job_id;
+        const job = jobsList.find(j => j.id === jobId);
+        const jobName = job ? (job.title || 'Projekt ' + jobId) : 'Bez projektu';
+        
+        if (!projectHours[jobName]) {
+          projectHours[jobName] = { hours: 0, jobId: jobId };
+        }
+        projectHours[jobName].hours += hours;
+        
+        // Daily hours
+        const date = new Date(row.date);
+        const dayOfWeek = (date.getDay() + 6) % 7; // Monday = 0
+        dailyHours[dayOfWeek] += hours;
+      });
+      
+      console.log('Stats calculated:', { totalHours, projectCount: Object.keys(projectHours).length });
+      
+      // Update summary in stats panel
+      const statsSummaryTotal = document.getElementById('statsSummaryTotal');
+      const statsSummaryAvg = document.getElementById('statsSummaryAvg');
+      const statsSummaryProjects = document.getElementById('statsSummaryProjects');
+      const statsSummaryOvertime = document.getElementById('statsSummaryOvertime');
+      const statsSummaryTrend = document.getElementById('statsSummaryTrend');
+      
+      if (statsSummaryTotal) statsSummaryTotal.textContent = totalHours.toFixed(1) + 'h';
+      if (statsSummaryAvg) statsSummaryAvg.textContent = (totalHours / 7).toFixed(1) + 'h';
+      if (statsSummaryProjects) statsSummaryProjects.textContent = Object.keys(projectHours).length;
+      
+      const overtime = Math.max(0, totalHours - 40);
+      if (statsSummaryOvertime) {
+        statsSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
+        statsSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+      }
+      
+      // Render Heat Map for stats
+      const byDate = {};
+      rows.forEach(r => {
+        const d = (r.date || '').slice(0, 10);
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+      renderStatsHeatMap(byDate);
+      
+      // Render Project Legend for stats
+      renderStatsLegend(projectHours);
+      
+      // Render Project Breakdown
+      renderProjectBreakdown(projectHours, totalHours);
+      
+      // Render Trend (4 weeks)
+      await renderTrend(start, statsSummaryTrend);
+      
+      // Render Daily Chart
+      renderDailyChart(dailyHours);
+      
+      // Render Top Projects
+      renderTopProjects(projectHours);
+      
+      console.log('renderStats() completed');
+    } catch (error) {
+      console.error('Error in renderStats:', error);
+      renderErrorState();
+    }
+  }
+  
+  function renderProjectBreakdown(projectHours, totalHours) {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    if (!breakdownEl) return;
+    
+    if (Object.keys(projectHours).length === 0) {
+      breakdownEl.innerHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Žádné projekty</div></div>';
+      return;
+    }
+    
+    const sorted = Object.entries(projectHours)
+      .sort((a, b) => b[1].hours - a[1].hours);
+    
+    breakdownEl.innerHTML = sorted.map(([name, data]) => {
+      const hours = data.hours;
+      const percent = totalHours > 0 ? (hours / totalHours * 100) : 0;
+      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      
+      return `
+        <div class="ts-project-item">
+          <div class="ts-project-info">
+            <span class="ts-project-name">${name}</span>
+            <span class="ts-project-hours">${hours.toFixed(1)}h (${percent.toFixed(0)}%)</span>
+          </div>
+          <div class="ts-progress-bar">
+            <div class="ts-progress-fill" style="width: ${percent}%; background: ${color}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  async function renderTrend(currentWeekStart, trendSummaryEl) {
+    const trendEl = document.getElementById('trendWeeks');
+    const infoEl = document.getElementById('trendInfo');
+    if (!trendEl || !infoEl) return;
+    
+    const weeks = [];
+    const weekHours = [];
+    const weekLabels = ['Před 3 týdny', 'Před 2 týdny', 'Minulý týden', 'Tento týden'];
+    
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = addDays(currentWeekStart, -7 * i);
+      const weekEnd = addDays(weekStart, 6);
+      weeks.push(weekStart);
+      
+      const weekQ = new URLSearchParams();
+      weekQ.set('from', fmtLocal(weekStart));
+      weekQ.set('to', fmtLocal(weekEnd));
+      if(elFJob && elFJob.value) weekQ.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) weekQ.set('employee_id', elFEmp.value);
+      
+      try {
+        const weekData = await fetchJSON('/api/timesheets?' + weekQ.toString());
+        const weekRows = weekData.rows || [];
+        const total = weekRows.reduce((sum, r) => sum + (r.hours || 0), 0);
+        weekHours.push(total);
+      } catch (e) {
+        weekHours.push(0);
+      }
+    }
+    
+    const maxHours = Math.max(...weekHours, 1);
+    const currentHours = weekHours[3];
+    const lastWeekHours = weekHours[2];
+    const avgHours = weekHours.reduce((a, b) => a + b, 0) / weekHours.length;
+    const diff = currentHours - lastWeekHours;
+    
+    trendEl.innerHTML = weekHours.map((hours, index) => {
+      const isActive = index === 3;
+      const label = weekLabels[index];
+      return `
+        <div class="ts-week-stat ${isActive ? 'active' : ''}">
+          <div class="ts-week-label" title="${label}">${label}</div>
+          <div class="ts-week-hours ${isActive ? 'big' : ''}">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+    
+    const trendIcon = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+    const trendText = diff !== 0 
+      ? `${trendIcon} Tento týden: ${Math.abs(diff).toFixed(1)}h ${diff > 0 ? 'více' : 'méně'} oproti minulému`
+      : '→ Stejně jako minulý týden';
+    
+    infoEl.innerHTML = `
+      Průměr: ${avgHours.toFixed(1)}h/týden<br>
+      ${trendText}
+    `;
+    
+    // Update summary trend
+    if (trendSummaryEl) {
+      if (diff > 0) {
+        trendSummaryEl.textContent = `+${diff.toFixed(1)}h`;
+        trendSummaryEl.style.color = '#4ade80';
+      } else if (diff < 0) {
+        trendSummaryEl.textContent = `${diff.toFixed(1)}h`;
+        trendSummaryEl.style.color = '#ff4d4d';
+      } else {
+        trendSummaryEl.textContent = '—';
+        trendSummaryEl.style.color = 'var(--text-secondary)';
+      }
+    }
+  }
+  
+  function renderStatsHeatMap(byDate) {
+    const heatMapEl = document.getElementById('statsHeatMapDays');
+    if (!heatMapEl) return;
+    heatMapEl.innerHTML = '';
+    const weekStart = monday(parse(elWeekStart.value));
+    const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i);
+      const dstr = fmtLocal(d);
+      const entries = byDate[dstr] || [];
+      const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const intensity = Math.min((totalHours / 8) * 100, 100);
+      const dayEl = document.createElement('div');
+      dayEl.className = 'ts-heatmap-day';
+      dayEl.style.background = `rgba(74, 222, 128, ${intensity / 100})`;
+      dayEl.innerHTML = `<div><div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div><div style="font-size:11px;">${totalHours.toFixed(1)}h</div></div>`;
+      heatMapEl.appendChild(dayEl);
+    }
+  }
+  
+  function renderStatsLegend(projectHours) {
+    const legendEl = document.getElementById('statsLegendItems');
+    if (!legendEl) return;
+    legendEl.innerHTML = '';
+    const projectNames = Object.keys(projectHours);
+    projectNames.forEach(name => {
+      const data = projectHours[name];
+      const job = jobsList.find(j => j.id === data.jobId);
+      if (job || data.jobId) {
+        const item = document.createElement('div');
+        item.className = 'ts-legend-item';
+        const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+        const jobTitle = job ? job.title : name;
+        item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${jobTitle}</span>`;
+        legendEl.appendChild(item);
+      }
+    });
+  }
+  
+  function renderDailyChart(dailyHours) {
+    const chartEl = document.getElementById('dailyChart');
+    if (!chartEl) return;
+    
+    const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    const maxHours = Math.max(...dailyHours, 8); // Default max 8h
+    
+    chartEl.innerHTML = dailyHours.map((hours, index) => {
+      const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
+      let barClass = 'ts-bar-column';
+      if (hours === 0) barClass += '';
+      else if (hours <= 5) barClass += ' low';
+      else if (hours <= 8) barClass += ' medium';
+      else barClass += ' high';
+      
+      return `
+        <div class="ts-day-bar">
+          <div class="${barClass}" style="height: ${percent}%"></div>
+          <div class="ts-day-label">${dayNames[index]}</div>
+          <div class="ts-hours-label">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  function renderTopProjects(projectHours) {
+    const topEl = document.getElementById('topProjects');
+    if (!topEl) return;
+    
+    const sorted = Object.entries(projectHours)
+      .sort((a, b) => b[1].hours - a[1].hours)
+      .slice(0, 5);
+    
+    if (sorted.length === 0) {
+      topEl.innerHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Žádné projekty</div></div>';
+      return;
+    }
+    
+    const maxHours = sorted[0][1].hours;
+    const medals = ['🥇', '🥈', '🥉'];
+    
+    topEl.innerHTML = sorted.map(([name, data], index) => {
+      const hours = data.hours;
+      const percent = maxHours > 0 ? (hours / maxHours * 100) : 0;
+      const color = data.jobId ? getProjectColor(data.jobId) : '#4ade80';
+      const medal = index < 3 ? medals[index] : '•';
+      const rankClass = index === 0 ? 'rank-1' : '';
+      
+      return `
+        <div class="ts-top-project-item ${rankClass}">
+          <div class="ts-rank">${medal}</div>
+          <div class="ts-project-details">
+            <div class="ts-project-name">${name}</div>
+            <div class="ts-project-bar">
+              <div class="ts-bar-fill" style="width: ${percent}%; background: ${color}"></div>
+            </div>
+          </div>
+          <div class="ts-hours">${hours.toFixed(1)}h</div>
+        </div>
+      `;
+    }).join('');
+    
+    if (sorted.length === 1) {
+      topEl.innerHTML += '<div class="ts-no-other-projects">💡 Tento týden jen jeden projekt</div>';
+    }
+  }
+  
+  function renderEmptyState() {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    const trendEl = document.getElementById('trendWeeks');
+    const chartEl = document.getElementById('dailyChart');
+    const topEl = document.getElementById('topProjects');
+    const infoEl = document.getElementById('trendInfo');
+    
+    const emptyHTML = `
+      <div class="ts-empty-state">
+        <div class="ts-empty-icon">📊</div>
+        <div class="ts-empty-text">Žádné výkazy tento týden</div>
+        <button class="btn btn-primary" onclick="document.getElementById('addTimesheet').click()">+ Přidat první výkaz</button>
+      </div>
+    `;
+    
+    if (breakdownEl) breakdownEl.innerHTML = emptyHTML;
+    if (trendEl) trendEl.innerHTML = emptyHTML;
+    if (chartEl) chartEl.innerHTML = emptyHTML;
+    if (topEl) topEl.innerHTML = emptyHTML;
+    if (infoEl) infoEl.innerHTML = '';
+  }
+  
+  function renderErrorState() {
+    const breakdownEl = document.getElementById('projectBreakdown');
+    const trendEl = document.getElementById('trendWeeks');
+    const chartEl = document.getElementById('dailyChart');
+    const topEl = document.getElementById('topProjects');
+    const infoEl = document.getElementById('trendInfo');
+    
+    const errorHTML = '<div class="ts-empty-state"><div class="ts-empty-text">Chyba při načítání dat</div></div>';
+    
+    if (breakdownEl) breakdownEl.innerHTML = errorHTML;
+    if (trendEl) trendEl.innerHTML = errorHTML;
+    if (chartEl) chartEl.innerHTML = errorHTML;
+    if (topEl) topEl.innerHTML = errorHTML;
+    if (infoEl) infoEl.innerHTML = '';
+  }
+  
+  // Attach view toggle listeners (elements already declared above)
+  if (elViewList) elViewList.addEventListener('click', () => switchView('list'));
+  if (elViewTimeline) elViewTimeline.addEventListener('click', () => switchView('timeline'));
+  if (elViewStats) elViewStats.addEventListener('click', () => switchView('stats'));
+  
+  // Copy Week
+  const elCopyWeek = document.getElementById('copyWeek');
+  if (elCopyWeek) {
+    elCopyWeek.addEventListener('click', async () => {
+      if (!confirm('Kopírovat všechny výkazy z tohoto týdne do příštího týdne?')) return;
+      const start = monday(parse(elWeekStart.value));
+      const end = addDays(start, 6);
+      const nextStart = addDays(start, 7);
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      try {
+        const data = await fetchJSON('/api/timesheets?' + q.toString());
+        const rows = data.rows || [];
+        for (const row of rows) {
+          const oldDate = parse(row.date.slice(0, 10));
+          const newDate = addDays(oldDate, 7);
+          const payload = {employee_id: row.employee_id, job_id: row.job_id, date: fmtLocal(newDate), hours: row.hours, place: row.place || '', activity: row.activity || ''};
+          await apiJSON('/api/timesheets', {method: 'POST', body: JSON.stringify(payload)});
+        }
+        alert('Týden úspěšně zkopírován!');
+        elWeekStart.value = fmtLocal(nextStart);
+        renderWeek().catch(console.error);
+      } catch (e) {
+        alert('Chyba při kopírování: ' + e.message);
+      }
+    });
+  }
+  
+  // Copy Entry
+  const elMCopy = document.getElementById('mCopy');
+  if (elMCopy) {
+    elMCopy.addEventListener('click', () => {
+      if (!mId.value) return;
+      mId.value = '';
+      mTitle.textContent = 'nový záznam (kopie)';
+      mDelete.style.display = 'none';
+    });
+  }
+  
+  // Load KPI data from new API
+  async function loadKPIData(start, end) {
+    try {
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) {
+        // Get user_id from employee_id if needed
+        const emp = employeesList.find(e => e.id == elFEmp.value);
+        if (emp && emp.user_id) q.set('user_id', emp.user_id);
+      }
+      
+      const response = await fetchJSON('/gd/api/worklogs/summary?' + q.toString());
+      if (response.ok && response.summary) {
+        const s = response.summary;
+        
+        // Update KPI cards
+        const kpiTotal = document.getElementById('kpiTotal');
+        const kpiAvg = document.getElementById('kpiAvg');
+        const kpiOvertime = document.getElementById('kpiOvertime');
+        const kpiEfficiency = document.getElementById('kpiEfficiency');
+        const kpiTopJobs = document.getElementById('kpiTopJobs');
+        const kpiAnomalies = document.getElementById('kpiAnomalies');
+        
+        if (kpiTotal) kpiTotal.textContent = Math.round(s.total_minutes / 60) + 'h';
+        if (kpiAvg) kpiAvg.textContent = Math.round(s.avg_per_day / 60 * 10) / 10 + 'h';
+        if (kpiOvertime) {
+          kpiOvertime.textContent = Math.round(s.overtime_minutes / 60) + 'h';
+          kpiOvertime.style.color = s.overtime_minutes > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+        if (kpiEfficiency) {
+          kpiEfficiency.textContent = s.efficiency.toFixed(0) + '%';
+          kpiEfficiency.style.color = s.efficiency >= 70 ? 'var(--mint)' : s.efficiency >= 50 ? 'var(--warning)' : 'var(--danger)';
+        }
+        if (kpiTopJobs) kpiTopJobs.textContent = s.top_jobs.length;
+        if (kpiAnomalies) {
+          kpiAnomalies.textContent = s.anomalies_count;
+          kpiAnomalies.style.color = s.anomalies_count > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+        
+        // Update summary bar (backwards compatibility)
+        const summaryTotal = document.getElementById('summaryTotal');
+        const summaryAvg = document.getElementById('summaryAvg');
+        const summaryOvertime = document.getElementById('summaryOvertime');
+        if (summaryTotal) summaryTotal.textContent = Math.round(s.total_minutes / 60) + 'h';
+        if (summaryAvg) summaryAvg.textContent = Math.round(s.avg_per_day / 60 * 10) / 10 + 'h';
+        if (summaryOvertime) {
+          summaryOvertime.textContent = Math.round(s.overtime_minutes / 60) + 'h';
+          summaryOvertime.style.color = s.overtime_minutes > 0 ? 'var(--danger)' : 'var(--text-secondary)';
+        }
+      }
+    } catch (error) {
+      console.error('Error loading KPI data:', error);
+    }
+  }
+  
+  // Load heatmap data from new API
+  async function loadHeatmapData(start, end) {
+    try {
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) {
+        const emp = employeesList.find(e => e.id == elFEmp.value);
+        if (emp && emp.user_id) q.set('user_id', emp.user_id);
+      }
+      
+      const response = await fetchJSON('/gd/api/worklogs/heatmap?' + q.toString());
+      const heatMapEl = document.getElementById('heatMapDays');
+      const emptyState = document.getElementById('heatmapEmptyState');
+      
+      if (!heatMapEl) return;
+      
+      if (response.ok && response.heatmap && response.heatmap.length > 0) {
+        heatMapEl.innerHTML = '';
+        emptyState.style.display = 'none';
+        
+        const weekStart = monday(parse(elWeekStart.value));
+        const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        const heatmapByDate = {};
+        response.heatmap.forEach(item => {
+          heatmapByDate[item.date] = item;
+        });
+        
+        for (let i = 0; i < 7; i++) {
+          const d = addDays(weekStart, i);
+          const dstr = fmtLocal(d);
+          const dayData = heatmapByDate[dstr];
+          
+          const dayEl = document.createElement('div');
+          dayEl.className = 'ts-heatmap-day';
+          dayEl.setAttribute('data-date', dstr);
+          dayEl.style.cursor = 'pointer';
+          
+          if (dayData) {
+            const loadLevel = dayData.load_level;
+            const totalMinutes = dayData.total_minutes;
+            const totalHours = totalMinutes / 60;
+            
+            // Color based on load_level
+            let bgColor, textColor = '#0a0e11';
+            if (loadLevel === 0) bgColor = 'rgba(134, 239, 172, 0.3)'; // green (<4h)
+            else if (loadLevel === 1) bgColor = 'rgba(96, 165, 250, 0.3)'; // blue (4-6h)
+            else if (loadLevel === 2) bgColor = 'rgba(251, 191, 36, 0.3)'; // orange (6-8h)
+            else bgColor = 'rgba(239, 68, 68, 0.3)'; // red (>8h)
+            
+            dayEl.style.background = bgColor;
+            dayEl.style.border = `2px solid ${bgColor.replace('0.3', '0.6')}`;
+            
+            let flagsHTML = '';
+            if (dayData.flags && dayData.flags.length > 0) {
+              flagsHTML = '<div style="font-size:8px;margin-top:2px;opacity:0.7;">' + dayData.flags.join(', ') + '</div>';
+            }
+            
+            dayEl.innerHTML = `
+              <div>
+                <div style="font-size:10px;margin-bottom:2px;font-weight:600;">${dayNames[i]}</div>
+                <div style="font-size:11px;font-weight:700;">${totalHours.toFixed(1)}h</div>
+                ${flagsHTML}
+              </div>
+            `;
+            
+            // Click handler - navigate to day detail
+            dayEl.addEventListener('click', () => {
+              // Filter to this day
+              elWeekStart.value = dstr;
+              renderWeek();
+            });
+          } else {
+            dayEl.style.background = 'rgba(255, 255, 255, 0.03)';
+            dayEl.style.border = '1px dashed rgba(255, 255, 255, 0.1)';
+            dayEl.innerHTML = `
+              <div>
+                <div style="font-size:10px;margin-bottom:2px;">${dayNames[i]}</div>
+                <div style="font-size:11px;opacity:0.5;">0h</div>
+              </div>
+            `;
+            dayEl.addEventListener('click', () => {
+              openWorklogModal({date: dstr});
+            });
+          }
+          
+          heatMapEl.appendChild(dayEl);
+        }
+      } else {
+        heatMapEl.innerHTML = '';
+        emptyState.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error loading heatmap data:', error);
+    }
+  }
+
+  // Heat Map (legacy - kept for backwards compatibility)
+  function renderHeatMap(byDate) {
+    const heatMapEl = document.getElementById('heatMapDays');
+    if (!heatMapEl) return;
+    // Use new API-based heatmap instead
+    const start = monday(parse(elWeekStart.value));
+    const end = addDays(start, 6);
+    loadHeatmapData(start, end);
+  }
+  
+  // Enhanced renderWeek with heat map and colors - WRAPPER
+  const originalRenderWeek = renderWeek;
+  renderWeek = async function() {
+    // Ensure listView is visible when rendering
+    if (currentView === 'list' && elListView) {
+      elListView.style.display = 'block';
+    }
+    
+    // Call original renderWeek first to show days
+    await originalRenderWeek();
+    
+    // Then add enhancements
+    try {
+      const start = monday(parse(elWeekStart.value));
+      const end = addDays(start, 6);
+      const q = new URLSearchParams();
+      q.set('from', fmtLocal(start));
+      q.set('to', fmtLocal(end));
+      if(elFJob && elFJob.value) q.set('job_id', elFJob.value);
+      if(elFEmp && elFEmp.value) q.set('employee_id', elFEmp.value);
+      
+      const data = await fetchJSON('/api/timesheets?' + q.toString());
+      const rows = data.rows || [];
+      const byDate = {};
+      rows.forEach(r => {
+        const d = (r.date || '').slice(0, 10);
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+      renderHeatMap(byDate);
+      
+      // Render project legend
+      const legendEl = document.getElementById('legendItems');
+      if (legendEl) {
+        legendEl.innerHTML = '';
+        const uniqueJobs = [...new Set(rows.map(r => r.job_id).filter(Boolean))];
+        uniqueJobs.forEach(jobId => {
+          const job = jobsList.find(j => j.id === jobId);
+          if (job) {
+            const item = document.createElement('div');
+            item.className = 'ts-legend-item';
+            const color = getProjectColor(jobId);
+            item.innerHTML = `<div class="ts-legend-color" style="background:${color};"></div><span>${job.title || 'Projekt ' + jobId}</span>`;
+            legendEl.appendChild(item);
+          }
+        });
+      }
+      
+      const totalHours = rows.reduce((sum, r) => sum + (r.hours || 0), 0);
+      const overtime = Math.max(0, totalHours - 40);
+      if (elSummaryOvertime) {
+        elSummaryOvertime.textContent = overtime > 0 ? overtime.toFixed(1) + 'h' : '0h';
+        elSummaryOvertime.style.color = overtime > 0 ? '#ff4d4d' : 'var(--text-secondary)';
+      }
+    } catch (e) {
+      console.error('Error in enhanced renderWeek:', e);
+    }
+  };
+  
+  // FAB Handler
+  const elFab = document.getElementById('fabAdd');
+  if (elFab) {
+    elFab.addEventListener('click', () => {
+      openModal({date: elWeekStart.value});
+    });
+    // Show FAB on mobile
+    if (window.innerWidth < 769) {
+      elFab.style.display = 'flex';
+    }
+    window.addEventListener('resize', () => {
+      elFab.style.display = window.innerWidth < 769 ? 'flex' : 'none';
+    });
+  }
+
+  // Initialize
+  // Set default view to 'list'
+  currentView = 'list';
+  switchView('list');
+  
+  const today = new Date();
+  const startMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay()+6)%7));
+  startMonday.setHours(0,0,0,0);
+  if (elWeekStart) {
+    elWeekStart.value = fmtLocal(startMonday);
+  } else {
+    // Create hidden weekStart input if it doesn't exist
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'date';
+    hiddenInput.id = 'weekStart';
+    hiddenInput.style.display = 'none';
+    hiddenInput.value = fmtLocal(startMonday);
+    document.body.appendChild(hiddenInput);
+    elWeekStart = hiddenInput;
+  }
+  
+  // Load filters and render
+  loadFilters().then(() => {
+    // Populate filter selects
+    if (elFJob && jobsList.length > 0) {
+      jobsList.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id;
+        opt.textContent = j.title + (j.code ? (' (' + j.code + ')') : '');
+        elFJob.appendChild(opt);
+      });
+    }
+    if (elFEmp && employeesList.length > 0) {
+      employeesList.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.name;
+        elFEmp.appendChild(opt);
+      });
+    }
+    return renderWeek();
+  }).catch(console.error);
+  
+  // ============================================================================
+  // EXPORT MODAL LOGIC
+  // ============================================================================
+  
+  let selectedFormat = 'pdf';
+  let exportModalInitialized = false;
+  
+  function openExportModal() {
+    const modal = document.getElementById('exportModal');
+    modal.classList.add('active');
+    
+    // Set default dates (current week or from filter)
+    const weekStart = elWeekStart?.value;
+    if (weekStart) {
+      const start = new Date(weekStart);
+      const end = new Date(weekStart);
+      end.setDate(end.getDate() + 6);
+      
+      document.getElementById('exportFrom').value = start.toISOString().slice(0, 10);
+      document.getElementById('exportTo').value = end.toISOString().slice(0, 10);
+    } else {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      document.getElementById('exportFrom').value = firstDay.toISOString().slice(0, 10);
+      document.getElementById('exportTo').value = lastDay.toISOString().slice(0, 10);
+    }
+    
+    // Populate job filter
+    const exportJob = document.getElementById('exportJob');
+    exportJob.innerHTML = '<option value="">Všechny zakázky</option>';
+    jobsList.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id;
+      opt.textContent = j.title + (j.code ? (' (' + j.code + ')') : '');
+      exportJob.appendChild(opt);
+    });
+    
+    // Populate employee checkboxes - NEZAŠKRTNUTÉ defaultně
+    const employeeList = document.getElementById('employeeList');
+    employeeList.innerHTML = employeesList.map(e => `
+      <div class="checkbox-item">
+        <input type="checkbox" id="emp_${e.id}" value="${e.id}">
+        <label for="emp_${e.id}">${e.name}</label>
+      </div>
+    `).join('');
+    
+    // Initialize event listeners only once
+    if (!exportModalInitialized) {
+      initializeExportModal();
+      exportModalInitialized = true;
+    }
+    
+    updateExportButton();
+  }
+  
+  function initializeExportModal() {
+    // Format selection
+    document.querySelectorAll('.format-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.format-option').forEach(o => o.classList.remove('active'));
+        option.classList.add('active');
+        selectedFormat = option.dataset.format;
+        updateExportButton();
+      });
+    });
+    
+    // Cancel button
+    document.getElementById('btnCancelExport').addEventListener('click', closeExportModal);
+    
+    // Click outside to close
+    document.getElementById('exportModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('exportModal')) closeExportModal();
+    });
+    
+    // Confirm export button
+    document.getElementById('btnConfirmExport').addEventListener('click', async () => {
+      const fromDate = document.getElementById('exportFrom').value;
+      const toDate = document.getElementById('exportTo').value;
+      const jobId = document.getElementById('exportJob').value;
+      
+      // Get selected employees
+      const selectedEmployees = Array.from(document.querySelectorAll('#employeeList input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+      
+      if (selectedEmployees.length === 0) {
+        alert('Vyberte alespoň jednoho člena teamu');
+        return;
+      }
+      
+      // Build query string
+      const params = new URLSearchParams();
+      params.append('format', selectedFormat);
+      
+      if (fromDate) params.append('from', fromDate);
+      if (toDate) params.append('to', toDate);
+      if (jobId) params.append('job_id', jobId);
+      
+      // If not all employees selected, add employee filter
+      if (selectedEmployees.length !== employeesList.length) {
+        params.append('employees', selectedEmployees.join(','));
+      } else {
+        params.append('employees', 'all');
+      }
+      
+      // Download file
+      const url = `/api/timesheets/export-advanced?${params.toString()}`;
+      window.location.href = url;
+      
+      closeExportModal();
+    });
+  }
+  
+  function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('active');
+  }
+  
+  function updateExportButton() {
+    const formatNames = { pdf: 'PDF', xlsx: 'Excel', csv: 'CSV' };
+    document.getElementById('exportBtnText').textContent = `Exportovat ${formatNames[selectedFormat]}`;
+  }
+  
+  // Select all employees button - musí být dynamický, protože se znovu vytváří při každém otevření
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'selectAllEmployees') {
+      const checkboxes = document.querySelectorAll('#employeeList input[type="checkbox"]');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(cb => cb.checked = !allChecked);
+      e.target.textContent = allChecked ? '✓ Všichni' : '✗ Zrušit výběr';
+    }
+  });
+  
+  // ============================================================================
+  // NEW WORKLOG MODAL LOGIC
+  // ============================================================================
+  
+  let lastJobId = null;
+  let materialItems = [];
+  
+  // Open new worklog modal
+  function openWorklogModal(data = {}) {
+    const modal = document.getElementById('worklogModal');
+    const title = document.getElementById('worklogModalTitle');
+    const form = document.getElementById('worklogForm');
+    const deleteBtn = document.getElementById('worklogDelete');
+    
+    // Reset form
+    form.reset();
+    materialItems = [];
+    renderMaterialList();
+    
+    // Set title
+    if (data.id) {
+      title.textContent = 'Upravit výkaz';
+      deleteBtn.style.display = 'flex';
+      loadWorklogData(data.id);
+    } else {
+      title.textContent = 'Nový výkaz';
+      deleteBtn.style.display = 'none';
+      
+      // Prefill with defaults
+      if (data.date) {
+        document.getElementById('worklogDate').value = data.date;
+      } else {
+        document.getElementById('worklogDate').value = new Date().toISOString().split('T')[0];
+      }
+      
+      // Prefill last job
+      if (lastJobId) {
+        document.getElementById('worklogJob').value = lastJobId;
+      }
+      
+      // Default work type
+      setWorkType('manual');
+      setPerformanceSignal('normal');
+    }
+    
+    // Populate selects
+    populateWorklogSelects();
+    
+    // Load warehouse items for autocomplete
+    loadWarehouseItems();
+    
+    // Show modal
+    modal.classList.add('active');
+    
+    // Close on backdrop click
+    modal.addEventListener('click', function backdropClick(e) {
+      if (e.target === modal) {
+        closeWorklogModal();
+        modal.removeEventListener('click', backdropClick);
+      }
+    });
+  }
+  
+  function closeWorklogModal() {
+    document.getElementById('worklogModal').classList.remove('active');
+  }
+  
+  function populateWorklogSelects() {
+    const jobSelect = document.getElementById('worklogJob');
+    const employeeSelect = document.getElementById('worklogEmployee');
+    
+    // Jobs
+    jobSelect.innerHTML = '<option value="">— Vyberte zakázku —</option>';
+    if (jobsList && jobsList.length > 0) {
+      jobsList.forEach(job => {
+        const opt = document.createElement('option');
+        opt.value = job.id;
+        opt.textContent = (job.title || job.name || 'Bez názvu') + (job.code ? ` (${job.code})` : '');
+        jobSelect.appendChild(opt);
+      });
+    } else {
+      // Empty state - no jobs
+      jobSelect.innerHTML = '<option value="">Nejdřív vytvoř zakázku</option>';
+      jobSelect.disabled = true;
+      // Show empty state message
+      const emptyState = document.createElement('div');
+      emptyState.className = 'worklog-empty-state';
+      emptyState.innerHTML = `
+        <div class="worklog-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div class="worklog-empty-text">Zatím není žádná zakázka</div>
+        <a href="/jobs.html" class="worklog-empty-cta">+ Nová zakázka</a>
+      `;
+      const form = document.getElementById('worklogForm');
+      if (form && !form.querySelector('.worklog-empty-state')) {
+        form.insertBefore(emptyState, jobSelect.parentElement);
+      }
+    }
+    
+    // Employees
+    employeeSelect.innerHTML = '<option value="">— Vyberte člena teamu —</option>';
+    if (employeesList && employeesList.length > 0) {
+      employeesList.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        employeeSelect.appendChild(opt);
+      });
+    }
+  }
+  
+  // Duration chips
+  document.querySelectorAll('.worklog-duration-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.worklog-duration-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      const minutes = parseInt(this.dataset.minutes);
+      document.getElementById('worklogDuration').value = minutes;
+    });
+  });
+  
+  // Work type selector
+  document.querySelectorAll('.worklog-work-type-option').forEach(option => {
+    option.addEventListener('click', function() {
+      document.querySelectorAll('.worklog-work-type-option').forEach(o => o.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('worklogWorkType').value = this.dataset.type;
+    });
+  });
+  
+  function setWorkType(type) {
+    document.querySelectorAll('.worklog-work-type-option').forEach(o => {
+      o.classList.remove('active');
+      if (o.dataset.type === type) {
+        o.classList.add('active');
+      }
+    });
+    document.getElementById('worklogWorkType').value = type;
+  }
+  
+  // Performance signal selector
+  document.querySelectorAll('.worklog-performance-signal').forEach(signal => {
+    signal.addEventListener('click', function() {
+      document.querySelectorAll('.worklog-performance-signal').forEach(s => {
+        s.classList.remove('active', 'fast', 'normal', 'slow', 'blocked');
+      });
+      const signalType = this.dataset.signal;
+      this.classList.add('active', signalType);
+      document.getElementById('worklogPerformanceSignal').value = signalType;
+    });
+  });
+  
+  function setPerformanceSignal(signal) {
+    document.querySelectorAll('.worklog-performance-signal').forEach(s => {
+      s.classList.remove('active', 'fast', 'normal', 'slow', 'blocked');
+      if (s.dataset.signal === signal) {
+        s.classList.add('active', signal);
+      }
+    });
+    document.getElementById('worklogPerformanceSignal').value = signal;
+  }
+  
+  // Progressive disclosure
+  function toggleWorklogExpand(section) {
+    const toggle = document.querySelector(`.worklog-expand-toggle[onclick*="${section}"]`);
+    const content = document.getElementById(`worklog${section.charAt(0).toUpperCase() + section.slice(1)}`);
+    
+    if (content) {
+      const isExpanded = content.classList.contains('expanded');
+      content.classList.toggle('expanded');
+      if (toggle) {
+        toggle.classList.toggle('expanded');
+      }
+    }
+  }
+  
+  // Material management
+  let warehouseItemsList = [];
+  
+  async function loadWarehouseItems() {
+    try {
+      const data = await fetchJSON('/gd/api/warehouse/items');
+      if (data.ok && data.items) {
+        warehouseItemsList = data.items;
+        updateMaterialDatalist();
+      }
+    } catch (e) {
+      console.error('Error loading warehouse items:', e);
+    }
+  }
+  
+  function updateMaterialDatalist() {
+    const datalist = document.getElementById('materialDatalist');
+    if (!datalist) return;
+    
+    if (warehouseItemsList.length === 0) {
+      const emptyState = document.getElementById('worklogMaterialEmptyState');
+      if (emptyState) emptyState.style.display = 'block';
+      return;
+    }
+    
+    const emptyState = document.getElementById('worklogMaterialEmptyState');
+    if (emptyState) emptyState.style.display = 'none';
+    
+    datalist.innerHTML = warehouseItemsList.map(item => `
+      <option value="${escapeHtml(item.name || '')}" data-item-id="${item.id}" data-unit="${escapeHtml(item.unit || 'ks')}">
+        ${escapeHtml(item.name || '')} (skladem: ${item.qty || 0} ${item.unit || 'ks'})
+      </option>
+    `).join('');
+  }
+  
+  function addWorklogMaterial() {
+    materialItems.push({item_id: '', name: '', qty: 1, unit: 'ks'});
+    renderMaterialList();
+  }
+  
+  function removeWorklogMaterial(index) {
+    materialItems.splice(index, 1);
+    renderMaterialList();
+  }
+  
+  function onMaterialInputChange(index, input) {
+    const value = input.value;
+    const option = Array.from(document.getElementById('materialDatalist').options).find(opt => opt.value === value);
+    if (option) {
+      materialItems[index].item_id = parseInt(option.dataset.itemId) || null;
+      materialItems[index].name = value;
+      materialItems[index].unit = option.dataset.unit || 'ks';
+      renderMaterialList();
+    } else {
+      materialItems[index].name = value;
+    }
+  }
+  
+  function renderMaterialList() {
+    const container = document.getElementById('worklogMaterialList');
+    if (!container) return;
+    
+    if (materialItems.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    
+    container.innerHTML = materialItems.map((item, index) => `
+      <div class="worklog-material-item">
+        <div class="worklog-material-item-inputs">
+          <input type="text" class="worklog-form-input" placeholder="Název materiálu" 
+                 list="materialDatalist"
+                 value="${escapeHtml(item.name || '')}" 
+                 oninput="onMaterialInputChange(${index}, this)">
+          <input type="number" class="worklog-form-input" placeholder="Množství" 
+                 value="${item.qty || 1}" min="0" step="0.01"
+                 onchange="materialItems[${index}].qty = parseFloat(this.value) || 0">
+          <input type="text" class="worklog-form-input" placeholder="Jedn." 
+                 value="${escapeHtml(item.unit || 'ks')}"
+                 onchange="materialItems[${index}].unit = this.value">
+        </div>
+        <button type="button" class="worklog-material-remove" onclick="removeWorklogMaterial(${index})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    `).join('');
+  }
+  
+  // Save worklog
+  async function saveWorklog() {
+    const form = document.getElementById('worklogForm');
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    
+    const id = document.getElementById('worklogId').value;
+    const jobId = document.getElementById('worklogJob').value;
+    const date = document.getElementById('worklogDate').value;
+    const durationMinutes = parseInt(document.getElementById('worklogDuration').value);
+    const workType = document.getElementById('worklogWorkType').value;
+    const employeeId = document.getElementById('worklogEmployee').value;
+    const taskId = document.getElementById('worklogTask').value;
+    const startTime = document.getElementById('worklogStartTime').value;
+    const endTime = document.getElementById('worklogEndTime').value;
+    const location = document.getElementById('worklogLocation').value;
+    const performanceSignal = document.getElementById('worklogPerformanceSignal').value;
+    const delayReason = document.getElementById('worklogDelayReason').value;
+    const note = document.getElementById('worklogNote').value;
+    
+    // Validate required fields
+    if (!jobId || !date || !durationMinutes || durationMinutes <= 0) {
+      alert('Vyplňte všechny povinné pole');
+      return;
+    }
+    
+    // Build payload
+    const payload = {
+      job_id: parseInt(jobId),
+      date: date,
+      duration_minutes: durationMinutes,
+      work_type: workType
+    };
+    
+    if (employeeId) payload.employee_id = parseInt(employeeId);
+    if (taskId) payload.task_id = parseInt(taskId);
+    if (startTime) payload.start_time = startTime;
+    if (endTime) payload.end_time = endTime;
+    if (location) payload.location = location;
+    if (performanceSignal) payload.performance_signal = performanceSignal;
+    if (delayReason) payload.delay_reason = delayReason;
+    if (note) payload.note = note;
+    if (materialItems.length > 0) {
+      payload.material_used = materialItems.map(item => ({
+        item_id: item.item_id || null,
+        qty: item.qty || 0,
+        unit: item.unit || 'ks',
+        name: item.name || ''
+      }));
+    }
+    
+    try {
+      let response;
+      if (id) {
+        // Update
+        payload.id = parseInt(id);
+        response = await fetch('/gd/api/worklogs', {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create
+        response = await fetch('/gd/api/worklogs', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+      }
+      
+      const result = await response.json();
+      
+      if (result.ok) {
+        // Save last job for next time
+        lastJobId = jobId;
+        
+        closeWorklogModal();
+        
+        // Reload data
+        if (typeof renderWeek === 'function') {
+          await renderWeek();
+        }
+        
+        // Show success
+        if (typeof showToast === 'function') {
+          showToast('Výkaz uložen', 'success');
+        } else {
+          alert('Výkaz úspěšně uložen');
+        }
+      } else {
+        alert('Chyba: ' + (result.error || 'Neznámá chyba'));
+      }
+    } catch (error) {
+      console.error('Error saving worklog:', error);
+      alert('Chyba při ukládání: ' + error.message);
+    }
+  }
+  
+  // Delete worklog
+  async function deleteWorklog() {
+    const id = document.getElementById('worklogId').value;
+    if (!id || !confirm('Opravdu smazat tento výkaz?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/gd/api/worklogs?id=${id}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.ok) {
+        closeWorklogModal();
+        
+        // Reload data
+        if (typeof renderWeek === 'function') {
+          await renderWeek();
+        }
+        
+        if (typeof showToast === 'function') {
+          showToast('Výkaz smazán', 'success');
+        } else {
+          alert('Výkaz úspěšně smazán');
+        }
+      } else {
+        alert('Chyba: ' + (result.error || 'Neznámá chyba'));
+      }
+    } catch (error) {
+      console.error('Error deleting worklog:', error);
+      alert('Chyba při mazání: ' + error.message);
+    }
+  }
+  
+  // Load worklog data for editing
+  async function loadWorklogData(id) {
+    try {
+      const response = await fetch(`/gd/api/worklogs?id=${id}`);
+      const result = await response.json();
+      
+      if (result.ok && result.worklogs && result.worklogs.length > 0) {
+        const wl = result.worklogs[0];
+        
+        document.getElementById('worklogId').value = wl.id;
+        document.getElementById('worklogJob').value = wl.job_id;
+        document.getElementById('worklogDate').value = wl.date;
+        document.getElementById('worklogDuration').value = wl.duration_minutes || (wl.hours ? wl.hours * 60 : 480);
+        if (wl.employee_id) document.getElementById('worklogEmployee').value = wl.employee_id;
+        if (wl.task_id) document.getElementById('worklogTask').value = wl.task_id;
+        if (wl.start_time) document.getElementById('worklogStartTime').value = wl.start_time;
+        if (wl.end_time) document.getElementById('worklogEndTime').value = wl.end_time;
+        if (wl.location) document.getElementById('worklogLocation').value = wl.location;
+        if (wl.performance_signal) setPerformanceSignal(wl.performance_signal);
+        if (wl.delay_reason) document.getElementById('worklogDelayReason').value = wl.delay_reason;
+        if (wl.note) document.getElementById('worklogNote').value = wl.note;
+        if (wl.work_type) setWorkType(wl.work_type);
+        
+        // Load materials
+        if (wl.material_used) {
+          try {
+            materialItems = JSON.parse(wl.material_used);
+            renderMaterialList();
+          } catch (e) {
+            materialItems = [];
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading worklog:', error);
+      alert('Chyba při načítání výkazu');
+    }
+  }
+  
+  // Replace old modal handler
+  const oldAddTimesheet = document.getElementById('addTimesheet');
+  if (oldAddTimesheet) {
+    oldAddTimesheet.addEventListener('click', () => {
+      openWorklogModal({date: elWeekStart?.value || new Date().toISOString().split('T')[0]});
+    });
+  }
+  
+  // Also handle legacy openModal calls
+  window.openModal = function(data) {
+    if (data && data.id) {
+      openWorklogModal(data);
+    } else {
+      openWorklogModal(data || {});
+    }
+  };
+  
+})();
+</script>
+
+<!-- Bottom Navigation Container -->
+<div id="bottom-nav-container"></div>
+
+<!-- More Menu (Expandable) -->
+<div id="more-menu" class="more-menu">
+  <div class="more-menu-backdrop" onclick="document.getElementById('more-menu').classList.remove('show');"></div>
+  <div class="more-menu-panel">
+    <div class="more-menu-header">
+      <div style="font-size:18px;font-weight:600;color:#e8eef2;">Navigace</div>
+      <button onclick="document.getElementById('more-menu').classList.remove('show');" style="background:none;border:none;color:#9ca8b3;cursor:pointer;font-size:24px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div class="more-menu-content">
+      <a href="/" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('dashboard'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>přehled</span>
+      </a>
+      <a href="/calendar.html" class="more-menu-item">
+        <span>kalendář</span>
+      </a>
+      <a href="/timesheets.html" class="more-menu-item">
+        <span>výkazy hodin</span>
+      </a>
+      <a href="/jobs.html" class="more-menu-item">
+        <span>zakázky</span>
+      </a>
+      <a href="/tasks.html" class="more-menu-item">
+        <span>úkoly</span>
+      </a>
+      <a href="/employees.html" class="more-menu-item">
+        <span>team</span>
+      </a>
+      <a href="/warehouse.html" class="more-menu-item">
+        <span>sklad</span>
+      </a>
+      <a href="/finance.html" class="more-menu-item">
+        <span>finance</span>
+      </a>
+      <a href="/documents.html" class="more-menu-item">
+        <span>dokumenty</span>
+      </a>
+      <a href="/reports.html" class="more-menu-item">
+        <span>reporty</span>
+      </a>
+      <a href="#" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('archive'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item">
+        <span>archiv zakázek</span>
+      </a>
+      <a href="#" id="users-menu-item" onclick="event.preventDefault(); if(window.setAppTab) window.setAppTab('users'); document.getElementById('more-menu').classList.remove('show');" class="more-menu-item" style="display:none;">
+        <span>uživatelé</span>
+      </a>
+      <a href="/settings.html" class="more-menu-item">
+        <span>nastavení</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal" class="export-modal">
+  <div class="export-modal-content">
+    <div class="export-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span>Export výkazů</span>
+    </div>
+
+    <!-- Format Selection -->
+    <div class="export-section">
+      <div class="export-section-title">Formát exportu</div>
+      <div class="format-selector">
+        <div class="format-option active" data-format="pdf">
+          <div class="format-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div class="format-name">PDF</div>
+        </div>
+        <div class="format-option" data-format="xlsx">
+          <div class="format-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </div>
+          <div class="format-name">Excel</div>
+        </div>
+        <div class="format-option" data-format="csv">
+          <div class="format-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="format-name">CSV</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Range -->
+    <div class="export-section">
+      <div class="export-section-title">Období</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="input-group">
+          <label class="input-label">Od data</label>
+          <input type="date" id="exportFrom" class="input-field">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Do data</label>
+          <input type="date" id="exportTo" class="input-field">
+        </div>
+      </div>
+    </div>
+
+    <!-- Job Selection -->
+    <div class="export-section">
+      <div class="export-section-title">Zakázka</div>
+      <select id="exportJob" class="input-field">
+        <option value="">Všechny zakázky</option>
+      </select>
+    </div>
+
+    <!-- Employee Selection -->
+    <div class="export-section">
+      <div class="export-section-title">Team</div>
+      <button class="select-all-btn" id="selectAllEmployees">✓ Všichni</button>
+      <div class="checkbox-list" id="employeeList">
+        <!-- Dynamic employee checkboxes -->
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-group">
+      <button class="btn-cancel" id="btnCancelExport">Zrušit</button>
+      <button class="btn-export" id="btnConfirmExport">
+        <span id="exportBtnText">Exportovat PDF</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.export-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.export-modal.active { display: flex; }
+.export-modal-content {
+  background: #1a2332;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  border: 2px solid #4ade80;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.export-header {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.export-section {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #334155;
+}
+.export-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ade80;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.format-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.format-option {
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.format-option:hover {
+  border-color: #4ade80;
+  background: #2d3748;
+}
+.format-option.active {
+  border-color: #4ade80;
+  background: #2d3748;
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.2);
+}
+.format-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+.format-name {
+  font-weight: 600;
+  color: white;
+  font-size: 14px;
+}
+.input-group {
+  margin-bottom: 12px;
+}
+.input-label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+  display: block;
+}
+.input-field {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+}
+.input-field:focus {
+  outline: none;
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
+}
+.checkbox-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid #334155;
+}
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.checkbox-item:hover {
+  background: #2d3748;
+}
+.checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.checkbox-item label {
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+.btn-export {
+  flex: 1;
+  padding: 12px 24px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-export:hover {
+  background: #388e3c;
+  transform: translateY(-1px);
+}
+.btn-export:disabled {
+  background: #4a5568;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-cancel {
+  flex: 1;
+  padding: 12px 24px;
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid #556165;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-cancel:hover {
+  background: #2d3748;
+  color: white;
+}
+.select-all-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid #556165;
+  color: #4ade80;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.select-all-btn:hover {
+  background: #2d3748;
+}
+
+/* Worklog Modal Styles - Glass Effect */
+.worklog-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+}
+.worklog-modal-backdrop.active {
+  display: flex;
+}
+.worklog-modal {
+  background: rgba(30, 33, 40, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.worklog-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.worklog-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.worklog-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.worklog-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.worklog-modal-body {
+  padding: 24px;
+}
+.worklog-form-group {
+  margin-bottom: 20px;
+}
+.worklog-form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.worklog-form-label.required::after {
+  content: ' *';
+  color: var(--danger);
+}
+.worklog-form-input,
+.worklog-form-select,
+.worklog-form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.worklog-form-input:focus,
+.worklog-form-select:focus,
+.worklog-form-textarea:focus {
+  outline: none;
+  border-color: var(--mint);
+  background: rgba(255, 255, 255, 0.08);
+}
+.worklog-form-grid {
+  display: grid;
+  gap: 16px;
+}
+.worklog-form-grid-2col {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .worklog-form-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+.worklog-duration-chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.worklog-duration-chip {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.worklog-duration-chip:hover {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: var(--mint);
+  color: var(--mint);
+}
+.worklog-duration-chip.active {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: #0a0e11;
+  font-weight: 600;
+}
+.worklog-work-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.worklog-work-type-option {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.worklog-work-type-option:hover {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: var(--mint);
+}
+.worklog-work-type-option.active {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: var(--mint);
+}
+.worklog-work-type-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+}
+.worklog-work-type-option.active .worklog-work-type-icon {
+  color: var(--mint);
+}
+.worklog-work-type-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.worklog-work-type-option.active .worklog-work-type-label {
+  color: var(--mint);
+}
+.worklog-expand-toggle {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+.worklog-expand-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+.worklog-expandable-content {
+  display: none;
+  margin-top: 16px;
+}
+.worklog-expandable-content.expanded {
+  display: block;
+}
+.worklog-performance-signals {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.worklog-performance-signal {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.worklog-performance-signal:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.worklog-performance-signal.active {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: var(--mint);
+}
+.worklog-performance-signal-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--text-secondary);
+}
+.worklog-performance-signal.active .worklog-performance-signal-icon {
+  color: var(--mint);
+}
+.worklog-performance-signal-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.worklog-performance-signal.active .worklog-performance-signal-label {
+  color: var(--mint);
+}
+.worklog-material-list {
+  margin-bottom: 12px;
+}
+.worklog-material-add {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.worklog-material-add:hover {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: var(--mint);
+  color: var(--mint);
+}
+.worklog-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.worklog-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+}
+.worklog-btn-primary {
+  background: linear-gradient(135deg, var(--mint) 0%, #4ade80 100%);
+  color: #0a0e11;
+}
+.worklog-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+.worklog-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.worklog-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.worklog-btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.worklog-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+.worklog-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+.worklog-empty-icon {
+  margin-bottom: 16px;
+  color: var(--text-tertiary);
+}
+.worklog-empty-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.worklog-empty-cta {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--mint) 0%, #4ade80 100%);
+  color: #0a0e11;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.worklog-empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+</style>
+
+{% endblock %}
+<script src="/static/bottom-nav.js"></script>
+<link rel="stylesheet" href="/static/icons.css">

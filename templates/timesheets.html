@@ -1,0 +1,1274 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+/* ── TIMESHEETS PAGE ── */
+.ts-page { max-width: 1400px; margin: 0 auto; padding: 0 16px 80px; }
+
+/* Header */
+.ts-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.ts-title { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.ts-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ts-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--border-primary); background: var(--bg-card);
+  color: var(--text-primary); cursor: pointer; white-space: nowrap;
+}
+.ts-btn:hover { border-color: var(--mint); }
+.ts-btn svg { width: 16px; height: 16px; }
+.ts-btn-primary { background: linear-gradient(135deg, rgba(74,222,128,0.85), rgba(34,197,94,0.85)) !important; color: #0a0e11 !important; border-color: rgba(74,222,128,0.4) !important; box-shadow: 0 4px 12px rgba(74,222,128,0.2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ts-btn-primary:hover { opacity: 0.9; }
+
+/* Week Nav */
+.ts-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.ts-nav-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--border-primary); background: var(--bg-card);
+  color: var(--text-primary); cursor: pointer;
+}
+.ts-nav-btn:hover { border-color: var(--mint); }
+.ts-nav-btn.active { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)) !important; color: #4ade80 !important; border: 1px solid rgba(74,222,128,0.35) !important; box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.ts-week-label { font-size: 15px; font-weight: 700; margin-left: 8px; }
+.ts-nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.ts-filter-select {
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+  background: var(--bg-card); border: 1px solid var(--border-primary);
+  color: var(--text-primary); min-width: 140px;
+}
+
+/* Summary */
+.ts-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.ts-stat {
+  background: var(--bg-card); border: 1px solid var(--border-primary);
+  border-radius: 12px; padding: 14px 16px; text-align: center;
+}
+.ts-stat-value { font-size: 22px; font-weight: 800; color: var(--mint); }
+.ts-stat-value.warn { color: #fbbf24; }
+.ts-stat-value.danger { color: #f87171; }
+.ts-stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* Week Grid */
+.ts-week {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .ts-week { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .ts-week { grid-template-columns: 1fr; }
+}
+
+.ts-day {
+  background: var(--bg-card); border: 1px solid var(--border-primary);
+  border-radius: 12px; min-height: 180px; display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.ts-day.today { border-color: var(--mint); box-shadow: 0 0 0 1px var(--mint); }
+.ts-day.weekend { opacity: 0.7; }
+
+.ts-day-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+}
+.ts-day-name { font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.ts-day-date { font-size: 11px; color: var(--text-secondary); }
+.ts-day-total { font-size: 13px; font-weight: 800; }
+.ts-day-add {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: transparent; border: 1px solid var(--border-primary);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-day-add:hover { border-color: var(--mint); color: var(--mint); }
+
+/* Heat bar under day header */
+.ts-day-heat { height: 3px; background: var(--bg-elevated); }
+.ts-day-heat-fill { height: 100%; border-radius: 0 0 2px 2px; transition: width 0.3s; }
+
+.ts-day-body { flex: 1; padding: 6px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 300px; }
+.ts-day-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 11px; }
+
+/* Entry Card */
+.ts-entry {
+  background: var(--bg-elevated); border: 1px solid var(--border-primary);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  border-left: 3px solid var(--mint); position: relative;
+  transition: border-color 0.15s;
+}
+.ts-entry:hover { border-color: var(--mint); }
+.ts-entry-top { display: flex; justify-content: space-between; align-items: start; gap: 6px; }
+.ts-entry-name { font-size: 12px; font-weight: 600; line-height: 1.3; }
+.ts-entry-hours { font-size: 12px; font-weight: 800; color: var(--mint); white-space: nowrap; }
+.ts-entry-job { font-size: 10px; color: var(--text-secondary); margin-top: 2px; line-height: 1.3; }
+.ts-entry-place { font-size: 10px; color: var(--text-secondary); margin-top: 2px; opacity: 0.7; }
+.ts-entry-note { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; font-style: italic; }
+.ts-entry-actions {
+  position: absolute; top: 4px; right: 4px;
+  display: none; gap: 2px;
+}
+.ts-entry:hover .ts-entry-actions { display: flex; }
+.ts-entry-btn {
+  width: 22px; height: 22px; border-radius: 4px;
+  background: var(--bg-card); border: 1px solid var(--border-primary);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-entry-btn:hover { color: var(--mint); border-color: var(--mint); }
+.ts-entry-btn.delete:hover { color: #f87171; border-color: #f87171; }
+
+/* Modal */
+.ts-modal-overlay {
+  position: fixed;
+  top: 56px;  /* začíná pod headerem */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: none;
+  justify-content: center;
+  align-items: flex-start;  /* modal nahoře, ne uprostřed */
+  padding: 24px 16px;
+  z-index: 1000;
+  overflow-y: auto;  /* KLÍČOVÉ: overlay sám je scrollovatelný */
+  -webkit-overflow-scrolling: touch;
+  pointer-events: none;
+}
+.ts-modal-overlay.active { 
+  display: flex; 
+  pointer-events: auto;
+}
+.ts-modal-overlay.active .ts-modal {
+  pointer-events: auto;
+}
+.ts-modal {
+  background: var(--bg-card); 
+  border: 1px solid var(--border-primary);
+  border-radius: 16px; 
+  width: 100%;
+  max-width: 560px;
+  max-height: none;  /* žádné omezení výšky */
+  overflow: visible;  /* žádný vlastní scroll */
+  pointer-events: auto;
+  position: relative;
+  z-index: 1001;
+  margin-bottom: 24px;  /* prostor na konci při scrollu */
+}
+.ts-modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 20px 12px; border-bottom: 1px solid var(--border-primary);
+}
+.ts-modal-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.ts-modal-close {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border-primary);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-modal-close:hover { color: #f87171; border-color: #f87171; }
+.ts-modal-body { 
+  padding: 16px 20px; 
+  overflow: visible;  /* NE overflow: auto/scroll */
+}
+.ts-form-row { margin-bottom: 12px; }
+.ts-form-row label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+.ts-form-row input, .ts-form-row select, .ts-form-row textarea {
+  width: 100%; padding: 9px 12px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border-primary);
+  color: var(--text-primary); font-size: 14px;
+}
+.ts-form-row input:focus, .ts-form-row select:focus, .ts-form-row textarea:focus { border-color: var(--mint); outline: none; }
+.ts-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ts-modal-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; border-top: 1px solid var(--border-primary);
+}
+.ts-modal-delete {
+  padding: 8px 14px; background: transparent; border: 1px solid rgba(248,113,113,0.3);
+  border-radius: 8px; color: #f87171; font-size: 13px; font-weight: 600; cursor: pointer;
+  display: none;
+}
+.ts-modal-delete:hover { background: rgba(248,113,113,0.1); }
+.ts-modal-save {
+  padding: 8px 20px; background: var(--mint); border: none;
+  border-radius: 8px; color: #0a0e11; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.ts-modal-save:hover { opacity: 0.9; }
+.ts-modal-cancel {
+  padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary);
+  border-radius: 8px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+}
+
+/* ── Extra Fields ── */
+.ts-extra-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0; color: var(--text-secondary, #94a3b8);
+  font-size: 13px; cursor: pointer; border-top: 1px solid var(--border-primary, #2a2a4a);
+  margin-top: 12px; user-select: none;
+}
+.ts-extra-toggle:hover { color: var(--text-primary, #e2e8f0); }
+.ts-extra-toggle svg { transition: transform 0.3s; }
+.ts-extra-toggle.open svg { transform: rotate(180deg); }
+
+.ts-extra-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; border-radius: 9px;
+  background: var(--mint, #4ade80); color: #0a0a0f;
+  font-size: 11px; font-weight: 700; padding: 0 5px;
+}
+
+.ts-extra-fields {
+  padding-top: 12px; animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 1000px; }
+}
+
+.ts-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; background: var(--bg-elevated, #252540);
+  border: 1px solid var(--border-primary, #2a2a4a); border-radius: 20px;
+  color: var(--text-secondary, #94a3b8); font-size: 13px; cursor: pointer;
+  transition: all 0.2s;
+}
+.ts-chip:hover {
+  border-color: var(--mint, #4ade80); color: var(--text-primary, #e2e8f0);
+}
+.ts-chip.active {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: var(--mint, #4ade80); color: var(--mint, #4ade80);
+}
+
+.ts-work-type-chips, .ts-performance-chips, .ts-weather-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+}
+
+.ts-perf-fast.active { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.15); }
+.ts-perf-slow.active { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.15); }
+.ts-perf-blocked.active { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.15); }
+
+.ts-material-list { margin-bottom: 8px; }
+.ts-material-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; background: var(--bg-elevated, #252540);
+  border-radius: 8px; margin-bottom: 4px; font-size: 13px;
+  color: var(--text-primary, #e2e8f0);
+}
+.ts-material-add {
+  display: flex; gap: 6px; align-items: center;
+}
+.ts-material-add input { flex: 1; }
+.ts-btn-small, .ts-btn-tiny {
+  background: var(--mint, #4ade80); color: #0a0a0f;
+  border: none; border-radius: 6px; padding: 6px 10px;
+  font-weight: 700; cursor: pointer; font-size: 13px;
+}
+.ts-btn-tiny {
+  padding: 2px 8px; font-size: 12px;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.ts-photo-upload {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px; padding: 24px;
+  border: 2px dashed var(--border-primary, #2a2a4a);
+  border-radius: 12px; cursor: pointer;
+  color: var(--text-secondary, #94a3b8); font-size: 13px;
+  transition: border-color 0.2s; margin-top: 6px;
+}
+.ts-photo-upload:hover {
+  border-color: var(--mint, #4ade80);
+}
+
+.ts-perf-icon { margin-left: 6px; vertical-align: middle; }
+.ts-work-tag {
+  display: inline-block; padding: 2px 8px;
+  background: rgba(74,222,128,0.1); border-radius: 10px;
+  font-size: 11px; color: var(--mint, #4ade80); margin-left: 6px;
+}
+
+@media (max-width: 600px) {
+  .ts-material-add { flex-wrap: wrap; }
+  .ts-work-type-chips, .ts-weather-chips { gap: 4px; }
+  .ts-chip { padding: 5px 10px; font-size: 12px; }
+  .ts-modal-overlay {
+    padding: 12px 8px;
+    top: 56px;
+  }
+  .ts-modal {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+}
+</style>
+
+<div class="ts-page">
+  <!-- Header -->
+  <div class="ts-header">
+    <div class="ts-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Výkazy hodin
+    </div>
+    <div class="ts-actions">
+      <button class="ts-btn" id="btnExport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="ts-btn" id="btnCopy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Kopírovat týden
+      </button>
+      <button class="ts-btn ts-btn-primary" id="btnAdd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Přidat výkaz
+      </button>
+    </div>
+  </div>
+
+  <!-- Week Navigation -->
+  <div class="ts-nav">
+    <button class="ts-nav-btn" id="navPrev">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M15 18l-6-6 6-6"/></svg>
+      Předchozí
+    </button>
+    <button class="ts-nav-btn active" id="navThis">Tento týden</button>
+    <button class="ts-nav-btn" id="navNext">
+      Další
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div class="ts-week-label" id="weekLabel"></div>
+    <div class="ts-nav-right">
+      <select class="ts-filter-select" id="filterEmp"><option value="">Všichni zaměstnanci</option></select>
+      <select class="ts-filter-select" id="filterJob"><option value="">Všechny zakázky</option></select>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="ts-summary">
+    <div class="ts-stat"><div class="ts-stat-value" id="statTotal">0h</div><div class="ts-stat-label">Celkem hodin</div></div>
+    <div class="ts-stat"><div class="ts-stat-value" id="statAvg">0h</div><div class="ts-stat-label">Průměr / den</div></div>
+    <div class="ts-stat"><div class="ts-stat-value" id="statPeople">0</div><div class="ts-stat-label">Lidí</div></div>
+    <div class="ts-stat"><div class="ts-stat-value" id="statJobs">0</div><div class="ts-stat-label">Zakázek</div></div>
+    <div class="ts-stat"><div class="ts-stat-value" id="statEntries">0</div><div class="ts-stat-label">Záznamů</div></div>
+  </div>
+
+  <!-- Week Grid -->
+  <div class="ts-week" id="weekGrid"></div>
+</div>
+
+<!-- Modal -->
+<div class="ts-modal-overlay" id="tsModal" onclick="if(event.target===this){closeModal();}">
+  <div class="ts-modal">
+    <div class="ts-modal-head">
+      <h3 id="modalTitle">Nový výkaz</h3>
+      <button class="ts-modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="ts-modal-body">
+      <input type="hidden" id="mId">
+      <div class="ts-form-grid">
+        <div class="ts-form-row">
+          <label>Zaměstnanec</label>
+          <select id="mEmployee"></select>
+        </div>
+        <div class="ts-form-row">
+          <label>Zakázka</label>
+          <select id="mJob"></select>
+        </div>
+      </div>
+      <div class="ts-form-grid">
+        <div class="ts-form-row">
+          <label>Datum</label>
+          <input type="date" id="mDate">
+        </div>
+        <div class="ts-form-row">
+          <label>Hodin</label>
+          <input type="number" id="mHours" min="0.25" max="24" step="0.25" value="8">
+        </div>
+      </div>
+      <div class="ts-form-row">
+        <label>Místo</label>
+        <input type="text" id="mPlace" placeholder="Volitelné">
+      </div>
+      <div class="ts-form-row">
+        <label>Poznámka</label>
+        <textarea id="mNote" rows="2" placeholder="Volitelné"></textarea>
+      </div>
+
+      <!-- Rozbalitelná sekce s extra poli -->
+      <div class="ts-extra-toggle" onclick="toggleExtraFields()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        <span>Více detailů</span>
+        <span class="ts-extra-badge" id="extraFieldsCount" style="display:none;">0</span>
+      </div>
+
+      <div class="ts-extra-fields" id="extraFields" style="display: none;">
+        
+        <!-- Typ práce -->
+        <div class="ts-form-row">
+          <label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+            Typ práce
+          </label>
+          <div class="ts-work-type-chips">
+            <button type="button" class="ts-chip" data-value="manual" onclick="selectWorkType(this)">Ruční práce</button>
+            <button type="button" class="ts-chip" data-value="machine" onclick="selectWorkType(this)">Stroje</button>
+            <button type="button" class="ts-chip" data-value="transport" onclick="selectWorkType(this)">Doprava</button>
+            <button type="button" class="ts-chip" data-value="planting" onclick="selectWorkType(this)">Výsadba</button>
+            <button type="button" class="ts-chip" data-value="maintenance" onclick="selectWorkType(this)">Údržba</button>
+            <button type="button" class="ts-chip" data-value="admin" onclick="selectWorkType(this)">Administrativa</button>
+            <button type="button" class="ts-chip" data-value="training" onclick="selectWorkType(this)">Školení</button>
+            <button type="button" class="ts-chip" data-value="other" onclick="selectWorkType(this)">Jiné</button>
+          </div>
+          <input type="hidden" id="mWorkType" name="work_type">
+        </div>
+        
+        <!-- Čas od-do -->
+        <div class="ts-form-row ts-form-grid">
+          <div>
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Od
+            </label>
+            <input type="time" id="mStartTime" name="start_time">
+          </div>
+          <div>
+            <label>Do</label>
+            <input type="time" id="mEndTime" name="end_time">
+          </div>
+        </div>
+        
+        <!-- Výkon -->
+        <div class="ts-form-row">
+          <label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/>
+            </svg>
+            Tempo práce
+          </label>
+          <div class="ts-performance-chips">
+            <button type="button" class="ts-chip ts-perf-fast" data-value="fast" onclick="selectPerformance(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
+              Rychlé
+            </button>
+            <button type="button" class="ts-chip ts-perf-normal" data-value="normal" onclick="selectPerformance(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+              Normální
+            </button>
+            <button type="button" class="ts-chip ts-perf-slow" data-value="slow" onclick="selectPerformance(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg>
+              Pomalé
+            </button>
+            <button type="button" class="ts-chip ts-perf-blocked" data-value="blocked" onclick="selectPerformance(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+              Blokováno
+            </button>
+          </div>
+          <input type="hidden" id="mPerformance" name="performance">
+        </div>
+        
+        <!-- Důvod zdržení -->
+        <div class="ts-form-row" id="delayReasonRow" style="display: none;">
+          <label>Důvod zdržení</label>
+          <select id="mDelayReason" name="delay_reason">
+            <option value="">— Vyber —</option>
+            <option value="weather">Počasí</option>
+            <option value="material">Chybějící materiál</option>
+            <option value="equipment">Porucha stroje</option>
+            <option value="access">Špatný přístup</option>
+            <option value="client">Klient (změna, čekání)</option>
+            <option value="permits">Povolení / administrativa</option>
+            <option value="other">Jiné</option>
+          </select>
+        </div>
+        
+        <!-- Materiál -->
+        <div class="ts-form-row">
+          <label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+            </svg>
+            Použitý materiál
+          </label>
+          <div id="materialList" class="ts-material-list"></div>
+          <div class="ts-material-add">
+            <input type="text" id="materialName" placeholder="Název materiálu" list="materialSuggestions">
+            <datalist id="materialSuggestions"></datalist>
+            <input type="number" id="materialQty" placeholder="Množství" min="0" step="0.1" style="width: 80px;">
+            <input type="text" id="materialUnit" placeholder="ks/m/kg" style="width: 60px;">
+            <button type="button" class="ts-btn-small" onclick="addMaterial()">+</button>
+          </div>
+          <input type="hidden" id="mMaterialUsed" name="material_used">
+        </div>
+        
+        <!-- Počasí -->
+        <div class="ts-form-row">
+          <label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 18a5 5 0 00-10 0"/><circle cx="12" cy="9" r="4"/><path d="M12 1v2M4.22 4.22l1.42 1.42M1 12h2M4.22 19.78l1.42-1.42M23 12h-2M19.78 19.78l-1.42-1.42M19.78 4.22l-1.42 1.42"/>
+            </svg>
+            Počasí
+          </label>
+          <div class="ts-weather-chips">
+            <button type="button" class="ts-chip" data-value="sunny" onclick="selectWeather(this)">☀ Slunečno</button>
+            <button type="button" class="ts-chip" data-value="cloudy" onclick="selectWeather(this)">☁ Oblačno</button>
+            <button type="button" class="ts-chip" data-value="rain" onclick="selectWeather(this)">🌧 Déšť</button>
+            <button type="button" class="ts-chip" data-value="snow" onclick="selectWeather(this)">❄ Sníh</button>
+            <button type="button" class="ts-chip" data-value="hot" onclick="selectWeather(this)">🌡 Horko</button>
+            <button type="button" class="ts-chip" data-value="cold" onclick="selectWeather(this)">🥶 Mráz</button>
+            <button type="button" class="ts-chip" data-value="wind" onclick="selectWeather(this)">💨 Vítr</button>
+          </div>
+          <input type="hidden" id="mWeather" name="weather">
+        </div>
+        
+        <!-- Fotka -->
+        <div class="ts-form-row">
+          <label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+            </svg>
+            Fotka z pracoviště
+          </label>
+          <div class="ts-photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Klikni nebo přetáhni fotku</span>
+          </div>
+          <div id="photoPreview" style="display: none;">
+            <img id="photoPreviewImg" style="max-width: 100%; border-radius: 8px; margin-top: 8px;">
+            <button type="button" class="ts-btn-small" onclick="removePhoto()" style="margin-top: 4px;">Odebrat</button>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(this)">
+          <input type="hidden" id="mPhotoUrl" name="photo_url">
+        </div>
+
+      </div>
+    </div>
+    <div class="ts-modal-foot">
+      <button class="ts-modal-delete" id="mDelete" onclick="deleteEntry()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        Smazat
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="ts-modal-cancel" onclick="closeModal()">Zrušit</button>
+        <button class="ts-modal-save" id="mSave" onclick="saveEntry()">Uložit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ── State ──
+  let weekStart = null;
+  let employees = [];
+  let jobs = [];
+  let rows = [];
+  const CZ_DAYS = ['Ne','Po','Út','St','Čt','Pá','So'];
+  const CZ_DAYS_FULL = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+
+  // ── Helpers ──
+  const fmt = d => {
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  };
+  const parse = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+  const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+  const getMonday = d => { const x=new Date(d); const wd=x.getDay(); x.setDate(x.getDate()-((wd+6)%7)); x.setHours(0,0,0,0); return x; };
+  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const empName = (id, row) => { if(row && row.employee_name) return row.employee_name; const e=employees.find(x=>x.id===id); return e?e.name:('#'+id); };
+  const jobTitle = (id, row) => { if(row && row.job_title) return row.job_title; const j=jobs.find(x=>x.id===id); return j?(j.title||j.customer_name||j.name||j.code||('#'+j.id)):''; };
+
+  // ── Init ──
+  weekStart = getMonday(new Date());
+
+  async function loadMeta(){
+    try {
+      const [eRes, jRes] = await Promise.all([fetch('/api/employees'),fetch('/api/jobs')]);
+      const eData = await eRes.json(), jData = await jRes.json();
+      employees = eData.employees || (Array.isArray(eData)?eData:[]);
+      jobs = jData.jobs || (Array.isArray(jData)?jData:[]);
+      // Populate filters
+      const fEmp = document.getElementById('filterEmp');
+      const fJob = document.getElementById('filterJob');
+      fEmp.innerHTML = '<option value="">Všichni zaměstnanci</option>' + employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+      fJob.innerHTML = '<option value="">Všechny zakázky</option>' + jobs.map(j=>`<option value="${j.id}">${esc(jobTitle(j.id))}</option>`).join('');
+      // Modal selects
+      document.getElementById('mEmployee').innerHTML = employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+      document.getElementById('mJob').innerHTML = jobs.map(j=>`<option value="${j.id}">${esc(jobTitle(j.id))}</option>`).join('');
+    } catch(e){ console.error('loadMeta:',e); }
+  }
+
+  async function loadWeek(){
+    const start = fmt(weekStart);
+    const end = fmt(addDays(weekStart, 6));
+    const q = new URLSearchParams({from: start, to: end});
+    const fEmp = document.getElementById('filterEmp').value;
+    const fJob = document.getElementById('filterJob').value;
+    if(fEmp) q.set('employee_id', fEmp);
+    if(fJob) q.set('job_id', fJob);
+    try {
+      const resp = await fetch('/api/timesheets?' + q.toString());
+      const data = await resp.json();
+      rows = data.rows || (Array.isArray(data)?data:[]);
+    } catch(e){ console.error('loadWeek:',e); rows=[]; }
+    render();
+  }
+
+  // Helper funkce pro zobrazení signálů (musí být před render())
+  function getPerformanceIcon(perf) {
+    if (!perf) return '';
+    const icons = {
+      fast: '<span class="ts-perf-icon ts-perf-fast" title="Rychlé tempo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg></span>',
+      normal: '',
+      slow: '<span class="ts-perf-icon ts-perf-slow" title="Pomalé tempo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg></span>',
+      blocked: '<span class="ts-perf-icon ts-perf-blocked" title="Blokováno"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg></span>',
+    };
+    return icons[perf] || '';
+  }
+  window.getPerformanceIcon = getPerformanceIcon;
+
+  function getWorkTypeTag(type) {
+    if (!type) return '';
+    const labels = {
+      manual: 'Ruční', machine: 'Stroje', transport: 'Doprava',
+      planting: 'Výsadba', maintenance: 'Údržba', admin: 'Admin',
+      training: 'Školení', other: 'Jiné'
+    };
+    return `<span class="ts-work-tag">${labels[type] || type}</span>`;
+  }
+  window.getWorkTypeTag = getWorkTypeTag;
+
+  function render(){
+    try {
+      // Week label
+      const end = addDays(weekStart, 6);
+      const weekLabelEl = document.getElementById('weekLabel');
+      if (weekLabelEl) {
+        weekLabelEl.textContent =
+          `${weekStart.getDate()}.${weekStart.getMonth()+1}. — ${end.getDate()}.${end.getMonth()+1}.${end.getFullYear()}`;
+      }
+
+      // Group by date
+      const byDate = {};
+      let totalH = 0;
+      const peopleSet = new Set(), jobSet = new Set();
+      if (rows && Array.isArray(rows)) {
+        for(const r of rows){
+          const d = (r.date||'').slice(0,10);
+          if(!byDate[d]) byDate[d] = [];
+          byDate[d].push(r);
+          totalH += (parseFloat(r.hours)||0);
+          if(r.employee_id) peopleSet.add(r.employee_id);
+          if(r.job_id) jobSet.add(r.job_id);
+        }
+      }
+
+      // Stats
+      const statTotalEl = document.getElementById('statTotal');
+      if (statTotalEl) {
+        statTotalEl.textContent = totalH.toFixed(1) + 'h';
+        statTotalEl.className = 'ts-stat-value' + (totalH > 200 ? ' danger' : totalH > 160 ? ' warn' : '');
+      }
+      const statAvgEl = document.getElementById('statAvg');
+      if (statAvgEl) statAvgEl.textContent = (totalH/7).toFixed(1) + 'h';
+      const statPeopleEl = document.getElementById('statPeople');
+      if (statPeopleEl) statPeopleEl.textContent = peopleSet.size;
+      const statJobsEl = document.getElementById('statJobs');
+      if (statJobsEl) statJobsEl.textContent = jobSet.size;
+      const statEntriesEl = document.getElementById('statEntries');
+      if (statEntriesEl) statEntriesEl.textContent = rows ? rows.length : 0;
+
+      // Week grid
+      const grid = document.getElementById('weekGrid');
+      if (!grid) {
+        console.error('weekGrid element not found!');
+        return;
+      }
+      
+      const todayStr = fmt(new Date());
+      let html = '';
+
+      for(let i=0; i<7; i++){
+        const d = addDays(weekStart, i);
+        const dstr = fmt(d);
+        const isToday = dstr === todayStr;
+        const isWeekend = d.getDay()===0 || d.getDay()===6;
+        const entries = byDate[dstr] || [];
+        const dayH = entries.reduce((s,e)=>s+(parseFloat(e.hours)||0), 0);
+        const heatPct = Math.min(100, (dayH/16)*100);
+        const heatColor = dayH > 12 ? '#f87171' : dayH > 8 ? '#fbbf24' : '#4ade80';
+
+        html += `<div class="ts-day${isToday?' today':''}${isWeekend?' weekend':''}">`;
+        html += `<div class="ts-day-head">`;
+        html += `<div><div class="ts-day-name">${CZ_DAYS[d.getDay()]}</div><div class="ts-day-date">${d.getDate()}.${d.getMonth()+1}.</div></div>`;
+        html += `<div style="display:flex;align-items:center;gap:8px;">`;
+        if(dayH > 0) html += `<div class="ts-day-total" style="color:${heatColor}">${dayH.toFixed(1)}h</div>`;
+        html += `<button class="ts-day-add" onclick="openModal('${dstr}')" title="Přidat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>`;
+        html += `</div></div>`;
+        html += `<div class="ts-day-heat"><div class="ts-day-heat-fill" style="width:${heatPct}%;background:${heatColor}"></div></div>`;
+        html += `<div class="ts-day-body">`;
+
+        if(entries.length === 0){
+          html += `<div class="ts-day-empty">—</div>`;
+        } else {
+          entries.forEach(r => {
+            const jt = jobTitle(r.job_id, r) || 'Bez zakázky';
+            const perf = r.performance || r.performance_signal || '';
+            const workType = r.work_type || '';
+            const perfIcon = typeof getPerformanceIcon === 'function' ? getPerformanceIcon(perf) : '';
+            const workTag = typeof getWorkTypeTag === 'function' ? getWorkTypeTag(workType) : '';
+            
+            html += `<div class="ts-entry" onclick="if(typeof openEditModal==='function')openEditModal(${r.id})" data-id="${r.id}">`;
+            html += `<div class="ts-entry-actions">`;
+            html += `<button class="ts-entry-btn" onclick="event.stopPropagation();if(typeof openEditModal==='function')openEditModal(${r.id})" title="Upravit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>`;
+            html += `<button class="ts-entry-btn delete" onclick="event.stopPropagation();if(typeof quickDelete==='function')quickDelete(${r.id})" title="Smazat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>`;
+            html += `</div>`;
+            html += `<div class="ts-entry-top"><div class="ts-entry-name">${esc(empName(r.employee_id, r))}${perfIcon}${workTag}</div><div class="ts-entry-hours">${(parseFloat(r.hours)||0).toFixed(1)}h</div></div>`;
+            html += `<div class="ts-entry-job">${esc(jt)}</div>`;
+            if(r.place) html += `<div class="ts-entry-place">${esc(r.place)}</div>`;
+            if(r.activity || r.note) html += `<div class="ts-entry-note">${esc(r.activity || r.note)}</div>`;
+            html += `</div>`;
+          });
+        }
+        html += `</div></div>`;
+      }
+      grid.innerHTML = html;
+    } catch(e) {
+      console.error('Render error:', e);
+      const grid = document.getElementById('weekGrid');
+      if (grid) {
+        grid.innerHTML = '<div class="ts-day-empty" style="grid-column:1/-1;padding:20px;text-align:center;color:var(--text-secondary);">Chyba při zobrazení výkazů. Zkontroluj konzoli.</div>';
+      }
+    }
+  }
+
+  // ── Modal ──
+  function openModal(dateStr){
+    document.getElementById('mId').value = '';
+    document.getElementById('modalTitle').textContent = 'Nový výkaz';
+    document.getElementById('mDate').value = dateStr || fmt(new Date());
+    document.getElementById('mHours').value = '8';
+    document.getElementById('mPlace').value = '';
+    document.getElementById('mNote').value = '';
+    document.getElementById('mDelete').style.display = 'none';
+    document.getElementById('mSave').textContent = 'Uložit';
+    if (typeof resetExtraFields === 'function') resetExtraFields();
+    document.getElementById('tsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';  // Zablokuj scroll stránky
+  }
+  window.openModal = openModal;
+
+  function openEditModal(id){
+    const r = rows.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('mId').value = r.id;
+    document.getElementById('modalTitle').textContent = 'Upravit výkaz';
+    document.getElementById('mEmployee').value = r.employee_id || '';
+    document.getElementById('mJob').value = r.job_id || '';
+    document.getElementById('mDate').value = (r.date||'').slice(0,10);
+    document.getElementById('mHours').value = r.hours || 8;
+    document.getElementById('mPlace').value = r.place || '';
+    document.getElementById('mNote').value = r.activity || r.note || '';
+    document.getElementById('mDelete').style.display = '';
+    document.getElementById('mSave').textContent = 'Uložit změny';
+    
+    // Předvyplň extra pole
+    document.getElementById('mWorkType').value = r.work_type || '';
+    document.getElementById('mStartTime').value = r.start_time || '';
+    document.getElementById('mEndTime').value = r.end_time || '';
+    document.getElementById('mPerformance').value = r.performance || r.performance_signal || '';
+    document.getElementById('mDelayReason').value = r.delay_reason || '';
+    document.getElementById('mWeather').value = r.weather || r.weather_snapshot || '';
+    document.getElementById('mPhotoUrl').value = r.photo_url || '';
+    
+    // Aktivuj správné chipy
+    if (r.work_type) {
+      const chip = document.querySelector(`.ts-work-type-chips .ts-chip[data-value="${r.work_type}"]`);
+      if (chip) chip.classList.add('active');
+    }
+    if (r.performance || r.performance_signal) {
+      const perf = r.performance || r.performance_signal;
+      const chip = document.querySelector(`.ts-performance-chips .ts-chip[data-value="${perf}"]`);
+      if (chip) chip.classList.add('active');
+      if (perf === 'slow' || perf === 'blocked') {
+        document.getElementById('delayReasonRow').style.display = 'block';
+      }
+    }
+    if (r.weather || r.weather_snapshot) {
+      const weather = r.weather || r.weather_snapshot;
+      const chip = document.querySelector(`.ts-weather-chips .ts-chip[data-value="${weather}"]`);
+      if (chip) chip.classList.add('active');
+    }
+    
+    // Materiál
+    materials = [];
+    if (r.material_used) {
+      try {
+        materials = typeof r.material_used === 'string' ? JSON.parse(r.material_used) : r.material_used;
+      } catch(e) {}
+    }
+    renderMaterials();
+    
+    // Fotka
+    if (r.photo_url) {
+      document.getElementById('photoPreviewImg').src = r.photo_url;
+      document.getElementById('photoPreview').style.display = 'block';
+      document.getElementById('photoUpload').style.display = 'none';
+    }
+    
+    updateExtraCount();
+    
+    // Pokud jsou extra pole vyplněné, automaticky rozbal sekci
+    if (r.work_type || r.performance || r.performance_signal || r.weather || r.weather_snapshot || r.material_used || r.photo_url) {
+      document.getElementById('extraFields').style.display = 'block';
+      const toggle = document.querySelector('.ts-extra-toggle');
+      if (toggle) {
+        toggle.classList.add('open');
+        const svg = toggle.querySelector('svg');
+        if (svg) svg.style.transform = 'rotate(180deg)';
+      }
+    }
+    
+    document.getElementById('tsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';  // Zablokuj scroll stránky
+  }
+  window.openEditModal = openEditModal;
+
+  function closeModal(){
+    document.getElementById('tsModal').classList.remove('active');
+    if (typeof resetExtraFields === 'function') resetExtraFields();
+    document.body.style.overflow = '';  // Obnov scroll stránky
+  }
+  window.closeModal = closeModal;
+
+  async function saveEntry(){
+    const id = document.getElementById('mId').value;
+    const payload = {
+      employee_id: Number(document.getElementById('mEmployee').value),
+      job_id: Number(document.getElementById('mJob').value),
+      date: document.getElementById('mDate').value,
+      hours: parseFloat(document.getElementById('mHours').value) || 0,
+      place: document.getElementById('mPlace').value,
+      activity: document.getElementById('mNote').value
+    };
+    
+    // Nová pole (pošlou se jen pokud mají hodnotu)
+    const workType = document.getElementById('mWorkType').value;
+    const startTime = document.getElementById('mStartTime').value;
+    const endTime = document.getElementById('mEndTime').value;
+    const performance = document.getElementById('mPerformance').value;
+    const delayReason = document.getElementById('mDelayReason').value;
+    const materialUsed = document.getElementById('mMaterialUsed').value;
+    const weather = document.getElementById('mWeather').value;
+    const photoUrl = document.getElementById('mPhotoUrl').value;
+    
+    if (workType) payload.work_type = workType;
+    if (startTime) payload.start_time = startTime;
+    if (endTime) payload.end_time = endTime;
+    if (performance) payload.performance = performance;
+    if (delayReason) payload.delay_reason = delayReason;
+    if (materialUsed) {
+      try {
+        payload.material_used = JSON.parse(materialUsed);
+      } catch(e) {
+        payload.material_used = [];
+      }
+    }
+    if (weather) payload.weather = weather;
+    if (photoUrl) payload.photo_url = photoUrl;
+    
+    if(!payload.employee_id){ alert('Vyber zaměstnance'); return; }
+    if(!payload.job_id){ alert('Vyber zakázku'); return; }
+    if(!payload.date){ alert('Vyplň datum'); return; }
+    if(!payload.hours || payload.hours <= 0){ alert('Vyplň hodiny'); return; }
+    try {
+      if(id){
+        payload.id = Number(id);
+        await fetch('/api/timesheets',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      } else {
+        await fetch('/api/timesheets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      }
+      closeModal();
+      loadWeek();
+    } catch(e){ alert('Chyba: '+e.message); }
+  }
+  window.saveEntry = saveEntry;
+
+  async function deleteEntry(){
+    const id = document.getElementById('mId').value;
+    if(!id || !confirm('Opravdu smazat tento výkaz?')) return;
+    try {
+      await fetch('/api/timesheets?id='+id, {method:'DELETE'});
+      closeModal();
+      loadWeek();
+    } catch(e){ alert('Chyba: '+e.message); }
+  }
+  window.deleteEntry = deleteEntry;
+
+  async function quickDelete(id){
+    if(!confirm('Smazat výkaz?')) return;
+    try {
+      await fetch('/api/timesheets?id='+id, {method:'DELETE'});
+      loadWeek();
+    } catch(e){ alert('Chyba: '+e.message); }
+  }
+  window.quickDelete = quickDelete;
+
+  // ── Copy Week ──
+  async function copyWeek(){
+    if(!confirm('Kopírovat všechny výkazy z tohoto týdne do příštího týdne?')) return;
+    const nextMonday = addDays(weekStart, 7);
+    let count = 0;
+    for(const r of rows){
+      const origDate = parse((r.date||'').slice(0,10));
+      const dayOffset = Math.round((origDate - weekStart) / 86400000);
+      const newDate = fmt(addDays(nextMonday, dayOffset));
+      try {
+        await fetch('/api/timesheets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          employee_id: r.employee_id, job_id: r.job_id, date: newDate,
+          hours: r.hours, place: r.place||'', activity: r.activity||''
+        })});
+        count++;
+      } catch(e){}
+    }
+    alert(`Zkopírováno ${count} záznamů do příštího týdne`);
+    weekStart = nextMonday;
+    loadWeek();
+  }
+
+  // ── Extra Fields Functions ──
+  let materials = [];
+
+  function toggleExtraFields() {
+    const el = document.getElementById('extraFields');
+    const toggle = document.querySelector('.ts-extra-toggle');
+    if (!el || !toggle) return;
+    const isOpen = el.style.display !== 'none';
+    el.style.display = isOpen ? 'none' : 'block';
+    toggle.classList.toggle('open', !isOpen);
+    const svg = toggle.querySelector('svg');
+    if (svg) svg.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+  window.toggleExtraFields = toggleExtraFields;
+
+  function selectWorkType(btn) {
+    if (!btn) return;
+    btn.parentElement.querySelectorAll('.ts-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const workTypeInput = document.getElementById('mWorkType');
+    if (workTypeInput) workTypeInput.value = btn.dataset.value || '';
+    updateExtraCount();
+  }
+  window.selectWorkType = selectWorkType;
+
+  function selectPerformance(btn) {
+    if (!btn) return;
+    btn.parentElement.querySelectorAll('.ts-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const perfInput = document.getElementById('mPerformance');
+    if (perfInput) perfInput.value = btn.dataset.value || '';
+    const showDelay = btn.dataset.value === 'slow' || btn.dataset.value === 'blocked';
+    const delayRow = document.getElementById('delayReasonRow');
+    if (delayRow) delayRow.style.display = showDelay ? 'block' : 'none';
+    updateExtraCount();
+  }
+  window.selectPerformance = selectPerformance;
+
+  function selectWeather(btn) {
+    if (!btn) return;
+    btn.parentElement.querySelectorAll('.ts-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const weatherInput = document.getElementById('mWeather');
+    if (weatherInput) weatherInput.value = btn.dataset.value || '';
+    updateExtraCount();
+  }
+  window.selectWeather = selectWeather;
+
+  function addMaterial() {
+    const nameEl = document.getElementById('materialName');
+    const qtyEl = document.getElementById('materialQty');
+    const unitEl = document.getElementById('materialUnit');
+    if (!nameEl || !qtyEl || !unitEl) return;
+    const name = nameEl.value.trim();
+    const qty = parseFloat(qtyEl.value) || 0;
+    const unit = unitEl.value.trim() || 'ks';
+    if (!name) return;
+    materials.push({ name, qty, unit });
+    renderMaterials();
+    nameEl.value = '';
+    qtyEl.value = '';
+    unitEl.value = '';
+    const materialInput = document.getElementById('mMaterialUsed');
+    if (materialInput) materialInput.value = JSON.stringify(materials);
+    updateExtraCount();
+  }
+  window.addMaterial = addMaterial;
+
+  function removeMaterial(idx) {
+    materials.splice(idx, 1);
+    renderMaterials();
+    const materialInput = document.getElementById('mMaterialUsed');
+    if (materialInput) materialInput.value = JSON.stringify(materials);
+    updateExtraCount();
+  }
+  window.removeMaterial = removeMaterial;
+
+  function renderMaterials() {
+    const list = document.getElementById('materialList');
+    if (!list) return;
+    if (materials.length === 0) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = materials.map((m, i) => `
+      <div class="ts-material-item">
+        <span>${esc(m.name)} — ${m.qty} ${m.unit}</span>
+        <button type="button" class="ts-btn-tiny" onclick="removeMaterial(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+  window.renderMaterials = renderMaterials;
+
+  function handlePhotoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const previewImg = document.getElementById('photoPreviewImg');
+      const preview = document.getElementById('photoPreview');
+      const upload = document.getElementById('photoUpload');
+      const photoInput = document.getElementById('mPhotoUrl');
+      if (previewImg) previewImg.src = e.target.result;
+      if (preview) preview.style.display = 'block';
+      if (upload) upload.style.display = 'none';
+      if (photoInput) photoInput.value = e.target.result;
+      updateExtraCount();
+    };
+    reader.readAsDataURL(file);
+  }
+  window.handlePhotoUpload = handlePhotoUpload;
+
+  function removePhoto() {
+    const preview = document.getElementById('photoPreview');
+    const upload = document.getElementById('photoUpload');
+    const photoInput = document.getElementById('mPhotoUrl');
+    const fileInput = document.getElementById('photoInput');
+    if (preview) preview.style.display = 'none';
+    if (upload) upload.style.display = 'flex';
+    if (photoInput) photoInput.value = '';
+    if (fileInput) fileInput.value = '';
+    updateExtraCount();
+  }
+  window.removePhoto = removePhoto;
+
+  function updateExtraCount() {
+    let count = 0;
+    const workType = document.getElementById('mWorkType');
+    const performance = document.getElementById('mPerformance');
+    const weather = document.getElementById('mWeather');
+    const startTime = document.getElementById('mStartTime');
+    const photoUrl = document.getElementById('mPhotoUrl');
+    const delayReason = document.getElementById('mDelayReason');
+    if (workType && workType.value) count++;
+    if (performance && performance.value) count++;
+    if (weather && weather.value) count++;
+    if (startTime && startTime.value) count++;
+    if (materials.length > 0) count++;
+    if (photoUrl && photoUrl.value) count++;
+    if (delayReason && delayReason.value) count++;
+    const badge = document.getElementById('extraFieldsCount');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+  window.updateExtraCount = updateExtraCount;
+
+  function resetExtraFields() {
+    const workType = document.getElementById('mWorkType');
+    const startTime = document.getElementById('mStartTime');
+    const endTime = document.getElementById('mEndTime');
+    const performance = document.getElementById('mPerformance');
+    const delayReason = document.getElementById('mDelayReason');
+    const weather = document.getElementById('mWeather');
+    const photoUrl = document.getElementById('mPhotoUrl');
+    const materialUsed = document.getElementById('mMaterialUsed');
+    const materialName = document.getElementById('materialName');
+    const materialQty = document.getElementById('materialQty');
+    const materialUnit = document.getElementById('materialUnit');
+    
+    if (workType) workType.value = '';
+    if (startTime) startTime.value = '';
+    if (endTime) endTime.value = '';
+    if (performance) performance.value = '';
+    if (delayReason) delayReason.value = '';
+    if (weather) weather.value = '';
+    if (photoUrl) photoUrl.value = '';
+    if (materialUsed) materialUsed.value = '';
+    if (materialName) materialName.value = '';
+    if (materialQty) materialQty.value = '';
+    if (materialUnit) materialUnit.value = '';
+    
+    materials = [];
+    renderMaterials();
+    
+    document.querySelectorAll('.ts-chip.active').forEach(c => c.classList.remove('active'));
+    
+    const extraFields = document.getElementById('extraFields');
+    if (extraFields) extraFields.style.display = 'none';
+    const toggle = document.querySelector('.ts-extra-toggle');
+    if (toggle) {
+      toggle.classList.remove('open');
+      const svg = toggle.querySelector('svg');
+      if (svg) svg.style.transform = '';
+    }
+    const delayReasonRow = document.getElementById('delayReasonRow');
+    if (delayReasonRow) delayReasonRow.style.display = 'none';
+    
+    const photoPreview = document.getElementById('photoPreview');
+    const photoUpload = document.getElementById('photoUpload');
+    const photoInput = document.getElementById('photoInput');
+    if (photoPreview) photoPreview.style.display = 'none';
+    if (photoUpload) photoUpload.style.display = 'flex';
+    if (photoInput) photoInput.value = '';
+    
+    updateExtraCount();
+  }
+  window.resetExtraFields = resetExtraFields;
+
+  async function loadMaterialSuggestions() {
+    try {
+      const res = await fetch('/api/warehouse');
+      const data = await res.json();
+      const items = data.items || data || [];
+      const datalist = document.getElementById('materialSuggestions');
+      if (datalist) {
+        datalist.innerHTML = items.map(item => 
+          `<option value="${esc(item.name || item.title || '')}">`
+        ).join('');
+      }
+    } catch (e) {
+      console.warn('Warehouse API not available:', e);
+    }
+  }
+  window.loadMaterialSuggestions = loadMaterialSuggestions;
+
+  // ── Export ──
+  function exportCsv(){
+    const start = fmt(weekStart);
+    const end = fmt(addDays(weekStart, 6));
+    window.location.href = `/api/timesheets/export-advanced?format=csv&from=${start}&to=${end}&employees=all`;
+  }
+
+  // ── Navigation ──
+  function navigate(offset){
+    if(offset === 0) weekStart = getMonday(new Date());
+    else { weekStart = addDays(weekStart, offset * 7); }
+    loadWeek();
+  }
+
+  // ── Bind Events ──
+  function bindEvents() {
+    try {
+      const navPrev = document.getElementById('navPrev');
+      const navThis = document.getElementById('navThis');
+      const navNext = document.getElementById('navNext');
+      const filterEmp = document.getElementById('filterEmp');
+      const filterJob = document.getElementById('filterJob');
+      const btnAdd = document.getElementById('btnAdd');
+      const btnExport = document.getElementById('btnExport');
+      const btnCopy = document.getElementById('btnCopy');
+      
+      if (navPrev) navPrev.onclick = () => navigate(-1);
+      if (navThis) navThis.onclick = () => navigate(0);
+      if (navNext) navNext.onclick = () => navigate(1);
+      if (filterEmp) filterEmp.onchange = loadWeek;
+      if (filterJob) filterJob.onchange = loadWeek;
+      if (btnAdd) btnAdd.onclick = () => {
+        if (typeof resetExtraFields === 'function') resetExtraFields();
+        openModal();
+      };
+      if (btnExport) btnExport.onclick = exportCsv;
+      if (btnCopy) btnCopy.onclick = copyWeek;
+      
+      // Escape key pro zavření modalu
+      document.addEventListener('keydown', e => { 
+        if(e.key==='Escape' && typeof closeModal === 'function') closeModal(); 
+      });
+      
+      // Delegovaný listener pro klikání na záznamy (bezpečnější pro dynamicky generované elementy)
+      const weekGrid = document.getElementById('weekGrid');
+      if (weekGrid) {
+        weekGrid.addEventListener('click', function(e) {
+          const entry = e.target.closest('.ts-entry');
+          if (entry) {
+            const onclick = entry.getAttribute('onclick');
+            if (onclick && onclick.includes('openEditModal')) {
+              // Inline onclick už existuje, nech ho běžet
+              return;
+            }
+            // Fallback: extrahuj ID z onclick nebo data atributu
+            const match = onclick ? onclick.match(/openEditModal\((\d+)\)/) : null;
+            const id = match ? parseInt(match[1]) : (entry.dataset.id ? parseInt(entry.dataset.id) : null);
+            if (id && typeof openEditModal === 'function') {
+              e.stopPropagation();
+              openEditModal(id);
+            }
+          }
+        });
+      }
+      
+      console.log('Event listeners bound successfully');
+    } catch(e) {
+      console.error('Error binding events:', e);
+    }
+  }
+
+  // ── Boot ──
+  // Počkej až se DOM načte
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      bindEvents();
+      loadMeta().then(loadWeek);
+    });
+  } else {
+    // DOM už je načtený
+    bindEvents();
+    loadMeta().then(loadWeek);
+  }
+})();
+</script>
+
+{% endblock %}
+<script src="/static/bottom-nav.js"></script>
+<link rel="stylesheet" href="/static/icons.css">
