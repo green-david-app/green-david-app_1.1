@@ -95,6 +95,9 @@ def _disable_cache_for_static(resp):
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"
             resp.headers["Expires"] = "0"
+        # Service Worker needs proper scope header
+        if path == "/sw.js":
+            resp.headers["Service-Worker-Allowed"] = "/"
     except Exception:
         pass
     return resp
