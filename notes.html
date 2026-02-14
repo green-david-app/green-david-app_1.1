@@ -484,6 +484,7 @@
           const res = await fetch('/api/notes/' + editingNoteId, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
           });
           const data = await res.json();
@@ -493,6 +494,7 @@
           const res = await fetch('/api/notes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
           });
           const data = await res.json();
@@ -511,7 +513,7 @@
       if (ev) ev.stopPropagation();
       if (!confirm('Smazat tuto poznámku?')) return;
       try {
-        const res = await fetch('/api/notes/' + id, { method: 'DELETE' });
+        const res = await fetch('/api/notes/' + id, { method: 'DELETE', credentials: 'same-origin' });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
         if (window.showToast) window.showToast('Poznámka smazána', 'success');
@@ -526,7 +528,7 @@
     async function pinNote(id, ev) {
       if (ev) ev.stopPropagation();
       try {
-        const res = await fetch('/api/notes/' + id + '/pin', { method: 'PUT' });
+        const res = await fetch('/api/notes/' + id + '/pin', { method: 'PUT', credentials: 'same-origin' });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
         if (window.showToast) window.showToast(data.is_pinned ? 'Poznámka připnuta' : 'Poznámka odepnuta', 'success');

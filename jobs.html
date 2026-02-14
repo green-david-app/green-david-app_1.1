@@ -2652,11 +2652,12 @@ async function createApiTaskFromTodo(jobId, todo) {
         const res = await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
         });
         if (!res.ok) return null;
         // API returns {ok:true} without id, so fetch last task for this job and title match (best-effort)
-        const listRes = await fetch('/api/tasks?job_id=' + encodeURIComponent(jobId));
+        const listRes = await fetch('/api/tasks?job_id=' + encodeURIComponent(jobId), { credentials: 'same-origin' });
         if (!listRes.ok) return null;
         const data = await listRes.json();
         const tasks = data.tasks || [];
@@ -2672,6 +2673,7 @@ async function updateApiTask(taskId, patch) {
         const res = await fetch('/api/tasks', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify({ id: taskId, ...patch })
         });
         return res.ok;
@@ -2682,7 +2684,7 @@ async function updateApiTask(taskId, patch) {
 
 async function deleteApiTask(taskId) {
     try {
-        const res = await fetch('/api/tasks?id=' + encodeURIComponent(taskId), { method: 'DELETE' });
+        const res = await fetch('/api/tasks?id=' + encodeURIComponent(taskId), { method: 'DELETE', credentials: 'same-origin' });
         return res.ok;
     } catch (e) {
         return false;

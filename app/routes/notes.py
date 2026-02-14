@@ -141,7 +141,7 @@ def get_note(note_id):
 @notes_bp.route('/api/notes', methods=['POST'])
 def create_note():
     db = get_db()
-    user_id = session.get('user_id')
+    user_id = session.get('uid') or session.get('user_id')
     data = request.json or {}
 
     content = (data.get('content') or '').strip()

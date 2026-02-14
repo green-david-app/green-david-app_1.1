@@ -2439,6 +2439,7 @@
                 const res = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(payload)
                 });
                 
@@ -2472,7 +2473,7 @@
         async function deleteJobNote(noteId) {
             if (!confirm('Opravdu smazat tuto poznámku?')) return;
             try {
-                const res = await fetch('/api/notes/' + noteId, { method: 'DELETE' });
+                const res = await fetch('/api/notes/' + noteId, { method: 'DELETE', credentials: 'same-origin' });
                 const data = await res.json();
                 if (data.ok) {
                     loadJobNotes();
@@ -2485,7 +2486,7 @@
         
         async function togglePinJobNote(noteId) {
             try {
-                await fetch('/api/notes/' + noteId + '/pin', { method: 'PUT' });
+                await fetch('/api/notes/' + noteId + '/pin', { method: 'PUT', credentials: 'same-origin' });
                 loadJobNotes();
             } catch(e) {
                 console.error('Chyba:', e);

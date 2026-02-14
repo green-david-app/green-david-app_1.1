@@ -2,7 +2,8 @@
 from flask import Blueprint, jsonify, request, send_from_directory, render_template
 from datetime import datetime
 from app.database import get_db
-from app.utils.permissions import require_auth, require_role, requires_role
+from app.config import WRITE_ROLES
+from app.utils.permissions import require_auth, require_role, requires_role, normalize_role
 
 try:
     import planning_extended_api as ext_api
@@ -80,7 +81,7 @@ def api_warehouse_items_list():
 def api_warehouse_items_create():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     try:
         data = request.json
@@ -109,7 +110,7 @@ def api_warehouse_items_create():
 def api_warehouse_items_update(item_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     try:
         data = request.json
@@ -140,7 +141,7 @@ def api_warehouse_items_update(item_id):
 def api_warehouse_items_delete(item_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     try:
         db = get_db()
@@ -161,7 +162,7 @@ def api_warehouse_locations():
 def api_warehouse_locations_create():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.create_location()
 
@@ -169,7 +170,7 @@ def api_warehouse_locations_create():
 def api_warehouse_locations_update(location_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.update_location(location_id)
 
@@ -177,7 +178,7 @@ def api_warehouse_locations_update(location_id):
 def api_warehouse_locations_delete(location_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.delete_location(location_id)
 
@@ -192,7 +193,7 @@ def api_warehouse_movements():
 def api_warehouse_movements_create():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.create_movement()
 
@@ -213,7 +214,7 @@ def api_warehouse_reservations():
 def api_warehouse_reservations_create():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.create_reservation()
 
@@ -221,7 +222,7 @@ def api_warehouse_reservations_create():
 def api_warehouse_reservations_update(reservation_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.update_reservation(reservation_id)
 
@@ -236,7 +237,7 @@ def api_warehouse_inventory():
 def api_warehouse_inventory_start():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.start_inventory()
 
@@ -250,7 +251,7 @@ def api_warehouse_inventory_items(inventory_id):
 def api_warehouse_inventory_items_update(inventory_item_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.update_inventory_item(inventory_item_id)
 
@@ -258,7 +259,7 @@ def api_warehouse_inventory_items_update(inventory_item_id):
 def api_warehouse_inventory_complete(inventory_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.complete_inventory(inventory_id)
 
@@ -267,7 +268,7 @@ def api_warehouse_inventory_complete(inventory_id):
 def api_warehouse_items_merge():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.merge_items()
 
@@ -275,7 +276,7 @@ def api_warehouse_items_merge():
 def api_warehouse_items_rename(item_id):
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     return warehouse_extended.rename_item(item_id)
 
@@ -483,7 +484,7 @@ def api_upload_task_photo(task_id):
 def api_warehouse_create_item():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     
     try:
@@ -511,7 +512,7 @@ def api_warehouse_create_item():
 def api_warehouse_update_item():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     
     try:
@@ -563,7 +564,7 @@ def api_get_items():
 def api_create_item():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     
     try:
@@ -590,7 +591,7 @@ def api_create_item():
 def api_update_item():
     u, err = require_auth()
     if err: return err
-    if u["role"] not in WRITE_ROLES:
+    if normalize_role(u.get("role")) not in WRITE_ROLES:
         return jsonify({"error": "Forbidden"}), 403
     
     try:
