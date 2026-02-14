@@ -1,15 +1,112 @@
 /* ================================================================
-   MOBILE-FIX.CSS — POSLEDNÍ NAČTENÝ SOUBOR
-   Přebíjí VEŠKERÉ předchozí styly pro mobilní zobrazení.
-   Každé pravidlo má !important pro jistotu.
+   MOBILE-FIX.CSS v3 — COMPLETE REWRITE
+   Loaded LAST — overrides everything for mobile.
+   
+   ROOT CAUSES FIXED:
+   1. sidebar.css sets overflow-x:auto !important on .page div
+   2. --sidebar-w stays 200px on mobile (affects width calcs)
+   3. 100vw is wider than visible viewport on iOS Safari
+   4. Inline <style> grids (repeat(5,1fr)) not overridden
    ================================================================ */
 
+
 /* ================================================================
-   1. HEADER — Nesmí přetékat, vše musí být uvnitř 46px pruhu
+   0. CSS VARIABLES — reset sidebar vars on mobile
    ================================================================ */
 @media (max-width: 768px) {
+  :root {
+    --sidebar-w: 0px !important;
+    --sidebar-width: 0px !important;
+    --sidebar-width-collapsed: 0px !important;
+    --page-side-padding: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   1. NUCLEAR OVERFLOW FIX — the #1 root cause
+   sidebar.css line 128 sets overflow-x:auto !important on
+   .sidebar-content-wrapper > div — this makes .page scrollable.
+   We MUST override with same or higher specificity + !important.
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Override sidebar.css: .sidebar-content-wrapper > div:not(.app-sidebar) */
+  html body .sidebar-content-wrapper > div:not(.app-sidebar),
+  html body .sidebar-content-wrapper > div.page,
+  html body .sidebar-content-wrapper > main,
+  html body .sidebar-content-wrapper > .container {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Override sidebar.css: .sidebar-content-wrapper [class*="grid"] */
+  html body .sidebar-content-wrapper .grid,
+  html body .sidebar-content-wrapper [class*="grid"]:not(.kanban-board):not([class*="kanban"]):not(.calendar-grid):not(.heatmap-grid),
+  html body .sidebar-content-wrapper .flex-row {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* The wrapper itself */
+  .sidebar-content-wrapper {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Body + HTML — prevent ANY horizontal scroll */
+  html {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
   
-  /* Header samotný */
+  body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Global containment — NO element wider than viewport */
+  .container,
+  main,
+  .page,
+  .page-container,
+  .content,
+  .main-content,
+  .app-shell {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* .page specifically needs side padding */
+  .page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   2. HEADER — compact 44px bar, all icons 26px
+   ================================================================ */
+@media (max-width: 768px) {
   .app-header {
     height: 44px !important;
     min-height: 44px !important;
@@ -17,9 +114,11 @@
     padding: 0 8px !important;
     overflow: visible !important;
     box-sizing: border-box !important;
+    left: 6px !important;
+    right: 6px !important;
+    width: auto !important;
   }
 
-  /* Kontejner uvnitř headeru */
   .app-header .app-header-container,
   .app-header > div {
     height: 44px !important;
@@ -29,7 +128,7 @@
     align-items: center !important;
   }
 
-  /* VŠECHNY ikony v headeru — uniformní 26px */
+  /* ALL header icons — 26x26 */
   .app-header .app-header-icon-btn,
   .app-header .app-header-notifications,
   .app-header .app-header-settings,
@@ -52,7 +151,7 @@
     justify-content: center !important;
   }
 
-  /* VŠECHNY SVG ikony v headeru — max 13px (přebíjí inline atributy) */
+  /* All SVGs in header — 13px */
   .app-header svg {
     width: 13px !important;
     height: 13px !important;
@@ -61,7 +160,7 @@
     flex-shrink: 0 !important;
   }
 
-  /* Nadpis stránky — ořez textu */
+  /* Page title — truncate */
   .app-header .app-header-page-title,
   .app-header [class*="page-title"] {
     font-size: 13px !important;
@@ -73,13 +172,12 @@
     min-width: 0 !important;
   }
 
-  /* Actions kontejner */
   .app-header .app-header-actions {
     gap: 3px !important;
     flex-shrink: 0 !important;
   }
 
-  /* Zpět tlačítko */
+  /* Back button */
   .app-header .app-header-back {
     height: 26px !important;
     max-height: 26px !important;
@@ -90,7 +188,7 @@
     border-radius: 6px !important;
   }
 
-  /* Úkoly badge — jen číslo */
+  /* Tasks badge */
   .app-header .app-header-tasks-count {
     font-size: 0 !important;
     border-radius: 50% !important;
@@ -100,7 +198,7 @@
     font-size: 10px !important;
   }
 
-  /* Notifikační badge — malý */
+  /* Notification badge */
   .app-header .notif-badge {
     min-width: 14px !important;
     height: 14px !important;
@@ -113,7 +211,7 @@
     border-width: 1.5px !important;
   }
 
-  /* AI operator badge — malá tečka */
+  /* AI badge */
   .app-header #ai-operator-badge.notif-badge,
   .app-header #ai-operator-badge {
     width: 7px !important;
@@ -124,20 +222,18 @@
     padding: 0 !important;
   }
 
-  /* Search wrapper — kompaktní */
+  /* Search — collapse */
   .app-header .app-header-search-wrapper {
     flex: 0 !important;
     max-width: 26px !important;
     margin: 0 !important;
   }
-  .app-header .app-header-search {
-    display: none !important;
-  }
+  .app-header .app-header-search,
   .app-header .global-search-container {
     display: none !important;
   }
 
-  /* Header text (brand name) — skrýt */
+  /* Brand text — hide */
   .app-header .app-header-text,
   .app-header .app-header-brand-text {
     display: none !important;
@@ -146,196 +242,140 @@
 
 
 /* ================================================================
-   2. BODY PADDING — obsah nesmí být pod headerem
+   3. HORIZONTAL SCROLL CONTAINERS
+   These are the ONLY elements that get overflow-x: auto.
+   Everything else is overflow-x: hidden.
    ================================================================ */
 @media (max-width: 768px) {
-  body {
-    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-    overflow-x: hidden !important;
-  }
-  
-  html {
-    overflow-x: hidden !important;
-  }
-}
 
-
-/* ================================================================
-   3. DASHBOARD BUBLINY — automatické zmenšování
-   ================================================================ */
-@media (max-width: 480px) {
-  /* Action grid — 2 sloupce, menší mezery */
-  .action-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-    padding: 0 !important;
-  }
-
-  /* Jednotlivé karty — menší */
-  .action-card {
-    padding: 12px 10px !important;
-    border-radius: 14px !important;
-    min-height: auto !important;
-  }
-
-  /* Ikona bublina — 40x40px */
-  .action-card .icon-circle,
-  .icon-circle {
-    width: 40px !important;
-    height: 40px !important;
-    margin: 0 auto 8px !important;
-  }
-
-  .icon-circle::before {
-    top: 2px !important;
-    left: 8px !important;
-    right: 8px !important;
-  }
-
-  /* SVG v bublině — 18x18px */
-  .action-card .icon-circle svg,
-  .icon-circle svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  /* Text v kartě — menší */
-  .action-card h3 {
-    font-size: 12px !important;
-    margin: 0 0 2px !important;
-    line-height: 1.3 !important;
-  }
-
-  .action-card p {
-    font-size: 10px !important;
-    line-height: 1.3 !important;
-  }
-}
-
-/* Extra malé (iPhone SE) */
-@media (max-width: 375px) {
-  .action-grid {
-    gap: 6px !important;
-  }
-  
-  .action-card {
-    padding: 10px 8px !important;
-    border-radius: 12px !important;
-  }
-
-  .action-card .icon-circle,
-  .icon-circle {
-    width: 32px !important;
-    height: 32px !important;
-    margin: 0 auto 6px !important;
-  }
-
-  .action-card .icon-circle svg,
-  .icon-circle svg {
-    width: 14px !important;
-    height: 14px !important;
-  }
-
-  .action-card h3 {
-    font-size: 11px !important;
-  }
-
-  .action-card p {
-    font-size: 9px !important;
-  }
-}
-
-
-/* ================================================================
-   4. STAT KARTY (Zakázky, Dashboard) — scroll + menší + indikátor
-   ================================================================ */
-@media (max-width: 768px) {
-  /* Wrapper pro scroll indikátor — použít na parent */
-  .stats-row-wrapper,
-  .overview-stats-wrapper,
-  .kpi-cards-wrapper {
-    position: relative !important;
-  }
-  .stats-row-wrapper::after,
-  .overview-stats-wrapper::after,
-  .kpi-cards-wrapper::after,
-  .stats-row::after,
-  .overview-stats::after,
-  .kpi-cards::after,
-  .tasks-stats::after {
-    content: '' !important;
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: 40px !important;
-    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-  }
-
-  /* Horizontální scroll kontejner */
+  /* --- STAT CARDS --- */
+  .tasks-stats,
   .stats-row,
   .overview-stats,
   .kpi-cards,
   .budget-cards,
   .finance-summary-cards,
-  .tasks-stats,
-  [class*="stat-row"],
-  [class*="stats-grid"] {
+  .crew-stats-row,
+  .quick-stats,
+  .directory-stats,
+  [class*="stats-grid"]:not(.stats-grid) {
     display: flex !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
+    overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px 12px 4px 12px !important;
+    padding: 4px 40px 4px 0 !important;
     scroll-snap-type: x mandatory !important;
     scrollbar-width: none !important;
     position: relative !important;
+    grid-template-columns: none !important;
   }
-  
+
+  .tasks-stats::-webkit-scrollbar,
   .stats-row::-webkit-scrollbar,
   .overview-stats::-webkit-scrollbar,
   .kpi-cards::-webkit-scrollbar,
   .budget-cards::-webkit-scrollbar,
-  .tasks-stats::-webkit-scrollbar {
+  .crew-stats-row::-webkit-scrollbar,
+  .quick-stats::-webkit-scrollbar,
+  .directory-stats::-webkit-scrollbar {
     display: none !important;
   }
 
-  /* Jednotlivé stat karty */
-  .stat-card,
-  .kpi-card,
-  .overview-card {
-    min-width: 100px !important;
-    max-width: 130px !important;
-    padding: 8px 10px !important;
+  /* Individual stat cards */
+  .tasks-stats > .stat-card,
+  .tasks-stats > div,
+  .stats-row > .stat-card,
+  .overview-stats > .overview-card,
+  .overview-stats > div,
+  .kpi-cards > .kpi-card,
+  .kpi-cards > div,
+  .crew-stats-row > .crew-stat-card,
+  .crew-stats-row > div,
+  .quick-stats > .stat-card,
+  .quick-stats > div,
+  .directory-stats > .stat-card,
+  .directory-stats > div {
+    min-width: 110px !important;
+    max-width: 140px !important;
     flex-shrink: 0 !important;
     scroll-snap-align: start !important;
-    font-size: 11px !important;
     box-sizing: border-box !important;
   }
 
   .stat-card h4,
   .stat-card .stat-label,
-  .kpi-label {
+  .kpi-label,
+  .crew-stat-card h4 {
     font-size: 10px !important;
     margin-bottom: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
+  .stat-card .value,
   .stat-card .stat-value,
-  .kpi-value,
-  .stat-card .value {
-    font-size: clamp(14px, 4vw, 16px) !important;
+  .stat-card-value,
+  .kpi-value {
+    font-size: clamp(14px, 4vw, 18px) !important;
   }
-}
 
+  .stat-card .sub {
+    font-size: 10px !important;
+  }
 
-/* ================================================================
-   5. FINANCE KARTY (Job Detail) — menší, scroll, indikátor
-   ================================================================ */
-@media (max-width: 768px) {
-  /* Finance grid — job-detail i stránka Finance → horizontální scroll */
+  /* --- TABS --- */
+  .view-toggle,
+  .role-tabs,
+  .job-tabs,
+  .page-tabs,
+  .tab-list,
+  .nav-tabs,
+  .finance-tabs,
+  .inbox-tabs,
+  .view-mode-tabs,
+  .filter-pills,
+  [class*="tab-list"],
+  [class*="page-tabs"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    padding-right: 32px !important;
+    position: relative !important;
+  }
+
+  .view-toggle::-webkit-scrollbar,
+  .role-tabs::-webkit-scrollbar,
+  .job-tabs::-webkit-scrollbar,
+  .page-tabs::-webkit-scrollbar,
+  .tab-list::-webkit-scrollbar,
+  .nav-tabs::-webkit-scrollbar,
+  .finance-tabs::-webkit-scrollbar,
+  .inbox-tabs::-webkit-scrollbar,
+  .view-mode-tabs::-webkit-scrollbar,
+  .filter-pills::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .job-tab,
+  .tab-btn,
+  .page-tab,
+  .view-toggle button,
+  .role-tab,
+  .filter-pill {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* --- FINANCE CARDS --- */
   .finance-overview,
   .finance-cards,
   .budget-overview,
@@ -345,28 +385,21 @@
     display: flex !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
+    overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px 12px !important;
+    padding: 4px 32px 4px 0 !important;
     scrollbar-width: none !important;
     position: relative !important;
     scroll-snap-type: x mandatory !important;
-  }
-  .finance-overview::after,
-  .finance-cards::after,
-  #tab-finance .info-grid::after {
-    content: '' !important;
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: 40px !important;
-    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
+    grid-template-columns: none !important;
   }
 
-  .finance-overview .finance-card,
+  .finance-overview::-webkit-scrollbar,
+  .finance-cards::-webkit-scrollbar {
+    display: none !important;
+  }
+
   .finance-card {
     min-width: 130px !important;
     max-width: 160px !important;
@@ -376,501 +409,27 @@
     scroll-snap-align: start !important;
   }
 
-  .finance-card h3 {
-    font-size: 11px !important;
-    margin: 0 0 6px !important;
-  }
-
+  .finance-card h3 { font-size: 11px !important; margin: 0 0 6px !important; }
   .finance-card h2,
-  .finance-card .amount,
-  .stat-value,
-  .kpi-value {
-    font-size: clamp(14px, 4vw, 24px) !important;
-    margin: 0 0 4px !important;
-    word-break: break-all !important;
-  }
+  .finance-card .amount { font-size: clamp(14px, 4vw, 20px) !important; word-break: break-all !important; }
 
-  .finance-card .trend {
-    font-size: 10px !important;
-  }
-
-  .finance-card .breakdown {
-    font-size: 10px !important;
-  }
-}
-
-
-/* ================================================================
-   6. HORIZONTÁLNÍ OVERFLOW FIX — nic nesmí přetékat
-   ================================================================ */
-@media (max-width: 768px) {
-  html, body {
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-
-  /* Hlavní kontejnery */
-  .container,
-  main,
-  .page-container,
-  .content,
-  .main-content,
-  [class*="container"]:not(.app-header-container):not(.kanban-container) {
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Všechny karty — max šířka */
-  .card,
-  .glass-card,
-  .info-card,
-  .dashboard-card,
-  .finance-card,
-  .stat-card,
-  [class*="card"]:not(.action-card) {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Tlačítka — nesmí přetékat */
-  .btn,
-  button:not(.app-header-icon-btn):not(.app-header-sidebar-toggle):not(.app-header-search-btn):not(.app-header-back):not(.sidebar-close) {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  /* Nová zakázka tlačítko */
-  .jobs-new-btn,
-  [class*="new-job"],
-  a[href*="jobs-new"] {
-    max-width: calc(100vw - 24px) !important;
-  }
-
-  /* Job hero */
-  .job-hero {
-    padding: 14px !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .job-hero-content h1 {
-    font-size: 18px !important;
-    word-break: break-word !important;
-  }
-
-  .job-risk-ring {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 14px !important;
-    flex-shrink: 0 !important;
-  }
-
-  /* Tabs — horizontální scroll + padding aby první tab nebyl oříznutý */
-  .job-tabs,
-  .page-tabs,
-  .tab-list,
-  .view-toggle,
-  .role-tabs,
-  .nav-tabs,
-  .finance-tabs,
-  .inbox-tabs,
-  .view-mode-tabs,
-  [class*="tab-list"],
-  [class*="page-tabs"] {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    white-space: nowrap !important;
-    scrollbar-width: none !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    position: relative !important;
-  }
-  .job-tabs::after,
-  .page-tabs::after,
-  .tab-list::after,
-  .view-toggle::after,
-  .role-tabs::after,
-  .nav-tabs::after,
-  .finance-tabs::after,
-  .inbox-tabs::after,
-  .view-mode-tabs::after {
-    content: '' !important;
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: 32px !important;
-    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-  }
-
-  .job-tab,
-  .tab-btn,
-  .view-toggle button,
-  .role-tab,
-  [class*="tab"]:not([class*="tabs"]):not([class*="table"]) {
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-  }
-
-  /* Info grid */
-  .info-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  .info-card {
-    padding: 12px !important;
-  }
-
-  .info-card h3 {
-    font-size: 13px !important;
-  }
-
-  .info-row {
-    padding: 6px 0 !important;
-    font-size: 12px !important;
-  }
-}
-
-
-/* ================================================================
-   7. AI OPERÁTOR KARTA — menší na mobilu
-   ================================================================ */
-@media (max-width: 768px) {
-  .ai-panel,
-  .ai-job-panel,
-  [class*="ai-panel"],
-  [class*="ai-operator-section"] {
-    padding: 10px !important;
-    font-size: 12px !important;
-  }
-
-  .ai-panel-header {
-    font-size: 14px !important;
-    padding: 8px 10px !important;
-  }
-}
-
-
-/* ================================================================
-   8. TOOLBAR (Zakázky) — wrap + menší
-   ================================================================ */
-@media (max-width: 768px) {
-  .jobs-toolbar,
-  .toolbar,
-  .action-bar,
-  [class*="toolbar"] {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    padding: 6px !important;
-  }
-
-  .jobs-toolbar button,
-  .jobs-toolbar select,
-  .toolbar button,
-  .toolbar select {
-    font-size: 12px !important;
-    padding: 6px 10px !important;
-    height: auto !important;
-  }
-}
-
-
-/* ================================================================
-   9. BOTTOM NAV — safe area
-   ================================================================ */
-@media (max-width: 768px) {
-  .bottom-nav,
-  #bottom-nav-container > div {
-    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-  }
-}
-
-
-/* ================================================================
-   10. SIDEBAR LOGO — zobrazit správně
-   ================================================================ */
-.sidebar-logo {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 8px !important;
-  object-fit: contain !important;
-  background: transparent !important;
-}
-
-.sidebar-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-.sidebar-brand-text {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-}
-
-
-/* ================================================================
-   11. WEATHER WIDGET — menší
-   ================================================================ */
-@media (max-width: 480px) {
-  .weather-card,
-  .weather-widget,
-  [class*="weather"] {
-    padding: 12px !important;
-  }
-  
-  .weather-card .temp,
-  [class*="weather"] .temp {
-    font-size: 28px !important;
-  }
-}
-
-
-/* ================================================================
-   12. SAFARI iOS specifické opravy
-   ================================================================ */
-@supports (-webkit-touch-callout: none) {
-  body {
-    min-height: -webkit-fill-available !important;
-  }
-  
-  html {
-    height: -webkit-fill-available !important;
-  }
-  
-  .app-header {
-    -webkit-transform: translateZ(0) !important;
-  }
-}
-
-@supports (padding: env(safe-area-inset-left)) {
-  @media (max-width: 768px) {
-    .app-header {
-      top: calc(6px + env(safe-area-inset-top, 0px)) !important;
-      left: calc(6px + env(safe-area-inset-left, 0px)) !important;
-      right: calc(6px + env(safe-area-inset-right, 0px)) !important;
-    }
-    
-    .container, main, .page-container {
-      padding-left: max(12px, env(safe-area-inset-left)) !important;
-      padding-right: max(12px, env(safe-area-inset-right)) !important;
-    }
-  }
-}
-
-
-/* ================================================================
-   13. QUICK ADD BAR
-   ================================================================ */
-@media (max-width: 480px) {
-  .quick-add,
-  .quick-task-bar,
-  [class*="quick-add"] {
-    margin: 6px !important;
-    padding: 6px !important;
-    border-radius: 10px !important;
-  }
-
-  .quick-add input,
-  .quick-task-bar input {
-    font-size: 13px !important;
-    padding: 6px 8px !important;
-  }
-
-  .quick-add button,
-  .quick-task-bar button {
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-  }
-}
-
-
-/* ================================================================
-   14. ÚKOLY — view-toggle, role-tabs, tasks-stats scroll + padding
-   ================================================================ */
-@media (max-width: 768px) {
-  .tasks-stats {
-    grid-template-columns: none !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    gap: 8px !important;
-    scroll-snap-type: x mandatory !important;
-    scrollbar-width: none !important;
-  }
-  .tasks-stats .stat-card {
-    min-width: 90px !important;
-    max-width: 120px !important;
-    flex-shrink: 0 !important;
-    scroll-snap-align: start !important;
-  }
-  .tasks-stats .stat-card .value {
-    font-size: 14px !important;
-  }
-  .view-toggle,
-  .role-tabs {
-    flex-shrink: 0 !important;
-    padding-left: 12px !important;
-  }
-}
-
-/* ================================================================
-   15. KALENDÁŘ — max-width, box-sizing
-   ================================================================ */
-@media (max-width: 768px) {
-  .calendar-grid,
-  .cal,
-  .grid-wrap,
-  .calendar-month {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  .toolbar {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 8px !important;
-  }
-  .toolbar .month {
-    font-size: clamp(14px, 4vw, 18px) !important;
-  }
-}
-
-/* ================================================================
-   16. TÝM — kapacitní karty, heatmapa
-   ================================================================ */
-@media (max-width: 768px) {
-  [class*="capacity-card"],
-  [class*="team-card"] {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
+  /* --- HEATMAP / CALENDAR --- */
+  [class*="heatmap"],
   [class*="capacity-heatmap"],
-  [class*="heatmap"] {
+  .heatmap-grid {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
   }
+
   [class*="heatmap"] td,
   [class*="capacity-cell"] {
     min-width: 40px !important;
+    font-size: 11px !important;
+    padding: 4px !important;
   }
-  .legend,
-  [class*="legend"] {
-    font-size: 10px !important;
-    flex-wrap: wrap !important;
-  }
-}
 
-/* ================================================================
-   17. INBOX — tabs, container
-   ================================================================ */
-@media (max-width: 768px) {
-  .inbox-container {
-    padding: 16px 12px 100px !important;
-  }
-  .inbox-tabs {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-}
-
-/* ================================================================
-   18. REPORTY — quick-stats, report-types
-   ================================================================ */
-@media (max-width: 768px) {
-  .reports-container {
-    padding: 16px 12px 120px !important;
-  }
-  .quick-stats {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 12px !important;
-    padding: 4px 12px !important;
-    scroll-snap-type: x mandatory !important;
-    scrollbar-width: none !important;
-  }
-  .quick-stats .stat-card {
-    min-width: 140px !important;
-    flex-shrink: 0 !important;
-    scroll-snap-align: start !important;
-  }
-  .report-types {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-  .report-card {
-    padding: 20px !important;
-  }
-}
-
-/* ================================================================
-   19. TÝM — crew-stats-row, view-mode-tabs
-   ================================================================ */
-@media (max-width: 768px) {
-  .crew-stats-row {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    grid-template-columns: none !important;
-    gap: 12px !important;
-    padding: 4px 12px !important;
-    scroll-snap-type: x mandatory !important;
-    scrollbar-width: none !important;
-  }
-  .crew-stat-card {
-    min-width: 140px !important;
-    flex-shrink: 0 !important;
-    scroll-snap-align: start !important;
-  }
-  .view-mode-tabs {
-    overflow-x: auto !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    max-width: 100% !important;
-  }
-}
-
-/* ================================================================
-   20. VÝKAZY (Timesheets) — ts-summary, ts-nav
-   ================================================================ */
-@media (max-width: 768px) {
-  .ts-page {
-    padding: 0 12px 80px !important;
-  }
-  .ts-summary {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-  .ts-stat-value {
-    font-size: 18px !important;
-  }
-  .ts-nav {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-  }
-}
-
-/* ================================================================
-   21. TABULKY — overflow na mobilu
-   ================================================================ */
-@media (max-width: 768px) {
+  /* --- TABLES --- */
   .invoices-table,
   .data-table,
   .list-table,
@@ -879,109 +438,8 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  .invoices-table th,
-  .invoices-table td,
-  .data-table th,
-  .data-table td {
-    font-size: 12px !important;
-    padding: 8px 10px !important;
-  }
-}
 
-/* ================================================================
-   22. ADRESÁŘ — directory-stats
-   ================================================================ */
-@media (max-width: 768px) {
-  .directory-stats {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    grid-template-columns: none !important;
-    gap: 12px !important;
-    padding: 4px 12px !important;
-    scroll-snap-type: x mandatory !important;
-    scrollbar-width: none !important;
-  }
-  .directory-stats .stat-card {
-    min-width: 120px !important;
-    flex-shrink: 0 !important;
-    scroll-snap-align: start !important;
-  }
-}
-
-/* ================================================================
-   23. DOKUMENTY — file-browser na mobilu
-   ================================================================ */
-@media (max-width: 768px) {
-  .file-browser {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto 1fr !important;
-    gap: 16px !important;
-    padding: 12px !important;
-    min-height: auto !important;
-  }
-  .file-browser .sidebar {
-    width: 100% !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.12)) !important;
-    padding: 12px 0 16px !important;
-  }
-  .file-browser .sidebar h3 {
-    margin-bottom: 12px !important;
-  }
-  .file-browser .folder {
-    padding: 10px 12px !important;
-  }
-}
-
-/* ================================================================
-   24. REPORTY denní/týdenní — main-grid, heatmap
-   ================================================================ */
-@media (max-width: 768px) {
-  .daily-report,
-  .weekly-report {
-    padding: 16px 12px !important;
-  }
-  .main-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-  .heatmap-grid {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    display: block !important;
-  }
-  .heatmap-grid > * {
-    min-width: 600px !important;
-  }
-  .material-summary {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 10px !important;
-  }
-}
-
-/* ================================================================
-   25. SKLAD / EMPTY STATE — mezera mezi h3 a p
-   ================================================================ */
-.empty-state h3 {
-  margin-bottom: 6px !important;
-}
-.empty-state h3 + p,
-.empty-state h3 + div,
-.empty-state p {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-.empty-state td h3,
-.empty-state td p {
-  display: block !important;
-}
-
-/* ================================================================
-   26. KANBAN — horizontální scroll
-   ================================================================ */
-@media (max-width: 768px) {
+  /* --- KANBAN --- */
   .kanban-board,
   .kanban-container {
     overflow-x: auto !important;
@@ -996,9 +454,409 @@
     max-width: 280px !important;
     flex-shrink: 0 !important;
   }
+}
 
-  .kanban-card {
-    padding: 10px !important;
+
+/* ================================================================
+   4. SCROLL FADE INDICATORS
+   Using mask-image for reliable fade on scroll containers
+   ================================================================ */
+@media (max-width: 768px) {
+  .tasks-stats,
+  .stats-row,
+  .overview-stats,
+  .kpi-cards,
+  .crew-stats-row,
+  .quick-stats,
+  .directory-stats,
+  .finance-overview,
+  .finance-cards,
+  .view-toggle,
+  .role-tabs,
+  .job-tabs,
+  .page-tabs,
+  .tab-list,
+  .filter-pills,
+  .inbox-tabs,
+  .view-mode-tabs {
+    -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 80%, transparent 100%) !important;
+  }
+}
+
+
+/* ================================================================
+   5. ACTION BAR / TOOLBAR — wrap on mobile
+   ================================================================ */
+@media (max-width: 768px) {
+  .action-bar,
+  .jobs-toolbar,
+  .toolbar:not([class*="heatmap"]),
+  [class*="toolbar"]:not([class*="heatmap"]) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 6px 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-bar > .view-toggle,
+  .action-bar > .role-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .action-bar button.btn-primary,
+  .action-bar > button {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   6. DASHBOARD BUBBLES
+   ================================================================ */
+@media (max-width: 480px) {
+  .action-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-card {
+    padding: 12px 10px !important;
+    border-radius: 14px !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-card .icon-circle,
+  .icon-circle {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .action-card .icon-circle svg,
+  .icon-circle svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .action-card h3 { font-size: 12px !important; margin: 0 0 2px !important; }
+  .action-card p { font-size: 10px !important; }
+}
+
+@media (max-width: 375px) {
+  .action-grid { gap: 6px !important; }
+  .action-card { padding: 10px 8px !important; }
+  .action-card .icon-circle, .icon-circle { width: 32px !important; height: 32px !important; }
+  .action-card h3 { font-size: 11px !important; }
+}
+
+
+/* ================================================================
+   7. OPERATOR BAR
+   ================================================================ */
+@media (max-width: 768px) {
+  .operator-bar,
+  .ai-panel,
+  .ai-job-panel,
+  [class*="ai-panel"],
+  [class*="ai-operator"],
+  [class*="operator-bar"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 10px 12px !important;
     font-size: 12px !important;
   }
+
+  .operator-message {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .operator-badges {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+}
+
+
+/* ================================================================
+   8. JOB DETAIL
+   ================================================================ */
+@media (max-width: 768px) {
+  .job-hero, .hero-card {
+    padding: 14px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .job-hero-content h1 { font-size: 18px !important; word-break: break-word !important; }
+
+  .job-risk-ring, .risk-ring {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .info-grid:not(#tab-finance .info-grid) {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .info-card {
+    padding: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   9. TEAM PAGE
+   ================================================================ */
+@media (max-width: 768px) {
+  [class*="capacity-card"],
+  [class*="team-card"] {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .legend, [class*="legend"] {
+    font-size: 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+}
+
+
+/* ================================================================
+   10. CALENDAR
+   ================================================================ */
+@media (max-width: 768px) {
+  .calendar-grid, .cal, .grid-wrap, .calendar-month {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+  }
+
+  .toolbar .month { font-size: clamp(14px, 4vw, 18px) !important; }
+}
+
+
+/* ================================================================
+   11. REPORTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 16px 12px 120px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .report-types { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .main-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .material-summary { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+
+/* ================================================================
+   12. TIMESHEETS
+   ================================================================ */
+@media (max-width: 768px) {
+  .ts-page { padding: 0 12px 80px !important; }
+  .ts-summary { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .ts-stat-value { font-size: 18px !important; }
+  .ts-nav { flex-wrap: wrap !important; gap: 8px !important; }
+}
+
+
+/* ================================================================
+   13. INBOX
+   ================================================================ */
+@media (max-width: 768px) {
+  .inbox-container {
+    padding: 16px 12px 100px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   14. DOCUMENTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .file-browser {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    gap: 16px !important;
+    padding: 12px !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .file-browser .sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.12)) !important;
+  }
+}
+
+
+/* ================================================================
+   15. SKLAD / EMPTY STATE
+   ================================================================ */
+.empty-state h3 { margin-bottom: 6px !important; }
+.empty-state h3 + p, .empty-state p { margin-top: 0 !important; }
+
+
+/* ================================================================
+   16. GENERIC CATCH-ALL
+   ================================================================ */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .card, .glass-card, .info-card, .dashboard-card,
+  [class*="card"]:not(.action-card):not(.stat-card):not(.finance-card):not(.kpi-card):not(.crew-stat-card) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  img, video, canvas, svg:not(.app-header svg) {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* ================================================================
+   17. BOTTOM NAV
+   ================================================================ */
+@media (max-width: 768px) {
+  .bottom-nav, #bottom-nav-container > div {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+}
+
+
+/* ================================================================
+   18. SIDEBAR LOGO
+   ================================================================ */
+.sidebar-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  object-fit: contain !important;
+}
+
+
+/* ================================================================
+   19. WEATHER
+   ================================================================ */
+@media (max-width: 480px) {
+  .weather-card, .weather-widget, [class*="weather"] {
+    padding: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   20. AI OPERATOR
+   ================================================================ */
+@media (max-width: 768px) {
+  .ai-panel-header { font-size: 14px !important; padding: 8px 10px !important; }
+  .ai-avatar { width: 32px !important; height: 32px !important; }
+}
+
+
+/* ================================================================
+   21. QUICK ADD
+   ================================================================ */
+@media (max-width: 480px) {
+  .quick-add, .quick-task-bar, [class*="quick-add"] {
+    margin: 6px 0 !important;
+    padding: 6px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   22. SAFARI iOS
+   ================================================================ */
+@supports (-webkit-touch-callout: none) {
+  body { min-height: -webkit-fill-available !important; }
+  html { height: -webkit-fill-available !important; }
+  .app-header { -webkit-transform: translateZ(0) !important; }
+}
+
+@supports (padding: env(safe-area-inset-left)) {
+  @media (max-width: 768px) {
+    .app-header {
+      top: calc(6px + env(safe-area-inset-top, 0px)) !important;
+      left: calc(6px + env(safe-area-inset-left, 0px)) !important;
+      right: calc(6px + env(safe-area-inset-right, 0px)) !important;
+    }
+  }
+}
+
+
+/* ================================================================
+   23. PLANNING PAGES
+   ================================================================ */
+@media (max-width: 768px) {
+  .planning-grid, .scenario-grid, .costs-grid, [class*="planning-grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   24. NURSERY
+   ================================================================ */
+@media (max-width: 768px) {
+  .plant-grid, .nursery-grid, .catalog-grid,
+  [class*="plant-grid"], [class*="nursery-grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .plant-grid, .nursery-grid, .catalog-grid { grid-template-columns: 1fr !important; }
 }
