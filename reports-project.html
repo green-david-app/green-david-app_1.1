@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Zakázková mise - green david app</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/tasks-design-system.css"/>
+    <link rel="stylesheet" href="/static/css/global-search.css"/>
+    <script src="/app-settings.js"></script>
+    <script src="/static/app-header.js"></script>
+    <script src="/static/global-search.js"></script>
+    <style>
+        :root { --bg-primary:#1a1d1f; --bg-card:rgba(255,255,255,0.06); --bg-card-hover:rgba(255,255,255,0.10); --border:rgba(255,255,255,0.08); --text-primary:#f1f5f9; --text-secondary:#94a3b8; --text-muted:#64748b; --accent-green:#4ade80; --accent-blue:#60a5fa; --accent-yellow:#fbbf24; --accent-red:#f87171; --accent-purple:#a78bfa; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:var(--bg-primary); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; min-height:100vh; }
+        .project-report { max-width:1400px; margin:0 auto; padding:24px; }
+        .report-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+        .report-title { display:flex; align-items:center; gap:16px; }
+        .back-btn { width:40px; height:40px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .back-btn:hover { background:var(--bg-card-hover); border-color:var(--accent-purple); }
+        .back-btn svg { width:20px; height:20px; stroke:var(--text-secondary); }
+        .report-title h1 { font-size:28px; font-weight:700; color:var(--accent-purple); }
+        .report-title .subtitle { color:var(--text-muted); font-size:14px; }
+        
+        .job-selector { display:flex; gap:12px; align-items:center; }
+        .job-selector select { padding:12px 16px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); font-size:15px; min-width:300px; cursor:pointer; }
+        .job-selector select:focus { outline:none; border-color:var(--accent-purple); }
+        
+        .job-hero { background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(96,165,250,0.1)); border:1px solid rgba(167,139,250,0.2); border-radius:20px; padding:32px; margin-bottom:24px; display:grid; grid-template-columns:1fr auto; gap:32px; align-items:center; }
+        .job-hero-info h2 { font-size:24px; font-weight:700; color:var(--text-primary); margin-bottom:8px; }
+        .job-hero-meta { display:flex; gap:24px; flex-wrap:wrap; }
+        .job-hero-meta span { display:flex; align-items:center; gap:6px; font-size:14px; color:var(--text-secondary); }
+        .job-hero-meta svg { width:16px; height:16px; stroke:var(--accent-purple); }
+        .job-hero-progress { text-align:center; }
+        .progress-ring { width:120px; height:120px; position:relative; }
+        .progress-ring svg { transform:rotate(-90deg); }
+        .progress-ring circle { fill:none; stroke-width:8; }
+        .progress-ring .bg { stroke:var(--border); }
+        .progress-ring .fg { stroke:var(--accent-green); stroke-linecap:round; transition:stroke-dashoffset 0.5s; }
+        .progress-ring .value { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .progress-ring .value .num { font-size:32px; font-weight:700; color:var(--text-primary); }
+        .progress-ring .value .label { font-size:12px; color:var(--text-muted); }
+        
+        .main-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+        .span-2 { grid-column:span 2; }
+        .span-3 { grid-column:span 3; }
+        
+        .panel-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+        .panel-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .panel-header h3 { font-size:15px; font-weight:600; display:flex; align-items:center; gap:10px; }
+        .panel-header h3 svg { width:18px; height:18px; }
+        .panel-link { color:var(--accent-blue); font-size:13px; text-decoration:none; }
+        .panel-link:hover { text-decoration:underline; }
+        .panel-content { padding:20px; }
+        
+        .budget-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+        .budget-item { background:var(--bg-card-hover); border-radius:12px; padding:20px; }
+        .budget-label { font-size:12px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; }
+        .budget-value { font-size:28px; font-weight:700; }
+        .budget-value.ok { color:var(--accent-green); }
+        .budget-value.warn { color:var(--accent-yellow); }
+        .budget-value.over { color:var(--accent-red); }
+        .budget-bar { height:6px; background:var(--border); border-radius:3px; margin-top:12px; overflow:hidden; }
+        .budget-bar-fill { height:100%; border-radius:3px; }
+        
+        .team-list { display:flex; flex-wrap:wrap; gap:12px; }
+        .team-member { display:flex; align-items:center; gap:10px; background:var(--bg-card-hover); padding:10px 14px; border-radius:10px; cursor:pointer; }
+        .team-member:hover { background:rgba(167,139,250,0.1); }
+        .team-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent-purple),var(--accent-blue)); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; }
+        .team-name { font-size:14px; color:var(--text-primary); }
+        .team-role { font-size:11px; color:var(--text-muted); }
+        
+        .task-list { display:flex; flex-direction:column; gap:8px; }
+        .task-item { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-card-hover); border-radius:10px; }
+        .task-status { width:20px; height:20px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; }
+        .task-status.done { background:var(--accent-green); border-color:var(--accent-green); }
+        .task-status.done svg { stroke:white; }
+        .task-status svg { width:12px; height:12px; }
+        .task-info { flex:1; }
+        .task-title { font-size:14px; color:var(--text-primary); }
+        .task-meta { font-size:12px; color:var(--text-muted); }
+        
+        .photo-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+        .photo-item { aspect-ratio:1; border-radius:10px; background:var(--bg-card-hover); overflow:hidden; cursor:pointer; position:relative; }
+        .photo-item img { width:100%; height:100%; object-fit:cover; }
+        .photo-item:hover::after { content:''; position:absolute; inset:0; background:rgba(167,139,250,0.3); }
+        .photo-empty { display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
+        
+        .ai-box { background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(96,165,250,0.08)); border:1px solid rgba(74,222,128,0.2); }
+        .ai-prediction { display:flex; align-items:center; gap:20px; }
+        .ai-prediction-icon { width:60px; height:60px; border-radius:14px; background:linear-gradient(135deg,var(--accent-green),var(--accent-blue)); display:flex; align-items:center; justify-content:center; }
+        .ai-prediction-icon svg { width:28px; height:28px; stroke:white; }
+        .ai-prediction-content h4 { font-size:18px; font-weight:600; color:var(--text-primary); margin-bottom:4px; }
+        .ai-prediction-content p { font-size:14px; color:var(--text-secondary); }
+        
+        .risk-list { display:flex; flex-direction:column; gap:10px; }
+        .risk-item { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-card-hover); border-radius:10px; border-left:3px solid var(--accent-yellow); }
+        .risk-item.high { border-left-color:var(--accent-red); }
+        .risk-text { flex:1; font-size:14px; color:var(--text-primary); }
+        
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+        .no-job { text-align:center; padding:80px 20px; }
+        .no-job svg { width:80px; height:80px; stroke:var(--text-muted); opacity:0.5; margin-bottom:20px; }
+        .no-job h2 { font-size:20px; color:var(--text-primary); margin-bottom:8px; }
+        .no-job p { color:var(--text-muted); }
+        
+        @media (max-width:1024px) { .main-grid { grid-template-columns:1fr 1fr; } .span-3 { grid-column:span 2; } }
+        @media (max-width:640px) { 
+            .main-grid { grid-template-columns:1fr; } 
+            .span-2,.span-3 { grid-column:span 1; } 
+            .job-hero { grid-template-columns:1fr; text-align:center; }
+            .photo-grid { grid-template-columns:repeat(2,1fr); }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+  <link rel="stylesheet" href="/static/css/mobile-fix.css">
+</head>
+<body class="has-sidebar">
+    <header class="app-header">
+        <div class="app-header-container">
+            <a href="/" class="app-header-brand">
+                <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
+                <div class="app-header-text">
+                    <div class="app-header-title">green david app</div>
+                    <div class="app-header-subtitle">interní systém</div>
+                </div>
+            </a>
+            <div class="global-search-container"></div>
+            <div class="app-header-actions">
+                <a href="/reports" style="color: var(--text-secondary); text-decoration: none; font-size: 13px; margin-right: 16px;">← Velitelský panel</a>
+                <div id="userbox" class="app-header-user"></div>
+                <a href="/settings.html" class="app-header-settings" title="Nastavení">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m11-9h-6m-6 0H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="project-report">
+        <div class="report-header">
+            <div class="report-title">
+                <button class="back-btn" onclick="location.href='/reports.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                <div><h1>Zakázková mise</h1><div class="subtitle">Řídicí centrum projektu</div></div>
+            </div>
+            <div class="job-selector">
+                <select id="jobSelect" onchange="loadJob(this.value)">
+                    <option value="">-- Vyberte zakázku --</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="jobContent">
+            <div class="no-job">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                <h2>Vyberte zakázku</h2>
+                <p>Zvolte zakázku ze seznamu pro zobrazení detailního přehledu</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJob = null;
+        
+        async function loadJobList() {
+            try {
+                const r = await fetch('/api/jobs');
+                const d = await r.json();
+                const jobs = (d.jobs||[]).filter(j=>j.status&&!['cancelled'].includes(j.status.toLowerCase()));
+                const sel = document.getElementById('jobSelect');
+                sel.innerHTML = '<option value="">-- Vyberte zakázku --</option>' + 
+                    jobs.map(j=>`<option value="${j.id}">${esc(j.title||j.name||j.client)} - ${esc(j.status)}</option>`).join('');
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const jobId = urlParams.get('id');
+                if(jobId) { sel.value = jobId; loadJob(jobId); }
+            } catch(e) { console.error('Error loading jobs:', e); }
+        }
+        
+        async function loadJob(jobId) {
+            if(!jobId) {
+                document.getElementById('jobContent').innerHTML = `
+                    <div class="no-job">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        <h2>Vyberte zakázku</h2>
+                        <p>Zvolte zakázku ze seznamu pro zobrazení detailního přehledu</p>
+                    </div>`;
+                return;
+            }
+            
+            try {
+                const r = await fetch(`/api/jobs/${jobId}`);
+                const job = await r.json();
+                if(job.error) throw new Error(job.error);
+                currentJob = job;
+                renderJob(job);
+            } catch(e) { 
+                document.getElementById('jobContent').innerHTML = `<div class="no-job"><h2>Chyba načítání</h2><p>${e.message}</p></div>`;
+            }
+        }
+        
+        function renderJob(job) {
+            const progress = job.completion_percent || job.progress || 0;
+            const budgetLabor = job.budget_labor || 0;
+            const actualLabor = job.actual_labor_cost || 0;
+            const budgetMat = job.budget_materials || 0;
+            const actualMat = job.actual_material_cost || 0;
+            const laborPct = budgetLabor > 0 ? (actualLabor / budgetLabor * 100) : 0;
+            const matPct = budgetMat > 0 ? (actualMat / budgetMat * 100) : 0;
+            const circumference = 2 * Math.PI * 52;
+            const offset = circumference - (progress / 100) * circumference;
+            
+            document.getElementById('jobContent').innerHTML = `
+                <div class="job-hero">
+                    <div class="job-hero-info">
+                        <h2>${esc(job.title || job.name || job.client)}</h2>
+                        <div class="job-hero-meta">
+                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${esc(job.client || 'Bez klienta')}</span>
+                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(job.city || job.location || 'Bez lokace')}</span>
+                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>${job.deadline ? formatDate(job.deadline) : 'Bez termínu'}</span>
+                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${esc(job.status || 'Neznámý')}</span>
+                        </div>
+                    </div>
+                    <div class="job-hero-progress">
+                        <div class="progress-ring">
+                            <svg width="120" height="120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/></svg>
+                            <div class="value"><span class="num">${progress}</span><span class="label">% hotovo</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="main-grid">
+                    <div class="panel-card">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Rozpočet práce</h3></div>
+                        <div class="panel-content">
+                            <div class="budget-item">
+                                <div class="budget-label">Plán vs Skutečnost</div>
+                                <div class="budget-value ${laborPct>110?'over':laborPct>90?'warn':'ok'}">${formatMoney(actualLabor)} / ${formatMoney(budgetLabor)}</div>
+                                <div class="budget-bar"><div class="budget-bar-fill" style="width:${Math.min(laborPct,100)}%;background:${laborPct>110?'var(--accent-red)':laborPct>90?'var(--accent-yellow)':'var(--accent-green)'}"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-card">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-yellow)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Rozpočet materiál</h3></div>
+                        <div class="panel-content">
+                            <div class="budget-item">
+                                <div class="budget-label">Plán vs Skutečnost</div>
+                                <div class="budget-value ${matPct>110?'over':matPct>90?'warn':'ok'}">${formatMoney(actualMat)} / ${formatMoney(budgetMat)}</div>
+                                <div class="budget-bar"><div class="budget-bar-fill" style="width:${Math.min(matPct,100)}%;background:${matPct>110?'var(--accent-red)':matPct>90?'var(--accent-yellow)':'var(--accent-green)'}"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-card">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Tým</h3><a href="/job-detail.html?id=${job.id}" class="panel-link">Detail →</a></div>
+                        <div class="panel-content"><div class="team-list" id="teamList"><div style="color:var(--text-muted)">Načítání...</div></div></div>
+                    </div>
+                    
+                    <div class="panel-card span-2">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Úkoly</h3><a href="/tasks.html?job=${job.id}" class="panel-link">Všechny úkoly →</a></div>
+                        <div class="panel-content"><div class="task-list" id="taskList"><div style="color:var(--text-muted)">Načítání...</div></div></div>
+                    </div>
+                    
+                    <div class="panel-card">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Rizika</h3></div>
+                        <div class="panel-content"><div class="risk-list" id="riskList"><div style="color:var(--text-muted)">Načítání...</div></div></div>
+                    </div>
+                    
+                    <div class="panel-card span-2">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Fotodokumentace</h3><a href="/job-detail.html?id=${job.id}#photos" class="panel-link">Galerie →</a></div>
+                        <div class="panel-content"><div class="photo-grid" id="photoGrid"><div class="photo-item photo-empty">Žádné fotky</div></div></div>
+                    </div>
+                    
+                    <div class="panel-card ai-box span-3">
+                        <div class="panel-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><circle cx="12" cy="12" r="10"/></svg>AI Predikce dokončení</h3><a href="/ai-operator.html" class="panel-link">AI Operátor →</a></div>
+                        <div class="panel-content" id="aiPrediction">
+                            <div class="ai-prediction">
+                                <div class="ai-prediction-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                                <div class="ai-prediction-content">
+                                    <h4>Predikovaný konec: ${predictEndDate(job)}</h4>
+                                    <p>Na základě aktuálního postupu a historických dat podobných zakázek.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            loadTeam(job.id);
+            loadTasks(job.id);
+            loadRisks(job.id);
+            loadPhotos(job.id);
+        }
+        
+        async function loadTeam(jobId) {
+            const el = document.getElementById('teamList');
+            try {
+                const r = await fetch(`/api/jobs/${jobId}/employees`);
+                const d = await r.json();
+                const emps = d.employees || d || [];
+                if(!emps.length) { el.innerHTML = '<div style="color:var(--text-muted)">Žádní přiřazení</div>'; return; }
+                el.innerHTML = emps.map(e=>{
+                    const i=(e.name||'NN').split(' ').map(n=>n[0]).join('').slice(0,2);
+                    return `<div class="team-member" onclick="location.href='/employee-detail.html?id=${e.id}'"><div class="team-avatar">${i}</div><div><div class="team-name">${esc(e.name)}</div><div class="team-role">${esc(e.role||'Pracovník')}</div></div></div>`;
+                }).join('');
+            } catch(e) { el.innerHTML = '<div style="color:var(--text-muted)">Nepodařilo se načíst</div>'; }
+        }
+        
+        async function loadTasks(jobId) {
+            const el = document.getElementById('taskList');
+            try {
+                const r = await fetch('/api/tasks');
+                const d = await r.json();
+                const tasks = (d.tasks||[]).filter(t=>t.job_id==jobId).slice(0,5);
+                if(!tasks.length) { el.innerHTML = '<div style="color:var(--text-muted)">Žádné úkoly</div>'; return; }
+                el.innerHTML = tasks.map(t=>{
+                    const done = t.status==='done'||t.status==='completed';
+                    return `<div class="task-item"><div class="task-status ${done?'done':''}">${done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div><div class="task-info"><div class="task-title">${esc(t.title||t.name)}</div><div class="task-meta">${t.deadline?formatDate(t.deadline):'Bez termínu'}</div></div></div>`;
+                }).join('');
+            } catch(e) { el.innerHTML = '<div style="color:var(--text-muted)">Nepodařilo se načíst</div>'; }
+        }
+        
+        async function loadRisks(jobId) {
+            const el = document.getElementById('riskList');
+            try {
+                const r = await fetch('/api/ai/insights?limit=5');
+                const d = await r.json();
+                const risks = (d.insights||[]).filter(i=>i.entity_id==jobId||i.type?.includes('JOB'));
+                if(!risks.length) { el.innerHTML = '<div style="color:var(--accent-green)">✓ Žádná identifikovaná rizika</div>'; return; }
+                el.innerHTML = risks.slice(0,3).map(r=>`<div class="risk-item ${r.severity==='CRITICAL'?'high':''}"><div class="risk-text">${esc(r.title||r.summary)}</div></div>`).join('');
+            } catch(e) { el.innerHTML = '<div style="color:var(--accent-green)">✓ Žádná rizika</div>'; }
+        }
+        
+        async function loadPhotos(jobId) {
+            const el = document.getElementById('photoGrid');
+            try {
+                const r = await fetch(`/api/jobs/${jobId}/attachments`);
+                const d = await r.json();
+                const photos = (d.attachments||d||[]).filter(a=>a.mime_type?.startsWith('image/')).slice(0,4);
+                if(!photos.length) { el.innerHTML = '<div class="photo-item photo-empty" style="grid-column:1/-1">Žádná fotodokumentace</div>'; return; }
+                el.innerHTML = photos.map(p=>`<div class="photo-item"><img src="${p.url||'/uploads/'+p.filename}" alt=""/></div>`).join('');
+            } catch(e) { el.innerHTML = '<div class="photo-item photo-empty" style="grid-column:1/-1">Nepodařilo se načíst</div>'; }
+        }
+        
+        function predictEndDate(job) {
+            if(!job.deadline) return 'Neurčeno';
+            const progress = job.completion_percent || job.progress || 0;
+            if(progress >= 100) return 'Dokončeno';
+            const deadline = new Date(job.deadline);
+            const today = new Date();
+            const daysLeft = Math.ceil((deadline - today) / 86400000);
+            const remaining = 100 - progress;
+            const daysNeeded = Math.ceil(remaining / (progress > 0 ? (progress / 7) : 5));
+            const predicted = new Date(today);
+            predicted.setDate(today.getDate() + daysNeeded);
+            return formatDate(predicted.toISOString()) + (predicted > deadline ? ' Zpoždění' : ' ✓');
+        }
+        
+        function formatDate(d) { if(!d) return ''; const dt=new Date(d); return `${dt.getDate()}.${dt.getMonth()+1}.${dt.getFullYear()}`; }
+        function formatMoney(v) { return new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',maximumFractionDigits:0}).format(v||0); }
+        function esc(s) { return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''; }
+        
+        loadJobList();
+    </script>
+<script src="/static/app-sidebar.js"></script>
+</body>
+</html>

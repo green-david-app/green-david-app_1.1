@@ -1,0 +1,642 @@
+/* ================================================================
+   MOBILE-FIX.CSS — POSLEDNÍ NAČTENÝ SOUBOR
+   Přebíjí VEŠKERÉ předchozí styly pro mobilní zobrazení.
+   Každé pravidlo má !important pro jistotu.
+   ================================================================ */
+
+/* ================================================================
+   1. HEADER — Nesmí přetékat, vše musí být uvnitř 46px pruhu
+   ================================================================ */
+@media (max-width: 768px) {
+  
+  /* Header samotný */
+  .app-header {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 8px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Kontejner uvnitř headeru */
+  .app-header .app-header-container,
+  .app-header > div {
+    height: 44px !important;
+    max-height: 44px !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+    align-items: center !important;
+  }
+
+  /* VŠECHNY ikony v headeru — uniformní 28px */
+  .app-header .app-header-icon-btn,
+  .app-header .app-header-notifications,
+  .app-header .app-header-settings,
+  .app-header .app-header-sidebar-toggle,
+  .app-header .app-header-search-btn,
+  .app-header .app-header-tasks-count,
+  .app-header button,
+  .app-header a[class*="header"] {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* VŠECHNY SVG ikony v headeru — max 14px */
+  .app-header svg {
+    width: 14px !important;
+    height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Nadpis stránky — ořez textu */
+  .app-header .app-header-page-title,
+  .app-header [class*="page-title"] {
+    font-size: 13px !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
+  /* Actions kontejner */
+  .app-header .app-header-actions {
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Zpět tlačítko */
+  .app-header .app-header-back {
+    height: 26px !important;
+    max-height: 26px !important;
+    width: auto !important;
+    max-width: 32px !important;
+    min-width: 26px !important;
+    padding: 0 6px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Úkoly badge — jen číslo */
+  .app-header .app-header-tasks-count {
+    font-size: 0 !important;
+    border-radius: 50% !important;
+    position: relative !important;
+  }
+  .app-header .app-header-tasks-count strong {
+    font-size: 10px !important;
+  }
+
+  /* Notifikační badge — malý */
+  .app-header .notif-badge {
+    min-width: 14px !important;
+    height: 14px !important;
+    max-height: 14px !important;
+    font-size: 8px !important;
+    line-height: 14px !important;
+    padding: 0 2px !important;
+    top: -3px !important;
+    right: -3px !important;
+    border-width: 1.5px !important;
+  }
+
+  /* AI operator badge — malá tečka */
+  .app-header #ai-operator-badge.notif-badge,
+  .app-header #ai-operator-badge {
+    width: 7px !important;
+    min-width: 7px !important;
+    height: 7px !important;
+    top: 0 !important;
+    right: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Search wrapper — kompaktní */
+  .app-header .app-header-search-wrapper {
+    flex: 0 !important;
+    max-width: 28px !important;
+    margin: 0 !important;
+  }
+  .app-header .app-header-search {
+    display: none !important;
+  }
+  .app-header .global-search-container {
+    display: none !important;
+  }
+
+  /* Header text (brand name) — skrýt */
+  .app-header .app-header-text,
+  .app-header .app-header-brand-text {
+    display: none !important;
+  }
+}
+
+
+/* ================================================================
+   2. BODY PADDING — obsah nesmí být pod headerem
+   ================================================================ */
+@media (max-width: 768px) {
+  body {
+    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-x: hidden !important;
+  }
+  
+  html {
+    overflow-x: hidden !important;
+  }
+}
+
+
+/* ================================================================
+   3. DASHBOARD BUBLINY — automatické zmenšování
+   ================================================================ */
+@media (max-width: 480px) {
+  /* Action grid — 2 sloupce, menší mezery */
+  .action-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 0 !important;
+  }
+
+  /* Jednotlivé karty — menší */
+  .action-card {
+    padding: 12px 8px !important;
+    border-radius: 14px !important;
+    min-height: auto !important;
+  }
+
+  /* Ikona bublina — 40px místo 64px */
+  .action-card .icon-circle,
+  .icon-circle {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .icon-circle::before {
+    top: 2px !important;
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  /* SVG v bublině — 18px místo 28px */
+  .action-card .icon-circle svg,
+  .icon-circle svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Text v kartě — menší */
+  .action-card h3 {
+    font-size: 12px !important;
+    margin: 0 0 2px !important;
+    line-height: 1.3 !important;
+  }
+
+  .action-card p {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Extra malé (iPhone SE) */
+@media (max-width: 375px) {
+  .action-grid {
+    gap: 6px !important;
+  }
+  
+  .action-card {
+    padding: 10px 6px !important;
+    border-radius: 12px !important;
+  }
+
+  .icon-circle {
+    width: 34px !important;
+    height: 34px !important;
+    margin: 0 auto 6px !important;
+  }
+
+  .icon-circle svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .action-card h3 {
+    font-size: 11px !important;
+  }
+
+  .action-card p {
+    font-size: 9px !important;
+  }
+}
+
+
+/* ================================================================
+   4. STAT KARTY (Zakázky, Dashboard) — scroll + menší
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Horizontální scroll kontejner */
+  .stats-row,
+  .overview-stats,
+  .kpi-cards,
+  .budget-cards,
+  .finance-summary-cards,
+  [class*="stat-row"],
+  [class*="stats-grid"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px 8px !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+  }
+  
+  .stats-row::-webkit-scrollbar,
+  .overview-stats::-webkit-scrollbar,
+  .kpi-cards::-webkit-scrollbar,
+  .budget-cards::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Jednotlivé stat karty */
+  .stat-card,
+  .kpi-card,
+  .overview-card {
+    min-width: 100px !important;
+    max-width: 130px !important;
+    padding: 8px 10px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+    font-size: 11px !important;
+    box-sizing: border-box !important;
+  }
+
+  .stat-card h4,
+  .stat-card .stat-label,
+  .kpi-label {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .stat-card .stat-value,
+  .kpi-value {
+    font-size: 16px !important;
+  }
+}
+
+
+/* ================================================================
+   5. FINANCE KARTY (Job Detail) — menší, scroll
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Finance grid na job-detail → horizontální scroll */
+  .finance-cards,
+  .budget-overview,
+  [class*="finance-grid"],
+  #tab-finance .info-grid,
+  #tab-finance > div:first-child {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  .finance-card {
+    min-width: 140px !important;
+    max-width: 180px !important;
+    padding: 12px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .finance-card h3 {
+    font-size: 11px !important;
+    margin: 0 0 6px !important;
+  }
+
+  .finance-card h2 {
+    font-size: 20px !important;
+    margin: 0 0 4px !important;
+    word-break: break-all !important;
+  }
+
+  .finance-card .trend {
+    font-size: 10px !important;
+  }
+
+  .finance-card .breakdown {
+    font-size: 10px !important;
+  }
+}
+
+
+/* ================================================================
+   6. HORIZONTÁLNÍ OVERFLOW FIX — nic nesmí přetékat
+   ================================================================ */
+@media (max-width: 768px) {
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Hlavní kontejnery */
+  .container,
+  main,
+  .page-container,
+  .content,
+  .main-content,
+  [class*="container"]:not(.app-header-container):not(.kanban-container) {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Všechny karty — max šířka */
+  .card,
+  .glass-card,
+  .info-card,
+  .dashboard-card,
+  .finance-card,
+  .stat-card,
+  [class*="card"]:not(.action-card) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Tlačítka — nesmí přetékat */
+  .btn,
+  button:not(.app-header-icon-btn):not(.app-header-sidebar-toggle):not(.app-header-search-btn):not(.app-header-back):not(.sidebar-close) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Nová zakázka tlačítko */
+  .jobs-new-btn,
+  [class*="new-job"],
+  a[href*="jobs-new"] {
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* Job hero */
+  .job-hero {
+    padding: 14px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .job-hero-content h1 {
+    font-size: 18px !important;
+    word-break: break-word !important;
+  }
+
+  .job-risk-ring {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Tabs — horizontální scroll */
+  .job-tabs,
+  .page-tabs,
+  .tab-list,
+  .tabs,
+  [class*="tabs"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .job-tab,
+  .tab-btn,
+  [class*="tab"]:not([class*="tabs"]):not([class*="table"]) {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* Info grid */
+  .info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .info-card {
+    padding: 12px !important;
+  }
+
+  .info-card h3 {
+    font-size: 13px !important;
+  }
+
+  .info-row {
+    padding: 6px 0 !important;
+    font-size: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   7. AI OPERÁTOR KARTA — menší na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  .ai-panel,
+  .ai-job-panel,
+  [class*="ai-panel"],
+  [class*="ai-operator-section"] {
+    padding: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .ai-panel-header {
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+  }
+}
+
+
+/* ================================================================
+   8. TOOLBAR (Zakázky) — wrap + menší
+   ================================================================ */
+@media (max-width: 768px) {
+  .jobs-toolbar,
+  .toolbar,
+  .action-bar,
+  [class*="toolbar"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  .jobs-toolbar button,
+  .jobs-toolbar select,
+  .toolbar button,
+  .toolbar select {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    height: auto !important;
+  }
+}
+
+
+/* ================================================================
+   9. BOTTOM NAV — safe area
+   ================================================================ */
+@media (max-width: 768px) {
+  .bottom-nav,
+  #bottom-nav-container > div {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+}
+
+
+/* ================================================================
+   10. SIDEBAR LOGO — zobrazit správně
+   ================================================================ */
+.sidebar-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+}
+
+.sidebar-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.sidebar-brand-text {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+
+/* ================================================================
+   11. WEATHER WIDGET — menší
+   ================================================================ */
+@media (max-width: 480px) {
+  .weather-card,
+  .weather-widget,
+  [class*="weather"] {
+    padding: 12px !important;
+  }
+  
+  .weather-card .temp,
+  [class*="weather"] .temp {
+    font-size: 28px !important;
+  }
+}
+
+
+/* ================================================================
+   12. SAFARI iOS specifické opravy
+   ================================================================ */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available !important;
+  }
+  
+  html {
+    height: -webkit-fill-available !important;
+  }
+  
+  .app-header {
+    -webkit-transform: translateZ(0) !important;
+  }
+}
+
+@supports (padding: env(safe-area-inset-left)) {
+  @media (max-width: 768px) {
+    .app-header {
+      top: calc(6px + env(safe-area-inset-top, 0px)) !important;
+      left: calc(6px + env(safe-area-inset-left, 0px)) !important;
+      right: calc(6px + env(safe-area-inset-right, 0px)) !important;
+    }
+    
+    .container, main, .page-container {
+      padding-left: max(8px, env(safe-area-inset-left)) !important;
+      padding-right: max(8px, env(safe-area-inset-right)) !important;
+    }
+  }
+}
+
+
+/* ================================================================
+   13. QUICK ADD BAR
+   ================================================================ */
+@media (max-width: 480px) {
+  .quick-add,
+  .quick-task-bar,
+  [class*="quick-add"] {
+    margin: 6px !important;
+    padding: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .quick-add input,
+  .quick-task-bar input {
+    font-size: 13px !important;
+    padding: 6px 8px !important;
+  }
+
+  .quick-add button,
+  .quick-task-bar button {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+}
+
+
+/* ================================================================
+   14. KANBAN — horizontální scroll
+   ================================================================ */
+@media (max-width: 768px) {
+  .kanban-board,
+  .kanban-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 16px !important;
+  }
+
+  .kanban-column {
+    min-width: 250px !important;
+    max-width: 280px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .kanban-card {
+    padding: 10px !important;
+    font-size: 12px !important;
+  }
+}
