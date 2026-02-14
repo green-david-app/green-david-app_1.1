@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Timeline | Green David</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/icons.css">
+    <script src="/app-settings.js"></script>
+    <script src="/static/global-search.js"></script>
+    <style>
+        /* Timeline 2.0 - Provozní realita firmy v čase */
+        :root {
+            --mint: #4ade80;
+            --mint-dim: rgba(74, 222, 128, 0.15);
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --border-primary: #2d3748;
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            
+            /* Signal colors */
+            --color-ok: #4ade80;
+            --color-info: #60a5fa;
+            --color-warning: #fbbf24;
+            --color-danger: #f87171;
+            --color-ai: #a78bfa;
+            
+            /* Capacity heatmap */
+            --capacity-low: rgba(74, 222, 128, 0.08);
+            --capacity-optimal: rgba(74, 222, 128, 0.2);
+            --capacity-high: rgba(251, 191, 36, 0.15);
+            --capacity-overload: rgba(248, 113, 113, 0.2);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        .timeline-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 120px;
+        }
+        
+        /* Header */
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .timeline-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .timeline-title svg { color: var(--mint); }
+        
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-arrow {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .nav-arrow:hover {
+            border-color: var(--mint);
+            background: var(--mint-dim);
+        }
+        
+        .current-period {
+            font-size: 16px;
+            font-weight: 600;
+            min-width: 180px;
+            text-align: center;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        
+        .view-btn {
+            padding: 8px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .view-btn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+        .view-btn.active { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        
+        /* Stats Grid - Klikatelné */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        
+        .stat-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08); border-top-color: rgba(255,255,255,0.14); box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--mint);
+            transform: translateY(-2px);
+        }
+        
+        .stat-card.active { border-color: var(--mint); background: var(--mint-dim); }
+        .stat-card.warning { border-left: 3px solid var(--color-warning); }
+        .stat-card.danger { border-left: 3px solid var(--color-danger); }
+        
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .stat-card.warning .stat-icon { color: var(--color-warning); background: rgba(251, 191, 36, 0.1); }
+        .stat-card.danger .stat-icon { color: var(--color-danger); background: rgba(248, 113, 113, 0.1); }
+        
+        .stat-info { flex: 1; }
+        .stat-value { font-size: 24px; font-weight: 700; }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        
+        /* Weather strip */
+        .weather-strip {
+            display: flex;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .weather-label {
+            width: 220px;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .weather-days { display: flex; flex: 1; }
+        
+        .weather-day {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .weather-day:last-child { border-right: none; }
+        .weather-day.rain { background: rgba(96, 165, 250, 0.08); }
+        .weather-day.storm { background: rgba(248, 113, 113, 0.08); }
+        
+        .weather-icon svg { width: 20px; height: 20px; }
+        .weather-temp { font-size: 12px; font-weight: 600; }
+        
+        /* Gantt */
+        .gantt-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .gantt-chart {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            min-height: 400px;
+        }
+        
+        .gantt-sidebar {
+            border-right: 1px solid var(--border-primary);
+            background: var(--bg-elevated);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .gantt-sidebar-header {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-primary);
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            position: sticky;
+            top: 0;
+            background: var(--bg-elevated);
+            z-index: 10;
+        }
+        
+        .gantt-row-label {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--border-primary);
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .gantt-row-label:hover { background: rgba(74, 222, 128, 0.05); }
+        .gantt-row-label.dragging { opacity: 0.5; background: var(--mint-dim); }
+        
+        .row-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: var(--bg-card);
+        }
+        
+        .row-icon.job { background: rgba(74, 222, 128, 0.15); color: var(--mint); }
+        .row-icon.employee { background: rgba(96, 165, 250, 0.15); color: var(--color-info); }
+        
+        .row-info { flex: 1; min-width: 0; }
+        .row-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        
+        .row-capacity {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .row-capacity.low { background: var(--capacity-low); color: var(--color-ok); }
+        .row-capacity.optimal { background: var(--capacity-optimal); color: var(--color-ok); }
+        .row-capacity.high { background: var(--capacity-high); color: var(--color-warning); }
+        .row-capacity.overload { background: var(--capacity-overload); color: var(--color-danger); }
+        
+        .gantt-main { flex: 1; overflow-x: auto; position: relative; }
+        
+        .gantt-header {
+            height: 50px;
+            display: flex;
+            border-bottom: 1px solid var(--border-primary);
+            background: var(--bg-elevated);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .gantt-day {
+            flex: 1;
+            min-width: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--border-primary);
+            font-size: 12px;
+            position: relative;
+        }
+        
+        .gantt-day:last-child { border-right: none; }
+        .gantt-day.weekend { background: rgba(100, 100, 120, 0.04); }
+        .gantt-day.today { background: rgba(74, 222, 128, 0.1); }
+        
+        .day-name { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
+        .day-number { font-weight: 600; font-size: 14px; }
+        .gantt-day.today .day-number { color: var(--mint); }
+        
+        .day-weather { position: absolute; top: 4px; right: 4px; }
+        .day-weather svg { width: 14px; height: 14px; opacity: 0.6; }
+        
+        .gantt-body { position: relative; }
+        
+        .gantt-row {
+            height: 64px;
+            display: flex;
+            border-bottom: 1px solid var(--border-primary);
+            position: relative;
+        }
+        
+        .gantt-row.drop-target { background: rgba(74, 222, 128, 0.1); }
+        
+        .gantt-cell {
+            flex: 1;
+            min-width: 60px;
+            border-right: 1px solid var(--border-primary);
+            position: relative;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        
+        .gantt-cell:last-child { border-right: none; }
+        .gantt-cell.weekend { background: rgba(100, 100, 120, 0.02); }
+        .gantt-cell.today { background: rgba(74, 222, 128, 0.06); }
+        .gantt-cell:hover { background: rgba(74, 222, 128, 0.1) !important; }
+        
+        /* Capacity heatmap */
+        .gantt-cell.capacity-low { background: var(--capacity-low); }
+        .gantt-cell.capacity-optimal { background: var(--capacity-optimal); }
+        .gantt-cell.capacity-high { background: var(--capacity-high); }
+        .gantt-cell.capacity-overload { background: var(--capacity-overload); }
+        
+        /* Signals */
+        .cell-signals {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+            max-width: 40px;
+            justify-content: flex-end;
+        }
+        
+        .signal-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .signal-icon:hover { transform: scale(1.2); }
+        .signal-icon svg { width: 10px; height: 10px; }
+        
+        .signal-icon.risk { background: rgba(248, 113, 113, 0.2); color: var(--color-danger); }
+        .signal-icon.budget { background: rgba(251, 191, 36, 0.2); color: var(--color-warning); }
+        .signal-icon.weather { background: rgba(96, 165, 250, 0.2); color: var(--color-info); }
+        .signal-icon.material { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .signal-icon.ai { background: rgba(167, 139, 250, 0.2); color: var(--color-ai); animation: aiPulse 2s ease-in-out infinite; }
+        
+        @keyframes aiPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
+            50% { box-shadow: 0 0 0 4px rgba(167, 139, 250, 0); }
+        }
+        
+        /* Bars */
+        .gantt-bar {
+            position: absolute;
+            top: 14px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 5;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .gantt-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            z-index: 15;
+        }
+        
+        .gantt-bar.dragging { opacity: 0.8; cursor: grabbing; z-index: 100; }
+        
+        .gantt-bar.status-active {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.15));
+            border: 1px solid rgba(74, 222, 128, 0.4);
+        }
+        
+        .gantt-bar.status-planned {
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1));
+            border: 1px dashed rgba(96, 165, 250, 0.4);
+            color: var(--text-secondary);
+        }
+        
+        .gantt-bar.status-urgent {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(248, 113, 113, 0.15));
+            border: 1px solid rgba(248, 113, 113, 0.5);
+            color: #fca5a5;
+        }
+        
+        .gantt-bar.status-completed {
+            background: rgba(107, 117, 128, 0.15);
+            border: 1px solid rgba(107, 117, 128, 0.3);
+            color: var(--text-tertiary);
+            opacity: 0.6;
+        }
+        
+        /* AI Ghost bar */
+        .gantt-bar.ghost {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(167, 139, 250, 0.1));
+            border: 2px dashed rgba(167, 139, 250, 0.5);
+            color: var(--color-ai);
+            animation: ghostPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes ghostPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .gantt-bar .bar-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gantt-bar .bar-signals { display: flex; gap: 4px; margin-left: 8px; }
+        .gantt-bar .bar-hours { background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px; }
+        
+        /* Today line */
+        .today-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--mint);
+            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+        
+        /* AI Assistant */
+        .ai-assistant {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        
+        .ai-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--color-ai), #7c3aed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .ai-content { flex: 1; }
+        .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .ai-title { font-weight: 600; font-size: 14px; }
+        .ai-badge { background: var(--color-ai); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+        .ai-suggestion { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+        .ai-actions { display: flex; gap: 8px; }
+        
+        .ai-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+        }
+        
+        .ai-btn.primary { background: var(--color-ai); color: white; }
+        .ai-btn.primary:hover { background: #9171f7; }
+        .ai-btn.secondary { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-primary); }
+        .ai-btn.secondary:hover { border-color: var(--color-ai); }
+        
+        /* Legend */
+        .timeline-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 16px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+        .legend-color { width: 16px; height: 16px; border-radius: 4px; }
+        .legend-divider { width: 1px; height: 20px; background: var(--border-primary); }
+        
+        /* Empty */
+        .gantt-empty {
+            grid-column: span 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .gantt-empty svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.3; }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            padding: 24px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .modal-header h3 svg { width: 24px; height: 24px; color: var(--mint); }
+        
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover { background: rgba(248, 113, 113, 0.1); border-color: var(--color-danger); color: var(--color-danger); }
+        
+        .modal-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
+        
+        .modal-action {
+            padding: 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .modal-action:hover { border-color: var(--mint); background: var(--mint-dim); }
+        .modal-action.primary { background: linear-gradient(135deg, rgba(74,222,128,0.85), rgba(34,197,94,0.85)); color: #0a0e11; border-color: rgba(74,222,128,0.4); box-shadow: 0 4px 12px rgba(74,222,128,0.2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .modal-action svg { width: 20px; height: 20px; }
+        
+        /* Signal tooltip */
+        .signal-tooltip {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            padding: 12px 16px;
+            max-width: 280px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: none;
+        }
+        
+        .signal-tooltip.active { display: block; }
+        .signal-tooltip-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; }
+        .signal-tooltip-content { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+        
+        .signal-tooltip-action {
+            padding: 8px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            color: var(--text-primary);
+        }
+        
+        .signal-tooltip-action:hover { border-color: var(--mint); }
+        
+        @media (max-width: 768px) {
+            .timeline-header { flex-direction: column; align-items: flex-start; }
+            .gantt-chart { grid-template-columns: 160px 1fr; }
+            .gantt-day, .gantt-cell { min-width: 50px; }
+            .weather-label { width: 160px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+  <link rel="stylesheet" href="/static/css/mobile-fix.css">
+</head>
+<body class="has-sidebar">
+    <header class="app-header"></header>
+    
+    <div class="timeline-container">
+        <!-- Header -->
+        <div class="timeline-header">
+            <div class="timeline-controls">
+                <div class="timeline-nav">
+                    <button class="nav-arrow" id="btn-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg></button>
+                    <span class="current-period" id="current-period">-</span>
+                    <button class="nav-arrow" id="btn-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg></button>
+                </div>
+                
+                <div class="view-toggle">
+                    <button class="view-btn" id="btn-today">Dnes</button>
+                    <button class="view-btn active" id="btn-week">Týden</button>
+                    <button class="view-btn" id="btn-month">Měsíc</button>
+                </div>
+                
+                <div class="view-toggle">
+                    <button class="view-btn active" id="btn-view-jobs">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+                        Zakázky
+                    </button>
+                    <button class="view-btn" id="btn-view-team">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                        Tým
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card" id="stat-jobs" onclick="filterByJobs()">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></div>
+                <div class="stat-info"><div class="stat-value" id="stat-jobs-value">-</div><div class="stat-label">Aktivních zakázek</div></div>
+            </div>
+            <div class="stat-card" id="stat-hours" onclick="filterByHours()">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div>
+                <div class="stat-info"><div class="stat-value" id="stat-hours-value">0h</div><div class="stat-label">Hodin tento týden</div></div>
+            </div>
+            <div class="stat-card" id="stat-team" onclick="setViewMode('team')">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+                <div class="stat-info"><div class="stat-value" id="stat-team-value">-</div><div class="stat-label">Aktivních lidí</div></div>
+            </div>
+            <div class="stat-card warning" id="stat-deadlines" onclick="filterByDeadlines()">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                <div class="stat-info"><div class="stat-value" id="stat-deadlines-value">-</div><div class="stat-label">Blíží se termín</div></div>
+            </div>
+            <div class="stat-card" id="stat-capacity" onclick="filterByCapacity()">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="8" width="3" height="9" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="11" width="3" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg></div>
+                <div class="stat-info"><div class="stat-value" id="stat-capacity-value">0%</div><div class="stat-label">Využití kapacity</div></div>
+            </div>
+        </div>
+        
+        <!-- Weather -->
+        <div class="weather-strip" id="weather-strip">
+            <div class="weather-label weather-clickable" onclick="window.WeatherPicker.showPicker(this, async () => { await generateWeatherData(); renderWeatherStrip(); })" title="Změnit polohu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 18a5 5 0 0 0-4.6-4.96A7 7 0 1 0 5 18"/><line x1="9" y1="18" x2="9.01" y2="18"/><line x1="15" y1="18" x2="15.01" y2="18"/></svg>
+                <span>Počasí</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;margin-left:4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="weather-days" id="weather-days"></div>
+        </div>
+        
+        <!-- Gantt -->
+        <div class="gantt-wrapper" id="gantt-wrapper">
+            <div class="gantt-chart" id="gantt-chart">
+                <div class="gantt-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <p style="font-size: 18px; font-weight: 600;">Načítám timeline...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Assistant -->
+        <div class="ai-assistant" id="ai-assistant" style="display: none;">
+            <div class="ai-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></div>
+            <div class="ai-content">
+                <div class="ai-header"><span class="ai-title">Asistent týmu</span><span class="ai-badge">AI</span></div>
+                <div class="ai-suggestion" id="ai-suggestion">Načítám doporučení...</div>
+                <div class="ai-actions" id="ai-actions"></div>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="timeline-legend">
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.15)); border: 1px solid rgba(74, 222, 128, 0.4);"></div><span>Aktivní</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1)); border: 1px dashed rgba(96, 165, 250, 0.4);"></div><span>Plánované</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(248, 113, 113, 0.15)); border: 1px solid rgba(248, 113, 113, 0.5);"></div><span>Urgentní</span></div>
+            <div class="legend-divider"></div>
+            <div class="legend-item"><div class="signal-icon risk" style="width:18px;height:18px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div><span>Riziko</span></div>
+            <div class="legend-item"><div class="signal-icon budget" style="width:18px;height:18px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><span>Rozpočet</span></div>
+            <div class="legend-item"><div class="signal-icon weather" style="width:18px;height:18px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 0 0-4.6-4.96A7 7 0 1 0 5 18"/></svg></div><span>Počasí</span></div>
+            <div class="legend-item"><div class="signal-icon ai" style="width:18px;height:18px;animation:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></div><span>AI</span></div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Detail</h3>
+                <button class="modal-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+    
+    <!-- Signal tooltip -->
+    <div class="signal-tooltip" id="signal-tooltip">
+        <div class="signal-tooltip-header" id="tooltip-header"></div>
+        <div class="signal-tooltip-content" id="tooltip-content"></div>
+        <button class="signal-tooltip-action" id="tooltip-action">Akce</button>
+    </div>
+    
+    <script src="/static/bottom-nav.js"></script>
+    <script src="/static/toast.js"></script>
+<script>
+    (function() {
+        let view = 'week';
+        let viewMode = 'jobs';
+        let currentDate = new Date();
+        let jobs = [], employees = [], timesheets = [], tasks = [], insights = [], weatherData = [];
+        let activeFilter = null, draggedItem = null;
+        
+        const icons = {
+            risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',
+            budget: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+            weather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 0 0-4.6-4.96A7 7 0 1 0 5 18"/></svg>',
+            material: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>',
+            ai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>',
+            sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+            cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+            rain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>',
+            job: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>',
+            person: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>'
+        };
+        
+        const chart = document.getElementById('gantt-chart');
+        const periodLabel = document.getElementById('current-period');
+        const modal = document.getElementById('modal');
+        const tooltip = document.getElementById('signal-tooltip');
+        
+        async function init() {
+            await loadData();
+            await generateWeatherData();
+            generateAIInsights();
+            updateStats();
+            render();
+            setupEventListeners();
+            showAIAssistant();
+        }
+        
+        async function loadData() {
+            try {
+                const [j, e, t, ts] = await Promise.all([
+                    fetch('/api/jobs').then(r => r.json()),
+                    fetch('/api/employees').then(r => r.json()).catch(() => ({ employees: [] })),
+                    fetch('/api/tasks').then(r => r.json()).catch(() => []),
+                    fetch('/api/timesheets').then(r => r.json()).catch(() => [])
+                ]);
+                jobs = Array.isArray(j) ? j : (j.jobs || []);
+                employees = Array.isArray(e) ? e : (e.employees || []);
+                tasks = Array.isArray(t) ? t : (t.tasks || []);
+                timesheets = Array.isArray(ts) ? ts : (ts.timesheets || ts.rows || []);
+                
+                const today = new Date().toISOString().slice(0, 10);
+                jobs = jobs.map(job => ({ ...job, start_date: job.start_date || job.created_at?.slice(0, 10) || today, deadline: job.deadline || job.end_date || null }));
+            } catch (e) { console.error('Error loading data:', e); }
+        }
+        
+        async function generateWeatherData() {
+            weatherData = [];
+            try {
+                const weatherUrl = await window.WeatherPicker.getWeatherUrl();
+                const resp = await fetch(weatherUrl, {credentials: 'same-origin'});
+                const w = await resp.json();
+                if (w.success && w.forecast) {
+                    // Map API weather codes to timeline conditions
+                    const codeToCondition = (code) => {
+                        if ([0, 1].includes(code)) return 'sun';
+                        if ([2, 3, 45, 48].includes(code)) return 'cloud';
+                        return 'rain'; // 51-99 = rain/snow/storm
+                    };
+                    w.forecast.forEach(day => {
+                        const code = day.weather_code || 0;
+                        weatherData.push({
+                            date: day.date,
+                            condition: codeToCondition(code),
+                            temp: Math.round(day.temp_max != null ? day.temp_max : 10),
+                            isOutdoorRisk: code >= 51,
+                            description: day.description || '',
+                            icon: day.icon || ''
+                        });
+                    });
+                    // Update weather label with city
+                    const weatherLabel = document.querySelector('.weather-label span');
+                    if (weatherLabel) weatherLabel.textContent = `Počasí · ${w.city}`;
+                }
+            } catch(e) {
+                console.warn('Weather API error, using fallback:', e);
+            }
+            // Fallback if API failed
+            if (weatherData.length === 0) {
+                const cond = ['cloud', 'cloud', 'rain', 'cloud', 'sun', 'cloud', 'sun'];
+                const temps = [8, 10, 6, 9, 12, 7, 11];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(); d.setDate(d.getDate() + i);
+                    weatherData.push({ date: d.toISOString().slice(0, 10), condition: cond[i], temp: temps[i], isOutdoorRisk: cond[i] === 'rain' });
+                }
+            }
+        }
+        
+        function generateAIInsights() {
+            insights = [];
+            const today = new Date();
+            jobs.forEach(job => {
+                if (job.deadline && job.status !== 'completed') {
+                    const d = new Date(job.deadline);
+                    const days = Math.floor((d - today) / (1000 * 60 * 60 * 24));
+                    if (days <= 3 && days >= 0) {
+                        insights.push({ type: 'risk', job_id: job.id, title: 'Blíží se termín', message: `"${job.client || job.name}" má termín za ${days} dny.`, action: 'Zkontrolovat', priority: 'high' });
+                    }
+                }
+            });
+            weatherData.forEach(w => {
+                if (w.isOutdoorRisk) insights.push({ type: 'weather', date: w.date, title: 'Počasí', message: `${new Date(w.date).toLocaleDateString('cs-CZ')}: Déšť - outdoor práce omezeny.`, action: 'Přeplánovat', priority: 'medium' });
+            });
+            if (employees.length > 0 && jobs.length > 0) {
+                insights.push({ type: 'ai', title: 'AI Optimalizace', message: `Doporučuji přesunout ${employees[0]?.name || 'pracovníka'} na zakázku s nejvyšší prioritou.`, action: 'Aplikovat', priority: 'low' });
+            }
+        }
+        
+        function updateStats() {
+            const today = new Date();
+            const ws = new Date(today); ws.setDate(today.getDate() - today.getDay() + 1); ws.setHours(0,0,0,0);
+            const we = new Date(ws); we.setDate(ws.getDate() + 6);
+            
+            const activeJobs = jobs.filter(j => !['completed', 'archived', 'cancelled', 'Dokončeno'].includes(j.status));
+            document.getElementById('stat-jobs-value').textContent = activeJobs.length;
+            
+            let hours = 0;
+            timesheets.forEach(ts => { const d = new Date(ts.date); if (d >= ws && d <= we) hours += ts.hours || 0; });
+            document.getElementById('stat-hours-value').textContent = Math.round(hours) + 'h';
+            
+            const activeEmps = employees.filter(e => e.status !== 'inactive');
+            document.getElementById('stat-team-value').textContent = activeEmps.length;
+            
+            let deadlines = 0;
+            jobs.forEach(j => { if (j.deadline && j.status !== 'completed') { const d = new Date(j.deadline); if (d >= today && d <= we) deadlines++; } });
+            document.getElementById('stat-deadlines-value').textContent = deadlines;
+            
+            const maxCap = activeEmps.length * 40;
+            document.getElementById('stat-capacity-value').textContent = (maxCap > 0 ? Math.round((hours / maxCap) * 100) : 0) + '%';
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('btn-prev').onclick = () => { navigate(-1); };
+            document.getElementById('btn-next').onclick = () => { navigate(1); };
+            document.getElementById('btn-today').onclick = () => { currentDate = new Date(); setView('week'); };
+            document.getElementById('btn-week').onclick = () => { setView('week'); };
+            document.getElementById('btn-month').onclick = () => { setView('month'); };
+            document.getElementById('btn-view-jobs').onclick = () => { setViewMode('jobs'); };
+            document.getElementById('btn-view-team').onclick = () => { setViewMode('team'); };
+            modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); hideTooltip(); } });
+            document.addEventListener('click', (e) => { if (!e.target.closest('.signal-icon') && !e.target.closest('.signal-tooltip')) hideTooltip(); });
+        }
+        
+        function navigate(dir) {
+            if (view === 'week') currentDate.setDate(currentDate.getDate() + (dir * 7));
+            else currentDate.setMonth(currentDate.getMonth() + dir);
+            render();
+        }
+        
+        function setView(v) {
+            view = v;
+            document.querySelectorAll('.view-toggle .view-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + v).classList.add('active');
+            render();
+        }
+        
+        window.setViewMode = function(mode) {
+            viewMode = mode;
+            document.getElementById('btn-view-jobs').classList.toggle('active', mode === 'jobs');
+            document.getElementById('btn-view-team').classList.toggle('active', mode === 'team');
+            render();
+        };
+        
+        function getDays() {
+            const days = [];
+            let start, count;
+            if (view === 'week') {
+                start = new Date(currentDate);
+                const dow = start.getDay();
+                start.setDate(start.getDate() - dow + (dow === 0 ? -6 : 1));
+                start.setHours(0,0,0,0);
+                count = 7;
+            } else {
+                start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                count = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            }
+            for (let i = 0; i < count; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+            return days;
+        }
+        
+        function render() {
+            updatePeriodLabel();
+            renderWeatherStrip();
+            if (viewMode === 'team') renderTeamView(); else renderJobsView();
+        }
+        
+        function updatePeriodLabel() {
+            const months = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+            const days = getDays();
+            if (view === 'week') {
+                const s = days[0], e = days[days.length - 1];
+                periodLabel.textContent = `${s.getDate()}.${s.getMonth()+1}. - ${e.getDate()}.${e.getMonth()+1}.${e.getFullYear()}`;
+            } else {
+                periodLabel.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+            }
+        }
+        
+        function renderWeatherStrip() {
+            const days = getDays();
+            let html = '';
+            days.forEach(d => {
+                const ds = d.toISOString().slice(0, 10);
+                const w = weatherData.find(x => x.date === ds) || { condition: 'sun', temp: 10 };
+                const cls = w.isOutdoorRisk ? 'rain' : '';
+                html += `<div class="weather-day ${cls}"><span class="weather-icon">${icons[w.condition] || icons.sun}</span><span class="weather-temp">${w.temp}°C</span></div>`;
+            });
+            document.getElementById('weather-days').innerHTML = html;
+        }
+        
+        function renderJobsView() {
+            const days = getDays();
+            const today = new Date(); today.setHours(0,0,0,0);
+            const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+            
+            let filteredJobs = jobs.filter(j => !['archived', 'cancelled'].includes(j.status));
+            if (filteredJobs.length === 0) {
+                chart.innerHTML = `<div class="gantt-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p style="font-size: 18px; font-weight: 600;">Žádné zakázky</p></div>`;
+                return;
+            }
+            
+            let sidebarHTML = '<div class="gantt-sidebar-header">Zakázky & Úkoly</div>';
+            filteredJobs.forEach(job => {
+                const jobHours = timesheets.filter(ts => ts.job_id === job.id).reduce((s, ts) => s + (ts.hours || 0), 0);
+                const capClass = jobHours > 40 ? 'overload' : (jobHours > 30 ? 'high' : (jobHours > 15 ? 'optimal' : 'low'));
+                sidebarHTML += `<div class="gantt-row-label" draggable="true" data-job-id="${job.id}" ondragstart="handleDragStart(event, ${job.id})" ondragend="handleDragEnd(event)">
+                    <div class="row-icon job">${icons.job}</div>
+                    <div class="row-info"><div class="row-title">${job.client || job.name || 'Zakázka #' + job.id}</div><div class="row-meta">${job.address || job.city || job.status || ''}</div></div>
+                    <div class="row-capacity ${capClass}">${Math.round(jobHours)}h</div>
+                </div>`;
+            });
+            
+            let headerHTML = '';
+            days.forEach(d => {
+                const isToday = d.getTime() === today.getTime();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const w = weatherData.find(x => x.date === d.toISOString().slice(0, 10));
+                const wIcon = w && w.isOutdoorRisk ? `<span class="day-weather">${icons[w.condition]}</span>` : '';
+                headerHTML += `<div class="gantt-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">${wIcon}<span class="day-name">${dayNames[d.getDay()]}</span><span class="day-number">${d.getDate()}</span></div>`;
+            });
+            
+            let bodyHTML = '';
+            filteredJobs.forEach(job => {
+                let rowHTML = '';
+                days.forEach(d => {
+                    const ds = d.toISOString().slice(0, 10);
+                    const isToday = d.getTime() === today.getTime();
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    
+                    const cellInsights = insights.filter(i => (i.job_id === job.id) || (i.date === ds));
+                    const cellHours = timesheets.filter(ts => ts.job_id === job.id && ts.date?.slice(0, 10) === ds).reduce((s, ts) => s + (ts.hours || 0), 0);
+                    const capClass = cellHours > 10 ? 'capacity-overload' : (cellHours > 8 ? 'capacity-high' : (cellHours > 4 ? 'capacity-optimal' : ''));
+                    
+                    let signalsHTML = '';
+                    if (cellInsights.length > 0) {
+                        signalsHTML = '<div class="cell-signals">';
+                        const seen = new Set();
+                        cellInsights.forEach(i => { if (seen.has(i.type)) return; seen.add(i.type); signalsHTML += `<div class="signal-icon ${i.type}" onclick="showSignalTooltip(event, '${i.type}', '${i.title}', '${i.message.replace(/'/g, "\\'")}', '${i.action}')">${icons[i.type]}</div>`; });
+                        signalsHTML += '</div>';
+                    }
+                    
+                    rowHTML += `<div class="gantt-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${capClass}" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${job.id}, '${ds}')" onclick="showDayModal('${ds}', ${job.id}, '${(job.client || job.name || '').replace(/'/g, "\\'")}')">${signalsHTML}</div>`;
+                });
+                
+                const bar = calculateBar(job, days);
+                let barHTML = '';
+                if (bar) {
+                    const statusClass = job.status === 'completed' ? 'status-completed' : (job.status === 'Plán' ? 'status-planned' : 'status-active');
+                    const barInsights = insights.filter(i => i.job_id === job.id);
+                    let barSignals = '';
+                    if (barInsights.length > 0) {
+                        barSignals = '<div class="bar-signals">';
+                        const seen = new Set();
+                        barInsights.slice(0, 2).forEach(i => { if (seen.has(i.type)) return; seen.add(i.type); barSignals += `<span class="signal-icon ${i.type}" style="width:14px;height:14px;">${icons[i.type]}</span>`; });
+                        barSignals += '</div>';
+                    }
+                    const jobHours = timesheets.filter(ts => ts.job_id === job.id).reduce((s, ts) => s + (ts.hours || 0), 0);
+                    barHTML = `<div class="gantt-bar ${statusClass}" style="left: ${bar.left}%; width: ${bar.width}%;" draggable="true" data-job-id="${job.id}" ondragstart="handleDragStart(event, ${job.id})" ondragend="handleDragEnd(event)" onclick="showJobDetail(${job.id})"><span class="bar-title">${job.client || job.name || 'Zakázka'}</span>${barSignals}${jobHours > 0 ? `<span class="bar-hours">${Math.round(jobHours)}h</span>` : ''}</div>`;
+                }
+                
+                bodyHTML += `<div class="gantt-row" data-job-id="${job.id}">${rowHTML}${barHTML}</div>`;
+            });
+            
+            const todayOffset = Math.floor((today - days[0]) / (1000 * 60 * 60 * 24));
+            let todayLine = '';
+            if (todayOffset >= 0 && todayOffset < days.length) {
+                const linePos = (todayOffset / days.length) * 100 + (50 / days.length);
+                todayLine = `<div class="today-line" style="left: ${linePos}%;"></div>`;
+            }
+            
+            chart.innerHTML = `<div class="gantt-sidebar">${sidebarHTML}</div><div class="gantt-main"><div class="gantt-header">${headerHTML}</div><div class="gantt-body">${todayLine}${bodyHTML}</div></div>`;
+        }
+        
+        function renderTeamView() {
+            const days = getDays();
+            const today = new Date(); today.setHours(0,0,0,0);
+            const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+            
+            const activeEmps = employees.filter(e => e.status !== 'inactive');
+            if (activeEmps.length === 0) {
+                chart.innerHTML = `<div class="gantt-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><p style="font-size: 18px; font-weight: 600;">Žádní team</p></div>`;
+                return;
+            }
+            
+            let sidebarHTML = '<div class="gantt-sidebar-header">Tým</div>';
+            activeEmps.forEach(emp => {
+                const empHours = timesheets.filter(ts => ts.employee_id === emp.id).reduce((s, ts) => s + (ts.hours || 0), 0);
+                const util = Math.round((empHours / 40) * 100);
+                const capClass = util > 100 ? 'overload' : (util > 80 ? 'high' : (util > 50 ? 'optimal' : 'low'));
+                sidebarHTML += `<div class="gantt-row-label" data-emp-id="${emp.id}"><div class="row-icon employee">${icons.person}</div><div class="row-info"><div class="row-title">${emp.name}</div><div class="row-meta">${emp.role || emp.position || ''}</div></div><div class="row-capacity ${capClass}">${util}%</div></div>`;
+            });
+            
+            let headerHTML = '';
+            days.forEach(d => {
+                const isToday = d.getTime() === today.getTime();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                headerHTML += `<div class="gantt-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}"><span class="day-name">${dayNames[d.getDay()]}</span><span class="day-number">${d.getDate()}</span></div>`;
+            });
+            
+            let bodyHTML = '';
+            activeEmps.forEach(emp => {
+                let rowHTML = '';
+                days.forEach(d => {
+                    const ds = d.toISOString().slice(0, 10);
+                    const isToday = d.getTime() === today.getTime();
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    const dayHours = timesheets.filter(ts => ts.employee_id === emp.id && ts.date?.slice(0, 10) === ds).reduce((s, ts) => s + (ts.hours || 0), 0);
+                    const capClass = dayHours > 10 ? 'capacity-overload' : (dayHours > 8 ? 'capacity-high' : (dayHours > 4 ? 'capacity-optimal' : ''));
+                    rowHTML += `<div class="gantt-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${capClass}" onclick="showDayModal('${ds}', null, null, ${emp.id})">${dayHours > 0 ? `<span style="position:absolute;bottom:4px;right:4px;font-size:10px;color:var(--mint);">${dayHours}h</span>` : ''}</div>`;
+                });
+                bodyHTML += `<div class="gantt-row" data-emp-id="${emp.id}">${rowHTML}</div>`;
+            });
+            
+            chart.innerHTML = `<div class="gantt-sidebar">${sidebarHTML}</div><div class="gantt-main"><div class="gantt-header">${headerHTML}</div><div class="gantt-body">${bodyHTML}</div></div>`;
+        }
+        
+        function calculateBar(job, days) {
+            const startDate = new Date(job.start_date || days[0]);
+            const endDate = job.deadline ? new Date(job.deadline) : new Date(days[days.length - 1]);
+            const firstDay = days[0], lastDay = days[days.length - 1];
+            startDate.setHours(0,0,0,0); endDate.setHours(0,0,0,0);
+            
+            const visibleStart = startDate < firstDay ? firstDay : startDate;
+            const visibleEnd = endDate > lastDay ? lastDay : endDate;
+            if (visibleStart > lastDay || visibleEnd < firstDay) return null;
+            
+            const totalMs = lastDay.getTime() - firstDay.getTime() + (24*60*60*1000);
+            const startOffset = Math.max(0, visibleStart.getTime() - firstDay.getTime());
+            const duration = visibleEnd.getTime() - visibleStart.getTime() + (24*60*60*1000);
+            return { left: (startOffset / totalMs) * 100, width: Math.max((duration / totalMs) * 100, 5) };
+        }
+        
+        function showAIAssistant() {
+            const container = document.getElementById('ai-assistant');
+            const aiInsight = insights.find(i => i.type === 'ai') || insights[0];
+            if (!aiInsight) { container.style.display = 'none'; return; }
+            container.style.display = 'flex';
+            document.getElementById('ai-suggestion').textContent = aiInsight.message;
+            document.getElementById('ai-actions').innerHTML = `<button class="ai-btn primary" onclick="applyAISuggestion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>${aiInsight.action || 'Aplikovat'}</button><button class="ai-btn secondary" onclick="dismissAISuggestion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Zavřít</button>`;
+        }
+        
+        window.filterByJobs = function() { toggleFilter('stat-jobs'); };
+        window.filterByHours = function() { toggleFilter('stat-hours'); };
+        window.filterByDeadlines = function() { toggleFilter('stat-deadlines'); };
+        window.filterByCapacity = function() { toggleFilter('stat-capacity'); };
+        
+        function toggleFilter(id) {
+            const card = document.getElementById(id);
+            const wasActive = card.classList.contains('active');
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+            if (!wasActive) { card.classList.add('active'); activeFilter = id; } else { activeFilter = null; }
+            render();
+        }
+        
+        window.handleDragStart = function(e, jobId) { draggedItem = jobId; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
+        window.handleDragEnd = function(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target')); draggedItem = null; };
+        window.handleDragOver = function(e) { e.preventDefault(); e.currentTarget.closest('.gantt-row')?.classList.add('drop-target'); };
+        window.handleDrop = function(e, targetJobId, date) {
+            e.preventDefault();
+            document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+            if (draggedItem && draggedItem !== targetJobId) {
+                if (typeof showToast === 'function') showToast(`Zakázka přesunuta na ${date}`, 'success');
+            }
+        };
+        
+        window.showSignalTooltip = function(e, type, title, message, action) {
+            e.stopPropagation();
+            const colors = { risk: 'var(--color-danger)', budget: 'var(--color-warning)', weather: 'var(--color-info)', material: '#8b5cf6', ai: 'var(--color-ai)' };
+            document.getElementById('tooltip-header').innerHTML = `<span class="signal-icon ${type}" style="width:20px;height:20px;">${icons[type]}</span><span style="color: ${colors[type]}">${title}</span>`;
+            document.getElementById('tooltip-content').textContent = message;
+            document.getElementById('tooltip-action').textContent = action;
+            const rect = e.target.getBoundingClientRect();
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = (rect.bottom + 8) + 'px';
+            tooltip.classList.add('active');
+        };
+        
+        function hideTooltip() { tooltip.classList.remove('active'); }
+        
+        window.showDayModal = function(date, jobId, jobName, empId) {
+            const d = new Date(date);
+            const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
+            document.getElementById('modal-title').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${dayNames[d.getDay()]}`;
+            document.getElementById('modal-body').innerHTML = `<h2 style="margin: 0 0 16px 0; font-size: 20px;">${d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}</h2>${jobName ? `<p style="color: var(--mint); margin-bottom: 16px;">${jobName}</p>` : ''}<div class="modal-actions"><a href="/timesheets.html?date=${date}${jobId ? '&job_id=' + jobId : ''}" class="modal-action primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Výkaz práce</a><a href="/tasks.html?deadline=${date}${jobId ? '&job_id=' + jobId : ''}" class="modal-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Nový úkol</a><a href="/calendar.html?date=${date}" class="modal-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>Kalendář</a>${jobId ? `<a href="/job.html?id=${jobId}" class="modal-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>Detail zakázky</a>` : ''}</div>`;
+            modal.classList.add('active');
+        };
+        
+        window.showJobDetail = function(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+            document.getElementById('modal-title').innerHTML = `${icons.job}Zakázka`;
+            const jobHours = timesheets.filter(ts => ts.job_id === jobId).reduce((s, ts) => s + (ts.hours || 0), 0);
+            document.getElementById('modal-body').innerHTML = `<h2 style="margin: 0 0 16px 0; font-size: 20px;">${job.client || job.name || 'Zakázka #' + jobId}</h2><div style="display: grid; gap: 8px; margin-bottom: 20px;"><div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--bg-elevated); border-radius: 8px;"><span style="color: var(--text-secondary);">Adresa</span><span>${job.address || job.city || 'Neuvedena'}</span></div><div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--bg-elevated); border-radius: 8px;"><span style="color: var(--text-secondary);">Termín</span><span>${job.deadline || '∞'}</span></div><div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--bg-elevated); border-radius: 8px;"><span style="color: var(--text-secondary);">Odpracováno</span><span style="color: var(--mint);">${Math.round(jobHours)}h</span></div></div><div class="modal-actions"><a href="/job.html?id=${jobId}" class="modal-action primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Otevřít detail</a><a href="/timesheets.html?job_id=${jobId}" class="modal-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Výkazy</a></div>`;
+            modal.classList.add('active');
+        };
+        
+        window.closeModal = function() { modal.classList.remove('active'); };
+        window.applyAISuggestion = function() { if (typeof showToast === 'function') showToast('AI návrh aplikován', 'success'); document.getElementById('ai-assistant').style.display = 'none'; };
+        window.dismissAISuggestion = function() { document.getElementById('ai-assistant').style.display = 'none'; };
+        
+        init();
+    })();
+    </script>
+<script src="/static/app-sidebar.js"></script>
+<script src="/static/app-header.js"></script>
+    <script src="/static/js/weather-picker.js"></script>
+</body>
+</html>

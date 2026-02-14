@@ -1,0 +1,1544 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Školení - green david app</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+  <link rel="stylesheet" href="/static/css/glass-design.css"/>
+  <link rel="stylesheet" href="/static/icons.css"/>
+  <link rel="stylesheet" href="/static/css/sidebar.css"/>
+  <script src="/app-settings.js"></script>
+  <script src="/static/app-header.js"></script>
+  <style>
+    body {
+      background: #1a1d1f;
+      color: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .trainings-page {
+      padding-top: 80px;
+      min-height: 100vh;
+    }
+    .page-container {
+      padding: 24px;
+      padding-bottom: 100px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .page-header {
+      padding: 0;
+      margin-bottom: 32px;
+    }
+    .page-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 20px;
+    }
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+    .page-title svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--mint);
+    }
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin: 0;
+    }
+    .btn-add-training {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+      color: var(--text-on-light);
+      border: 1px solid var(--mint-border);
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+    }
+    .btn-add-training:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+      background: linear-gradient(135deg, var(--mint-light) 0%, var(--mint) 100%);
+    }
+    .btn-add-training svg {
+      width: 20px;
+      height: 20px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.18);
+      border-left-color: rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+      border-color: var(--mint-border);
+    }
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(74,222,128,0.2) 0%, rgba(74,222,128,0.1) 100%);
+      box-shadow: 0 4px 12px rgba(74,222,128,0.15);
+    }
+    .stat-content {
+      flex: 1;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 4px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .trainings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+    }
+    .training-card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.18);
+      border-left-color: rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
+      cursor: pointer;
+    }
+    .training-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--mint-border);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 30px rgba(74,222,128,0.12), inset 0 2px 0 rgba(255,255,255,0.1);
+      background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%);
+    }
+    /* Card Header - Název a kategorie vedle sebe */
+    .training-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .training-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      flex: 1;
+    }
+    .training-category-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .training-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    /* Účastníci */
+    .training-participants {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .training-participants svg {
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+    .training-participants span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Card Footer - Kompenzace + Akce */
+    .training-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* Compensation badge */
+    .compensation-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .compensation-badge.paid {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+    .compensation-badge.costs-only {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+    .compensation-badge.free {
+      background: rgba(107, 114, 128, 0.15);
+      color: #9ca3af;
+    }
+    /* Action buttons */
+    .training-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+    .btn-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: block;
+      flex-shrink: 0;
+    }
+    .btn-edit {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+    }
+    .btn-edit:hover {
+      background: rgba(59, 130, 246, 0.3);
+      transform: scale(1.1);
+    }
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+    .btn-delete:hover {
+      background: rgba(239, 68, 68, 0.3);
+      transform: scale(1.1);
+    }
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px dashed var(--border-primary);
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(167,139,250,0.2) 0%, rgba(139,92,246,0.1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(167,139,250,0.2);
+    }
+    
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      position: relative;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.01) 100%);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.18);
+      border-left-color: rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-primary);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .modal-close:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .modal-close svg {
+      width: 24px;
+      height: 24px;
+    }
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Form sections */
+    .form-section {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .form-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .form-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #8b5cf6;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 16px 0;
+    }
+    .form-section-hint {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin: -8px 0 16px 0;
+    }
+    
+    /* Form groups */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    .form-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 8px;
+    }
+    .form-group label svg {
+      opacity: 0.6;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+      box-sizing: border-box;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--mint-border);
+      background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(255,255,255,0.05) 100%);
+      box-shadow: 0 0 0 3px rgba(74,222,128,0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    /* Input with suffix (Kč) */
+    .input-with-suffix {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-with-suffix input {
+      padding-right: 50px;
+    }
+    .input-with-suffix .suffix {
+      position: absolute;
+      right: 14px;
+      color: rgba(255,255,255,0.4);
+      font-size: 14px;
+      pointer-events: none;
+    }
+    
+    /* Costs grid */
+    .costs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .costs-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(139,92,246,0.1) 100%);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(167,139,250,0.3);
+      box-shadow: 0 4px 12px rgba(167,139,250,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .costs-total span {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .costs-total strong {
+      color: var(--accent-purple);
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    /* Compensation selector */
+    .compensation-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .compensation-selector {
+        grid-template-columns: 1fr;
+      }
+    }
+    .comp-option {
+      cursor: pointer;
+    }
+    .comp-option input {
+      display: none;
+    }
+    .comp-card {
+      padding: 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+      backdrop-filter: blur(10px);
+      border: 2px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.12);
+      border-radius: 14px;
+      text-align: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .comp-option input:checked + .comp-card {
+      border-color: var(--mint-border);
+      background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(74,222,128,0.05) 100%);
+      box-shadow: 0 8px 24px rgba(74,222,128,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+    .comp-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+    .comp-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    .comp-card strong {
+      display: block;
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .comp-card small {
+      display: block;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+    }
+    
+    /* Participants select */
+    .participants-select-wrapper {
+      position: relative;
+    }
+    .participants-select {
+      width: 100%;
+      min-height: 180px;
+      max-height: 250px;
+      padding: 12px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-primary);
+      border-top-color: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+      overflow-y: auto;
+      box-sizing: border-box;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .participants-select:focus {
+      outline: none;
+      border-color: var(--mint-border);
+      background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(255,255,255,0.05) 100%);
+      box-shadow: 0 0 0 3px rgba(74,222,128,0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .participants-select option {
+      padding: 10px 14px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 2px 0;
+    }
+    .participants-select option:hover {
+      background: linear-gradient(135deg, rgba(74,222,128,0.1) 0%, rgba(74,222,128,0.05) 100%);
+    }
+    .participants-select option:checked {
+      background: linear-gradient(135deg, rgba(74,222,128,0.25) 0%, rgba(74,222,128,0.15) 100%);
+      color: var(--mint);
+      font-weight: 600;
+    }
+    .participants-search {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-primary);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .participants-search:focus {
+      outline: none;
+      border-color: var(--mint-border);
+      background: linear-gradient(145deg, rgba(74,222,128,0.15) 0%, rgba(255,255,255,0.05) 100%);
+    }
+    .participants-search::placeholder {
+      color: var(--text-tertiary);
+    }
+    .selected-count {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+    
+    /* Buttons */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+      color: var(--text-on-light);
+      border: 1px solid var(--mint-border);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(74, 222, 128, 0.25);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 222, 128, 0.35);
+      background: linear-gradient(135deg, var(--mint-light) 0%, var(--mint) 100%);
+    }
+    .btn-primary svg {
+      width: 18px;
+      height: 18px;
+    }
+    .btn-secondary {
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(10px);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-primary);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .btn-secondary:hover {
+      background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+      border-color: var(--border-medium);
+      transform: translateY(-1px);
+    }
+    
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .trainings-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+  <body class="has-sidebar">
+  <div id="app-header"></div>
+  <header class="app-header">
+    <div class="app-header-container">
+      <a href="/" class="app-header-brand">
+        <img src="/logo.jpg" alt="green david app" class="app-header-logo" onerror="this.src='/logo.svg'"/>
+        <div class="app-header-text">
+          <div class="app-header-title">green david app</div>
+          <div class="app-header-subtitle">interní systém</div>
+        </div>
+      </a>
+      <div class="global-search-container"></div>
+      <div class="app-header-actions">
+        <div id="userbox" class="app-header-user"></div>
+        <a href="/settings.html" class="app-header-settings" title="Nastavení">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="trainings-page">
+    <div class="page-container">
+      <div class="page-header">
+        <div class="page-title-row">
+          <h1 class="page-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+            Školení
+          </h1>
+          <button class="btn-add-training" onclick="openAddTrainingModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Přidat školení
+          </button>
+        </div>
+        <p class="subtitle">Investice do rozvoje týmu</p>
+      </div>
+      
+      <!-- STATISTIKY -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(167, 139, 250, 0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" style="width: 24px; height: 24px;">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="statCount">0</div>
+            <div class="stat-label">Školení letos</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(251, 191, 36, 0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" style="width: 24px; height: 24px;">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="statCost">0 Kč</div>
+            <div class="stat-label">Investice</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(96, 165, 250, 0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" style="width: 24px; height: 24px;">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="statHours">0h</div>
+            <div class="stat-label">Hodin školení</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(74, 222, 128, 0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" style="width: 24px; height: 24px;">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="statAttendees">0</div>
+            <div class="stat-label">Účastníků</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- SEZNAM ŠKOLENÍ -->
+      <div id="trainingsList">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" style="width: 40px; height: 40px;">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 8px;">Zatím žádná školení</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0 0 24px;">Přidejte první školení pro evidenci vzdělávání týmu</p>
+          <button class="btn-add-training" onclick="openAddTrainingModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Přidat první školení
+          </button>
+        </div>
+        
+        <div id="trainingsGrid" class="trainings-grid" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL pro přidání/editaci školení -->
+  <div id="trainingModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="closeTrainingModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header" id="modal-header">
+        <h2>Přidat školení</h2>
+        <button class="modal-close" onclick="closeTrainingModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="trainingForm" class="modal-body">
+        <!-- ZÁKLADNÍ INFORMACE -->
+        <div class="form-section">
+          <h3 class="form-section-title">Základní informace</h3>
+          
+          <div class="form-group">
+            <label for="training_title">Název školení *</label>
+            <input type="text" id="training_title" name="title" required 
+                   placeholder="např. Kurz řezu ovocných stromů">
+          </div>
+          
+          <div class="form-group">
+            <label for="training_description">Popis</label>
+            <textarea id="training_description" name="description" rows="3"
+                      placeholder="Detailní popis školení..."></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="training_category">Kategorie</label>
+              <select id="training_category" name="category">
+                <option value="safety">Bezpečnost</option>
+                <option value="technical">Technické</option>
+                <option value="machinery">Stroje</option>
+                <option value="plants" selected>Rostliny</option>
+                <option value="soft_skills">Soft skills</option>
+                <option value="management">Management</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="training_type">Typ</label>
+              <select id="training_type" name="training_type">
+                <option value="external">Externí školení</option>
+                <option value="internal">Interní školení</option>
+                <option value="online">Online kurz</option>
+                <option value="conference">Konference</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="training_date">Datum zahájení *</label>
+              <input type="date" id="training_date" name="date" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="training_date_end">Datum ukončení</label>
+              <input type="date" id="training_date_end" name="date_end" placeholder="Pro vícedenní školení">
+            </div>
+            
+            <div class="form-group">
+              <label for="training_hours">Délka (hodin)</label>
+              <input type="number" id="training_hours" name="duration_hours" 
+                     min="0" step="0.5" value="8" placeholder="8">
+            </div>
+          </div>
+        </div>
+        
+        <!-- TYP KOMPENZACE -->
+        <div class="form-section">
+          <h3 class="form-section-title">Typ kompenzace</h3>
+          <p class="form-section-hint">Jak bude školení propláceno?</p>
+          
+          <div class="compensation-selector">
+            <label class="comp-option">
+              <input type="radio" name="compensation_type" value="paid_workday" checked>
+              <div class="comp-card">
+                <div class="comp-icon" style="background: rgba(34,197,94,0.2); color: #22c55e;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                    <path d="M2 10h20"/>
+                  </svg>
+                </div>
+                <strong>Placený pracovní den</strong>
+                <small>Firma platí mzdu + náklady</small>
+              </div>
+            </label>
+            
+            <label class="comp-option">
+              <input type="radio" name="compensation_type" value="costs_only">
+              <div class="comp-card">
+                <div class="comp-icon" style="background: rgba(245,158,11,0.2); color: #f59e0b;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                  </svg>
+                </div>
+                <strong>Pouze náklady</strong>
+                <small>Jen cesta, ubytování (bez mzdy)</small>
+              </div>
+            </label>
+            
+            <label class="comp-option">
+              <input type="radio" name="compensation_type" value="no_compensation">
+              <div class="comp-card">
+                <div class="comp-icon" style="background: rgba(107,114,128,0.2); color: #6b7280;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
+                <strong>Ve volném čase</strong>
+                <small>Bez náhrady (online kurz doma)</small>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <!-- NÁKLADY -->
+        <div class="form-section">
+          <h3 class="form-section-title">Náklady</h3>
+          
+          <div class="costs-grid">
+            <div class="form-group">
+              <label for="cost_training">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                  <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+                Cena školení
+              </label>
+              <div class="input-with-suffix">
+                <input type="number" id="cost_training" name="cost_training" 
+                       min="0" value="0" placeholder="0">
+                <span class="suffix">Kč</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="cost_travel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/>
+                  <path d="M2 12h20"/>
+                </svg>
+                Cestovné
+              </label>
+              <div class="input-with-suffix">
+                <input type="number" id="cost_travel" name="cost_travel" 
+                       min="0" value="0" placeholder="0">
+                <span class="suffix">Kč</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="cost_accommodation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M3 21h18M3 7v14M21 7v14M6 11h4v10H6zM14 11h4v10h-4zM9 3h6l3 4H6z"/>
+                </svg>
+                Ubytování
+              </label>
+              <div class="input-with-suffix">
+                <input type="number" id="cost_accommodation" name="cost_accommodation" 
+                       min="0" value="0" placeholder="0">
+                <span class="suffix">Kč</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="cost_meals">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                  <path d="M6 1v3M10 1v3M14 1v3"/>
+                </svg>
+                Stravné
+              </label>
+              <div class="input-with-suffix">
+                <input type="number" id="cost_meals" name="cost_meals" 
+                       min="0" value="0" placeholder="0">
+                <span class="suffix">Kč</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="costs-total">
+            <span>Celkové náklady:</span>
+            <strong id="totalCosts">0 Kč</strong>
+          </div>
+        </div>
+        
+        <!-- ÚČASTNÍCI -->
+        <div class="form-section">
+          <h3 class="form-section-title">Účastníci</h3>
+          
+          <div class="participants-select-wrapper">
+            <input type="text" id="participantsSearch" class="participants-search" 
+                   placeholder="🔍 Hledat zaměstnance..." 
+                   oninput="filterParticipants()">
+            <select id="participantsSelect" class="participants-select" multiple size="10">
+              <!-- Dynamicky načtené z /api/employees -->
+            </select>
+            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px; padding-left: 4px;">
+              💡 Podržte Ctrl (Cmd na Mac) pro výběr více zaměstnanců
+            </div>
+            <div class="selected-count" id="selectedCount">Vybráno: 0</div>
+          </div>
+        </div>
+        
+        <!-- MÍSTO A POSKYTOVATEL -->
+        <div class="form-section">
+          <h3 class="form-section-title">Místo a poskytovatel</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="training_location">Místo konání</label>
+              <input type="text" id="training_location" name="location" 
+                     placeholder="např. Zahradnická škola Mělník">
+            </div>
+            
+            <div class="form-group">
+              <label for="training_provider">Poskytovatel</label>
+              <input type="text" id="training_provider" name="provider" 
+                     placeholder="např. Svaz zahradníků ČR">
+            </div>
+          </div>
+        </div>
+        
+        <!-- POZNÁMKY -->
+        <div class="form-section">
+          <h3 class="form-section-title">Poznámky</h3>
+          <div class="form-group">
+            <textarea id="training_notes" name="notes" rows="3"
+                      placeholder="Další poznámky ke školení..."></textarea>
+          </div>
+        </div>
+      </form>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeTrainingModal()">Zrušit</button>
+        <button type="submit" class="btn-primary" onclick="saveTraining()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <path d="M17 21v-8H7v8M7 3v5h8"/>
+          </svg>
+          Uložit školení
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Container -->
+  <div id="bottom-nav-container"></div>
+  <script src="/static/bottom-nav.js"></script>
+  <script src="/static/global-search.js"></script>
+
+  <script>
+    const TRAINING_CATEGORIES = {
+      safety: { name: 'Bezpečnost', color: '#ef4444' },
+      technical: { name: 'Technické', color: '#3b82f6' },
+      machinery: { name: 'Stroje', color: '#f59e0b' },
+      plants: { name: 'Rostliny', color: '#22c55e' },
+      soft_skills: { name: 'Soft skills', color: '#8b5cf6' },
+      management: { name: 'Management', color: '#ec4899' }
+    };
+
+    const COMPENSATION_TYPES = {
+      paid_workday: { name: 'Placený pracovní den', class: 'paid', color: '#22c55e' },
+      costs_only: { name: 'Pouze náklady', class: 'costs-only', color: '#f59e0b' },
+      no_compensation: { name: 'Ve volném čase', class: 'free', color: '#6b7280' }
+    };
+
+    let employees = [];
+    let trainings = [];
+    let editingTrainingId = null;
+
+    // Načtení zaměstnanců
+    async function loadEmployees() {
+      try {
+        const resp = await fetch('/api/employees');
+        const data = await resp.json();
+        employees = data.employees || data || [];
+        renderParticipants();
+      } catch (e) {
+        console.error('Chyba načítání zaměstnanců:', e);
+      }
+    }
+
+    // Vykreslení účastníků do selectu
+    function renderParticipants(selectedIds = []) {
+      const select = document.getElementById('participantsSelect');
+      if (!select) return;
+      
+      select.innerHTML = employees.map(emp => {
+        const isSelected = selectedIds.includes(emp.id);
+        return `<option value="${emp.id}" ${isSelected ? 'selected' : ''}>${emp.name || 'Neznámý'}</option>`;
+      }).join('');
+      
+      updateSelectedCount();
+    }
+    
+    // Filtrování účastníků podle vyhledávání
+    function filterParticipants() {
+      const search = document.getElementById('participantsSearch').value.toLowerCase();
+      const select = document.getElementById('participantsSelect');
+      if (!select) return;
+      
+      Array.from(select.options).forEach(option => {
+        const text = option.textContent.toLowerCase();
+        option.style.display = text.includes(search) ? '' : 'none';
+      });
+    }
+    
+    // Aktualizace počtu vybraných
+    function updateSelectedCount() {
+      const select = document.getElementById('participantsSelect');
+      const countEl = document.getElementById('selectedCount');
+      if (!select || !countEl) return;
+      
+      const selected = Array.from(select.selectedOptions).length;
+      countEl.textContent = `Vybráno: ${selected}`;
+    }
+
+    // Otevření modalu pro nové školení
+    function openAddTrainingModal() {
+      editingTrainingId = null;
+      document.getElementById('trainingForm').reset();
+      document.getElementById('modal-header').querySelector('h2').textContent = 'Přidat školení';
+      document.getElementById('training_date').value = new Date().toISOString().split('T')[0];
+      document.querySelector('input[name="compensation_type"][value="paid_workday"]').checked = true;
+      renderParticipants([]);
+      updateTotalCosts();
+      document.getElementById('participantsSearch').value = '';
+      filterParticipants();
+      document.getElementById('trainingModal').style.display = 'flex';
+    }
+    
+    // Otevření modalu pro úpravu školení
+    async function editTraining(trainingId) {
+      editingTrainingId = trainingId;
+      const training = trainings.find(t => t.id === trainingId);
+      if (!training) {
+        alert('Školení nenalezeno');
+        return;
+      }
+      
+      // Naplň formulář daty
+      document.getElementById('training_title').value = training.title || training.name || '';
+      document.getElementById('training_description').value = training.description || '';
+      document.getElementById('training_category').value = training.category || 'plants';
+      document.getElementById('training_type').value = training.training_type || 'external';
+      document.getElementById('training_date').value = training.date || training.date_start || '';
+      document.getElementById('training_date_end').value = training.date_end || '';
+      document.getElementById('training_hours').value = training.duration_hours || 8;
+      
+      // Typ kompenzace
+      const compType = training.compensation_type || 'paid_workday';
+      document.querySelector(`input[name="compensation_type"][value="${compType}"]`).checked = true;
+      
+      // Náklady
+      document.getElementById('cost_training').value = training.cost_training || 0;
+      document.getElementById('cost_travel').value = training.cost_travel || 0;
+      document.getElementById('cost_accommodation').value = training.cost_accommodation || 0;
+      document.getElementById('cost_meals').value = training.cost_meals || 0;
+      
+      // Účastníci
+      let participants = [];
+      if (training.participants) {
+        try {
+          participants = JSON.parse(training.participants);
+        } catch (e) {
+          participants = [];
+        }
+      }
+      renderParticipants(participants);
+      
+      // Místo a poskytovatel
+      document.getElementById('training_location').value = training.location || '';
+      document.getElementById('training_provider').value = training.provider || '';
+      document.getElementById('training_notes').value = training.notes || '';
+      
+      // Aktualizuj celkové náklady
+      updateTotalCosts();
+      
+      // Změň nadpis modalu
+      document.getElementById('modal-header').querySelector('h2').textContent = 'Upravit školení';
+      
+      // Otevři modal
+      document.getElementById('participantsSearch').value = '';
+      filterParticipants();
+      document.getElementById('trainingModal').style.display = 'flex';
+    }
+    
+    // Smazání školení
+    async function deleteTraining(trainingId) {
+      const training = trainings.find(t => t.id === trainingId);
+      const trainingName = training ? (training.title || training.name || 'Školení') : 'Školení';
+      
+      if (!confirm(`Opravdu chcete smazat školení "${trainingName}"?`)) {
+        return;
+      }
+      
+      try {
+        const resp = await fetch(`/gd/api/trainings/${trainingId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await resp.json();
+        
+        if (result.ok || resp.status === 200) {
+          await loadTrainings();
+          await loadStats();
+          alert('Školení smazáno');
+        } else {
+          alert('Chyba při mazání: ' + (result.error || result.message || 'Neznámá chyba'));
+        }
+      } catch (e) {
+        console.error('Chyba:', e);
+        alert('Chyba při mazání školení');
+      }
+    }
+
+    // Zavření modalu
+    function closeTrainingModal() {
+      document.getElementById('trainingModal').style.display = 'none';
+      editingTrainingId = null;
+      document.getElementById('trainingForm').reset();
+      document.getElementById('participantsSearch').value = '';
+      filterParticipants();
+    }
+
+    // Aktualizace celkových nákladů
+    function updateTotalCosts() {
+      const cost_training = parseFloat(document.getElementById('cost_training').value) || 0;
+      const cost_travel = parseFloat(document.getElementById('cost_travel').value) || 0;
+      const cost_accommodation = parseFloat(document.getElementById('cost_accommodation').value) || 0;
+      const cost_meals = parseFloat(document.getElementById('cost_meals').value) || 0;
+      
+      const total = cost_training + cost_travel + cost_accommodation + cost_meals;
+      document.getElementById('totalCosts').textContent = total.toLocaleString('cs-CZ') + ' Kč';
+    }
+
+    // Auto-calculate hours from date range
+    function autoCalcHours() {
+      const dateStart = document.getElementById('training_date').value;
+      const dateEnd = document.getElementById('training_date_end').value;
+      if (dateStart && dateEnd) {
+        const start = new Date(dateStart);
+        const end = new Date(dateEnd);
+        const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        document.getElementById('training_hours').value = diffDays * 8;
+      }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const dateEnd = document.getElementById('training_date_end');
+      const dateStart = document.getElementById('training_date');
+      if (dateEnd) dateEnd.addEventListener('change', autoCalcHours);
+      if (dateStart) dateStart.addEventListener('change', () => {
+        // Set min for date_end
+        if (dateEnd && dateStart.value) {
+          dateEnd.min = dateStart.value;
+        }
+        autoCalcHours();
+      });
+    });
+
+    // Uložení školení
+    async function saveTraining() {
+      const form = document.getElementById('trainingForm');
+      
+      // Získat vybrané účastníky z selectu
+      const select = document.getElementById('participantsSelect');
+      const participants = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+      
+      // Získat typ kompenzace
+      const compensationType = form.querySelector('input[name="compensation_type"]:checked')?.value || 'paid_workday';
+      
+      const data = {
+        title: document.getElementById('training_title').value,
+        name: document.getElementById('training_title').value,
+        description: document.getElementById('training_description').value,
+        category: document.getElementById('training_category').value,
+        training_type: document.getElementById('training_type').value,
+        date: document.getElementById('training_date').value,
+        date_start: document.getElementById('training_date').value,
+        date_end: document.getElementById('training_date_end').value || null,
+        duration_hours: parseFloat(document.getElementById('training_hours').value) || 0,
+        cost_training: parseFloat(document.getElementById('cost_training').value) || 0,
+        cost_travel: parseFloat(document.getElementById('cost_travel').value) || 0,
+        cost_accommodation: parseFloat(document.getElementById('cost_accommodation').value) || 0,
+        cost_meals: parseFloat(document.getElementById('cost_meals').value) || 0,
+        compensation_type: compensationType,
+        participants: participants,
+        location: document.getElementById('training_location').value,
+        provider: document.getElementById('training_provider').value,
+        notes: document.getElementById('training_notes').value
+      };
+      
+      console.log('Ukládám školení s účastníky:', participants);
+      
+      // Validace
+      if (!data.title) {
+        alert('Zadejte název školení');
+        return;
+      }
+      if (!data.date) {
+        alert('Zadejte datum školení');
+        return;
+      }
+      
+      try {
+        const url = editingTrainingId 
+          ? `/gd/api/trainings/${editingTrainingId}` 
+          : '/gd/api/trainings';
+        const method = editingTrainingId ? 'PUT' : 'POST';
+        
+        const resp = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await resp.json();
+        
+        if (result.ok || result.id) {
+          closeTrainingModal();
+          await loadTrainings();
+          await loadStats();
+          alert(editingTrainingId ? 'Školení upraveno' : 'Školení uloženo');
+        } else {
+          alert('Chyba při ukládání: ' + (result.error || result.message || 'Neznámá chyba'));
+        }
+      } catch (e) {
+        console.error('Chyba:', e);
+        alert('Chyba při ukládání školení');
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const year = new Date().getFullYear();
+        const response = await fetch(`/gd/api/trainings/stats?from=${year}-01-01&to=${year}-12-31`);
+        const data = await response.json();
+        
+        if (data.ok && data.stats) {
+          const countEl = document.getElementById('statCount');
+          const costEl = document.getElementById('statCost');
+          const hoursEl = document.getElementById('statHours');
+          const attendeesEl = document.getElementById('statAttendees');
+          
+          if (countEl) countEl.textContent = data.stats.count || 0;
+          if (costEl) costEl.textContent = (data.stats.total_cost || 0).toLocaleString('cs-CZ') + ' Kč';
+          if (hoursEl) hoursEl.textContent = (data.stats.total_hours || 0) + 'h';
+          if (attendeesEl) attendeesEl.textContent = data.stats.attendees || 0;
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    async function loadTrainings() {
+      try {
+        const year = new Date().getFullYear();
+        const response = await fetch(`/gd/api/trainings?from=${year}-01-01&to=${year}-12-31`);
+        const data = await response.json();
+        
+        trainings = data.trainings || [];
+        
+        const emptyState = document.getElementById('emptyState');
+        const grid = document.getElementById('trainingsGrid');
+        
+        if (trainings.length > 0) {
+          if (emptyState) emptyState.style.display = 'none';
+          if (grid) {
+            grid.style.display = 'grid';
+            grid.innerHTML = trainings.map(t => renderTrainingCard(t)).join('');
+          }
+        } else {
+          if (emptyState) emptyState.style.display = 'flex';
+          if (grid) grid.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error loading trainings:', error);
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('cs-CZ');
+    }
+
+    function renderTrainingCard(training) {
+      // Kategorie
+      const cat = TRAINING_CATEGORIES[training.category] || TRAINING_CATEGORIES.technical;
+      
+      // Kompenzace
+      const comp = COMPENSATION_TYPES[training.compensation_type] || COMPENSATION_TYPES.paid_workday;
+      
+      // Účastníci - získej jména
+      let participantNames = 'Žádní účastníci';
+      try {
+        const participantIds = JSON.parse(training.participants || '[]');
+        if (participantIds.length > 0) {
+          const names = participantIds.map(id => {
+            const emp = employees.find(e => e.id === id);
+            return emp ? emp.name : null;
+          }).filter(n => n);
+          
+          if (names.length > 0) {
+            participantNames = names.length <= 3 
+              ? names.join(', ')
+              : names.slice(0, 3).join(', ') + ` +${names.length - 3}`;
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing participants:', e);
+      }
+      
+      // Celkové náklady
+      const totalCost = (parseFloat(training.cost_training) || 0) + 
+                        (parseFloat(training.cost_travel) || 0) + 
+                        (parseFloat(training.cost_accommodation) || 0) + 
+                        (parseFloat(training.cost_meals) || 0);
+      
+      return `
+        <div class="training-card" onclick="editTraining(${training.id})">
+          <!-- Header: Název + Kategorie -->
+          <div class="training-card-header">
+            <h3 class="training-title">${training.title || training.name || 'Bez názvu'}</h3>
+            <span class="training-category-badge" style="background: ${cat.color}20; color: ${cat.color}">
+              ${cat.name.toUpperCase()}
+            </span>
+          </div>
+          
+          <!-- Meta: Datum, Hodiny, Cena -->
+          <div class="training-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              ${formatDate(training.date || training.date_start)}${training.date_end ? ' — ' + formatDate(training.date_end) : ''}
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              ${training.duration_hours || 0}h
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 12h8M8 9h5M8 15h5"></path>
+              </svg>
+              ${totalCost.toLocaleString('cs-CZ')} Kč
+            </span>
+          </div>
+          
+          <!-- Účastníci -->
+          <div class="training-participants">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <span>${participantNames}</span>
+          </div>
+          
+          <!-- Footer: Kompenzace + Tlačítka -->
+          <div class="training-card-footer">
+            <span class="compensation-badge ${comp.class}">
+              ${comp.name}
+            </span>
+            
+            <div class="training-actions">
+              <button class="btn-icon btn-edit" onclick="event.stopPropagation(); editTraining(${training.id})" title="Upravit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteTraining(${training.id})" title="Smazat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Event listenery
+    document.addEventListener('DOMContentLoaded', () => {
+      loadEmployees();
+      loadTrainings();
+      loadStats();
+      
+      // Aktualizace součtu při změně nákladů
+      ['cost_training', 'cost_travel', 'cost_accommodation', 'cost_meals'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', updateTotalCosts);
+        }
+      });
+      
+      // Aktualizace počtu vybraných účastníků
+      const participantsSelect = document.getElementById('participantsSelect');
+      if (participantsSelect) {
+        participantsSelect.addEventListener('change', updateSelectedCount);
+      }
+    });
+  </script>
+</div>
+<script src="/static/app-sidebar.js"></script>
+</body>
+</html>

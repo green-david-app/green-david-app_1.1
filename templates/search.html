@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <div class="card">
+    <div class="card-h" style="display:flex;align-items:center;justify-content:space-between">
+      <div><strong>Výsledky hledání</strong></div>
+      <div><a href="/" class="btn small">Zpět</a></div>
+    </div>
+    {% if not q %}
+      <div class="small muted">Napište dotaz do pole nahoře a stiskněte Hledat.</div>
+    {% else %}
+      {% if results|length == 0 %}
+        <div class="small muted">Nic nenalezeno pro „{{ q }}“.</div>
+      {% else %}
+        <table class="table">
+          <tr><th>Typ</th><th>Název</th><th>Další</th><th>Datum</th><th></th></tr>
+          {% for r in results %}
+          <tr>
+            <td class="small">{{ r.type }}</td>
+            <td>{{ r.title }}</td>
+            <td class="small">{{ r.sub }}</td>
+            <td class="small">{{ r.date }}</td>
+            <td><a class="ghost" href="{{ r.url }}">Otevřít</a></td>
+          </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
