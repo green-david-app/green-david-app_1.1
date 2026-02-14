@@ -747,33 +747,34 @@ def apply_migrations():
         (32, [
             ("employees", "position", "ALTER TABLE employees ADD COLUMN position TEXT DEFAULT ''"),
         ]),
-
-        # v33: finance invoices table (for Finance stránka)
+        # v33: fix missing columns — tasks.updated_at + notes table rebuild
         (33, [
+            # Tasks: add updated_at column
+            ("tasks", "updated_at", "ALTER TABLE tasks ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))"),
+            # Notes: drop and recreate with correct schema (no user data to lose — notes never worked)
             """
-            CREATE TABLE IF NOT EXISTS invoices (
+            DROP TABLE IF EXISTS notes;
+            CREATE TABLE notes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                type TEXT NOT NULL DEFAULT 'issued',
-                number TEXT NOT NULL,
-                client TEXT DEFAULT '',
-                supplier TEXT DEFAULT '',
-                amount REAL NOT NULL DEFAULT 0,
-                date TEXT NOT NULL,
-                due_date TEXT,
-                status TEXT DEFAULT 'pending',
-                note TEXT DEFAULT '',
-                created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                title TEXT,
+                content TEXT NOT NULL,
+                category TEXT DEFAULT 'general',
+                color TEXT DEFAULT 'default',
+                is_pinned INTEGER DEFAULT 0,
+                job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+                employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+                party_id INTEGER REFERENCES parties(id) ON DELETE SET NULL,
+                created_by INTEGER REFERENCES users(id),
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
             );
-            CREATE INDEX IF NOT EXISTS idx_invoices_type ON invoices(type);
-            CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(date);
-            CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-            """
-        ]),
-
-        # v34: trainings days_of_week (Po–Pá, víkend, vlastní výběr)
-        (34, [
-            ("trainings", "days_of_week", "ALTER TABLE trainings ADD COLUMN days_of_week TEXT DEFAULT '[0,1,2,3,4,5,6]'"),
+            CREATE INDEX IF NOT EXISTS idx_notes_job ON notes(job_id);
+            CREATE INDEX IF NOT EXISTS idx_notes_employee ON notes(employee_id);
+            CREATE INDEX IF NOT EXISTS idx_notes_party ON notes(party_id);
+            CREATE INDEX IF NOT EXISTS idx_notes_created_by ON notes(created_by);
+            CREATE INDEX IF NOT EXISTS idx_notes_category ON notes(category);
+            CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(is_pinned);
+            """,
         ]),
     ]
 
@@ -1867,7 +1868,6 @@ CREATE TABLE IF NOT EXISTS employees (
             ("wage_cost_per_person", "REAL"),
             ("participants", "TEXT DEFAULT '[]'"),
             ("title", "TEXT"),
-            ("days_of_week", "TEXT DEFAULT '[0,1,2,3,4,5,6]'"),
         ],
     }
     for table, columns in _ensure_columns.items():
@@ -2199,6 +2199,12 @@ def _ensure():
         except Exception as e:
             # Never break the app startup/runtime on a migration helper issue
             print(f"[DB] Migration failed: {e}")
+        # Emergency DB fix for missing columns (tasks.updated_at, notes table)
+        try:
+            from app.utils.db_fix import fix_database
+            fix_database()
+        except Exception as e:
+            print(f"[DB] db_fix failed: {e}")
         # Legacy migrations (kept for backward compatibility with older app.db variants)
         try:
             _migrate_completed_at()
@@ -2213,3 +2219,144 @@ def _ensure():
     _auto_upgrade_admins_to_owner()
     seed_employees()
     seed_plant_catalog()
+
+    """Create Crew Control System tables if they don't exist"""
+    db = get_db()
+    try:
+        tables_to_create = [
+            ("employee_skills", '''
+                CREATE TABLE IF NOT EXISTS employee_skills (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    skill_type TEXT NOT NULL,
+                    skill_name TEXT NOT NULL,
+                    level INTEGER DEFAULT 1,
+                    certified INTEGER DEFAULT 0,
+                    certified_date TEXT,
+                    certified_by TEXT,
+                    notes TEXT,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            '''),
+            ("employee_certifications", '''
+                CREATE TABLE IF NOT EXISTS employee_certifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    cert_name TEXT NOT NULL,
+                    cert_type TEXT,
+                    issued_date TEXT,
+                    expiry_date TEXT,
+                    issuer TEXT,
+                    document_url TEXT,
+                    status TEXT DEFAULT 'active',
+                    created_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            '''),
+            ("employee_preferences", '''
+                CREATE TABLE IF NOT EXISTS employee_preferences (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL UNIQUE,
+                    preferred_work_types TEXT,
+                    avoided_work_types TEXT,
+                    max_weekly_hours REAL DEFAULT 40,
+                    preferred_locations TEXT,
+                    travel_radius_km INTEGER DEFAULT 50,
+                    prefers_team_work INTEGER DEFAULT 1,
+                    prefers_solo_work INTEGER DEFAULT 0,
+                    notes TEXT,
+                    updated_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            '''),
+            ("employee_capacity", '''
+                CREATE TABLE IF NOT EXISTS employee_capacity (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    week_start TEXT NOT NULL,
+                    planned_hours REAL DEFAULT 40,
+                    assigned_hours REAL DEFAULT 0,
+                    actual_hours REAL DEFAULT 0,
+                    utilization_pct REAL DEFAULT 0,
+                    status TEXT DEFAULT 'available',
+                    notes TEXT,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+                    UNIQUE(employee_id, week_start)
+                )
+            '''),
+            ("employee_performance", '''
+                CREATE TABLE IF NOT EXISTS employee_performance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    period_start TEXT NOT NULL,
+                    period_end TEXT NOT NULL,
+                    total_hours REAL DEFAULT 0,
+                    completed_tasks INTEGER DEFAULT 0,
+                    on_time_rate REAL DEFAULT 100,
+                    quality_score REAL DEFAULT 0,
+                    efficiency_score REAL DEFAULT 0,
+                    reliability_score REAL DEFAULT 0,
+                    notes TEXT,
+                    calculated_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            '''),
+            ("employee_ai_scores", '''
+                CREATE TABLE IF NOT EXISTS employee_ai_scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    score_date TEXT NOT NULL,
+                    balance_score REAL DEFAULT 50,
+                    workload_score REAL DEFAULT 50,
+                    burnout_risk REAL DEFAULT 0,
+                    recommendation TEXT,
+                    factors TEXT,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            '''),
+            ("employee_availability", '''
+                CREATE TABLE IF NOT EXISTS employee_availability (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id INTEGER NOT NULL,
+                    date TEXT NOT NULL,
+                    availability_type TEXT NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    all_day INTEGER DEFAULT 1,
+                    notes TEXT,
+                    approved INTEGER DEFAULT 0,
+                    approved_by INTEGER,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+                )
+            ''')
+        ]
+        for table_name, create_sql in tables_to_create:
+            if not _table_exists(db, table_name):
+                db.execute(create_sql)
+                db.commit()
+                print(f"[DB] Created table: {table_name}")
+        if _table_exists(db, "employees"):
+            cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
+            new_cols = {
+                "weekly_capacity": "REAL DEFAULT 40",
+                "current_workload": "REAL DEFAULT 0",
+                "ai_balance_score": "REAL DEFAULT 50",
+                "burnout_risk": "REAL DEFAULT 0",
+                "reliability_score": "REAL DEFAULT 0",
+                "specializations": "TEXT",
+                "availability_status": "TEXT DEFAULT 'available'",
+            }
+            for col_name, col_def in new_cols.items():
+                if col_name not in cols:
+                    try:
+                        db.execute(f"ALTER TABLE employees ADD COLUMN {col_name} {col_def}")
+                        db.commit()
+                        print(f"[DB] Added column: employees.{col_name}")
+                    except Exception as e:
+                        pass  # Column might already exist
+    except Exception as e:
+        print(f"[DB] Crew Control migration warning: {e}")
