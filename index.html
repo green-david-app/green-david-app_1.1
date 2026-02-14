@@ -2,7 +2,7 @@
 <html lang="cs">
   <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
     <title>green david app</title>
     <link rel="stylesheet" href="/static/style.css"/>
     <link rel="stylesheet" href="/static/css/app.css"/>
@@ -102,10 +102,12 @@
       }
       
       function showJSError(msg){
-        var el = document.getElementById('js-error');
-        el.style.display = 'block';
-        el.textContent = String(msg || 'Neznámá chyba ve skriptu.');
-        console.error(msg);
+        console.error('[GD Error]', msg);
+        // Only show error overlay in dev mode
+        if (window.DEBUG) {
+          var el = document.getElementById('js-error');
+          if (el) { el.style.display = 'block'; el.textContent = String(msg || 'Neznámá chyba ve skriptu.'); }
+        }
       }
       window.addEventListener('error', function(e){ showJSError(e.error ? (e.error.stack||e.error) : (e.message||e)); });
       window.addEventListener('unhandledrejection', function(e){ showJSError(e.reason ? (e.reason.stack||e.reason) : e); });
