@@ -11,6 +11,7 @@ api_bp = Blueprint('api', __name__)
 
 # Miscellaneous API routes from main.py
 @api_bp.route("/trainings.html")
+@api_bp.route("/trainings")
 def page_trainings():
     return render_template("trainings.html")
 

@@ -781,6 +781,12 @@ def gd_api_trainings_post():
         date_value = _normalize_date(data.get('date_start') or data.get('date'))
         date_end_value = _normalize_date(data.get('date_end')) if data.get('date_end') else None
         
+        days_of_week_raw = data.get('days_of_week', '[0,1,2,3,4,5,6]')
+        if isinstance(days_of_week_raw, list):
+            days_of_week_json = json_lib.dumps(days_of_week_raw)
+        else:
+            days_of_week_json = days_of_week_raw if isinstance(days_of_week_raw, str) else '[0,1,2,3,4,5,6]'
+        
         col_val_map = {
             'name': training_name,
             'title': data.get('title') or training_name,
@@ -792,6 +798,7 @@ def gd_api_trainings_post():
             'date_start': date_value,
             'date': date_value,
             'date_end': date_end_value,
+            'days_of_week': days_of_week_json,
             'duration_hours': data.get('duration_hours'),
             'is_paid': 1 if data.get('is_paid', True) else 0,
             'cost_training': data.get('cost_training', 0),
@@ -878,7 +885,8 @@ def gd_api_trainings_put(training_id):
             'location': str, 'is_remote': bool, 'has_certificate': bool,
             'certificate_name': str, 'rating': int, 'notes': str,
             'skill_level_increase': int, 'skill_increase': int,
-            'compensation_type': str, 'wage_cost_per_person': float
+            'compensation_type': str, 'wage_cost_per_person': float,
+            'days_of_week': str
         }
         
         for field, field_type in allowed_fields.items():

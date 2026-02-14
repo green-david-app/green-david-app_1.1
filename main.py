@@ -65,8 +65,8 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = SEND_FILE_MAX_AGE_DEFAULT
 app.register_blueprint(auth_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(employees_bp)
+app.register_blueprint(tasks_bp)  # před jobs_bp — /api/tasks a /api/issues mají správnou implementaci
 app.register_blueprint(jobs_bp)
-app.register_blueprint(tasks_bp)
 app.register_blueprint(timesheets_bp)
 app.register_blueprint(calendar_bp)
 app.register_blueprint(warehouse_bp)

@@ -301,25 +301,26 @@
     // Load data
     async function loadData() {
       try {
-        // Load invoices from localStorage (fallback to API if available)
-        const stored = localStorage.getItem('finance_invoices');
-        invoices = stored ? JSON.parse(stored) : [];
-        
-        // Try to load from API
+        // Load invoices from API (primary), fallback to localStorage
+        invoices = [];
         try {
-          const res = await fetch('/api/invoices');
+          const res = await fetch('/api/invoices', { credentials: 'same-origin' });
           const data = await res.json();
-          if (data.invoices) {
+          if (data.ok && data.invoices) {
             invoices = data.invoices;
             localStorage.setItem('finance_invoices', JSON.stringify(invoices));
+          } else {
+            const stored = localStorage.getItem('finance_invoices');
+            invoices = stored ? JSON.parse(stored) : [];
           }
         } catch (e) {
-          // Use localStorage data
+          const stored = localStorage.getItem('finance_invoices');
+          invoices = stored ? JSON.parse(stored) : [];
         }
 
         // Load jobs for ROI calculation
         try {
-          const res = await fetch('/api/jobs');
+          const res = await fetch('/api/jobs', { credentials: 'same-origin' });
           const data = await res.json();
           jobs = data.jobs || [];
         } catch (e) {
@@ -328,7 +329,7 @@
 
         // Load timesheets for cost calculation
         try {
-          const res = await fetch('/api/timesheets');
+          const res = await fetch('/api/timesheets', { credentials: 'same-origin' });
           const data = await res.json();
           timesheets = data.timesheets || [];
         } catch (e) {
@@ -765,44 +766,49 @@
       };
 
       try {
-        if (!currentInvoiceId) {
-          invoiceData.id = Date.now();
-          invoiceData.created_at = new Date().toISOString();
-          invoices.push(invoiceData);
-        } else {
-          const index = invoices.findIndex(inv => inv.id === currentInvoiceId);
-          if (index !== -1) {
-            Object.assign(invoices[index], invoiceData);
-          }
+        const opts = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invoiceData),
+          credentials: 'same-origin'
+        };
+        if (currentInvoiceId) {
+          opts.method = 'PATCH';
+          opts.body = JSON.stringify(invoiceData);
         }
-
-        localStorage.setItem('finance_invoices', JSON.stringify(invoices));
-        
-        // Try to save to API
-        try {
-          await fetch('/api/invoices', {
-            method: currentInvoiceId ? 'PATCH' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(invoiceData)
-          });
-        } catch (e) {
-          // Fallback to localStorage only
+        const url = currentInvoiceId ? `/api/invoices/${currentInvoiceId}` : '/api/invoices';
+        const res = await fetch(url, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || 'Chyba při ukládání');
         }
-
         await loadData();
         closeModal();
       } catch (e) {
         console.error('Error saving invoice:', e);
-        alert('Chyba při ukládání faktury');
+        alert(e.message || 'Chyba při ukládání faktury');
       }
     }
 
-    function markAsPaid(invoiceId) {
+    async function markAsPaid(invoiceId) {
       const invoice = invoices.find(inv => inv.id === invoiceId);
-      if (invoice) {
-        invoice.status = 'paid';
-        localStorage.setItem('finance_invoices', JSON.stringify(invoices));
-        loadData();
+      if (!invoice) return;
+      try {
+        const res = await fetch(`/api/invoices/${invoiceId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'paid' }),
+          credentials: 'same-origin'
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          await loadData();
+        } else {
+          alert(data.error || 'Nepodařilo se označit jako zaplaceno');
+        }
+      } catch (e) {
+        console.error('markAsPaid:', e);
+        alert('Chyba při ukládání');
       }
     }
 

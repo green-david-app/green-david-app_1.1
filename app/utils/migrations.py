@@ -747,6 +747,34 @@ def apply_migrations():
         (32, [
             ("employees", "position", "ALTER TABLE employees ADD COLUMN position TEXT DEFAULT ''"),
         ]),
+
+        # v33: finance invoices table (for Finance stránka)
+        (33, [
+            """
+            CREATE TABLE IF NOT EXISTS invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL DEFAULT 'issued',
+                number TEXT NOT NULL,
+                client TEXT DEFAULT '',
+                supplier TEXT DEFAULT '',
+                amount REAL NOT NULL DEFAULT 0,
+                date TEXT NOT NULL,
+                due_date TEXT,
+                status TEXT DEFAULT 'pending',
+                note TEXT DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_invoices_type ON invoices(type);
+            CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(date);
+            CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+            """
+        ]),
+
+        # v34: trainings days_of_week (Po–Pá, víkend, vlastní výběr)
+        (34, [
+            ("trainings", "days_of_week", "ALTER TABLE trainings ADD COLUMN days_of_week TEXT DEFAULT '[0,1,2,3,4,5,6]'"),
+        ]),
     ]
 
     for version, alters in migrations:
