@@ -156,9 +156,10 @@ body {
   line-height: 1.6;
   color: var(--text-primary);
   min-height: 100vh;
-  padding-top: 80px;
-  padding-bottom: 90px;
+  padding-top: calc(80px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
   
@@ -283,7 +284,7 @@ a:hover {
 
 .app-header {
   position: fixed;
-  top: 12px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
   left: calc(var(--sidebar-width, 0px) + 12px);
   right: 12px;
   height: 56px;
@@ -1556,14 +1557,14 @@ tr:hover td {
 
 @media (max-width: 768px) {
   body {
-    padding-top: 64px;
-    padding-bottom: 80px;
+    padding-top: calc(64px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
   
   .app-header {
-    top: 6px;
-    left: 6px;
-    right: 6px;
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    left: calc(6px + env(safe-area-inset-left, 0px));
+    right: calc(6px + env(safe-area-inset-right, 0px));
     height: 46px;
     padding: 0 10px !important;
     border-radius: 14px;

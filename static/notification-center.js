@@ -321,10 +321,14 @@
     // Poll every 30 seconds
     pollInterval = setInterval(fetchNotifications, 30000);
 
-    // Request permission after a delay
+    // Request permission after a delay (safely — Safari may not support Notification API)
     setTimeout(() => {
-      if (Notification.permission === 'default') {
-        // Don't auto-request, wait for user interaction
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          // Don't auto-request, wait for user interaction
+        }
+      } catch (e) {
+        // Notification API not available (e.g. Safari PWA)
       }
     }, 5000);
   }

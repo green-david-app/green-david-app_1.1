@@ -860,37 +860,109 @@ button[style*="4299e1"]:hover {
 
 @media (max-width: 768px) {
   .job-detail-container {
-    padding: 16px;
+    padding: 12px;
   }
   
   .job-header {
-    padding: 20px;
+    padding: 16px;
   }
   
   .job-header h1 {
-    font-size: 22px;
-    padding-right: 100px;
+    font-size: 20px;
+    padding-right: 80px;
+  }
+  
+  .job-hero {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .job-hero-content h1 {
+    font-size: 20px;
+  }
+  
+  .job-risk-ring {
+    width: 48px;
+    height: 48px;
+    font-size: 14px;
   }
   
   .job-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
   }
   
   .job-tabs {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding: 0 16px;
+    margin-left: -12px;
+    margin-right: -12px;
+    padding: 0 12px;
   }
   
   .info-grid {
     grid-template-columns: 1fr;
   }
   
+  .info-card {
+    padding: 14px;
+  }
+  
+  .info-card h3 {
+    font-size: 14px;
+  }
+  
   .tab-btn {
-    padding: 10px 14px;
+    padding: 8px 12px;
     font-size: 13px;
+  }
+  
+  .section-header h2 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .job-detail-container {
+    padding: 8px;
+  }
+  
+  .job-hero {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  
+  .job-hero-content h1 {
+    font-size: 18px;
+  }
+  
+  .job-risk-ring {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    border-width: 3px;
+  }
+  
+  .job-hero-actions .btn-primary {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  
+  .tab-btn, .job-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .info-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  
+  .timeline-item {
+    padding: 10px 14px;
+  }
+  
+  .ghost-plan-item {
+    padding: 12px;
   }
 }
 

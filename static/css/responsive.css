@@ -176,11 +176,11 @@
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
-    padding: 0 12px !important;
+    padding: 0 8px !important;
   }
   
   .quick-action-card, .action-card, .dashboard-card {
-    padding: 16px 12px !important;
+    padding: 14px 10px !important;
     min-height: auto !important;
   }
   
@@ -188,68 +188,71 @@
   .quick-action-card .icon-wrapper,
   .action-card .icon-wrapper,
   .glass-icon-circle {
-    width: 48px !important;
-    height: 48px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
   
   .quick-action-card h3, .quick-action-card .card-title,
   .action-card h3, .action-card .card-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
     margin: 8px 0 2px !important;
   }
   
   .quick-action-card small, .quick-action-card .card-subtitle,
-  .action-card small, .action-card .card-subtitle {
+  .action-card small, .action-card .card-subtitle,
+  .action-card p {
     font-size: 11px !important;
   }
   
   /* Quick add bar */
   .quick-add, .quick-task-bar {
-    margin: 8px 12px !important;
+    margin: 8px 8px !important;
     padding: 8px !important;
   }
   
   /* Header na mobilu — kompaktnější */
   .app-header {
-    padding: 8px 12px !important;
-    min-height: 48px !important;
+    padding: 8px 10px !important;
+    min-height: 46px !important;
   }
   
   .app-header .header-title, .page-title {
-    font-size: 16px !important;
+    font-size: 14px !important;
   }
   
   /* Zakázky toolbar — horizontální scroll nebo wrap */
   .jobs-toolbar, .toolbar, .action-bar {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 8px 12px !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
   }
   
   .jobs-toolbar button, .toolbar button {
-    font-size: 13px !important;
-    padding: 8px 12px !important;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
   }
   
-  /* Statistické karty — menší */
+  /* Statistické karty — scroll container, menší */
   .stats-row, .overview-stats, .kpi-cards {
     display: flex !important;
     gap: 8px !important;
     overflow-x: auto !important;
-    padding: 8px 12px !important;
+    padding: 8px !important;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
   }
   
   .stat-card, .kpi-card, .overview-card {
-    min-width: 120px !important;
+    min-width: 110px !important;
     padding: 10px !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     flex-shrink: 0 !important;
+    scroll-snap-align: start;
   }
   
   .stat-card .stat-value, .kpi-value {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
   
   /* Kanban — horizontální scroll */
@@ -266,14 +269,57 @@
   
   /* AI Operátor box — menší text */
   .operator-card, .ai-operator, [class*="operator"] {
-    font-size: 13px !important;
-    padding: 12px !important;
+    font-size: 12px !important;
+    padding: 10px !important;
   }
   
   .operator-card .operator-text {
-    font-size: 12px !important;
+    font-size: 11px !important;
     line-height: 1.4 !important;
   }
+  
+  /* Obecné karty - padding menší */
+  .card, .glass-card, [class*="card"] {
+    border-radius: 12px !important;
+  }
+  
+  /* Container tighter */
+  .container, main {
+    padding: 0 8px !important;
+  }
+  
+  /* Footer */
+  .footer {
+    font-size: 11px !important;
+  }
+}
+
+/* === EXTRA SMALL (iPhone SE, ~320-380px) === */
+@media (max-width: 380px) {
+  .quick-actions, .dashboard-grid, .action-grid {
+    gap: 6px !important;
+  }
+  
+  .quick-action-card, .action-card, .dashboard-card {
+    padding: 10px 8px !important;
+  }
+  
+  .quick-action-card h3, .action-card h3 {
+    font-size: 12px !important;
+  }
+  
+  .stat-card, .kpi-card, .overview-card {
+    min-width: 95px !important;
+    padding: 8px !important;
+  }
+  
+  .stat-card .stat-value, .kpi-value {
+    font-size: 14px !important;
+  }
+  
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 16px !important; }
+  h3 { font-size: 14px !important; }
 }
 
 /* === TABLET (769-1024px) === */
@@ -308,5 +354,75 @@
   
   body.has-sidebar.sidebar-collapsed .container {
     max-width: calc(100% - var(--sidebar-width-collapsed));
+  }
+}
+
+/* ==========================================
+   SAFARI iOS SPECIFIC FIXES
+   ========================================== */
+
+/* Safari: Fix 100vh bug (includes browser chrome) */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+  
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  /* Safari: Prevent bounce scroll revealing background */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+  
+  /* Safari: Fix backdrop-filter rendering */
+  .app-header {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Safari: Fix overflow clipping on horizontal scrollable areas */
+  .stats-row, .overview-stats, .kpi-cards,
+  .page-tabs, .tab-list, .tabs {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .stats-row::-webkit-scrollbar,
+  .overview-stats::-webkit-scrollbar,
+  .kpi-cards::-webkit-scrollbar,
+  .page-tabs::-webkit-scrollbar,
+  .tab-list::-webkit-scrollbar,
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Safari safe area - container padding */
+@supports (padding: env(safe-area-inset-left)) {
+  @media (max-width: 768px) {
+    .container, main {
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+    
+    /* Prevent horizontal overflow on all pages */
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100vw;
+    }
+    
+    /* Fix cards being clipped on right edge */
+    .stat-card, .kpi-card, .overview-card,
+    .card, .glass-card, [class*="card"] {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    /* Bottom nav safe area */
+    .bottom-nav, .bottom-navigation {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
   }
 }

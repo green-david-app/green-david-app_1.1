@@ -156,6 +156,58 @@
   .action-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
+/* === AUTO-SCALE: Dashboard bubbles scale with screen size === */
+@media (max-width: 480px) {
+  .action-card {
+    padding: 16px 10px;
+    border-radius: 16px;
+  }
+  .action-card h3 {
+    font-size: 13px !important;
+  }
+  .action-card p {
+    font-size: 11px !important;
+  }
+  .icon-circle {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+  }
+  .icon-circle svg {
+    width: 22px;
+    height: 22px;
+  }
+  .icon-circle::before {
+    top: 3px;
+    left: 10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .action-grid { gap: 8px; }
+  .action-card {
+    padding: 12px 8px;
+    border-radius: 14px;
+  }
+  .action-card h3 {
+    font-size: 12px !important;
+    margin: 0 0 3px 0 !important;
+  }
+  .action-card p {
+    font-size: 10px !important;
+  }
+  .icon-circle {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+  .icon-circle svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .action-card {
   /* Glass background */
   background: linear-gradient(
@@ -4209,6 +4261,43 @@ color: var(--text-secondary);
 .finance-card .breakdown span {
 display: flex;
 justify-content: space-between;
+}
+
+/* Finance cards mobile scaling */
+@media (max-width: 480px) {
+  .finance-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+  .finance-card h3 {
+    font-size: 12px;
+    margin: 0 0 6px 0;
+  }
+  .finance-card h2 {
+    font-size: 22px;
+    margin: 0 0 4px 0;
+  }
+  .finance-card .trend {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  .finance-card .breakdown {
+    font-size: 11px;
+    gap: 4px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .finance-card {
+    padding: 10px;
+  }
+  .finance-card h2 {
+    font-size: 18px;
+  }
+  .finance-card h3 {
+    font-size: 11px;
+  }
 }
 
 /* Tabs */
