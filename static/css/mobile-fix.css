@@ -1,5 +1,5 @@
 /* ================================================================
-   MOBILE-FIX.CSS v3 — COMPLETE REWRITE
+   MOBILE-FIX.CSS v4 — OVERFLOW CLIPPING FIX
    Loaded LAST — overrides everything for mobile.
    
    ROOT CAUSES FIXED:
@@ -7,6 +7,16 @@
    2. --sidebar-w stays 200px on mobile (affects width calcs)
    3. 100vw is wider than visible viewport on iOS Safari
    4. Inline <style> grids (repeat(5,1fr)) not overridden
+   
+   v4 ADDITIONS:
+   5. Calendar topbar overlap (absolute center → static flex)
+   6. Job detail budget row doesn't wrap
+   7. Team heatmap legend clipping + grid overflow
+   8. Training stats padding + number overflow
+   9. Timeline weather strip too wide
+   10. Warehouse nav-tabs scroll indicator
+   11. Mask-image fade 80%→92% for scroll containers
+   12. Global inline gap override for mobile
    ================================================================ */
 
 
@@ -479,8 +489,8 @@
   .filter-pills,
   .inbox-tabs,
   .view-mode-tabs {
-    -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%) !important;
-    mask-image: linear-gradient(to right, black 80%, transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
   }
 }
 
@@ -859,4 +869,356 @@
 
 @media (max-width: 375px) {
   .plant-grid, .nursery-grid, .catalog-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* ================================================================
+   25. v4 FIXES — overflow clipping on specific pages
+   ================================================================ */
+
+/* --- CALENDAR TOPBAR: stop absolute center from overlapping right buttons --- */
+@media (max-width: 768px) {
+  .cal-topbar {
+    gap: 4px !important;
+    padding: 8px 6px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .cal-topbar-center {
+    position: static !important;
+    transform: none !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+  }
+
+  .cal-topbar-label {
+    font-size: 13px !important;
+    min-width: 60px !important;
+  }
+
+  .cal-topbar-right {
+    flex-shrink: 0 !important;
+    gap: 3px !important;
+  }
+
+  .cal-tbtn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .cal-btn-today {
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .cal-btn-back {
+    padding: 4px 6px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cal-btn-back svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* --- JOB DETAIL: budget comparison flex row must wrap --- */
+@media (max-width: 768px) {
+  /* Target the inline-styled flex row with budget/actual/diff */
+  #tab-finance [style*="display:flex"][style*="gap:24px"],
+  #tab-finance [style*="display: flex"][style*="gap: 24px"],
+  .budget-compare-row,
+  [style*="gap:24px"][style*="margin-bottom:12px"] {
+    flex-wrap: wrap !important;
+    gap: 8px 16px !important;
+  }
+
+  /* Employee cost cards in budget section */
+  #tab-finance table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: 11px !important;
+  }
+
+  /* Budget subsections */
+  #tab-finance [style*="display:flex"][style*="justify-content:space-between"] {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* Employee cost breakdown cards */
+  .employee-cost-card,
+  #tab-finance [style*="border-radius"][style*="padding"][style*="text-align:center"] {
+    min-width: 80px !important;
+    max-width: calc(33% - 8px) !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* --- TIMELINE: weather strip and gantt for mobile --- */
+@media (max-width: 768px) {
+  .weather-strip {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .weather-label {
+    width: 90px !important;
+    min-width: 90px !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .weather-day {
+    min-width: 55px !important;
+    padding: 6px 4px !important;
+    font-size: 10px !important;
+  }
+
+  .weather-temp {
+    font-size: 11px !important;
+  }
+
+  .gantt-chart {
+    grid-template-columns: 120px 1fr !important;
+  }
+
+  .gantt-sidebar {
+    width: 120px !important;
+    min-width: 120px !important;
+  }
+
+  .gantt-sidebar-header,
+  .gantt-row-label {
+    font-size: 11px !important;
+    padding: 6px !important;
+  }
+
+  .gantt-row-label {
+    width: 120px !important;
+    min-width: 120px !important;
+  }
+
+  /* Capacity bar */
+  .capacity-bar-container,
+  [class*="capacity-bar"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* Timeline view toggle tabs */
+  .timeline-tabs,
+  .view-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .timeline-tabs::-webkit-scrollbar,
+  .view-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* --- TEAM PAGE: heatmap legend and grid fixes --- */
+@media (max-width: 768px) {
+  .heatmap-legend {
+    flex-wrap: wrap !important;
+    gap: 6px 12px !important;
+    font-size: 10px !important;
+  }
+
+  .heatmap-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .capacity-heatmap {
+    padding: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .heatmap-grid {
+    min-width: 500px !important;
+    font-size: 10px !important;
+  }
+
+  .heatmap-name {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+
+  .heatmap-cell {
+    height: 32px !important;
+    font-size: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .heatmap-name-avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 9px !important;
+  }
+
+  /* Crew stats (team page top stats) — scrollable */
+  .crew-stats-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px 32px 4px 0 !important;
+    grid-template-columns: none !important;
+    scrollbar-width: none !important;
+  }
+
+  .crew-stats-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .crew-stats-row > * {
+    min-width: 120px !important;
+    max-width: 160px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* AI insights on team page */
+  .ai-insight-cards,
+  [class*="insight-card"] {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+  }
+}
+
+/* --- ŠKOLENÍ (TRAINING): stats card padding + number overflow --- */
+@media (max-width: 768px) {
+  /* Override inline training page stats */
+  .stats-grid .stat-card {
+    padding: 14px 12px !important;
+    gap: 10px !important;
+  }
+
+  .stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .stat-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .stat-value,
+  .stat-card .stat-value {
+    font-size: clamp(16px, 5vw, 24px) !important;
+    word-break: break-all !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid .stat-card {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+}
+
+/* --- SKLAD (WAREHOUSE): nav-tabs improvements --- */
+@media (max-width: 768px) {
+  .nav-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+    padding: 4px 32px 4px 0 !important;
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 88%, transparent 100%) !important;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .nav-tab {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    gap: 4px !important;
+  }
+
+  .nav-tab svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Warehouse stats top row */
+  .warehouse-stats,
+  [class*="warehouse-stat"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* --- JOBS PAGE (Zakázky): operator bar text clipping --- */
+@media (max-width: 768px) {
+  .operator-bar,
+  [class*="operator-bar"],
+  .ai-alert,
+  [class*="ai-alert"] {
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* Job cards in list */
+  .job-card-content,
+  .job-card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .job-card .job-amount,
+  .job-card .job-budget {
+    font-size: 13px !important;
+    word-break: break-all !important;
+  }
+}
+
+/* --- GLOBAL: prevent ANY child from breaking parent width --- */
+@media (max-width: 768px) {
+  .page > *,
+  .page-container > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Fix all inline flex gaps > 16px on mobile */
+  [style*="gap:24px"],
+  [style*="gap: 24px"],
+  [style*="gap:32px"],
+  [style*="gap: 32px"] {
+    gap: 12px !important;
+  }
 }
