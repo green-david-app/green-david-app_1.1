@@ -638,6 +638,23 @@ a:hover {
   height: 18px;
 }
 
+/* AI asistent v headeru — bez rámečku (ostatní ikony mají border) */
+#app-header-ai-toggle,
+.app-header-ai-operator .app-header-icon-btn,
+.app-header-ai-operator button {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#app-header-ai-toggle:focus,
+#app-header-ai-toggle:focus-visible,
+.app-header-ai-operator .app-header-icon-btn:focus,
+.app-header-ai-operator .app-header-icon-btn:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .app-header-notifications {
   width: 36px;
   height: 36px;

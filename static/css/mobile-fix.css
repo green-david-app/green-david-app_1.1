@@ -958,18 +958,47 @@
   }
 }
 
-/* --- TIMELINE: weather strip and gantt for mobile --- */
+/* --- TIMELINE: weather strip and gantt for mobile (v5 FIX) --- */
 @media (max-width: 768px) {
-  .weather-strip {
+  /* Celý timeline kontejner — horizontálně scrollovatelný */
+  .gantt-wrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    overflow-y: visible !important;
+    max-width: 100% !important;
+    margin: 0 -12px !important;
+    padding: 0 12px !important;
   }
 
+  .weather-strip {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    position: relative !important;
+  }
+
+  .weather-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Weather label — sticky při scrollu */
   .weather-label {
     width: 90px !important;
     min-width: 90px !important;
     padding: 8px !important;
     font-size: 11px !important;
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: var(--bg-elevated, rgba(255,255,255,0.05)) !important;
+    border-right: 1px solid var(--border-primary, #2d3748) !important;
+  }
+
+  .weather-days {
+    display: flex !important;
+    flex-shrink: 0 !important;
   }
 
   .weather-day {
@@ -982,24 +1011,69 @@
     font-size: 11px !important;
   }
 
+  /* Gantt — sidebar 140px aby se vešla jména */
   .gantt-chart {
-    grid-template-columns: 120px 1fr !important;
+    grid-template-columns: 140px 1fr !important;
+    min-width: min-content !important;
   }
 
   .gantt-sidebar {
-    width: 120px !important;
-    min-width: 120px !important;
+    width: 140px !important;
+    min-width: 140px !important;
   }
 
-  .gantt-sidebar-header,
-  .gantt-row-label {
+  .gantt-sidebar-header {
     font-size: 11px !important;
-    padding: 6px !important;
+    padding: 6px 8px !important;
   }
 
+  /* Jména a města — ellipsis, NE vertikální text */
   .gantt-row-label {
-    width: 120px !important;
-    min-width: 120px !important;
+    width: 140px !important;
+    min-width: 140px !important;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    gap: 8px !important;
+  }
+
+  .row-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  .row-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .row-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .row-title,
+  .row-meta {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+
+  .row-title {
+    font-size: 12px !important;
+  }
+
+  .row-meta {
+    font-size: 10px !important;
+  }
+
+  .row-capacity {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 9px !important;
   }
 
   /* Capacity bar */
@@ -1222,3 +1296,318 @@
     gap: 12px !important;
   }
 }
+
+
+/* ================================================================
+   26. MOBILE UI v5 — Stránka po stránce
+   ================================================================ */
+
+/* --- ŠKOLKA / NURSERY: stat karty prázdné, layout 2 sloupce --- */
+@media (max-width: 768px) {
+  .stats-mini {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .stat-mini {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+  }
+
+  .stat-mini svg {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .stat-mini-info {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .stat-mini-label {
+    font-size: 11px !important;
+  }
+
+  .stat-mini-value {
+    font-size: 18px !important;
+    color: var(--text-primary, #e8eef2) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Quick actions — repeat(4,1fr) inline override */
+  .page-content [style*="grid-template-columns: repeat(4"],
+  .page-content [style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-mini,
+  .page-content [style*="grid-template-columns: repeat(4"],
+  .page-content [style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* --- REPORTY: text ořez v kartách --- */
+@media (max-width: 768px) {
+  .report-card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .report-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .report-card-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .report-card-info {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    flex: 1 !important;
+  }
+
+  .report-card-info h3 {
+    word-break: break-word !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .report-card-info p {
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+
+  .report-card-features {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .feature-tag {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 12px !important;
+  }
+
+  .stat-info .value {
+    font-size: 18px !important;
+    word-break: break-all !important;
+  }
+}
+
+
+/* --- INBOX: KPI boxy overflow --- */
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .kpi-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .kpi-value {
+    font-size: clamp(20px, 5vw, 28px) !important;
+    word-break: break-all !important;
+  }
+
+  .inbox-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    padding-right: 32px !important;
+    -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .kpi-value {
+    font-size: 20px !important;
+  }
+}
+
+
+/* --- ŠKOLENÍ: 105 300 Kč overflow (jen stat-card, ne kpi) --- */
+@media (max-width: 768px) {
+  .stats-grid .stat-card,
+  .stat-card {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  .stat-card .stat-value,
+  .stat-value {
+    font-size: clamp(14px, 4vw, 24px) !important;
+    word-break: break-all !important;
+  }
+}
+
+
+/* --- ZAKÁZKY / JOBS: stats row, mask 95% --- */
+@media (max-width: 768px) {
+  .stats-row,
+  .overview-stats,
+  .jobs-stats,
+  [class*="job-stats"] {
+    -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
+    padding-right: 24px !important;
+  }
+
+  .kanban-column {
+    min-width: 250px !important;
+    max-width: min(100vw, 280px) !important;
+  }
+}
+
+
+/* --- AI OPERÁTOR: watermark příliš výrazný --- */
+@media (max-width: 768px) {
+  .ai-operator-watermark,
+  [class*="watermark"],
+  .ai-panel::before,
+  .ai-modal::before,
+  [class*="ai-operator"]::before {
+    opacity: 0.04 !important;
+  }
+
+  /* Category tabs v modalu */
+  .ai-category-tabs,
+  .insight-tabs,
+  [class*="category-tabs"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    scrollbar-width: none !important;
+  }
+
+  .ai-category-tabs .tab,
+  .insight-tabs .tab,
+  [class*="category-tabs"] button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+
+/* --- NURSERY: dashboard-grid jednosloupcový --- */
+@media (max-width: 768px) {
+  .nursery-grid .dashboard-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-item.col-3,
+  .dashboard-item.col-4,
+  .dashboard-item.col-6,
+  .dashboard-item.col-8,
+  .dashboard-item.col-12 {
+    grid-column: span 1 !important;
+  }
+}
+
+
+/* ================================================================
+   27. DASHBOARD WEATHER WIDGET — zmenšit na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  .admin-card .admin-weather,
+  .admin-weather,
+  .weather-widget,
+  .weather-card {
+    padding: 12px !important;
+    gap: 12px !important;
+    max-height: 160px !important;
+  }
+
+  /* Hlavní ikona oblaku/emoji */
+  .admin-card .admin-weather > span:first-child,
+  .admin-weather > span:first-child {
+    font-size: 28px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Hlavní teplota */
+  .admin-card .admin-weather > div:nth-child(2) > div:first-child,
+  .admin-card .admin-weather div[style*="fontSize"]:first-of-type,
+  .admin-weather .weather-temp,
+  .weather-current .temp {
+    font-size: 28px !important;
+  }
+
+  /* Lokace */
+  .admin-card .admin-weather > div:nth-child(2) > div:last-child,
+  .admin-card .admin-weather div[style*="fontSize"][style*="12px"],
+  .admin-weather .weather-location,
+  .weather-current .location {
+    font-size: 12px !important;
+  }
+
+  /* 3-denní forecast row */
+  .admin-card .admin-weather > div:last-child,
+  .admin-weather > div:last-child,
+  .weather-forecast,
+  .forecast-row {
+    gap: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  /* Forecast den — ikona a teplota */
+  .admin-card .admin-weather > div:last-child > div > div:nth-child(2),
+  .admin-weather .forecast-day .icon,
+  .weather-forecast .forecast-icon {
+    font-size: 18px !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .admin-card .admin-weather > div:last-child > div > div:nth-child(3),
+  .admin-weather .forecast-day .temp,
+  .weather-forecast .forecast-temp {
+    font-size: 12px !important;
+  }
+
+  /* Zachovat zelený rámeček */
+  .admin-card .admin-weather.weather-clickable,
+  .admin-weather[style*="border"] {
+    border: 1px solid rgba(74, 222, 128, 0.15) !important;
+  }
+}
+
+
