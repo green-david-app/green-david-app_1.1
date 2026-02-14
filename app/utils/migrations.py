@@ -742,6 +742,11 @@ def apply_migrations():
                 confidence_level TEXT
             )"""
         ]),
+
+        # v32: employees.position column (missing on production)
+        (32, [
+            ("employees", "position", "ALTER TABLE employees ADD COLUMN position TEXT DEFAULT ''"),
+        ]),
     ]
 
     for version, alters in migrations:
@@ -972,6 +977,7 @@ CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'worker',
+        position TEXT DEFAULT '',
         -- delegace: kam přesměrovat úkoly/problémy (např. při nepřítomnosti)
         delegate_employee_id INTEGER NULL,
         -- delegace: kam přesměrovat schvalování (výkazy apod.)
