@@ -149,7 +149,10 @@ def api_jobs():
             updates = []; params = []
             if "title" in data and data["title"] is not None:
                 updates += _job_title_update_set(params, data["title"])
+            info = _jobs_info()  # Get actual columns in DB
             for f in ("client","status","city","code","date","note","created_date","start_date","progress","deadline","address","location","estimated_value","budget","party_id","job_type"):
+                if f not in info:
+                    continue  # Skip columns that don't exist in DB yet
                 if f in data:
                     if f in ("date", "created_date", "start_date", "deadline"):
                         # Normalizuj datum - pokud je prázdné/null, uloží se jako NULL do DB
@@ -178,7 +181,6 @@ def api_jobs():
                 except:
                     pass
             # Touch legacy updated_at if present
-            info = _jobs_info()
             if "updated_at" in info:
                 updates.append("updated_at=?"); params.append(datetime.utcnow().isoformat())
             # Optional owner change if present
