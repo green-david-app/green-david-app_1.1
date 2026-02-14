@@ -1307,6 +1307,381 @@ CREATE TABLE IF NOT EXISTS employees (
         FOREIGN KEY (section_id) REFERENCES budget_sections(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_budget_items_section ON budget_items(section_id);
+
+    -- Parties (CRM) tables
+    CREATE TABLE IF NOT EXISTS parties (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL DEFAULT 'ORG',
+        display_name TEXT NOT NULL,
+        legal_name TEXT,
+        email TEXT,
+        phone TEXT,
+        website TEXT,
+        street TEXT,
+        city TEXT,
+        zip TEXT,
+        country TEXT DEFAULT 'CZ',
+        gps_lat REAL,
+        gps_lon REAL,
+        ico TEXT,
+        dic TEXT,
+        bank_account TEXT,
+        roles TEXT DEFAULT '["CLIENT"]',
+        tier TEXT DEFAULT 'ONE_OFF',
+        status TEXT DEFAULT 'LEAD',
+        health_index INTEGER DEFAULT 50,
+        total_revenue REAL DEFAULT 0,
+        total_jobs INTEGER DEFAULT 0,
+        last_job_date TEXT,
+        payment_reliability INTEGER DEFAULT 50,
+        tags TEXT DEFAULT '[]',
+        note TEXT,
+        source TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_parties_status ON parties(status);
+    CREATE INDEX IF NOT EXISTS idx_parties_tier ON parties(tier);
+
+    CREATE TABLE IF NOT EXISTS party_contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        party_id INTEGER NOT NULL REFERENCES parties(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        role TEXT,
+        email TEXT,
+        phone TEXT,
+        is_primary INTEGER DEFAULT 0,
+        note TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_party_contacts_party ON party_contacts(party_id);
+
+    CREATE TABLE IF NOT EXISTS party_interactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        party_id INTEGER NOT NULL REFERENCES parties(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        summary TEXT,
+        date TEXT DEFAULT (date('now')),
+        created_by TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_party_interactions_party ON party_interactions(party_id);
+
+    -- Warehouse
+    CREATE TABLE IF NOT EXISTS warehouse_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        sku TEXT,
+        category TEXT DEFAULT 'general',
+        quantity REAL DEFAULT 0,
+        unit TEXT DEFAULT 'ks',
+        unit_price REAL DEFAULT 0,
+        min_quantity REAL DEFAULT 0,
+        location TEXT DEFAULT '',
+        supplier TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        job_id INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        sku TEXT,
+        category TEXT DEFAULT 'general',
+        quantity REAL DEFAULT 0,
+        unit TEXT DEFAULT 'ks',
+        unit_price REAL DEFAULT 0,
+        min_quantity REAL DEFAULT 0,
+        location TEXT DEFAULT '',
+        supplier TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Training
+    CREATE TABLE IF NOT EXISTS trainings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        training_type TEXT DEFAULT 'external',
+        category TEXT,
+        provider TEXT,
+        provider_type TEXT,
+        date_start TEXT NOT NULL DEFAULT (date('now')),
+        date_end TEXT,
+        duration_hours REAL,
+        is_paid INTEGER DEFAULT 1,
+        cost_training REAL DEFAULT 0,
+        cost_travel REAL DEFAULT 0,
+        cost_accommodation REAL DEFAULT 0,
+        cost_meals REAL DEFAULT 0,
+        cost_other REAL DEFAULT 0,
+        cost_total REAL DEFAULT 0,
+        cost_opportunity REAL DEFAULT 0,
+        location TEXT,
+        is_remote INTEGER DEFAULT 0,
+        has_certificate INTEGER DEFAULT 0,
+        certificate_name TEXT,
+        certificate_valid_until TEXT,
+        rating INTEGER,
+        notes TEXT,
+        skills_gained TEXT,
+        skill_level_increase INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_by INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS training_attendees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        training_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'registered',
+        attendance_confirmed INTEGER DEFAULT 0,
+        test_score REAL,
+        certificate_issued INTEGER DEFAULT 0,
+        certificate_url TEXT,
+        personal_rating INTEGER,
+        personal_notes TEXT,
+        FOREIGN KEY (training_id) REFERENCES trainings(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
+    -- Planning
+    CREATE TABLE IF NOT EXISTS day_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        employee_id INTEGER NOT NULL,
+        job_id INTEGER,
+        planned_hours REAL DEFAULT 8.0,
+        actual_hours REAL,
+        status TEXT DEFAULT 'planned',
+        note TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        confirmed_at TEXT,
+        FOREIGN KEY (employee_id) REFERENCES employees(id),
+        FOREIGN KEY (job_id) REFERENCES jobs(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS planning_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        job_id INTEGER,
+        task_id INTEGER,
+        date TEXT NOT NULL,
+        start_time TEXT,
+        end_time TEXT,
+        hours REAL DEFAULT 8,
+        note TEXT DEFAULT '',
+        status TEXT DEFAULT 'planned',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (employee_id) REFERENCES employees(id),
+        FOREIGN KEY (job_id) REFERENCES jobs(id),
+        FOREIGN KEY (task_id) REFERENCES tasks(id)
+    );
+
+    -- Notes & Attachments
+    CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        content TEXT NOT NULL,
+        category TEXT DEFAULT 'general',
+        color TEXT DEFAULT 'default',
+        is_pinned INTEGER DEFAULT 0,
+        job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+        employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+        party_id INTEGER REFERENCES parties(id) ON DELETE SET NULL,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT NOT NULL,
+        entity_id INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        filepath TEXT NOT NULL,
+        filesize INTEGER DEFAULT 0,
+        mimetype TEXT DEFAULT '',
+        uploaded_by INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    );
+
+    -- Employee extended
+    CREATE TABLE IF NOT EXISTS employee_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        file_url TEXT NOT NULL,
+        uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_timeline (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
+    -- Job extended detail tables
+    CREATE TABLE IF NOT EXISTS job_communications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        communication_date TEXT DEFAULT (datetime('now')),
+        type TEXT DEFAULT 'note',
+        direction TEXT DEFAULT 'internal',
+        subject TEXT,
+        summary TEXT NOT NULL,
+        full_content TEXT,
+        by_user_id INTEGER REFERENCES users(id),
+        with_client INTEGER DEFAULT 1,
+        participants TEXT,
+        outcome TEXT,
+        action_items TEXT,
+        is_internal INTEGER DEFAULT 0,
+        attachments TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS job_change_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        requested_by TEXT DEFAULT 'client',
+        requested_by_name TEXT,
+        description TEXT NOT NULL,
+        reason TEXT,
+        impact_cost REAL,
+        impact_time INTEGER,
+        impact_scope TEXT,
+        urgency TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'pending',
+        approved_by INTEGER REFERENCES users(id),
+        approved_date TEXT,
+        rejection_reason TEXT,
+        implemented_date TEXT,
+        implementation_notes TEXT,
+        requested_date TEXT DEFAULT (datetime('now')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS job_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        type TEXT DEFAULT 'other',
+        category TEXT,
+        file_path TEXT NOT NULL,
+        file_size INTEGER,
+        mime_type TEXT,
+        version INTEGER DEFAULT 1,
+        is_latest INTEGER DEFAULT 1,
+        replaces_document_id INTEGER REFERENCES job_documents(id),
+        description TEXT,
+        uploaded_by INTEGER REFERENCES users(id),
+        uploaded_date TEXT DEFAULT (datetime('now')),
+        signed INTEGER DEFAULT 0,
+        signed_date TEXT,
+        approval_status TEXT DEFAULT 'pending',
+        approval_date TEXT,
+        expires_date TEXT,
+        tags TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS job_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        calculated_at TEXT DEFAULT (datetime('now')),
+        days_elapsed INTEGER,
+        days_remaining INTEGER,
+        days_planned INTEGER,
+        schedule_variance INTEGER,
+        budget_spent REAL,
+        budget_remaining REAL,
+        budget_variance REAL,
+        cost_performance_index REAL,
+        completion_percent INTEGER,
+        on_track INTEGER,
+        avg_hours_per_day REAL,
+        productive_hours_percent INTEGER,
+        defects_count INTEGER DEFAULT 0,
+        rework_hours INTEGER DEFAULT 0,
+        predicted_completion_date TEXT,
+        predicted_final_cost REAL,
+        predicted_profit REAL,
+        confidence_level TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS job_plan_proposals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        proposal_type TEXT NOT NULL DEFAULT 'ghost',
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        proposed_timeline TEXT,
+        proposed_resources TEXT,
+        proposed_budget REAL DEFAULT 0,
+        risk_score INTEGER DEFAULT 0,
+        health_score INTEGER DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_by INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        reviewed_at TEXT,
+        reviewed_by INTEGER,
+        FOREIGN KEY (job_id) REFERENCES jobs(id),
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    );
+
+    -- Team capacity
+    CREATE TABLE IF NOT EXISTS team_capacity_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        planned_hours REAL DEFAULT 0,
+        actual_hours REAL DEFAULT 0,
+        capacity_status TEXT DEFAULT 'normal',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS team_member_profile (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL UNIQUE,
+        skills TEXT DEFAULT '[]',
+        certifications TEXT DEFAULT '[]',
+        weekly_capacity_hours REAL DEFAULT 40.0,
+        preferred_work_types TEXT DEFAULT '[]',
+        performance_stability_score REAL DEFAULT 0.5,
+        ai_balance_score REAL DEFAULT 0.5,
+        burnout_risk_level TEXT DEFAULT 'normal',
+        total_jobs_completed INTEGER DEFAULT 0,
+        current_active_jobs INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
+    -- GPS logs
+    CREATE TABLE IF NOT EXISTS gps_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        accuracy REAL,
+        timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+        job_id INTEGER,
+        FOREIGN KEY (employee_id) REFERENCES employees(id),
+        FOREIGN KEY (job_id) REFERENCES jobs(id)
+    );
     """)
     
     # Vytvoření FTS (Full-Text Search) tabulky pro katalog rostlin
