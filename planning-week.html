@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Týdenní plán | Green David</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/glass-design.css"/>
+    <link rel="stylesheet" href="/static/css/tasks-design-system.css"/>
+    <style>
+        :root {
+            --bg-primary: #1a1d1f;
+            --bg-card: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --border-primary: rgba(255,255,255,0.08);
+            --text-primary: #e8eef2;
+            --text-secondary: #9ca8b3;
+            --text-tertiary: #6b7580;
+            --mint: #4ade80;
+            --mint-dim: rgba(74, 222, 128, 0.16);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        /* Kompenzace pro sidebar */
+        body.has-sidebar > header {
+            margin-left: var(--sidebar-w, 200px) !important;
+            width: calc(100% - var(--sidebar-w, 200px)) !important;
+            max-width: calc(100% - var(--sidebar-w, 200px)) !important;
+            box-sizing: border-box;
+        }
+        body.has-sidebar > .week-container {
+            margin-left: var(--sidebar-w, 200px) !important;
+            width: calc(100% - var(--sidebar-w, 200px)) !important;
+            max-width: calc(100% - var(--sidebar-w, 200px)) !important;
+            box-sizing: border-box;
+        }
+        body.has-sidebar.sidebar-collapsed > header {
+            margin-left: var(--sidebar-width-collapsed, 60px) !important;
+            width: calc(100% - var(--sidebar-width-collapsed, 60px)) !important;
+            max-width: calc(100% - var(--sidebar-width-collapsed, 60px)) !important;
+        }
+        body.has-sidebar.sidebar-collapsed > .week-container {
+            margin-left: var(--sidebar-width-collapsed, 60px) !important;
+            width: calc(100% - var(--sidebar-width-collapsed, 60px)) !important;
+            max-width: calc(100% - var(--sidebar-width-collapsed, 60px)) !important;
+        }
+        
+        /* Override sidebar-content-wrapper z sidebar.css — jen pro tuto stránku */
+        .sidebar-content-wrapper {
+            max-width: none !important;
+            width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            box-sizing: border-box !important;
+        }
+        
+        .week-container {
+            padding: 16px 10px;
+            padding-bottom: 100px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .week-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .week-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .week-nav button {
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .week-nav button:hover {
+            background: var(--mint-dim);
+            border-color: var(--mint);
+        }
+        .week-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        /* ============================================
+           TABULKA - table-layout:fixed + colgroup %
+           = VŽDY přesně 100% šířky
+           ============================================ */
+        .week-grid-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .week-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            table-layout: fixed !important;
+        }
+        .week-table th,
+        .week-table td {
+            border-right: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-primary);
+            vertical-align: middle;
+            text-align: center;
+            padding: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .week-table th:last-child,
+        .week-table td:last-child { border-right: none; }
+
+        /* Header cells */
+        .wh-name {
+            padding: 14px 16px;
+            background: var(--bg-elevated);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .wh-day {
+            padding: 10px 4px;
+            background: var(--bg-elevated);
+        }
+        .wh-day .day-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .wh-day .day-date {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .wh-day.today { background: rgba(74, 222, 128, 0.08); }
+        .wh-day.today .day-label { color: var(--mint); }
+        .wh-day.weekend { background: rgba(0,0,0,0.15); }
+        .wh-total {
+            padding: 14px 8px;
+            background: var(--bg-elevated);
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-secondary);
+        }
+
+        /* Employee name cell */
+        .we-name {
+            padding: 14px 16px;
+            background: var(--bg-elevated);
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .we-name .emp-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .we-name .emp-role { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+        /* Day cell */
+        .we-day {
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .we-day:hover { background: var(--bg-elevated) !important; }
+        .we-day .hours-big { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+        .we-day .hours-label { font-size: 9px; color: var(--text-tertiary); margin-bottom: 6px; }
+
+        .cap-bar { height: 4px; background: var(--border-primary); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+        .cap-bar-fill { height: 100%; background: linear-gradient(90deg, var(--mint), #7bc67e); border-radius: 2px; }
+        .cap-bar-fill.overload { background: linear-gradient(90deg, #ff6b6b, #ff4444); }
+
+        .asgn-card { padding: 5px 7px; background: var(--bg-primary); border-radius: 5px; margin-bottom: 3px; border-left: 3px solid var(--mint); font-size: 11px; }
+        .asgn-card .asgn-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .asgn-card .asgn-hours { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
+        .empty-plus { color: var(--text-tertiary); font-size: 18px; opacity: 0; padding: 12px 0; transition: opacity 0.2s; }
+        .we-day:hover .empty-plus { opacity: 0.3; }
+
+        /* Total cell */
+        .we-total { padding: 14px 10px; background: var(--bg-elevated); }
+        .we-total .total-val { font-size: 18px; font-weight: 800; line-height: 1; }
+        .we-total .total-pct { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; }
+        .we-total .total-bar { width: 100%; height: 4px; background: var(--border-primary); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+        .we-total .total-bar-fill { height: 100%; border-radius: 2px; }
+
+        /* Summary row */
+        .ws-name { padding: 14px 16px; background: var(--bg-elevated); font-weight: 800; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; text-align: left; }
+        .ws-day { padding: 12px 8px; background: var(--bg-elevated); }
+        .ws-day .sum-val { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+        .ws-total { padding: 12px 8px; background: var(--bg-elevated); }
+        .ws-total .sum-val { font-size: 16px; font-weight: 800; color: var(--mint); }
+
+        /* ── MONTH VIEW ── */
+        .month-view .wh-day { padding: 4px 1px; }
+        .month-view .wh-day .day-label { font-size: 9px; }
+        .month-view .wh-day .day-date { font-size: 7px; }
+        .month-view .we-day { padding: 4px 1px; }
+        .month-view .we-day .hours-big { font-size: 11px; }
+        .month-view .we-name { padding: 6px 6px; }
+        .month-view .we-name .emp-name { font-size: 11px; }
+        .month-view .we-name .emp-role { font-size: 8px; }
+        .month-view .we-total { padding: 4px 2px; }
+        .month-view .we-total .total-val { font-size: 11px; }
+        .month-view .we-total .total-pct { font-size: 7px; }
+        .month-view .wh-name { padding: 6px 6px; font-size: 10px; }
+        .month-view .wh-total { font-size: 9px; padding: 4px 2px; }
+        .month-view .ws-day { padding: 4px 1px; }
+        .month-view .ws-day .sum-val { font-size: 9px; }
+        .month-view .ws-name { padding: 4px 6px; font-size: 10px; }
+        .month-view .ws-total .sum-val { font-size: 10px; }
+
+        /* ── EDIT MODAL ── */
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .edit-modal-overlay.active { display: flex; }
+        
+        .edit-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .edit-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 20px 12px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .edit-modal-header h3 { margin: 0; font-size: 17px; font-weight: 700; }
+        .edit-modal-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .edit-modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--bg-elevated); border: 1px solid var(--border-primary);
+            color: var(--text-secondary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .edit-modal-close:hover { background: rgba(248,113,113,0.1); border-color: #f87171; color: #f87171; }
+        
+        .edit-modal-body { padding: 12px 20px; }
+        
+        .edit-asgn-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .edit-asgn-item .asgn-color {
+            width: 4px; height: 36px; border-radius: 2px; background: var(--mint); flex-shrink: 0;
+        }
+        .edit-asgn-info { flex: 1; min-width: 0; }
+        .edit-asgn-name { font-size: 14px; font-weight: 600; }
+        .edit-asgn-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .edit-asgn-hours {
+            width: 56px; padding: 6px 8px; text-align: center;
+            background: var(--bg-primary); border: 1px solid var(--border-primary);
+            border-radius: 6px; color: var(--text-primary); font-size: 14px; font-weight: 700;
+        }
+        .edit-asgn-hours:focus { border-color: var(--mint); outline: none; }
+        .edit-asgn-unit { font-size: 12px; color: var(--text-secondary); }
+        .edit-asgn-delete {
+            width: 30px; height: 30px; border-radius: 6px;
+            background: transparent; border: 1px solid transparent;
+            color: var(--text-tertiary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .edit-asgn-delete:hover { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: #f87171; }
+        
+        .edit-empty { padding: 20px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+        
+        .edit-modal-add {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-primary);
+        }
+        .edit-add-header { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; }
+        .edit-add-row { display: flex; gap: 8px; align-items: center; }
+        .edit-select {
+            flex: 1; padding: 8px 10px;
+            background: var(--bg-elevated); border: 1px solid var(--border-primary);
+            border-radius: 8px; color: var(--text-primary); font-size: 13px;
+        }
+        .edit-select:focus { border-color: var(--mint); outline: none; }
+        .edit-input {
+            width: 50px; padding: 8px 6px; text-align: center;
+            background: var(--bg-elevated); border: 1px solid var(--border-primary);
+            border-radius: 8px; color: var(--text-primary); font-size: 13px; font-weight: 600;
+        }
+        .edit-input:focus { border-color: var(--mint); outline: none; }
+        .edit-input-label { font-size: 12px; color: var(--text-secondary); }
+        .edit-btn-add {
+            display: flex; align-items: center; gap: 4px;
+            padding: 8px 14px; background: var(--mint); color: #0a0e11;
+            border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+            white-space: nowrap;
+        }
+        .edit-btn-add:hover { opacity: 0.9; }
+        
+        .edit-modal-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-primary);
+        }
+        .edit-btn-daily {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px; background: var(--bg-elevated); border: 1px solid var(--border-primary);
+            border-radius: 8px; color: var(--text-primary); font-size: 13px; cursor: pointer;
+        }
+        .edit-btn-daily:hover { border-color: var(--mint); }
+        .edit-btn-close {
+            padding: 8px 20px; background: var(--bg-elevated); border: 1px solid var(--border-primary);
+            border-radius: 8px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+        }
+        .edit-btn-close:hover { background: var(--bg-card); }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/responsive.css"/>
+</head>
+<body class="has-sidebar">
+  <div id="app-header"></div>
+  <div id="app-sidebar"></div>
+  <header style="background: var(--bg-card); border-bottom: 1px solid var(--border-primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100;">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <a href="javascript:history.back()" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 8px; text-decoration: none; color: var(--text-primary);">
+            <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span style="font-weight: 600; font-size: 14px;">Zpět</span>
+        </a>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Týdenní plán
+        </h1>
+        <div style="display: flex; gap: 8px; margin-left: auto;">
+            <a href="/planning/daily" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Dnes</a>
+            <a href="/planning/timeline" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Timeline</a>
+            <a href="/planning/week" style="padding: 8px 16px; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 0 12px rgba(74,222,128,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">Týden</a>
+            <a href="/planning/costs" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Náklady</a>
+            <a href="/planning/scenarios" style="padding: 8px 16px; background: var(--bg-elevated); border: 1px solid var(--border-primary); color: var(--text-primary); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                    <path d="M15 18l6-6-6-6" opacity="0.5"/>
+                </svg>
+                Scénáře
+            </a>
+        </div>
+    </div>
+  </header>
+
+  <div class="week-container">
+    <div class="week-controls">
+        <div class="week-nav">
+            <button onclick="navigate(-1)">
+                <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                Předchozí
+            </button>
+            <button onclick="navigate(0)" style="background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08)); color: #4ade80; border: 1px solid rgba(74,222,128,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">Tento týden</button>
+            <button onclick="navigate(1)">
+                Příští
+                <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <div style="display:flex; gap:4px; background:var(--bg-card); border:1px solid var(--border-primary); border-radius:8px; padding:3px; margin-left:8px;">
+                <button id="btn-week" onclick="setViewMode('week')" style="padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:var(--mint); color:#0a0e11;">Týden</button>
+                <button id="btn-month" onclick="setViewMode('month')" style="padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:transparent; color:var(--text-secondary);">Měsíc</button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="employeeSearch" placeholder="Hledat člena teamu..." 
+                style="padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 200px;"
+                oninput="filterEmployees()">
+            <div class="week-title" id="weekTitle">Načítám...</div>
+        </div>
+    </div>
+
+    <div class="week-grid-wrapper">
+        <div id="weekGrid">
+            <div style="padding: 60px; text-align: center; color: var(--text-tertiary);">
+                <div style="width: 40px; height: 40px; border: 3px solid var(--border-primary); border-top-color: var(--mint); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+                Načítám týdenní plán...
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Edit Assignment Modal -->
+  <div class="edit-modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+    <div class="edit-modal">
+      <div class="edit-modal-header">
+        <div>
+          <h3 id="editModalTitle">Přiřazení</h3>
+          <div class="edit-modal-subtitle" id="editModalSubtitle"></div>
+        </div>
+        <button class="edit-modal-close" onclick="closeEditModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="edit-modal-body" id="editModalBody"></div>
+      <div class="edit-modal-add">
+        <div class="edit-add-header">Přidat zakázku</div>
+        <div class="edit-add-row">
+          <select id="addJobSelect" class="edit-select">
+            <option value="">Vyberte zakázku...</option>
+          </select>
+          <input type="number" id="addJobHours" class="edit-input" value="8" min="0.5" max="24" step="0.5">
+          <span class="edit-input-label">h</span>
+          <button class="edit-btn-add" onclick="addAssignment()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Přidat
+          </button>
+        </div>
+      </div>
+      <div class="edit-modal-footer">
+        <button class="edit-btn-daily" onclick="goToDaily()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Otevřít v denním plánu
+        </button>
+        <button class="edit-btn-close" onclick="closeEditModal()">Zavřít</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentWeekStart = null;
+    let weekData = null;
+    let viewMode = 'week';
+    const CZ_DAYS = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+    const CZ_MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+    function getMondayOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    function setViewMode(mode) {
+        viewMode = mode;
+        document.getElementById('btn-week').style.background = mode === 'week' ? 'var(--mint)' : 'transparent';
+        document.getElementById('btn-week').style.color = mode === 'week' ? '#0a0e11' : 'var(--text-secondary)';
+        document.getElementById('btn-month').style.background = mode === 'month' ? 'var(--mint)' : 'transparent';
+        document.getElementById('btn-month').style.color = mode === 'month' ? '#0a0e11' : 'var(--text-secondary)';
+        loadWeekData();
+    }
+
+    function navigate(offset) {
+        if (offset === 0) {
+            currentWeekStart = getMondayOfWeek(new Date());
+        } else if (viewMode === 'week') {
+            const newDate = new Date(currentWeekStart);
+            newDate.setDate(newDate.getDate() + (offset * 7));
+            currentWeekStart = newDate;
+        } else {
+            const newDate = new Date(currentWeekStart);
+            newDate.setMonth(newDate.getMonth() + offset);
+            currentWeekStart = getMondayOfWeek(new Date(newDate.getFullYear(), newDate.getMonth(), 1));
+        }
+        loadWeekData();
+    }
+
+    async function loadWeekData() {
+        try {
+            let startStr, numDays;
+            if (viewMode === 'week') {
+                startStr = currentWeekStart.toISOString().split('T')[0];
+                numDays = 7;
+            } else {
+                const monthStart = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                startStr = monthStart.toISOString().split('T')[0];
+                numDays = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0).getDate();
+            }
+            const response = await fetch(`/api/planning/week?start=${startStr}&days=${numDays}`);
+            const data = await response.json();
+            if (data.success) {
+                weekData = data;
+                renderWeekGrid(data);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    function filterEmployees() {
+        if (!weekData) return;
+        const search = document.getElementById('employeeSearch').value.toLowerCase();
+        renderWeekGrid({
+            ...weekData,
+            employees: weekData.employees.filter(e =>
+                e.name.toLowerCase().includes(search) ||
+                (e.role && e.role.toLowerCase().includes(search))
+            )
+        });
+    }
+
+    function renderWeekGrid(data) {
+        const days = data.days || [];
+        if (!days.length) { document.getElementById('weekGrid').innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-tertiary)">Žádná data</p>'; return; }
+
+        const firstDay = new Date(days[0].date);
+        const lastDay = new Date(days[days.length - 1].date);
+        if (viewMode === 'week') {
+            const onejan = new Date(currentWeekStart.getFullYear(), 0, 1);
+            const weekNum = Math.ceil(((currentWeekStart - onejan) / 86400000 + onejan.getDay() + 1) / 7);
+            document.getElementById('weekTitle').textContent =
+                `Týden ${weekNum} · ${firstDay.getDate()}.${firstDay.getMonth()+1}. — ${lastDay.getDate()}.${lastDay.getMonth()+1}.${lastDay.getFullYear()}`;
+        } else {
+            document.getElementById('weekTitle').textContent = `${CZ_MONTHS[firstDay.getMonth()]} ${firstDay.getFullYear()}`;
+        }
+
+        const todayStr = new Date().toDateString();
+        const numCols = days.length;
+        const monthClass = viewMode === 'month' ? ' month-view' : '';
+
+        // COLGROUP s procenty — table-layout:fixed to vynutí na 100%
+        // V týdenním zobrazení: menší jméno a celkem, více místa pro dny
+        const namePct = viewMode === 'month' ? 9 : 7;
+        const totalPct = viewMode === 'month' ? 5 : 4;
+        const dayPct = (100 - namePct - totalPct) / numCols;
+
+        // INLINE STYLES na <table> přebijí cokoliv z externích CSS
+        let h = `<table class="week-table${monthClass}" style="width:100%!important;table-layout:fixed!important;border-collapse:collapse">`;
+        h += `<colgroup><col style="width:${namePct}%">`;
+        for (let i = 0; i < numCols; i++) h += `<col style="width:${dayPct}%">`;
+        h += `<col style="width:${totalPct}%"></colgroup>`;
+
+        // HEADER
+        h += '<thead><tr>';
+        h += '<th class="wh-name">Zaměstnanec</th>';
+        days.forEach(day => {
+            const d = new Date(day.date);
+            const isToday = d.toDateString() === todayStr;
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            h += `<th class="wh-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">
+                <div class="day-label">${CZ_DAYS[d.getDay()]}</div>
+                <div class="day-date">${d.getDate()}.${d.getMonth()+1}.</div>
+            </th>`;
+        });
+        h += '<th class="wh-total">Celkem</th>';
+        h += '</tr></thead>';
+
+        // BODY
+        h += '<tbody>';
+        data.employees.forEach(emp => {
+            h += '<tr>';
+            h += `<td class="we-name"><div class="emp-name">${esc(emp.name)}</div><div class="emp-role">${esc(emp.role || emp.position || '')}</div></td>`;
+
+            let empWeekTotal = 0;
+            days.forEach(day => {
+                const assignments = day.assignments[emp.id] || [];
+                const totalHours = assignments.reduce((s, a) => s + (a.hours_planned || 0), 0);
+                empWeekTotal += totalHours;
+                const isOverload = totalHours > 8;
+                const capPct = Math.min(100, (totalHours / 8) * 100);
+                const d = new Date(day.date);
+                const isToday = d.toDateString() === todayStr;
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+
+                let bg = '';
+                if (totalHours === 0) bg = 'rgba(107,117,128,0.05)';
+                else if (totalHours <= 6) bg = 'rgba(74,222,128,0.08)';
+                else if (totalHours <= 8) bg = 'rgba(251,191,36,0.1)';
+                else bg = 'rgba(248,113,113,0.12)';
+                if (isToday) bg = 'rgba(74,222,128,0.1)';
+
+                const hColor = totalHours > 8 ? '#f87171' : totalHours > 6 ? '#fbbf24' : '#4ade80';
+                h += `<td class="we-day ${isWeekend ? 'weekend' : ''}" style="background:${bg}" onclick="openDayDetail('${day.date}',${emp.id})">`;
+
+                if (totalHours > 0) {
+                    h += `<div class="hours-big" style="color:${hColor}">${totalHours.toFixed(1)}</div>`;
+                    if (viewMode === 'week') h += `<div class="hours-label">hodin</div>`;
+                    h += `<div class="cap-bar"><div class="cap-bar-fill ${isOverload?'overload':''}" style="width:${capPct}%"></div></div>`;
+                    if (viewMode === 'week' && assignments.length > 0) {
+                        assignments.forEach(a => {
+                            h += `<div class="asgn-card"><div class="asgn-name">${esc(a.job_name || a.job_code || 'Zakázka')}</div><div class="asgn-hours">${a.hours_planned}h</div></div>`;
+                        });
+                    }
+                } else {
+                    if (viewMode === 'week') h += '<div class="empty-plus">+</div>';
+                }
+                h += '</td>';
+            });
+
+            const weeklyCap = emp.weekly_capacity || 40;
+            const expectedCap = viewMode === 'month' ? (weeklyCap / 5) * numCols : weeklyCap;
+            const weekPct = Math.round((empWeekTotal / expectedCap) * 100);
+            const wColor = weekPct > 100 ? '#f87171' : weekPct > 80 ? '#fbbf24' : '#4ade80';
+
+            h += `<td class="we-total">
+                <div class="total-val" style="color:${wColor}">${empWeekTotal.toFixed(1)}h</div>
+                <div class="total-pct">${weekPct}%</div>
+                <div class="total-bar"><div class="total-bar-fill" style="width:${Math.min(weekPct,100)}%;background:${wColor}"></div></div>
+            </td>`;
+            h += '</tr>';
+        });
+
+        // SUMMARY
+        h += '<tr>';
+        h += '<td class="ws-name">Celkem</td>';
+        let grandTotal = 0;
+        days.forEach(day => {
+            let dayTotal = 0;
+            Object.values(day.assignments).forEach(arr => { arr.forEach(a => { dayTotal += a.hours_planned || 0; }); });
+            grandTotal += dayTotal;
+            h += `<td class="ws-day"><div class="sum-val">${dayTotal.toFixed(1)}h</div></td>`;
+        });
+        h += `<td class="ws-total"><div class="sum-val">${grandTotal.toFixed(1)}h</div></td>`;
+        h += '</tr></tbody></table>';
+        document.getElementById('weekGrid').innerHTML = h;
+    }
+
+    function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    
+    // ── Edit Modal System ──
+    let editState = { date: null, employeeId: null, employeeName: '', plans: [], jobs: [] };
+    
+    async function openDayDetail(date, employeeId) {
+        editState.date = date;
+        editState.employeeId = employeeId;
+        
+        // Find employee name
+        const emp = weekData?.employees?.find(e => e.id === employeeId);
+        editState.employeeName = emp ? emp.name : 'Zaměstnanec';
+        
+        const d = new Date(date);
+        const czDays = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+        document.getElementById('editModalTitle').textContent = editState.employeeName;
+        document.getElementById('editModalSubtitle').textContent = `${czDays[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+        
+        try {
+            // Load day_plans (for plan IDs - editable), jobs list, and timesheets
+            const [plansResp, jobsResp] = await Promise.all([
+                fetch(`/api/planning/day-plans/${date}`),
+                fetch('/api/jobs')
+            ]);
+            const plansData = await plansResp.json();
+            const jobsData = await jobsResp.json();
+            
+            const allDayPlans = (plansData.plans || []).filter(p => p.employee_id === employeeId);
+            editState.jobs = Array.isArray(jobsData) ? jobsData : (jobsData.jobs || []);
+            editState.jobs = editState.jobs.filter(j => !['archived','cancelled','completed','Dokončeno'].includes(j.status));
+            
+            // Get ALL assignments from weekData (includes timesheets + day_plans)
+            const dayData = weekData?.days?.find(d => d.date === date);
+            const allAssignments = dayData ? (dayData.assignments[employeeId] || []) : [];
+            
+            // Merge: for each assignment, find matching day_plan (if exists) to get plan ID
+            editState.plans = allAssignments.map(a => {
+                const matchingPlan = allDayPlans.find(p => p.job_id === a.job_id);
+                return {
+                    id: matchingPlan ? matchingPlan.id : null,
+                    job_id: a.job_id,
+                    job_name: a.job_name || a.job_code || 'Zakázka',
+                    planned_hours: a.hours_planned || 8,
+                    status: a.status || 'planned',
+                    source: matchingPlan ? 'day_plan' : 'timesheet'
+                };
+            });
+        } catch(e) {
+            console.error('Load error:', e);
+            editState.plans = [];
+            editState.jobs = [];
+        }
+        
+        renderEditModal();
+        populateJobSelect();
+        document.getElementById('editModal').classList.add('active');
+    }
+    
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+    
+    function renderEditModal() {
+        const body = document.getElementById('editModalBody');
+        if (editState.plans.length === 0) {
+            body.innerHTML = '<div class="edit-empty">Žádné přiřazení pro tento den</div>';
+            return;
+        }
+        
+        body.innerHTML = editState.plans.map((p, idx) => {
+            const isTimesheet = p.source === 'timesheet';
+            const colorBar = isTimesheet ? '#60a5fa' : (p.status === 'confirmed' ? '#4ade80' : '#fbbf24');
+            const statusLabel = isTimesheet ? 'Odpracováno (timesheet)' : (p.status === 'confirmed' ? 'Potvrzeno' : 'Plán');
+            
+            return `
+            <div class="edit-asgn-item" data-idx="${idx}">
+                <div class="asgn-color" style="background: ${colorBar}"></div>
+                <div class="edit-asgn-info">
+                    <div class="edit-asgn-name">${esc(p.job_name)}</div>
+                    <div class="edit-asgn-meta">${statusLabel}</div>
+                </div>
+                ${p.id ? `
+                    <input type="number" class="edit-asgn-hours" value="${p.planned_hours}" 
+                        min="0.5" max="24" step="0.5" onchange="updateHours(${p.id}, this.value)">
+                    <span class="edit-asgn-unit">h</span>
+                ` : `
+                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${p.planned_hours}h</span>
+                `}
+                <button class="edit-asgn-delete" onclick="deleteAssignment(${p.id || 'null'}, ${idx})" title="Odebrat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>`;
+        }).join('');
+    }
+    
+    function populateJobSelect() {
+        const select = document.getElementById('addJobSelect');
+        const assignedJobIds = new Set(editState.plans.map(p => p.job_id));
+        const available = editState.jobs.filter(j => !assignedJobIds.has(j.id));
+        
+        select.innerHTML = '<option value="">Vyberte zakázku...</option>' +
+            available.map(j => `<option value="${j.id}">${esc(j.client || j.name || 'Zakázka #' + j.id)}${j.address ? ' — ' + esc(j.address) : ''}</option>`).join('');
+    }
+    
+    async function addAssignment() {
+        const jobId = document.getElementById('addJobSelect').value;
+        const hours = parseFloat(document.getElementById('addJobHours').value) || 8;
+        if (!jobId) { alert('Vyberte zakázku'); return; }
+        
+        try {
+            const resp = await fetch('/api/planning/day-plans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date: editState.date,
+                    employee_id: editState.employeeId,
+                    job_id: parseInt(jobId),
+                    planned_hours: hours,
+                    status: 'planned'
+                })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                // Reload plans
+                await refreshEditModal();
+                loadWeekData(); // refresh grid in background
+            } else {
+                alert('Chyba: ' + (data.error || 'Nepodařilo se přidat'));
+            }
+        } catch(e) {
+            console.error('Add error:', e);
+            alert('Chyba při přidávání');
+        }
+    }
+    
+    async function updateHours(planId, newHours) {
+        try {
+            await fetch(`/api/planning/day-plans/${planId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planned_hours: parseFloat(newHours) })
+            });
+            loadWeekData(); // refresh grid
+        } catch(e) { console.error('Update error:', e); }
+    }
+    
+    async function deleteAssignment(planId, idx) {
+        if (!confirm('Odebrat toto přiřazení?')) return;
+        
+        const plan = editState.plans[idx];
+        
+        if (planId) {
+            // Delete from day_plans
+            try {
+                const resp = await fetch(`/api/planning/day-plans/${planId}`, { method: 'DELETE' });
+                const data = await resp.json();
+                if (!data.success) { alert('Chyba: ' + (data.error || 'Nepodařilo se smazat')); return; }
+            } catch(e) { console.error('Delete error:', e); alert('Chyba při mazání'); return; }
+        } else if (plan && plan.source === 'timesheet' && plan.job_id) {
+            // Delete from timesheets
+            try {
+                const resp = await fetch(`/api/timesheets/delete-by-day`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: editState.date,
+                        employee_id: editState.employeeId,
+                        job_id: plan.job_id
+                    })
+                });
+                const data = await resp.json();
+                if (!data.success) { alert('Chyba: ' + (data.error || 'Nepodařilo se smazat timesheet')); return; }
+            } catch(e) { console.error('Delete timesheet error:', e); alert('Chyba při mazání timesheetu'); return; }
+        }
+        
+        await refreshEditModal();
+        loadWeekData();
+    }
+    
+    async function refreshEditModal() {
+        // Reload week data first (includes both sources)
+        try {
+            let startStr, numDays;
+            if (viewMode === 'week') {
+                startStr = currentWeekStart.toISOString().split('T')[0];
+                numDays = 7;
+            } else {
+                const monthStart = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                startStr = monthStart.toISOString().split('T')[0];
+                numDays = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0).getDate();
+            }
+            const [weekResp, plansResp] = await Promise.all([
+                fetch(`/api/planning/week?start=${startStr}&days=${numDays}`),
+                fetch(`/api/planning/day-plans/${editState.date}`)
+            ]);
+            const newWeekData = await weekResp.json();
+            const plansData = await plansResp.json();
+            
+            if (newWeekData.success) weekData = newWeekData;
+            
+            const allDayPlans = (plansData.plans || []).filter(p => p.employee_id === editState.employeeId);
+            const dayData = weekData?.days?.find(d => d.date === editState.date);
+            const allAssignments = dayData ? (dayData.assignments[editState.employeeId] || []) : [];
+            
+            editState.plans = allAssignments.map(a => {
+                const matchingPlan = allDayPlans.find(p => p.job_id === a.job_id);
+                return {
+                    id: matchingPlan ? matchingPlan.id : null,
+                    job_id: a.job_id,
+                    job_name: a.job_name || a.job_code || 'Zakázka',
+                    planned_hours: a.hours_planned || 8,
+                    status: a.status || 'planned',
+                    source: matchingPlan ? 'day_plan' : 'timesheet'
+                };
+            });
+            
+            renderEditModal();
+            populateJobSelect();
+        } catch(e) { console.error('Refresh error:', e); }
+    }
+    
+    function goToDaily() {
+        window.location.href = `/planning/daily?date=${editState.date}&employee=${editState.employeeId}`;
+    }
+    
+    // Escape closes modal
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModal(); });
+
+    currentWeekStart = getMondayOfWeek(new Date());
+    loadWeekData();
+  </script>
+  <script src="/static/app-sidebar.js"></script>
+  <script src="/static/app-header.js"></script>
+</body>
+</html>

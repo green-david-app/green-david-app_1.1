@@ -1,0 +1,514 @@
+/* ========================================
+   TASKS DESIGN SYSTEM - Globální design systém
+   Aplikováno na všechny části aplikace
+   Pastelové barvy, glass efekty, minimalistické ikony
+   ======================================== */
+
+:root {
+  /* Background Layers - z tasks.html */
+  --bg-base: #0f172a;
+  --bg-primary: #1a2332;
+  --bg-secondary: #0f172a;
+  --bg-elevated: #1a2332;
+  --bg-card: #1a2332;
+  --bg-panel: #0f172a;
+  
+  /* Pastelové barvy s opacity */
+  --pastel-green: rgba(74, 222, 128, 0.1);
+  --pastel-green-border: rgba(74, 222, 128, 0.2);
+  --pastel-green-strong: rgba(74, 222, 128, 0.15);
+  --pastel-blue: rgba(96, 165, 250, 0.2);
+  --pastel-blue-border: rgba(96, 165, 250, 0.3);
+  --pastel-yellow: rgba(251, 191, 36, 0.2);
+  --pastel-yellow-border: rgba(251, 191, 36, 0.3);
+  --pastel-red: rgba(248, 113, 113, 0.2);
+  --pastel-red-border: rgba(248, 113, 113, 0.3);
+  --pastel-purple: rgba(167, 139, 250, 0.2);
+  --pastel-purple-border: rgba(167, 139, 250, 0.3);
+  --pastel-cyan: rgba(34, 211, 238, 0.2);
+  --pastel-gray: rgba(148, 163, 184, 0.1);
+  --pastel-white: rgba(255, 255, 255, 0.1);
+  
+  /* Barvy */
+  --color-green: #4ade80;
+  --color-blue: #60a5fa;
+  --color-yellow: #fbbf24;
+  --color-red: #f87171;
+  --color-purple: #a78bfa;
+  --color-cyan: #22d3ee;
+  --color-gray: #64748b;
+  --color-gray-light: #94a3b8;
+  --color-gray-dark: #334155;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #64748b;
+  --color-text-tertiary: #94a3b8;
+  
+  /* Borders */
+  --border-base: #334155;
+  --border-light: #1e293b;
+  --border-dark: #0f172a;
+  
+  /* Glass efekty */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================
+   GLASS CARDS - Univerzální karty
+   ======================================== */
+.glass-card,
+.card,
+.dashboard-card,
+.stat-card,
+.kpi-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.glass-card:hover,
+.card:hover,
+.dashboard-card:hover,
+.stat-card:hover,
+.kpi-card:hover {
+  border-color: var(--border-base);
+  transform: translateY(-1px);
+}
+
+/* Glass Card s gradientem */
+.glass-card-gradient {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), rgba(96, 165, 250, 0.08));
+  border: 1px solid var(--pastel-green-border);
+  backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   BUTTONS - Glass tlačítka
+   ======================================== */
+.btn-glass,
+button.btn-glass,
+.view-toggle button,
+.role-tab,
+.filter-pill {
+  padding: 6px 12px;
+  border: 1px solid var(--border-base);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-glass:hover,
+button.btn-glass:hover,
+.view-toggle button:hover,
+.role-tab:hover,
+.filter-pill:hover {
+  border-color: var(--color-green);
+  color: var(--color-text-tertiary);
+}
+
+.btn-glass.active,
+.view-toggle button.active,
+.role-tab.active,
+.filter-pill.active {
+  background: var(--pastel-green);
+  border-color: var(--color-green);
+  color: var(--color-green);
+}
+
+.btn-primary,
+button.btn-primary {
+  background: var(--color-green);
+  color: #0a0f1a;
+  border: none;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #22c55e;
+}
+
+/* ========================================
+   BADGES & TAGS - Pastelové badge
+   ======================================== */
+.badge,
+.tag,
+.op-badge,
+.task-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge.warning,
+.op-badge.warning {
+  background: var(--pastel-yellow);
+  color: var(--color-yellow);
+}
+
+.badge.danger,
+.op-badge.danger {
+  background: var(--pastel-red);
+  color: var(--color-red);
+}
+
+.badge.info,
+.op-badge.info {
+  background: var(--pastel-blue);
+  color: var(--color-blue);
+}
+
+.badge.success {
+  background: var(--pastel-green);
+  color: var(--color-green);
+}
+
+.badge.purple {
+  background: var(--pastel-purple);
+  color: var(--color-purple);
+}
+
+.badge.cyan {
+  background: var(--pastel-cyan);
+  color: var(--color-cyan);
+}
+
+/* ========================================
+   INPUTS - Glass inputy
+   ======================================== */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border-base);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-green);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+textarea::placeholder {
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   MODALS - Glass modaly
+   ======================================== */
+.modal-overlay,
+.ts-modal-overlay {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content,
+.ts-modal {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-base);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header,
+.ts-modal-head {
+  border-bottom: 1px solid var(--border-light);
+  padding: 16px 20px;
+}
+
+.modal-body,
+.ts-modal-body {
+  padding: 20px;
+}
+
+.modal-footer,
+.ts-modal-foot {
+  border-top: 1px solid var(--border-light);
+  padding: 16px 20px;
+}
+
+/* ========================================
+   TABLES - Glass tabulky
+   ======================================== */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+table thead th {
+  background: var(--bg-secondary);
+  color: var(--color-text-secondary);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-light);
+  font-weight: 600;
+}
+
+table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+table tbody tr:hover td {
+  background: var(--pastel-green);
+}
+
+/* ========================================
+   PROGRESS BARS - Pastelové progress bary
+   ======================================== */
+.progress-bar,
+.task-progress-bar {
+  height: 3px;
+  background: var(--border-light);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill,
+.task-progress-fill {
+  height: 100%;
+  background: var(--color-green);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* ========================================
+   CHIPS & PILLS - Pastelové chipy
+   ======================================== */
+.chip,
+.pill,
+.ts-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--border-base);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: 20px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.chip:hover,
+.pill:hover,
+.ts-chip:hover {
+  border-color: var(--color-green);
+  color: var(--color-text-tertiary);
+}
+
+.chip.active,
+.pill.active,
+.ts-chip.active {
+  background: var(--pastel-green-strong);
+  border-color: var(--color-green);
+  color: var(--color-green);
+}
+
+/* ========================================
+   OPERATOR BAR - Gradient bar
+   ======================================== */
+.operator-bar {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), rgba(96, 165, 250, 0.08));
+  border: 1px solid var(--pastel-green-border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.operator-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #4ade80, #60a5fa);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   STAT CARDS - Statistiky s border-left
+   ======================================== */
+.stat-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 12px;
+  border-left: 3px solid var(--border-base);
+}
+
+.stat-card.todo,
+.stat-card.blue {
+  border-left-color: var(--color-blue);
+}
+
+.stat-card.progress,
+.stat-card.yellow {
+  border-left-color: var(--color-yellow);
+}
+
+.stat-card.done,
+.stat-card.green {
+  border-left-color: var(--color-green);
+}
+
+.stat-card.blocked,
+.stat-card.red {
+  border-left-color: var(--color-red);
+}
+
+.stat-card.ai,
+.stat-card.purple {
+  border-left-color: var(--color-purple);
+}
+
+.stat-card h4,
+.stat-card .label {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card .value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.stat-card .sub {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* ========================================
+   KANBAN COLUMNS - Glass sloupce
+   ======================================== */
+.kanban-column {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.column-count {
+  background: var(--border-base);
+  color: var(--color-text-secondary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.column-todo .column-count {
+  background: var(--pastel-blue);
+  color: var(--color-blue);
+}
+
+.column-progress .column-count {
+  background: var(--pastel-yellow);
+  color: var(--color-yellow);
+}
+
+.column-done .column-count {
+  background: var(--pastel-green);
+  color: var(--color-green);
+}
+
+/* ========================================
+   TASK CARDS - Glass karty úkolů
+   ======================================== */
+.task-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.task-card:hover {
+  border-color: var(--border-base);
+  transform: translateY(-1px);
+}
+
+.task-card.priority-high {
+  border-left: 3px solid var(--color-red);
+}
+
+.task-card.priority-medium {
+  border-left: 3px solid var(--color-yellow);
+}
+
+.task-card.priority-low {
+  border-left: 3px solid var(--color-green);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .glass-card,
+  .card,
+  .dashboard-card {
+    padding: 10px;
+  }
+  
+  .btn-glass,
+  button.btn-glass {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
