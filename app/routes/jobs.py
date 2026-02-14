@@ -3133,7 +3133,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 @jobs_bp.route('/api/jobs/<int:job_id>/complete', methods=['GET'])
 def get_job_complete(job_id):
-    """Získá kompletní informace o zakázce"""
+    """Získá kompletní informace o zakázce - resilient to missing tables"""
     try:
         db = get_db()
         
@@ -3142,30 +3142,50 @@ def get_job_complete(job_id):
             return jsonify({"error": "Job not found"}), 404
         job = dict(job_row)
         
-        client_row = db.execute("SELECT * FROM job_clients WHERE job_id = ?", (job_id,)).fetchone()
-        client = dict(client_row) if client_row else None
+        # Helper: safe query that returns empty on missing table
+        def safe_query(sql, params=()):
+            try:
+                return [dict(r) for r in db.execute(sql, params).fetchall()]
+            except Exception:
+                return []
         
-        location_row = db.execute("SELECT * FROM job_locations WHERE job_id = ?", (job_id,)).fetchone()
-        location = dict(location_row) if location_row else None
+        def safe_query_one(sql, params=()):
+            try:
+                row = db.execute(sql, params).fetchone()
+                return dict(row) if row else None
+            except Exception:
+                return None
         
-        milestones_rows = db.execute("SELECT * FROM job_milestones WHERE job_id = ? ORDER BY order_num, planned_date", (job_id,)).fetchall()
-        milestones = [dict(row) for row in milestones_rows]
+        client = safe_query_one("SELECT * FROM job_clients WHERE job_id = ?", (job_id,))
+        location = safe_query_one("SELECT * FROM job_locations WHERE job_id = ?", (job_id,))
+        milestones = safe_query("SELECT * FROM job_milestones WHERE job_id = ? ORDER BY order_num, planned_date", (job_id,))
+        materials = safe_query("SELECT * FROM job_materials WHERE job_id = ?", (job_id,))
+        equipment = safe_query("SELECT * FROM job_equipment WHERE job_id = ? ORDER BY date_from", (job_id,))
+        subcontractors = safe_query("SELECT * FROM job_subcontractors WHERE job_id = ?", (job_id,))
+        risks = safe_query("SELECT * FROM job_risks WHERE job_id = ? AND status != 'closed'", (job_id,))
+        payments = safe_query("SELECT * FROM job_payments WHERE job_id = ? ORDER BY planned_date", (job_id,))
+        photos = safe_query("SELECT * FROM job_photos WHERE job_id = ? LIMIT 50", (job_id,))
         
-        materials_rows = db.execute("SELECT * FROM job_materials WHERE job_id = ?", (job_id,)).fetchall()
-        materials = [dict(row) for row in materials_rows]
-        
-        equipment_rows = db.execute("SELECT * FROM job_equipment WHERE job_id = ? ORDER BY date_from", (job_id,)).fetchall()
-        equipment = [dict(row) for row in equipment_rows]
-        
-        team_rows = db.execute("""
-            SELECT jta.*, e.name as employee_name, e.position as employee_position, e.role
+        # Team: try job_team_assignments first, fallback to job_assignments
+        team = safe_query("""
+            SELECT jta.*, e.name as employee_name, e.role
             FROM job_team_assignments jta
             LEFT JOIN employees e ON jta.employee_id = e.id
             WHERE jta.job_id = ? AND jta.is_active = 1
-        """, (job_id,)).fetchall()
-        team = [dict(row) for row in team_rows]
+        """, (job_id,))
+        
+        # Try to add position if column exists
+        for t in team:
+            try:
+                emp_id = t.get('employee_id')
+                if emp_id:
+                    pos_row = db.execute("SELECT position FROM employees WHERE id=?", (emp_id,)).fetchone()
+                    t['employee_position'] = pos_row['position'] if pos_row and 'position' in pos_row.keys() else ''
+            except Exception:
+                t['employee_position'] = ''
         
         # Enrich team with actual hours from timesheets
+        ts_map = {}
         try:
             ts_hours = db.execute("""
                 SELECT employee_id, 
@@ -3186,35 +3206,18 @@ def get_job_complete(job_id):
         
         # If job_team_assignments is empty, fallback to job_assignments
         if not team:
-            try:
-                fallback_rows = db.execute("""
-                    SELECT ja.employee_id, e.name as employee_name, e.position as employee_position, e.role
-                    FROM job_assignments ja
-                    LEFT JOIN employees e ON ja.employee_id = e.id
-                    WHERE ja.job_id = ?
-                """, (job_id,)).fetchall()
-                team = []
-                for r in fallback_rows:
-                    row = dict(r)
-                    emp_ts = ts_map.get(row.get('employee_id'), {}) if 'ts_map' in dir() else {}
-                    row['hours_actual'] = emp_ts.get('hours', 0)
-                    row['hours_planned'] = 0
-                    row['timesheet_entries'] = emp_ts.get('entries', 0)
-                    team.append(row)
-            except Exception as e:
-                print(f"[TEAM] Fallback job_assignments also failed: {e}")
-        
-        subcontractors_rows = db.execute("SELECT * FROM job_subcontractors WHERE job_id = ?", (job_id,)).fetchall()
-        subcontractors = [dict(row) for row in subcontractors_rows]
-        
-        risks_rows = db.execute("SELECT * FROM job_risks WHERE job_id = ? AND status != 'closed'", (job_id,)).fetchall()
-        risks = [dict(row) for row in risks_rows]
-        
-        payments_rows = db.execute("SELECT * FROM job_payments WHERE job_id = ? ORDER BY planned_date", (job_id,)).fetchall()
-        payments = [dict(row) for row in payments_rows]
-        
-        photos_rows = db.execute("SELECT * FROM job_photos WHERE job_id = ? LIMIT 50", (job_id,)).fetchall()
-        photos = [dict(row) for row in photos_rows]
+            fallback = safe_query("""
+                SELECT ja.employee_id, e.name as employee_name, e.role
+                FROM job_assignments ja
+                LEFT JOIN employees e ON ja.employee_id = e.id
+                WHERE ja.job_id = ?
+            """, (job_id,))
+            for r in fallback:
+                emp_ts = ts_map.get(r.get('employee_id'), {})
+                r['hours_actual'] = emp_ts.get('hours', 0)
+                r['hours_planned'] = 0
+                r['timesheet_entries'] = emp_ts.get('entries', 0)
+            team = fallback
         
         result = {
             "job": job,
@@ -3420,13 +3423,16 @@ def manage_team(job_id):
     
     try:
         if request.method == 'GET':
-            team_rows = db.execute("""
-                SELECT jta.*, e.name as employee_name, e.position as employee_position
-                FROM job_team_assignments jta
-                LEFT JOIN employees e ON jta.employee_id = e.id
-                WHERE jta.job_id = ? AND jta.is_active = 1
-            """, (job_id,)).fetchall()
-            team = [dict(row) for row in team_rows]
+            try:
+                team_rows = db.execute("""
+                    SELECT jta.*, e.name as employee_name, e.role
+                    FROM job_team_assignments jta
+                    LEFT JOIN employees e ON jta.employee_id = e.id
+                    WHERE jta.job_id = ? AND jta.is_active = 1
+                """, (job_id,)).fetchall()
+                team = [dict(row) for row in team_rows]
+            except Exception:
+                team = []
             return jsonify({"team": team, "summary": {"size": len(team)}}), 200
             
         elif request.method == 'POST':
