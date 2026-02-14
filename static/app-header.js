@@ -1,3 +1,8 @@
+// PWA initialization - load before everything else
+if (!document.querySelector('script[src="/static/pwa-init.js"]')) {
+  const s = document.createElement('script'); s.src = '/static/pwa-init.js'; document.head.appendChild(s);
+}
+
 // Unified Header Component
 class AppHeader {
   constructor() {
