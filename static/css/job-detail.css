@@ -862,6 +862,33 @@ button[style*="4299e1"]:hover {
   .job-detail-container {
     padding: 12px;
   }
+
+  /* Tab container — padding aby první tab nebyl oříznutý */
+  .job-tabs {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Finance / info karty — horizontální scroll, částky clamp */
+  #tab-finance .info-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    padding: 4px 12px !important;
+    scroll-snap-type: x mandatory !important;
+  }
+  #tab-finance .info-card {
+    min-width: 130px !important;
+    max-width: 160px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+  }
+  #tab-finance .info-value {
+    font-size: clamp(14px, 4vw, 24px) !important;
+    word-break: break-all !important;
+  }
   
   .job-header {
     padding: 16px;
@@ -894,9 +921,9 @@ button[style*="4299e1"]:hover {
   }
   
   .job-tabs {
-    margin-left: -12px;
-    margin-right: -12px;
-    padding: 0 12px;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 12px 0 12px !important;
   }
   
   .info-grid {

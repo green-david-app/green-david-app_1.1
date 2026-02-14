@@ -29,7 +29,7 @@
     align-items: center !important;
   }
 
-  /* VŠECHNY ikony v headeru — uniformní 28px */
+  /* VŠECHNY ikony v headeru — uniformní 26px */
   .app-header .app-header-icon-btn,
   .app-header .app-header-notifications,
   .app-header .app-header-settings,
@@ -38,12 +38,12 @@
   .app-header .app-header-tasks-count,
   .app-header button,
   .app-header a[class*="header"] {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    min-height: 28px !important;
-    max-width: 28px !important;
-    max-height: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
     flex-shrink: 0 !important;
     box-sizing: border-box !important;
     padding: 0 !important;
@@ -52,12 +52,12 @@
     justify-content: center !important;
   }
 
-  /* VŠECHNY SVG ikony v headeru — max 14px */
+  /* VŠECHNY SVG ikony v headeru — max 13px (přebíjí inline atributy) */
   .app-header svg {
-    width: 14px !important;
-    height: 14px !important;
-    max-width: 14px !important;
-    max-height: 14px !important;
+    width: 13px !important;
+    height: 13px !important;
+    max-width: 13px !important;
+    max-height: 13px !important;
     flex-shrink: 0 !important;
   }
 
@@ -65,7 +65,7 @@
   .app-header .app-header-page-title,
   .app-header [class*="page-title"] {
     font-size: 13px !important;
-    max-width: 80px !important;
+    max-width: 90px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -127,7 +127,7 @@
   /* Search wrapper — kompaktní */
   .app-header .app-header-search-wrapper {
     flex: 0 !important;
-    max-width: 28px !important;
+    max-width: 26px !important;
     margin: 0 !important;
   }
   .app-header .app-header-search {
@@ -174,12 +174,12 @@
 
   /* Jednotlivé karty — menší */
   .action-card {
-    padding: 12px 8px !important;
+    padding: 12px 10px !important;
     border-radius: 14px !important;
     min-height: auto !important;
   }
 
-  /* Ikona bublina — 40px místo 64px */
+  /* Ikona bublina — 40x40px */
   .action-card .icon-circle,
   .icon-circle {
     width: 40px !important;
@@ -193,7 +193,7 @@
     right: 8px !important;
   }
 
-  /* SVG v bublině — 18px místo 28px */
+  /* SVG v bublině — 18x18px */
   .action-card .icon-circle svg,
   .icon-circle svg {
     width: 18px !important;
@@ -220,19 +220,21 @@
   }
   
   .action-card {
-    padding: 10px 6px !important;
+    padding: 10px 8px !important;
     border-radius: 12px !important;
   }
 
+  .action-card .icon-circle,
   .icon-circle {
-    width: 34px !important;
-    height: 34px !important;
+    width: 32px !important;
+    height: 32px !important;
     margin: 0 auto 6px !important;
   }
 
+  .action-card .icon-circle svg,
   .icon-circle svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .action-card h3 {
@@ -246,15 +248,40 @@
 
 
 /* ================================================================
-   4. STAT KARTY (Zakázky, Dashboard) — scroll + menší
+   4. STAT KARTY (Zakázky, Dashboard) — scroll + menší + indikátor
    ================================================================ */
 @media (max-width: 768px) {
+  /* Wrapper pro scroll indikátor — použít na parent */
+  .stats-row-wrapper,
+  .overview-stats-wrapper,
+  .kpi-cards-wrapper {
+    position: relative !important;
+  }
+  .stats-row-wrapper::after,
+  .overview-stats-wrapper::after,
+  .kpi-cards-wrapper::after,
+  .stats-row::after,
+  .overview-stats::after,
+  .kpi-cards::after,
+  .tasks-stats::after {
+    content: '' !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 40px !important;
+    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+
   /* Horizontální scroll kontejner */
   .stats-row,
   .overview-stats,
   .kpi-cards,
   .budget-cards,
   .finance-summary-cards,
+  .tasks-stats,
   [class*="stat-row"],
   [class*="stats-grid"] {
     display: flex !important;
@@ -262,15 +289,17 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px 8px !important;
+    padding: 4px 12px 4px 12px !important;
     scroll-snap-type: x mandatory !important;
     scrollbar-width: none !important;
+    position: relative !important;
   }
   
   .stats-row::-webkit-scrollbar,
   .overview-stats::-webkit-scrollbar,
   .kpi-cards::-webkit-scrollbar,
-  .budget-cards::-webkit-scrollbar {
+  .budget-cards::-webkit-scrollbar,
+  .tasks-stats::-webkit-scrollbar {
     display: none !important;
   }
 
@@ -295,17 +324,19 @@
   }
 
   .stat-card .stat-value,
-  .kpi-value {
-    font-size: 16px !important;
+  .kpi-value,
+  .stat-card .value {
+    font-size: clamp(14px, 4vw, 16px) !important;
   }
 }
 
 
 /* ================================================================
-   5. FINANCE KARTY (Job Detail) — menší, scroll
+   5. FINANCE KARTY (Job Detail) — menší, scroll, indikátor
    ================================================================ */
 @media (max-width: 768px) {
-  /* Finance grid na job-detail → horizontální scroll */
+  /* Finance grid — job-detail i stránka Finance → horizontální scroll */
+  .finance-overview,
   .finance-cards,
   .budget-overview,
   [class*="finance-grid"],
@@ -316,16 +347,33 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px !important;
+    padding: 4px 12px !important;
     scrollbar-width: none !important;
+    position: relative !important;
+    scroll-snap-type: x mandatory !important;
+  }
+  .finance-overview::after,
+  .finance-cards::after,
+  #tab-finance .info-grid::after {
+    content: '' !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 40px !important;
+    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
   }
 
+  .finance-overview .finance-card,
   .finance-card {
-    min-width: 140px !important;
-    max-width: 180px !important;
+    min-width: 130px !important;
+    max-width: 160px !important;
     padding: 12px !important;
     flex-shrink: 0 !important;
     box-sizing: border-box !important;
+    scroll-snap-align: start !important;
   }
 
   .finance-card h3 {
@@ -333,8 +381,11 @@
     margin: 0 0 6px !important;
   }
 
-  .finance-card h2 {
-    font-size: 20px !important;
+  .finance-card h2,
+  .finance-card .amount,
+  .stat-value,
+  .kpi-value {
+    font-size: clamp(14px, 4vw, 24px) !important;
     margin: 0 0 4px !important;
     word-break: break-all !important;
   }
@@ -418,22 +469,52 @@
     flex-shrink: 0 !important;
   }
 
-  /* Tabs — horizontální scroll */
+  /* Tabs — horizontální scroll + padding aby první tab nebyl oříznutý */
   .job-tabs,
   .page-tabs,
   .tab-list,
-  .tabs,
-  [class*="tabs"] {
+  .view-toggle,
+  .role-tabs,
+  .nav-tabs,
+  .finance-tabs,
+  .inbox-tabs,
+  .view-mode-tabs,
+  [class*="tab-list"],
+  [class*="page-tabs"] {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     white-space: nowrap !important;
     scrollbar-width: none !important;
     display: flex !important;
     flex-wrap: nowrap !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    position: relative !important;
+  }
+  .job-tabs::after,
+  .page-tabs::after,
+  .tab-list::after,
+  .view-toggle::after,
+  .role-tabs::after,
+  .nav-tabs::after,
+  .finance-tabs::after,
+  .inbox-tabs::after,
+  .view-mode-tabs::after {
+    content: '' !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 32px !important;
+    background: linear-gradient(to right, transparent, var(--bg-primary, #0f1419)) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
   }
 
   .job-tab,
   .tab-btn,
+  .view-toggle button,
+  .role-tab,
   [class*="tab"]:not([class*="tabs"]):not([class*="table"]) {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
@@ -583,8 +664,8 @@
     }
     
     .container, main, .page-container {
-      padding-left: max(8px, env(safe-area-inset-left)) !important;
-      padding-right: max(8px, env(safe-area-inset-right)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
     }
   }
 }
@@ -617,7 +698,288 @@
 
 
 /* ================================================================
-   14. KANBAN — horizontální scroll
+   14. ÚKOLY — view-toggle, role-tabs, tasks-stats scroll + padding
+   ================================================================ */
+@media (max-width: 768px) {
+  .tasks-stats {
+    grid-template-columns: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    gap: 8px !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+  }
+  .tasks-stats .stat-card {
+    min-width: 90px !important;
+    max-width: 120px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+  }
+  .tasks-stats .stat-card .value {
+    font-size: 14px !important;
+  }
+  .view-toggle,
+  .role-tabs {
+    flex-shrink: 0 !important;
+    padding-left: 12px !important;
+  }
+}
+
+/* ================================================================
+   15. KALENDÁŘ — max-width, box-sizing
+   ================================================================ */
+@media (max-width: 768px) {
+  .calendar-grid,
+  .cal,
+  .grid-wrap,
+  .calendar-month {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .toolbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  .toolbar .month {
+    font-size: clamp(14px, 4vw, 18px) !important;
+  }
+}
+
+/* ================================================================
+   16. TÝM — kapacitní karty, heatmapa
+   ================================================================ */
+@media (max-width: 768px) {
+  [class*="capacity-card"],
+  [class*="team-card"] {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  [class*="capacity-heatmap"],
+  [class*="heatmap"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  [class*="heatmap"] td,
+  [class*="capacity-cell"] {
+    min-width: 40px !important;
+  }
+  .legend,
+  [class*="legend"] {
+    font-size: 10px !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ================================================================
+   17. INBOX — tabs, container
+   ================================================================ */
+@media (max-width: 768px) {
+  .inbox-container {
+    padding: 16px 12px 100px !important;
+  }
+  .inbox-tabs {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* ================================================================
+   18. REPORTY — quick-stats, report-types
+   ================================================================ */
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 16px 12px 120px !important;
+  }
+  .quick-stats {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    padding: 4px 12px !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+  }
+  .quick-stats .stat-card {
+    min-width: 140px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+  }
+  .report-types {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .report-card {
+    padding: 20px !important;
+  }
+}
+
+/* ================================================================
+   19. TÝM — crew-stats-row, view-mode-tabs
+   ================================================================ */
+@media (max-width: 768px) {
+  .crew-stats-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    padding: 4px 12px !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+  }
+  .crew-stat-card {
+    min-width: 140px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+  }
+  .view-mode-tabs {
+    overflow-x: auto !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ================================================================
+   20. VÝKAZY (Timesheets) — ts-summary, ts-nav
+   ================================================================ */
+@media (max-width: 768px) {
+  .ts-page {
+    padding: 0 12px 80px !important;
+  }
+  .ts-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .ts-stat-value {
+    font-size: 18px !important;
+  }
+  .ts-nav {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+}
+
+/* ================================================================
+   21. TABULKY — overflow na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  .invoices-table,
+  .data-table,
+  .list-table,
+  table.invoices-table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .invoices-table th,
+  .invoices-table td,
+  .data-table th,
+  .data-table td {
+    font-size: 12px !important;
+    padding: 8px 10px !important;
+  }
+}
+
+/* ================================================================
+   22. ADRESÁŘ — directory-stats
+   ================================================================ */
+@media (max-width: 768px) {
+  .directory-stats {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    padding: 4px 12px !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+  }
+  .directory-stats .stat-card {
+    min-width: 120px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+/* ================================================================
+   23. DOKUMENTY — file-browser na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  .file-browser {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    gap: 16px !important;
+    padding: 12px !important;
+    min-height: auto !important;
+  }
+  .file-browser .sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.12)) !important;
+    padding: 12px 0 16px !important;
+  }
+  .file-browser .sidebar h3 {
+    margin-bottom: 12px !important;
+  }
+  .file-browser .folder {
+    padding: 10px 12px !important;
+  }
+}
+
+/* ================================================================
+   24. REPORTY denní/týdenní — main-grid, heatmap
+   ================================================================ */
+@media (max-width: 768px) {
+  .daily-report,
+  .weekly-report {
+    padding: 16px 12px !important;
+  }
+  .main-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .heatmap-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+  .heatmap-grid > * {
+    min-width: 600px !important;
+  }
+  .material-summary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ================================================================
+   25. SKLAD / EMPTY STATE — mezera mezi h3 a p
+   ================================================================ */
+.empty-state h3 {
+  margin-bottom: 6px !important;
+}
+.empty-state h3 + p,
+.empty-state h3 + div,
+.empty-state p {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+.empty-state td h3,
+.empty-state td p {
+  display: block !important;
+}
+
+/* ================================================================
+   26. KANBAN — horizontální scroll
    ================================================================ */
 @media (max-width: 768px) {
   .kanban-board,

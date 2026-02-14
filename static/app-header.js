@@ -99,6 +99,8 @@ class AppHeader {
       '/notes': 'Poznámky',
       '/directory.html': 'Adresář',
       '/directory': 'Adresář',
+      '/trainings.html': 'Školení',
+      '/trainings': 'Školení',
       '/notifications.html': 'Notifikace',
       '/nursery.html': 'Školka',
       '/plant-database.html': 'Databáze rostlin',
@@ -313,7 +315,7 @@ class AppHeader {
   <div class="app-header-container" style="overflow:hidden;">
     <!-- 1. Hamburger menu -->
     <button class="app-header-sidebar-toggle" id="app-header-sidebar-toggle" type="button" title="Toggle sidebar">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
         <line x1="3" y1="6" x2="21" y2="6"/>
         <line x1="3" y1="12" x2="21" y2="12"/>
         <line x1="3" y1="18" x2="21" y2="18"/>
@@ -322,7 +324,7 @@ class AppHeader {
 
     <!-- 2. Šipka zpět -->
     <button class="app-header-back" id="app-header-back" type="button" title="Zpět">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M15 18l-6-6 6-6"/>
       </svg>
     </button>
@@ -333,7 +335,7 @@ class AppHeader {
     <!-- 4. Vyhledávání -->
     <div class="app-header-search-wrapper">
       <button class="app-header-search-btn" id="app-header-search-btn" type="button" title="Vyhledávání (⌘K)">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
@@ -442,14 +444,14 @@ class AppHeader {
   }
 
   cleanupLegacyHeaders() {
-    // Bezpečně skryj staré top-bary/hlavičky napříč stránkami bez použití CSS :has()
+    // Skrýt staré top-bary/hlavičky; NEskrývat content page-header (např. Školení, stránky s tlačítkem)
     try {
+      const contentWrappers = '.trainings-page, .page-container, .crew-dashboard, .page, .finance-page, .warehouse-page';
       const candidates = document.querySelectorAll('.header, .page-header, .brand, .topbar, .top-bar, .top-nav, .navbar, .nav-top');
       candidates.forEach((el) => {
-        if (!el.closest('.app-header')) {
-          // Pokud je to brand uvnitř nového headeru, nechat být; jinak skrýt
-          el.style.display = 'none';
-        }
+        if (el.closest('.app-header')) return;
+        if (el.classList.contains('page-header') && el.closest(contentWrappers)) return; // content header, ne legacy nav
+        el.style.display = 'none';
       });
     } catch (e) {
       // no-op
