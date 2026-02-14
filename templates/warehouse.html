@@ -678,7 +678,7 @@
             try {
                 const url = id ? `/api/warehouse/items/${id}` : '/api/warehouse/items';
                 const method = id ? 'PUT' : 'POST';
-                const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, credentials: 'same-origin', body: JSON.stringify(data) });
                 const result = await res.json();
                 if (result.success) {
                     showNotification(id ? 'Položka aktualizována' : 'Položka přidána');
@@ -693,7 +693,7 @@
         async function deleteItem(id) {
             if (!confirm('Opravdu smazat položku?')) return;
             try {
-                const res = await fetch(`/api/warehouse/items/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/warehouse/items/${id}`, { method: 'DELETE', credentials: 'same-origin' });
                 const data = await res.json();
                 if (data.success) {
                     showNotification('Položka smazána');
@@ -728,7 +728,7 @@
             };
             
             try {
-                const res = await fetch('/api/warehouse/movements', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const res = await fetch('/api/warehouse/movements', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'same-origin', body: JSON.stringify(data) });
                 const result = await res.json();
                 if (result.success) {
                     showNotification('Pohyb zaznamenán');

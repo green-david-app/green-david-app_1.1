@@ -693,7 +693,7 @@
         async function deleteItem(id) {
             if (!confirm('Opravdu smazat položku?')) return;
             try {
-                const res = await fetch(`/api/warehouse/items/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/warehouse/items/${id}`, { method: 'DELETE', credentials: 'same-origin' });
                 const data = await res.json();
                 if (data.success) {
                     showNotification('Položka smazána');

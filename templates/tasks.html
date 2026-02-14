@@ -1409,6 +1409,7 @@
                 const res = await fetch('/api/tasks', {
                     method: editingTaskId ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(taskData)
                 });
                 
@@ -1436,6 +1437,7 @@
                 const res = await fetch('/api/tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
                 });
                 
