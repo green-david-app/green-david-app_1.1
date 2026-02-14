@@ -1721,19 +1721,138 @@ CREATE TABLE IF NOT EXISTS employees (
     except Exception as fts_err:
         print(f"[DB] FTS setup note: {fts_err}")
     
-    # Migrace: přidání sloupců phone, email, address do employees (pokud neexistují)
-    try:
-        db.execute("ALTER TABLE employees ADD COLUMN phone TEXT DEFAULT ''")
-    except Exception:
-        pass  # Sloupec už existuje
-    try:
-        db.execute("ALTER TABLE employees ADD COLUMN email TEXT DEFAULT ''")
-    except Exception:
-        pass  # Sloupec už existuje
-    try:
-        db.execute("ALTER TABLE employees ADD COLUMN address TEXT DEFAULT ''")
-    except Exception:
-        pass  # Sloupec už existuje
+    # ============================================================
+    # SAFETY NET: Ensure ALL columns exist on ALL tables
+    # Migrations can fail silently - this catches everything
+    # ============================================================
+    _ensure_columns = {
+        "jobs": [
+            ("completed_at", "TEXT"),
+            ("created_date", "TEXT"),
+            ("start_date", "TEXT"),
+            ("progress", "INTEGER DEFAULT 0"),
+            ("type", "TEXT DEFAULT 'construction'"),
+            ("priority", "TEXT DEFAULT 'medium'"),
+            ("description", "TEXT"),
+            ("internal_note", "TEXT"),
+            ("tags", "TEXT DEFAULT '[]'"),
+            ("planned_end_date", "DATE"),
+            ("actual_end_date", "DATE"),
+            ("deadline", "DATE"),
+            ("deadline_type", "TEXT DEFAULT 'soft'"),
+            ("deadline_reason", "TEXT"),
+            ("buffer_days", "INTEGER DEFAULT 0"),
+            ("weather_dependent", "INTEGER DEFAULT 0"),
+            ("seasonal_constraints", "TEXT"),
+            ("estimated_value", "REAL"),
+            ("estimated_hours", "INTEGER"),
+            ("actual_value", "REAL DEFAULT 0"),
+            ("actual_hours", "INTEGER DEFAULT 0"),
+            ("budget_labor", "REAL DEFAULT 0"),
+            ("budget_materials", "REAL DEFAULT 0"),
+            ("budget_equipment", "REAL DEFAULT 0"),
+            ("budget_other", "REAL DEFAULT 0"),
+            ("pricing_type", "TEXT DEFAULT 'fixed'"),
+            ("hourly_rate", "REAL"),
+            ("payment_terms", "TEXT"),
+            ("vat_rate", "INTEGER DEFAULT 21"),
+            ("price_includes_vat", "INTEGER DEFAULT 1"),
+            ("project_manager_id", "INTEGER"),
+            ("completion_percent", "INTEGER DEFAULT 0"),
+            ("budget_spent_percent", "INTEGER DEFAULT 0"),
+            ("profit_margin", "REAL"),
+            ("on_track", "INTEGER DEFAULT 1"),
+            ("created_by", "INTEGER"),
+            ("created_from_template", "TEXT"),
+            ("is_template", "INTEGER DEFAULT 0"),
+            ("actual_labor_cost", "REAL DEFAULT 0"),
+            ("actual_material_cost", "REAL DEFAULT 0"),
+            ("invoiced", "INTEGER DEFAULT 0"),
+            ("address", "TEXT DEFAULT ''"),
+            ("budget", "REAL DEFAULT 0"),
+            ("party_id", "INTEGER"),
+            ("job_type", "TEXT DEFAULT 'client'"),
+        ],
+        "employees": [
+            ("phone", "TEXT DEFAULT ''"),
+            ("email", "TEXT DEFAULT ''"),
+            ("address", "TEXT DEFAULT ''"),
+            ("position", "TEXT DEFAULT ''"),
+            ("birth_date", "TEXT"),
+            ("contract_type", "TEXT DEFAULT 'HPP'"),
+            ("start_date", "TEXT"),
+            ("hourly_rate", "REAL"),
+            ("salary", "REAL"),
+            ("skills", "TEXT"),
+            ("location", "TEXT"),
+            ("status", "TEXT DEFAULT 'active'"),
+            ("rating", "REAL DEFAULT 0"),
+            ("avatar_url", "TEXT"),
+            ("delegate_employee_id", "INTEGER"),
+            ("approver_delegate_employee_id", "INTEGER"),
+            ("user_id", "INTEGER"),
+            ("skill_score", "REAL DEFAULT 50"),
+            ("training_hours_total", "REAL DEFAULT 0"),
+            ("last_training_date", "TEXT"),
+        ],
+        "users": [
+            ("role", "VARCHAR(20) DEFAULT 'worker'"),
+            ("manager_id", "INTEGER"),
+        ],
+        "tasks": [
+            ("created_at", "TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ("deadline", "TEXT"),
+            ("depends_on", "TEXT"),
+            ("due_date", "TEXT"),
+            ("created_by", "TEXT"),
+            ("priority", "TEXT DEFAULT 'normal'"),
+        ],
+        "task_assignments": [
+            ("is_primary", "INTEGER NOT NULL DEFAULT 0"),
+        ],
+        "issue_assignments": [
+            ("is_primary", "INTEGER NOT NULL DEFAULT 0"),
+        ],
+        "timesheets": [
+            ("user_id", "INTEGER"),
+            ("duration_minutes", "INTEGER"),
+            ("work_type", "TEXT DEFAULT 'manual'"),
+            ("start_time", "TEXT"),
+            ("end_time", "TEXT"),
+            ("location", "TEXT"),
+            ("task_id", "INTEGER"),
+            ("material_used", "TEXT"),
+            ("weather_snapshot", "TEXT"),
+            ("performance_signal", "TEXT DEFAULT 'normal'"),
+            ("delay_reason", "TEXT"),
+            ("photo_url", "TEXT"),
+            ("note", "TEXT"),
+            ("ai_flags", "TEXT"),
+            ("created_at", "TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ("labor_cost", "REAL"),
+            ("delay_note", "TEXT"),
+            ("training_id", "INTEGER"),
+        ],
+        "trainings": [
+            ("compensation_type", "TEXT DEFAULT 'paid_workday'"),
+            ("wage_cost", "REAL DEFAULT 0"),
+            ("wage_cost_per_person", "REAL"),
+            ("participants", "TEXT DEFAULT '[]'"),
+            ("title", "TEXT"),
+        ],
+    }
+    for table, columns in _ensure_columns.items():
+        try:
+            existing = [r[1] for r in db.execute(f"PRAGMA table_info({table})").fetchall()]
+        except Exception:
+            continue
+        for col_name, col_def in columns:
+            if col_name not in existing:
+                try:
+                    db.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
+                    print(f"[DB] Added missing column: {table}.{col_name}")
+                except Exception:
+                    pass
     db.commit()
 
 def seed_admin():
