@@ -1,5 +1,5 @@
 # Green David App
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, redirect, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.database import get_db
 from app.utils.permissions import current_user
@@ -131,3 +131,13 @@ def api_logout():
     # remove user id from session
     session.pop("uid", None)
     return jsonify({"ok": True})
+
+
+@auth_bp.route("/logout")
+def logout_page():
+    """GET /logout - odhlášení a přesměrování na přehled (pro sidebar odkaz)."""
+    session.pop("uid", None)
+    session.pop("user_name", None)
+    session.pop("user_email", None)
+    session.pop("user_role", None)
+    return redirect("/")
