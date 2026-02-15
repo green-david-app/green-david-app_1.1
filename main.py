@@ -123,26 +123,8 @@ def _ensure():
 
 @app.route("/")
 def index():
-    # Detekce mobilu
-    user_agent = request.headers.get('User-Agent', '').lower()
-    is_mobile = any(x in user_agent for x in ['mobile', 'android', 'iphone', 'ipad'])
-    
-    if is_mobile:
-        # Získej mobile mode
-        try:
-            from app.utils.mobile_mode import get_mobile_mode
-            mobile_mode = get_mobile_mode()
-        except:
-            mobile_mode = request.cookies.get('mobile_mode', 'field')
-        
-        if mobile_mode == 'field':
-            # FIELD mode = Jinja template
-            return redirect('/mobile/today')
-        else:
-            # FULL mode = zobrazí DESKTOP stránku (s responsive CSS)
-            return send_from_directory(".", "index.html")
-    
-    # Desktop
+    # Všechny zařízení (desktop i mobil) dostanou stejný index.html
+    # Responsive CSS (mobile-fix.css) se postará o mobilní layout
     return send_from_directory(".", "index.html")
 
 # Work inbox (safe standalone page)
