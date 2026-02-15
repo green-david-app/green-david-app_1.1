@@ -12,8 +12,8 @@
   sidebar.className = 'app-sidebar';
   sidebar.innerHTML = `
     <div class="sidebar-brand">
-      <img src="/static/img/logo.png" alt="Logo" class="sidebar-logo" 
-           onerror="this.onerror=null; this.src='/static/logo.png'"/>
+      <img src="/static/logo.svg" alt="Logo" class="sidebar-logo" 
+           onerror="this.style.display='none'"/>
       <span class="sidebar-brand-text">green david</span>
       <button class="sidebar-close" id="sidebar-close-btn" aria-label="Zavřít sidebar">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
