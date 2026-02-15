@@ -1,0 +1,1613 @@
+/* ================================================================
+   MOBILE-FIX.CSS v4 — OVERFLOW CLIPPING FIX
+   Loaded LAST — overrides everything for mobile.
+   
+   ROOT CAUSES FIXED:
+   1. sidebar.css sets overflow-x:auto !important on .page div
+   2. --sidebar-w stays 200px on mobile (affects width calcs)
+   3. 100vw is wider than visible viewport on iOS Safari
+   4. Inline <style> grids (repeat(5,1fr)) not overridden
+   
+   v4 ADDITIONS:
+   5. Calendar topbar overlap (absolute center → static flex)
+   6. Job detail budget row doesn't wrap
+   7. Team heatmap legend clipping + grid overflow
+   8. Training stats padding + number overflow
+   9. Timeline weather strip too wide
+   10. Warehouse nav-tabs scroll indicator
+   11. Mask-image fade 80%→92% for scroll containers
+   12. Global inline gap override for mobile
+   ================================================================ */
+
+
+/* ================================================================
+   0. CSS VARIABLES — reset sidebar vars on mobile
+   ================================================================ */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: 0px !important;
+    --sidebar-width: 0px !important;
+    --sidebar-width-collapsed: 0px !important;
+    --page-side-padding: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   1. NUCLEAR OVERFLOW FIX — the #1 root cause
+   sidebar.css line 128 sets overflow-x:auto !important on
+   .sidebar-content-wrapper > div — this makes .page scrollable.
+   We MUST override with same or higher specificity + !important.
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Override sidebar.css: .sidebar-content-wrapper > div:not(.app-sidebar) */
+  html body .sidebar-content-wrapper > div:not(.app-sidebar),
+  html body .sidebar-content-wrapper > div.page,
+  html body .sidebar-content-wrapper > main,
+  html body .sidebar-content-wrapper > .container {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Override sidebar.css: .sidebar-content-wrapper [class*="grid"] */
+  html body .sidebar-content-wrapper .grid,
+  html body .sidebar-content-wrapper [class*="grid"]:not(.kanban-board):not([class*="kanban"]):not(.calendar-grid):not(.heatmap-grid),
+  html body .sidebar-content-wrapper .flex-row {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* The wrapper itself */
+  .sidebar-content-wrapper {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Body + HTML — prevent ANY horizontal scroll */
+  html {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+  
+  body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Global containment — NO element wider than viewport */
+  .container,
+  main,
+  .page,
+  .page-container,
+  .content,
+  .main-content,
+  .app-shell {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* .page specifically needs side padding */
+  .page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   2. HEADER — compact 44px bar, all icons 26px
+   ================================================================ */
+@media (max-width: 768px) {
+  .app-header {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 8px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    left: 6px !important;
+    right: 6px !important;
+    width: auto !important;
+  }
+
+  .app-header .app-header-container,
+  .app-header > div {
+    height: 44px !important;
+    max-height: 44px !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+    align-items: center !important;
+  }
+
+  /* ALL header icons — 26x26 */
+  .app-header .app-header-icon-btn,
+  .app-header .app-header-notifications,
+  .app-header .app-header-settings,
+  .app-header .app-header-sidebar-toggle,
+  .app-header .app-header-search-btn,
+  .app-header .app-header-tasks-count,
+  .app-header button,
+  .app-header a[class*="header"] {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* All SVGs in header — 13px */
+  .app-header svg {
+    width: 13px !important;
+    height: 13px !important;
+    max-width: 13px !important;
+    max-height: 13px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Page title — truncate */
+  .app-header .app-header-page-title,
+  .app-header [class*="page-title"] {
+    font-size: 13px !important;
+    max-width: 90px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .app-header .app-header-actions {
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Back button */
+  .app-header .app-header-back {
+    height: 26px !important;
+    max-height: 26px !important;
+    width: auto !important;
+    max-width: 32px !important;
+    min-width: 26px !important;
+    padding: 0 6px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Tasks badge */
+  .app-header .app-header-tasks-count {
+    font-size: 0 !important;
+    border-radius: 50% !important;
+    position: relative !important;
+  }
+  .app-header .app-header-tasks-count strong {
+    font-size: 10px !important;
+  }
+
+  /* Notification badge */
+  .app-header .notif-badge {
+    min-width: 14px !important;
+    height: 14px !important;
+    max-height: 14px !important;
+    font-size: 8px !important;
+    line-height: 14px !important;
+    padding: 0 2px !important;
+    top: -3px !important;
+    right: -3px !important;
+    border-width: 1.5px !important;
+  }
+
+  /* AI badge */
+  .app-header #ai-operator-badge.notif-badge,
+  .app-header #ai-operator-badge {
+    width: 7px !important;
+    min-width: 7px !important;
+    height: 7px !important;
+    top: 0 !important;
+    right: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Search — collapse */
+  .app-header .app-header-search-wrapper {
+    flex: 0 !important;
+    max-width: 26px !important;
+    margin: 0 !important;
+  }
+  .app-header .app-header-search,
+  .app-header .global-search-container {
+    display: none !important;
+  }
+
+  /* Brand text — hide */
+  .app-header .app-header-text,
+  .app-header .app-header-brand-text {
+    display: none !important;
+  }
+}
+
+
+/* ================================================================
+   3. HORIZONTAL SCROLL CONTAINERS
+   These are the ONLY elements that get overflow-x: auto.
+   Everything else is overflow-x: hidden.
+   ================================================================ */
+@media (max-width: 768px) {
+
+  /* --- STAT CARDS --- */
+  .tasks-stats,
+  .stats-row,
+  .overview-stats,
+  .kpi-cards,
+  .budget-cards,
+  .finance-summary-cards,
+  .crew-stats-row,
+  .quick-stats,
+  .directory-stats,
+  [class*="stats-grid"]:not(.stats-grid) {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px 40px 4px 0 !important;
+    scroll-snap-type: x mandatory !important;
+    scrollbar-width: none !important;
+    position: relative !important;
+    grid-template-columns: none !important;
+  }
+
+  .tasks-stats::-webkit-scrollbar,
+  .stats-row::-webkit-scrollbar,
+  .overview-stats::-webkit-scrollbar,
+  .kpi-cards::-webkit-scrollbar,
+  .budget-cards::-webkit-scrollbar,
+  .crew-stats-row::-webkit-scrollbar,
+  .quick-stats::-webkit-scrollbar,
+  .directory-stats::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Individual stat cards */
+  .tasks-stats > .stat-card,
+  .tasks-stats > div,
+  .stats-row > .stat-card,
+  .overview-stats > .overview-card,
+  .overview-stats > div,
+  .kpi-cards > .kpi-card,
+  .kpi-cards > div,
+  .crew-stats-row > .crew-stat-card,
+  .crew-stats-row > div,
+  .quick-stats > .stat-card,
+  .quick-stats > div,
+  .directory-stats > .stat-card,
+  .directory-stats > div {
+    min-width: 110px !important;
+    max-width: 140px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  .stat-card h4,
+  .stat-card .stat-label,
+  .kpi-label,
+  .crew-stat-card h4 {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .stat-card .value,
+  .stat-card .stat-value,
+  .stat-card-value,
+  .kpi-value {
+    font-size: clamp(14px, 4vw, 18px) !important;
+  }
+
+  .stat-card .sub {
+    font-size: 10px !important;
+  }
+
+  /* --- TABS --- */
+  .view-toggle,
+  .role-tabs,
+  .job-tabs,
+  .page-tabs,
+  .tab-list,
+  .nav-tabs,
+  .finance-tabs,
+  .inbox-tabs,
+  .view-mode-tabs,
+  .filter-pills,
+  [class*="tab-list"],
+  [class*="page-tabs"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    padding-right: 32px !important;
+    position: relative !important;
+  }
+
+  .view-toggle::-webkit-scrollbar,
+  .role-tabs::-webkit-scrollbar,
+  .job-tabs::-webkit-scrollbar,
+  .page-tabs::-webkit-scrollbar,
+  .tab-list::-webkit-scrollbar,
+  .nav-tabs::-webkit-scrollbar,
+  .finance-tabs::-webkit-scrollbar,
+  .inbox-tabs::-webkit-scrollbar,
+  .view-mode-tabs::-webkit-scrollbar,
+  .filter-pills::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .job-tab,
+  .tab-btn,
+  .page-tab,
+  .view-toggle button,
+  .role-tab,
+  .filter-pill {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* --- FINANCE CARDS --- */
+  .finance-overview,
+  .finance-cards,
+  .budget-overview,
+  [class*="finance-grid"],
+  #tab-finance .info-grid,
+  #tab-finance > div:first-child {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px 32px 4px 0 !important;
+    scrollbar-width: none !important;
+    position: relative !important;
+    scroll-snap-type: x mandatory !important;
+    grid-template-columns: none !important;
+  }
+
+  .finance-overview::-webkit-scrollbar,
+  .finance-cards::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .finance-card {
+    min-width: 130px !important;
+    max-width: 160px !important;
+    padding: 12px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    scroll-snap-align: start !important;
+  }
+
+  .finance-card h3 { font-size: 11px !important; margin: 0 0 6px !important; }
+  .finance-card h2,
+  .finance-card .amount { font-size: clamp(14px, 4vw, 20px) !important; word-break: break-all !important; }
+
+  /* --- HEATMAP / CALENDAR --- */
+  [class*="heatmap"],
+  [class*="capacity-heatmap"],
+  .heatmap-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+  }
+
+  [class*="heatmap"] td,
+  [class*="capacity-cell"] {
+    min-width: 40px !important;
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+
+  /* --- TABLES --- */
+  .invoices-table,
+  .data-table,
+  .list-table,
+  table.invoices-table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* --- KANBAN --- */
+  .kanban-board,
+  .kanban-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 16px !important;
+  }
+
+  .kanban-column {
+    min-width: 250px !important;
+    max-width: 280px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+
+/* ================================================================
+   4. SCROLL FADE INDICATORS
+   Using mask-image for reliable fade on scroll containers
+   ================================================================ */
+@media (max-width: 768px) {
+  .tasks-stats,
+  .stats-row,
+  .overview-stats,
+  .kpi-cards,
+  .crew-stats-row,
+  .quick-stats,
+  .directory-stats,
+  .finance-overview,
+  .finance-cards,
+  .view-toggle,
+  .role-tabs,
+  .job-tabs,
+  .page-tabs,
+  .tab-list,
+  .filter-pills,
+  .inbox-tabs,
+  .view-mode-tabs {
+    -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+  }
+}
+
+
+/* ================================================================
+   5. ACTION BAR / TOOLBAR — wrap on mobile
+   ================================================================ */
+@media (max-width: 768px) {
+  .action-bar,
+  .jobs-toolbar,
+  .toolbar:not([class*="heatmap"]),
+  [class*="toolbar"]:not([class*="heatmap"]) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 6px 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-bar > .view-toggle,
+  .action-bar > .role-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .action-bar button.btn-primary,
+  .action-bar > button {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   6. DASHBOARD BUBBLES
+   ================================================================ */
+@media (max-width: 480px) {
+  .action-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-card {
+    padding: 12px 10px !important;
+    border-radius: 14px !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-card .icon-circle,
+  .icon-circle {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .action-card .icon-circle svg,
+  .icon-circle svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .action-card h3 { font-size: 12px !important; margin: 0 0 2px !important; }
+  .action-card p { font-size: 10px !important; }
+}
+
+@media (max-width: 375px) {
+  .action-grid { gap: 6px !important; }
+  .action-card { padding: 10px 8px !important; }
+  .action-card .icon-circle, .icon-circle { width: 32px !important; height: 32px !important; }
+  .action-card h3 { font-size: 11px !important; }
+}
+
+
+/* ================================================================
+   7. OPERATOR BAR
+   ================================================================ */
+@media (max-width: 768px) {
+  .operator-bar,
+  .ai-panel,
+  .ai-job-panel,
+  [class*="ai-panel"],
+  [class*="ai-operator"],
+  [class*="operator-bar"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .operator-message {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .operator-badges {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+}
+
+
+/* ================================================================
+   8. JOB DETAIL
+   ================================================================ */
+@media (max-width: 768px) {
+  .job-hero, .hero-card {
+    padding: 14px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .job-hero-content h1 { font-size: 18px !important; word-break: break-word !important; }
+
+  .job-risk-ring, .risk-ring {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .info-grid:not(#tab-finance .info-grid) {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .info-card {
+    padding: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   9. TEAM PAGE
+   ================================================================ */
+@media (max-width: 768px) {
+  [class*="capacity-card"],
+  [class*="team-card"] {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .legend, [class*="legend"] {
+    font-size: 10px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+}
+
+
+/* ================================================================
+   10. CALENDAR
+   ================================================================ */
+@media (max-width: 768px) {
+  .calendar-grid, .cal, .grid-wrap, .calendar-month {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+  }
+
+  .toolbar .month { font-size: clamp(14px, 4vw, 18px) !important; }
+}
+
+
+/* ================================================================
+   11. REPORTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 16px 12px 120px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .report-types { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .main-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .material-summary { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+
+/* ================================================================
+   12. TIMESHEETS
+   ================================================================ */
+@media (max-width: 768px) {
+  .ts-page { padding: 0 12px 80px !important; }
+  .ts-summary { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .ts-stat-value { font-size: 18px !important; }
+  .ts-nav { flex-wrap: wrap !important; gap: 8px !important; }
+}
+
+
+/* ================================================================
+   13. INBOX
+   ================================================================ */
+@media (max-width: 768px) {
+  .inbox-container {
+    padding: 16px 12px 100px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   14. DOCUMENTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .file-browser {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    gap: 16px !important;
+    padding: 12px !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .file-browser .sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.12)) !important;
+  }
+}
+
+
+/* ================================================================
+   15. SKLAD / EMPTY STATE
+   ================================================================ */
+.empty-state h3 { margin-bottom: 6px !important; }
+.empty-state h3 + p, .empty-state p { margin-top: 0 !important; }
+
+
+/* ================================================================
+   16. GENERIC CATCH-ALL
+   ================================================================ */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .card, .glass-card, .info-card, .dashboard-card,
+  [class*="card"]:not(.action-card):not(.stat-card):not(.finance-card):not(.kpi-card):not(.crew-stat-card) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  img, video, canvas, svg:not(.app-header svg) {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* ================================================================
+   17. BOTTOM NAV
+   ================================================================ */
+@media (max-width: 768px) {
+  .bottom-nav, #bottom-nav-container > div {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+}
+
+
+/* ================================================================
+   18. SIDEBAR LOGO
+   ================================================================ */
+.sidebar-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  object-fit: contain !important;
+}
+
+
+/* ================================================================
+   19. WEATHER
+   ================================================================ */
+@media (max-width: 480px) {
+  .weather-card, .weather-widget, [class*="weather"] {
+    padding: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   20. AI OPERATOR
+   ================================================================ */
+@media (max-width: 768px) {
+  .ai-panel-header { font-size: 14px !important; padding: 8px 10px !important; }
+  .ai-avatar { width: 32px !important; height: 32px !important; }
+}
+
+
+/* ================================================================
+   21. QUICK ADD
+   ================================================================ */
+@media (max-width: 480px) {
+  .quick-add, .quick-task-bar, [class*="quick-add"] {
+    margin: 6px 0 !important;
+    padding: 6px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   22. SAFARI iOS
+   ================================================================ */
+@supports (-webkit-touch-callout: none) {
+  body { min-height: -webkit-fill-available !important; }
+  html { height: -webkit-fill-available !important; }
+  .app-header { -webkit-transform: translateZ(0) !important; }
+}
+
+@supports (padding: env(safe-area-inset-left)) {
+  @media (max-width: 768px) {
+    .app-header {
+      top: calc(6px + env(safe-area-inset-top, 0px)) !important;
+      left: calc(6px + env(safe-area-inset-left, 0px)) !important;
+      right: calc(6px + env(safe-area-inset-right, 0px)) !important;
+    }
+  }
+}
+
+
+/* ================================================================
+   23. PLANNING PAGES
+   ================================================================ */
+@media (max-width: 768px) {
+  .planning-grid, .scenario-grid, .costs-grid, [class*="planning-grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* ================================================================
+   24. NURSERY
+   ================================================================ */
+@media (max-width: 768px) {
+  .plant-grid, .nursery-grid, .catalog-grid,
+  [class*="plant-grid"], [class*="nursery-grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .plant-grid, .nursery-grid, .catalog-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* ================================================================
+   25. v4 FIXES — overflow clipping on specific pages
+   ================================================================ */
+
+/* --- CALENDAR TOPBAR: stop absolute center from overlapping right buttons --- */
+@media (max-width: 768px) {
+  .cal-topbar {
+    gap: 4px !important;
+    padding: 8px 6px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .cal-topbar-center {
+    position: static !important;
+    transform: none !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+  }
+
+  .cal-topbar-label {
+    font-size: 13px !important;
+    min-width: 60px !important;
+  }
+
+  .cal-topbar-right {
+    flex-shrink: 0 !important;
+    gap: 3px !important;
+  }
+
+  .cal-tbtn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .cal-btn-today {
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .cal-btn-back {
+    padding: 4px 6px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .cal-btn-back svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* --- JOB DETAIL: budget comparison flex row must wrap --- */
+@media (max-width: 768px) {
+  /* Target the inline-styled flex row with budget/actual/diff */
+  #tab-finance [style*="display:flex"][style*="gap:24px"],
+  #tab-finance [style*="display: flex"][style*="gap: 24px"],
+  .budget-compare-row,
+  [style*="gap:24px"][style*="margin-bottom:12px"] {
+    flex-wrap: wrap !important;
+    gap: 8px 16px !important;
+  }
+
+  /* Employee cost cards in budget section */
+  #tab-finance table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: 11px !important;
+  }
+
+  /* Budget subsections */
+  #tab-finance [style*="display:flex"][style*="justify-content:space-between"] {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* Employee cost breakdown cards */
+  .employee-cost-card,
+  #tab-finance [style*="border-radius"][style*="padding"][style*="text-align:center"] {
+    min-width: 80px !important;
+    max-width: calc(33% - 8px) !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* --- TIMELINE: weather strip and gantt for mobile (v5 FIX) --- */
+@media (max-width: 768px) {
+  /* Celý timeline kontejner — horizontálně scrollovatelný */
+  .gantt-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overflow-y: visible !important;
+    max-width: 100% !important;
+    margin: 0 -12px !important;
+    padding: 0 12px !important;
+  }
+
+  .weather-strip {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    position: relative !important;
+  }
+
+  .weather-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Weather label — sticky při scrollu */
+  .weather-label {
+    width: 90px !important;
+    min-width: 90px !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: var(--bg-elevated, rgba(255,255,255,0.05)) !important;
+    border-right: 1px solid var(--border-primary, #2d3748) !important;
+  }
+
+  .weather-days {
+    display: flex !important;
+    flex-shrink: 0 !important;
+  }
+
+  .weather-day {
+    min-width: 55px !important;
+    padding: 6px 4px !important;
+    font-size: 10px !important;
+  }
+
+  .weather-temp {
+    font-size: 11px !important;
+  }
+
+  /* Gantt — sidebar 140px aby se vešla jména */
+  .gantt-chart {
+    grid-template-columns: 140px 1fr !important;
+    min-width: min-content !important;
+  }
+
+  .gantt-sidebar {
+    width: 140px !important;
+    min-width: 140px !important;
+  }
+
+  .gantt-sidebar-header {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Jména a města — ellipsis, NE vertikální text */
+  .gantt-row-label {
+    width: 140px !important;
+    min-width: 140px !important;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    gap: 8px !important;
+  }
+
+  .row-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  .row-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .row-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .row-title,
+  .row-meta {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+
+  .row-title {
+    font-size: 12px !important;
+  }
+
+  .row-meta {
+    font-size: 10px !important;
+  }
+
+  .row-capacity {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 9px !important;
+  }
+
+  /* Capacity bar */
+  .capacity-bar-container,
+  [class*="capacity-bar"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* Timeline view toggle tabs */
+  .timeline-tabs,
+  .view-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .timeline-tabs::-webkit-scrollbar,
+  .view-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* --- TEAM PAGE: heatmap legend and grid fixes --- */
+@media (max-width: 768px) {
+  .heatmap-legend {
+    flex-wrap: wrap !important;
+    gap: 6px 12px !important;
+    font-size: 10px !important;
+  }
+
+  .heatmap-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .capacity-heatmap {
+    padding: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .heatmap-grid {
+    min-width: 500px !important;
+    font-size: 10px !important;
+  }
+
+  .heatmap-name {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+
+  .heatmap-cell {
+    height: 32px !important;
+    font-size: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .heatmap-name-avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 9px !important;
+  }
+
+  /* Crew stats (team page top stats) — scrollable */
+  .crew-stats-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 4px 32px 4px 0 !important;
+    grid-template-columns: none !important;
+    scrollbar-width: none !important;
+  }
+
+  .crew-stats-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .crew-stats-row > * {
+    min-width: 120px !important;
+    max-width: 160px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* AI insights on team page */
+  .ai-insight-cards,
+  [class*="insight-card"] {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+  }
+}
+
+/* --- ŠKOLENÍ (TRAINING): stats card padding + number overflow --- */
+@media (max-width: 768px) {
+  /* Override inline training page stats */
+  .stats-grid .stat-card {
+    padding: 14px 12px !important;
+    gap: 10px !important;
+  }
+
+  .stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .stat-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .stat-value,
+  .stat-card .stat-value {
+    font-size: clamp(16px, 5vw, 24px) !important;
+    word-break: break-all !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid .stat-card {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+}
+
+/* --- SKLAD (WAREHOUSE): nav-tabs improvements --- */
+@media (max-width: 768px) {
+  .nav-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+    padding: 4px 32px 4px 0 !important;
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 88%, transparent 100%) !important;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .nav-tab {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    gap: 4px !important;
+  }
+
+  .nav-tab svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Warehouse stats top row */
+  .warehouse-stats,
+  [class*="warehouse-stat"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* --- JOBS PAGE (Zakázky): operator bar text clipping --- */
+@media (max-width: 768px) {
+  .operator-bar,
+  [class*="operator-bar"],
+  .ai-alert,
+  [class*="ai-alert"] {
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* Job cards in list */
+  .job-card-content,
+  .job-card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .job-card .job-amount,
+  .job-card .job-budget {
+    font-size: 13px !important;
+    word-break: break-all !important;
+  }
+}
+
+/* --- GLOBAL: prevent ANY child from breaking parent width --- */
+@media (max-width: 768px) {
+  .page > *,
+  .page-container > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Fix all inline flex gaps > 16px on mobile */
+  [style*="gap:24px"],
+  [style*="gap: 24px"],
+  [style*="gap:32px"],
+  [style*="gap: 32px"] {
+    gap: 12px !important;
+  }
+}
+
+
+/* ================================================================
+   26. MOBILE UI v5 — Stránka po stránce
+   ================================================================ */
+
+/* --- ŠKOLKA / NURSERY: stat karty prázdné, layout 2 sloupce --- */
+@media (max-width: 768px) {
+  .stats-mini {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .stat-mini {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+  }
+
+  .stat-mini svg {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .stat-mini-info {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .stat-mini-label {
+    font-size: 11px !important;
+  }
+
+  .stat-mini-value {
+    font-size: 18px !important;
+    color: var(--text-primary, #e8eef2) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Quick actions — repeat(4,1fr) inline override */
+  .page-content [style*="grid-template-columns: repeat(4"],
+  .page-content [style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-mini,
+  .page-content [style*="grid-template-columns: repeat(4"],
+  .page-content [style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* --- REPORTY: text ořez v kartách --- */
+@media (max-width: 768px) {
+  .report-card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .report-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .report-card-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .report-card-info {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    flex: 1 !important;
+  }
+
+  .report-card-info h3 {
+    word-break: break-word !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .report-card-info p {
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+
+  .report-card-features {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .feature-tag {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 12px !important;
+  }
+
+  .stat-info .value {
+    font-size: 18px !important;
+    word-break: break-all !important;
+  }
+}
+
+
+/* --- INBOX: KPI boxy overflow --- */
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .kpi-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .kpi-value {
+    font-size: clamp(20px, 5vw, 28px) !important;
+    word-break: break-all !important;
+  }
+
+  .inbox-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    padding-right: 32px !important;
+    -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 92%, transparent 100%) !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .kpi-value {
+    font-size: 20px !important;
+  }
+}
+
+
+/* --- ŠKOLENÍ: 105 300 Kč overflow (jen stat-card, ne kpi) --- */
+@media (max-width: 768px) {
+  .stats-grid .stat-card,
+  .stat-card {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  .stat-card .stat-value,
+  .stat-value {
+    font-size: clamp(14px, 4vw, 24px) !important;
+    word-break: break-all !important;
+  }
+}
+
+
+/* --- ZAKÁZKY / JOBS: stats row, mask 95% --- */
+@media (max-width: 768px) {
+  .stats-row,
+  .overview-stats,
+  .jobs-stats,
+  [class*="job-stats"] {
+    -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
+    mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
+    padding-right: 24px !important;
+  }
+
+  .kanban-column {
+    min-width: 250px !important;
+    max-width: min(100vw, 280px) !important;
+  }
+}
+
+
+/* --- AI OPERÁTOR: watermark příliš výrazný --- */
+@media (max-width: 768px) {
+  .ai-operator-watermark,
+  [class*="watermark"],
+  .ai-panel::before,
+  .ai-modal::before,
+  [class*="ai-operator"]::before {
+    opacity: 0.04 !important;
+  }
+
+  /* Category tabs v modalu */
+  .ai-category-tabs,
+  .insight-tabs,
+  [class*="category-tabs"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    scrollbar-width: none !important;
+  }
+
+  .ai-category-tabs .tab,
+  .insight-tabs .tab,
+  [class*="category-tabs"] button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+
+/* --- NURSERY: dashboard-grid jednosloupcový --- */
+@media (max-width: 768px) {
+  .nursery-grid .dashboard-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-item.col-3,
+  .dashboard-item.col-4,
+  .dashboard-item.col-6,
+  .dashboard-item.col-8,
+  .dashboard-item.col-12 {
+    grid-column: span 1 !important;
+  }
+}
+
+
+/* ================================================================
+   27. DASHBOARD WEATHER WIDGET — zmenšit na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  .admin-card .admin-weather,
+  .admin-weather,
+  .weather-widget,
+  .weather-card {
+    padding: 12px !important;
+    gap: 12px !important;
+    max-height: 160px !important;
+  }
+
+  /* Hlavní ikona oblaku/emoji */
+  .admin-card .admin-weather > span:first-child,
+  .admin-weather > span:first-child {
+    font-size: 28px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Hlavní teplota */
+  .admin-card .admin-weather > div:nth-child(2) > div:first-child,
+  .admin-card .admin-weather div[style*="fontSize"]:first-of-type,
+  .admin-weather .weather-temp,
+  .weather-current .temp {
+    font-size: 28px !important;
+  }
+
+  /* Lokace */
+  .admin-card .admin-weather > div:nth-child(2) > div:last-child,
+  .admin-card .admin-weather div[style*="fontSize"][style*="12px"],
+  .admin-weather .weather-location,
+  .weather-current .location {
+    font-size: 12px !important;
+  }
+
+  /* 3-denní forecast row */
+  .admin-card .admin-weather > div:last-child,
+  .admin-weather > div:last-child,
+  .weather-forecast,
+  .forecast-row {
+    gap: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  /* Forecast den — ikona a teplota */
+  .admin-card .admin-weather > div:last-child > div > div:nth-child(2),
+  .admin-weather .forecast-day .icon,
+  .weather-forecast .forecast-icon {
+    font-size: 18px !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .admin-card .admin-weather > div:last-child > div > div:nth-child(3),
+  .admin-weather .forecast-day .temp,
+  .weather-forecast .forecast-temp {
+    font-size: 12px !important;
+  }
+
+  /* Zachovat zelený rámeček */
+  .admin-card .admin-weather.weather-clickable,
+  .admin-weather[style*="border"] {
+    border: 1px solid rgba(74, 222, 128, 0.15) !important;
+  }
+}
+
+
