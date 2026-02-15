@@ -638,10 +638,12 @@ a:hover {
   height: 18px;
 }
 
-/* AI asistent v headeru — bez rámečku (ostatní ikony mají border) */
+/* AI asistent v headeru — bez rámečku a bez pozadí */
 #app-header-ai-toggle,
 .app-header-ai-operator .app-header-icon-btn,
 .app-header-ai-operator button {
+  background: none !important;
+  background-color: transparent !important;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -1664,6 +1666,17 @@ tr:hover td {
   .app-header-sidebar-toggle svg {
     width: 14px !important;
     height: 14px !important;
+  }
+  
+  /* AI button — no background/border on mobile (match other icons visually) */
+  .app-header-ai-operator,
+  .app-header-ai-operator .app-header-icon-btn,
+  #app-header-ai-toggle {
+    background: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
   
   /* Badge smaller */

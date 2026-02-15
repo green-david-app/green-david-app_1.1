@@ -179,15 +179,17 @@ window.WeatherPicker = (function() {
     `;
     document.body.appendChild(picker);
     
-    // Position panel near anchor
+    // Position panel near anchor (skip on mobile — CSS centers it)
     const panel = picker.querySelector('.wlp-panel');
-    const rect = anchor.getBoundingClientRect();
-    const panelW = 320;
-    let left = rect.left + rect.width / 2 - panelW / 2;
-    if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
-    if (left < 16) left = 16;
-    panel.style.left = left + 'px';
-    panel.style.top = (rect.bottom + 8) + 'px';
+    if (window.innerWidth > 768) {
+      const rect = anchor.getBoundingClientRect();
+      const panelW = 320;
+      let left = rect.left + rect.width / 2 - panelW / 2;
+      if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
+      if (left < 16) left = 16;
+      panel.style.left = left + 'px';
+      panel.style.top = (rect.bottom + 8) + 'px';
+    }
 
     // Close handlers
     picker.querySelector('.wlp-backdrop').addEventListener('click', () => picker.remove());

@@ -138,7 +138,7 @@
     align-items: center !important;
   }
 
-  /* ALL header icons — 26x26 */
+  /* ALL header icons — 26x26, NO background/border on mobile */
   .app-header .app-header-icon-btn,
   .app-header .app-header-notifications,
   .app-header .app-header-settings,
@@ -159,6 +159,11 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    background: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
 
   /* All SVGs in header — 13px */
@@ -232,17 +237,27 @@
     padding: 0 !important;
   }
 
-  /* AI Assistant button — compact, match other header icons */
-  .app-header .app-header-ai-operator,
-  .app-header-ai-operator {
+  /* AI Assistant button — compact, NO background, match other header icons */
+  html body .app-header .app-header-ai-operator,
+  html body .app-header-ai-operator,
+  html body #app-header-ai-operator {
     padding: 0 !important;
     margin: 0 !important;
-    width: auto !important;
-    min-width: 0 !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    background: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
   }
-  #app-header-ai-toggle,
-  .app-header-ai-operator .app-header-icon-btn,
-  .app-header-ai-operator button {
+  html body .app-header #app-header-ai-toggle,
+  html body .app-header .app-header-ai-operator .app-header-icon-btn,
+  html body .app-header .app-header-ai-operator button,
+  html body #app-header-ai-toggle {
     width: 26px !important;
     height: 26px !important;
     min-width: 26px !important;
@@ -251,6 +266,16 @@
     max-height: 26px !important;
     padding: 0 !important;
     border-radius: 50% !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: none !important;
+    background-color: transparent !important;
+  }
+  html body .app-header .app-header-ai-operator svg,
+  html body #app-header-ai-toggle svg {
+    width: 14px !important;
+    height: 14px !important;
   }
 
   /* Search — collapse */
@@ -284,6 +309,8 @@
   .stats-row,
   .overview-stats,
   .kpi-cards,
+  .kpi-row,
+  .stats-bar,
   .budget-cards,
   .finance-summary-cards,
   .crew-stats-row,
@@ -296,7 +323,7 @@
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px 40px 4px 0 !important;
+    padding: 4px 8px 4px 6px !important;
     scroll-snap-type: x mandatory !important;
     scrollbar-width: none !important;
     position: relative !important;
@@ -307,6 +334,8 @@
   .stats-row::-webkit-scrollbar,
   .overview-stats::-webkit-scrollbar,
   .kpi-cards::-webkit-scrollbar,
+  .kpi-row::-webkit-scrollbar,
+  .stats-bar::-webkit-scrollbar,
   .budget-cards::-webkit-scrollbar,
   .crew-stats-row::-webkit-scrollbar,
   .quick-stats::-webkit-scrollbar,
@@ -322,6 +351,10 @@
   .overview-stats > div,
   .kpi-cards > .kpi-card,
   .kpi-cards > div,
+  .kpi-row > .kpi-card,
+  .kpi-row > div,
+  .stats-bar > .stat-mini,
+  .stats-bar > div,
   .crew-stats-row > .crew-stat-card,
   .crew-stats-row > div,
   .quick-stats > .stat-card,
@@ -333,6 +366,63 @@
     flex-shrink: 0 !important;
     scroll-snap-align: start !important;
     box-sizing: border-box !important;
+  }
+
+  /* Crew stat cards slightly larger (have more content) */
+  .crew-stats-row > .crew-stat-card,
+  .crew-stats-row > div {
+    min-width: 130px !important;
+    max-width: 160px !important;
+    padding: 12px !important;
+  }
+  .crew-stat-card .stat-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* Stats-bar cards (warehouse) */
+  .stats-bar > .stat-mini {
+    min-width: 120px !important;
+    max-width: 150px !important;
+    padding: 10px 12px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     GLASS SCROLL INDICATOR — universal for ALL scrollable rows
+     ═══════════════════════════════════════════════════ */
+  .tasks-stats::after,
+  .stats-row::after,
+  .overview-stats::after,
+  .kpi-cards::after,
+  .kpi-row::after,
+  .stats-bar::after,
+  .budget-cards::after,
+  .finance-summary-cards::after,
+  .crew-stats-row::after,
+  .quick-stats::after,
+  .directory-stats::after,
+  .finance-overview::after,
+  .jobs-dashboard::after {
+    content: "›" !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: auto !important;
+    align-self: stretch !important;
+    background: linear-gradient(to right, transparent, rgba(20, 27, 40, 0.6) 30%) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    color: rgba(255,255,255,0.4) !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
+    pointer-events: none !important;
+    flex-shrink: 0 !important;
+    padding-left: 10px !important;
+    z-index: 2 !important;
   }
 
   .stat-card h4,
@@ -419,7 +509,7 @@
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     gap: 8px !important;
-    padding: 4px 32px 4px 0 !important;
+    padding: 4px 8px 4px 6px !important;
     scrollbar-width: none !important;
     position: relative !important;
     scroll-snap-type: x mandatory !important;
@@ -540,8 +630,91 @@
 
   .action-bar button.btn-primary,
   .action-bar > button {
-    width: 100% !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
     box-sizing: border-box !important;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     GLOBAL: ALL .btn-primary — compact, NOT full-width
+     Overrides app.css: .btn-primary { width: 100% }
+     ═══════════════════════════════════════════════════ */
+  .btn-primary,
+  button.btn-primary,
+  .btn.btn-primary,
+  .page .btn-primary,
+  .page-header .btn-primary,
+  .header-actions .btn-primary,
+  .container .btn-primary,
+  .container .btn.btn-primary,
+  .finance-page .btn-primary,
+  .notes-content .btn-primary,
+  .page-content .btn-primary,
+  .page-actions-bar .btn-primary,
+  [style*="display:flex"] > .btn-primary,
+  [style*="display: flex"] > .btn-primary {
+    width: auto !important;
+    max-width: fit-content !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    flex: 0 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Also secondary buttons */
+  .btn-secondary,
+  button.btn-secondary {
+    flex: 0 0 auto !important;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     PAGE-HEADER & TOOLBAR CONTAINERS — visible, symmetric padding
+     ═══════════════════════════════════════════════════ */
+  .page-header {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 8px !important;
+    margin-bottom: 8px !important;
+    border-bottom: none !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .header-actions .btn,
+  .header-actions button {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+  }
+
+  /* Notes/Finance/Documents toolbar — inline flex divs with buttons */
+  .notes-content > div[style*="display:flex"],
+  .notes-content > div[style*="display: flex"],
+  .finance-page > div[style*="display:flex"],
+  .finance-page > div[style*="display: flex"],
+  [style*="justify-content:flex-end"][style*="flex-wrap"] {
+    padding: 4px 8px !important;
+    gap: 8px !important;
+  }
+
+  /* Nursery page-actions-bar */
+  .page-actions-bar {
+    padding: 4px 8px !important;
+  }
+  .page-actions-bar .btn.btn-primary {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
   }
 }
 
@@ -727,6 +900,22 @@
     padding: 16px 12px 100px !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+  }
+  .inbox-header {
+    padding-left: 8px !important;
+  }
+  .inbox-header h1 {
+    font-size: 18px !important;
+    gap: 8px !important;
+  }
+  .inbox-header h1 img {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+  }
+  .inbox-header .subtitle {
+    font-size: 12px !important;
+    padding-left: 2px !important;
   }
 }
 
@@ -1448,7 +1637,7 @@
     gap: 12px !important;
   }
 
-  .kpi-card {
+  .kpi-grid > .kpi-card {
     min-width: 0 !important;
     max-width: 100% !important;
   }
@@ -1492,21 +1681,70 @@
 }
 
 
-/* --- ZAKÁZKY / JOBS: stats row, mask 95% --- */
+/* --- ZAKÁZKY / JOBS: stats row — glass arrow handles fade --- */
 @media (max-width: 768px) {
-  .stats-row,
-  .overview-stats,
-  .jobs-stats,
-  [class*="job-stats"] {
-    -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
-    mask-image: linear-gradient(to right, black 95%, transparent 100%) !important;
-    padding-right: 24px !important;
-  }
-
   .kanban-column {
     min-width: 250px !important;
     max-width: min(100vw, 280px) !important;
   }
+
+  /* --- JOBS: buttons compact (not full width) --- */
+  .page > div:first-child {
+    flex-wrap: wrap !important;
+    padding-left: 6px !important;
+  }
+  /* Hide the flex:1 spacer on mobile */
+  .page > div:first-child > div[style*="flex:1"],
+  .page > div:first-child > div[style*="flex: 1"] {
+    display: none !important;
+  }
+  #btn-new-job,
+  #btn-new-job + .btn-primary,
+  #btn-new-job ~ .btn-primary {
+    width: auto !important;
+    max-width: none !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+  }
+
+  /* --- JOBS: Dashboard KPI bubbles — horizontal scroll --- */
+  .jobs-dashboard {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    gap: 8px !important;
+    padding: 0 8px 6px 6px !important;
+    margin-bottom: 10px !important;
+    position: relative !important;
+    scrollbar-width: none !important;
+  }
+  .jobs-dashboard::-webkit-scrollbar {
+    display: none !important;
+  }
+  .jobs-dashboard > .dashboard-card {
+    flex: 0 0 110px !important;
+    width: 110px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
+    scroll-snap-align: start !important;
+    padding: 8px 10px !important;
+  }
+  .jobs-dashboard > .dashboard-card h3,
+  .jobs-dashboard > .dashboard-card h3[style] {
+    font-size: 9px !important;
+    white-space: nowrap !important;
+    margin-bottom: 2px !important;
+  }
+  .jobs-dashboard > .dashboard-card .value,
+  .jobs-dashboard > .dashboard-card .value[style] {
+    font-size: 15px !important;
+  }
+
+  /* --- JOBS: scroll indicator — handled by global glass arrow above --- */
 }
 
 
@@ -1660,28 +1898,34 @@
    28. WEATHER LOCATION MODAL — vycentrovat na mobilu
    ================================================================ */
 @media (max-width: 768px) {
-  #weather-location-picker {
+  html body #weather-location-picker {
+    position: fixed !important;
+    inset: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     z-index: 10001 !important;
   }
 
-  #weather-location-picker .wlp-backdrop {
+  html body #weather-location-picker .wlp-backdrop {
     position: fixed !important;
     inset: 0 !important;
-    background: rgba(0,0,0,0.5) !important;
+    background: rgba(0,0,0,0.6) !important;
+    z-index: -1 !important;
   }
 
-  #weather-location-picker .wlp-panel {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+  html body #weather-location-picker .wlp-panel {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
     width: 90vw !important;
     max-width: 340px !important;
     max-height: 80vh !important;
     overflow-y: auto !important;
+    z-index: 1 !important;
   }
 }
 
