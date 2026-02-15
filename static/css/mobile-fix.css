@@ -232,6 +232,27 @@
     padding: 0 !important;
   }
 
+  /* AI Assistant button — compact, match other header icons */
+  .app-header .app-header-ai-operator,
+  .app-header-ai-operator {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+  #app-header-ai-toggle,
+  .app-header-ai-operator .app-header-icon-btn,
+  .app-header-ai-operator button {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+
   /* Search — collapse */
   .app-header .app-header-search-wrapper {
     flex: 0 !important;
@@ -1537,27 +1558,40 @@
 
 
 /* ================================================================
-   27. DASHBOARD WEATHER WIDGET — zmenšit na mobilu
+   27. DASHBOARD WEATHER WIDGET — horizontální layout na mobilu
    ================================================================ */
 @media (max-width: 768px) {
+  /* Horizontální kompaktní řádek: ikona+teplota+lokace vlevo, forecast vpravo */
   .admin-card .admin-weather,
   .admin-weather,
   .weather-widget,
   .weather-card {
-    padding: 12px !important;
-    gap: 12px !important;
-    max-height: 160px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 10px !important;
+    max-height: none !important;
   }
 
-  /* Hlavní ikona oblaku/emoji */
+  /* Ikona + teplota + lokace — levá strana */
   .admin-card .admin-weather > span:first-child,
   .admin-weather > span:first-child {
-    font-size: 28px !important;
-    width: 32px !important;
-    height: 32px !important;
+    font-size: 24px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Střední blok (teplota + město) */
+  .admin-card .admin-weather > div:nth-child(2),
+  .admin-weather > div:nth-child(2) {
+    flex-shrink: 0 !important;
   }
 
   /* Hlavní teplota */
@@ -1565,7 +1599,7 @@
   .admin-card .admin-weather div[style*="fontSize"]:first-of-type,
   .admin-weather .weather-temp,
   .weather-current .temp {
-    font-size: 28px !important;
+    font-size: 20px !important;
   }
 
   /* Lokace */
@@ -1573,25 +1607,36 @@
   .admin-card .admin-weather div[style*="fontSize"][style*="12px"],
   .admin-weather .weather-location,
   .weather-current .location {
-    font-size: 12px !important;
+    font-size: 10px !important;
   }
 
-  /* 3-denní forecast row */
+  /* Forecast dny — vpravo, horizontálně */
   .admin-card .admin-weather > div:last-child,
   .admin-weather > div:last-child,
   .weather-forecast,
   .forecast-row {
-    gap: 12px !important;
-    padding-left: 12px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    padding-left: 8px !important;
+    margin-left: auto !important;
+    border-left: 1px solid rgba(255,255,255,0.1) !important;
   }
 
   /* Forecast den — ikona a teplota */
+  .admin-card .admin-weather > div:last-child > div,
+  .admin-weather .forecast-day,
+  .weather-forecast > div {
+    min-width: 36px !important;
+    text-align: center !important;
+  }
+
   .admin-card .admin-weather > div:last-child > div > div:nth-child(2),
   .admin-weather .forecast-day .icon,
   .weather-forecast .forecast-icon {
-    font-size: 18px !important;
-    width: 24px !important;
-    height: 24px !important;
+    font-size: 14px !important;
+    width: 20px !important;
+    height: 20px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1600,13 +1645,43 @@
   .admin-card .admin-weather > div:last-child > div > div:nth-child(3),
   .admin-weather .forecast-day .temp,
   .weather-forecast .forecast-temp {
-    font-size: 12px !important;
+    font-size: 10px !important;
   }
 
   /* Zachovat zelený rámeček */
   .admin-card .admin-weather.weather-clickable,
   .admin-weather[style*="border"] {
     border: 1px solid rgba(74, 222, 128, 0.15) !important;
+  }
+}
+
+
+/* ================================================================
+   28. WEATHER LOCATION MODAL — vycentrovat na mobilu
+   ================================================================ */
+@media (max-width: 768px) {
+  #weather-location-picker {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10001 !important;
+  }
+
+  #weather-location-picker .wlp-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0,0,0,0.5) !important;
+  }
+
+  #weather-location-picker .wlp-panel {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90vw !important;
+    max-width: 340px !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
   }
 }
 
