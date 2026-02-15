@@ -964,7 +964,17 @@
               .admin-card .admin-stats { display: flex; gap: 16px !important; justify-content: center; }
               .admin-stat .value { font-size: 20px !important; }
               .admin-stat .label { font-size: 11px !important; }
-              .admin-card .admin-weather { margin-left: 0 !important; margin-top: 8px; width: 100%; justify-content: center; padding: 10px 14px !important; gap: 10px !important; }
+              .admin-card .admin-weather {
+                margin-left: 0 !important;
+                margin-top: 8px;
+                width: 100%;
+                justify-content: center;
+                padding: 8px 12px !important;
+                gap: 8px !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+              }
               .admin-card .admin-weather > span:first-child { font-size: 28px !important; }
               .admin-card .admin-weather div:nth-child(2) > div:first-child { font-size: 18px !important; }
               .admin-card .inbox-shortcut { padding: 8px 12px !important; }
@@ -981,7 +991,7 @@
               .admin-card { padding: 12px !important; }
               .admin-card .admin-title { font-size: 20px !important; }
               .admin-stat .value { font-size: 18px !important; }
-              .admin-card .admin-weather { flex-direction: column; }
+              .admin-card .admin-weather { flex-direction: row !important; gap: 6px !important; }
               .action-card .glass-icon-circle { width: 38px !important; height: 38px !important; }
               .action-card h3 { font-size: 12px !important; }
             }
@@ -1032,27 +1042,27 @@
                 marginLeft: "auto",
                 display: "flex",
                 alignItems: "center",
-                gap: "16px",
+                gap: "8px",
                 padding: "12px 20px",
                 background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(74, 222, 128, 0.08))",
                 borderRadius: "14px",
                 border: "1px solid rgba(74, 222, 128, 0.15)",
                 cursor: "pointer"
               }}>
-                <span style={{fontSize: "36px"}}>{weather.current.icon}</span>
+                <span style={{fontSize: "24px"}}>{weather.current.icon}</span>
                 <div>
-                  <div style={{fontSize: "24px", fontWeight: "700", color: "#e8eef2"}}>{Math.round(weather.current.temperature)}°C</div>
+                  <div style={{fontSize: "18px", fontWeight: "700", color: "#e8eef2"}}>{Math.round(weather.current.temperature)}°C</div>
                   <div style={{fontSize: "12px", color: "#9ca8b3", display: "flex", alignItems: "center", gap: "4px"}}>
                     <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     {weather.city}
                   </div>
                 </div>
-                <div style={{borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: "16px", display: "flex", gap: "8px"}}>
+                <div style={{borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: "8px", display: "flex", gap: "8px"}}>
                   {weather.forecast && weather.forecast.slice(1,4).map((day,i)=>{
                     const dayName = new Date(day.date).toLocaleDateString('cs-CZ',{weekday:'short'});
-                    return <div key={i} style={{textAlign: "center", minWidth: "45px"}}>
+                    return <div key={i} style={{textAlign: "center", minWidth: "36px"}}>
                       <div style={{fontSize: "10px", color: "#6b7580"}}>{dayName}</div>
-                      <div style={{fontSize: "18px"}}>{day.icon}</div>
+                      <div style={{fontSize: "14px"}}>{day.icon}</div>
                       <div style={{fontSize: "11px", color: "#e8eef2"}}>{Math.round(day.temp_max)}°</div>
                     </div>;
                   })}

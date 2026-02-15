@@ -123,7 +123,7 @@ def _ensure():
 
 @app.route("/")
 def index():
-    # Všechny zařízení (desktop i mobil) dostanou stejný index.html
+    # Všechna zařízení (desktop i mobil) dostanou stejný index.html
     # Responsive CSS (mobile-fix.css) se postará o mobilní layout
     return send_from_directory(".", "index.html")
 
